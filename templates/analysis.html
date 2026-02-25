@@ -1,0 +1,892 @@
+{% extends "base.html" %}
+{% block title %}Analyse IA - Kengni Finance{% endblock %}
+{% block page_title %}Analyse IA & Score Trader{% endblock %}
+{% block content %}
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --teal:    #00d4aa;
+  --teal2:   #00ff88;
+  --red:     #ff4757;
+  --orange:  #ffa502;
+  --blue:    #3d9eff;
+  --bg:      #070b10;
+  --bg2:     #0d1520;
+  --bg3:     #111d2b;
+  --border:  rgba(0,212,170,0.18);
+  --text:    #e8f0fe;
+  --muted:   rgba(232,240,254,0.45);
+  --mono:    'JetBrains Mono', monospace;
+  --sans:    'Space Grotesk', sans-serif;
+}
+
+/* ── reset dans le bloc ── */
+#ai-analysis-root * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--sans); }
+
+#ai-analysis-root {
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 0;
+  min-height: 80vh;
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ═══════════════ HEADER ═══════════════ */
+.ai-header {
+  background: linear-gradient(135deg, #0a1628 0%, #091420 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 28px 32px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.ai-header-left { display: flex; align-items: center; gap: 16px; }
+.ai-header-icon {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 0 24px rgba(0,212,170,0.35);
+}
+.ai-header h4 {
+  font-size: 1.25rem; font-weight: 700; color: white; letter-spacing: 0.3px;
+}
+.ai-header p {
+  font-size: 0.8rem; color: var(--muted); font-weight: 500; margin-top: 2px;
+}
+.ai-status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--teal2);
+  box-shadow: 0 0 10px var(--teal2);
+  animation: pulse-dot 2s infinite;
+  display: inline-block; margin-right: 6px;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+.ai-model-badge {
+  background: rgba(0,212,170,0.1);
+  border: 1px solid rgba(0,212,170,0.3);
+  color: var(--teal);
+  font-size: 0.72rem; font-weight: 700;
+  font-family: var(--mono);
+  padding: 4px 12px; border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════ TRIGGER SECTION ═══════════════ */
+.ai-trigger {
+  padding: 32px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: var(--bg2);
+}
+.ai-trigger-info { flex: 1; min-width: 200px; }
+.ai-trigger-info h5 { font-size: 1rem; font-weight: 700; color: white; margin-bottom: 6px; }
+.ai-trigger-info p  { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+.ai-trigger-info .data-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+}
+.chip {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: var(--muted);
+  font-size: 0.7rem; font-weight: 600;
+  padding: 3px 9px; border-radius: 12px;
+  font-family: var(--mono);
+}
+.chip.active { background: rgba(0,212,170,0.1); border-color: rgba(0,212,170,0.3); color: var(--teal); }
+
+.btn-analyze {
+  background: linear-gradient(135deg, #00c49a, #00ff88);
+  color: #050e0a;
+  border: none;
+  padding: 13px 28px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-family: var(--sans);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap;
+}
+.btn-analyze:hover  { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,212,170,0.4); filter: brightness(1.05); }
+.btn-analyze:active { transform: translateY(0); }
+.btn-analyze:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ═══════════════ LOADING ═══════════════ */
+#ai-loading {
+  display: none;
+  padding: 48px 32px;
+  text-align: center;
+  background: var(--bg2);
+}
+.ai-loading-inner { max-width: 400px; margin: 0 auto; }
+.ai-scanner {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,212,170,0.2);
+  border-top-color: var(--teal);
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+  position: relative;
+}
+.ai-scanner::after {
+  content: '🧠';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 1.5rem;
+  animation: spin-reverse 1s linear infinite;
+}
+@keyframes spin         { to { transform: rotate(360deg); } }
+@keyframes spin-reverse { to { transform: rotate(-360deg); } }
+.ai-loading-text { color: var(--teal); font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
+.ai-loading-sub  { color: var(--muted); font-size: 0.8rem; }
+.ai-typing-dots  { display: inline-block; }
+.ai-typing-dots span {
+  display: inline-block;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--teal); margin: 0 2px;
+  animation: bounce-dot 1.2s infinite;
+}
+.ai-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce-dot {
+  0%,80%,100% { transform: translateY(0); }
+  40%          { transform: translateY(-8px); }
+}
+
+/* ═══════════════ RÉSULTATS ═══════════════ */
+#ai-results { display: none; }
+
+/* ── Score global ── */
+.score-section {
+  padding: 32px;
+  background: linear-gradient(135deg, #09162a 0%, var(--bg2) 100%);
+  border-bottom: 1px solid var(--border);
+}
+.score-section h5 {
+  font-size: 0.75rem; font-weight: 700; color: var(--teal);
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px;
+}
+.score-grid { display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: center; }
+@media(max-width:600px) { .score-grid { grid-template-columns: 1fr; } }
+
+/* Donut SVG */
+.score-donut-wrap {
+  width: 160px; height: 160px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.score-donut-wrap svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.score-donut-bg  { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 10; }
+.score-donut-val { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+.score-donut-center {
+  position: relative; z-index: 1; text-align: center;
+}
+.score-donut-center .num {
+  font-size: 2.4rem; font-weight: 800; font-family: var(--mono);
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+.score-donut-center .lbl {
+  font-size: 0.7rem; color: var(--muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;
+}
+
+/* Barres de sous-scores */
+.sub-scores { display: flex; flex-direction: column; gap: 14px; }
+.sub-row { }
+.sub-row-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+}
+.sub-row-header .label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.sub-row-header .val   { font-size: 0.8rem; font-weight: 700; font-family: var(--mono); color: var(--teal); }
+.bar-track {
+  height: 7px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;
+}
+.bar-fill {
+  height: 100%; border-radius: 10px;
+  background: linear-gradient(90deg, var(--teal), var(--teal2));
+  transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  width: 0%;
+}
+
+/* ── Patterns ── */
+.patterns-section {
+  padding: 32px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.patterns-section h5 {
+  font-size: 0.75rem; font-weight: 700; color: var(--teal);
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;
+}
+.patterns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 14px; }
+.pattern-card {
+  background: var(--bg3);
+  border-radius: 12px;
+  padding: 18px 20px;
+  border-left: 3px solid;
+  position: relative;
+  overflow: hidden;
+}
+.pattern-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+}
+.pattern-card.severity-critical { border-left-color: var(--red); }
+.pattern-card.severity-high     { border-left-color: #ff6b35; }
+.pattern-card.severity-medium   { border-left-color: var(--orange); }
+.pattern-card.severity-low      { border-left-color: var(--blue); }
+
+.pattern-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.pattern-type {
+  font-size: 0.78rem; font-weight: 800; font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.pattern-card.severity-critical .pattern-type { color: var(--red); }
+.pattern-card.severity-high     .pattern-type { color: #ff6b35; }
+.pattern-card.severity-medium   .pattern-type { color: var(--orange); }
+.pattern-card.severity-low      .pattern-type { color: var(--blue); }
+
+.severity-badge {
+  font-size: 0.62rem; font-weight: 800; font-family: var(--mono);
+  padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.severity-critical { background: rgba(255,71,87,0.15); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+.severity-high     { background: rgba(255,107,53,0.15); color: #ff6b35; border: 1px solid rgba(255,107,53,0.3); }
+.severity-medium   { background: rgba(255,165,2,0.15);  color: var(--orange); border: 1px solid rgba(255,165,2,0.3); }
+.severity-low      { background: rgba(61,158,255,0.15); color: var(--blue); border: 1px solid rgba(61,158,255,0.3); }
+
+.pattern-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+.pattern-reco {
+  font-size: 0.78rem; color: var(--text);
+  background: rgba(0,212,170,0.06);
+  border: 1px solid rgba(0,212,170,0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.55;
+}
+.pattern-reco::before { content: '💡 '; }
+
+.no-pattern {
+  background: rgba(0,255,136,0.06);
+  border: 1px solid rgba(0,255,136,0.2);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex; align-items: center; gap: 14px;
+  color: var(--teal2);
+  font-weight: 700; font-size: 0.88rem;
+}
+.no-pattern-icon { font-size: 1.8rem; }
+
+/* ── Recommandations générales ── */
+.reco-section {
+  padding: 32px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.reco-section h5 {
+  font-size: 0.75rem; font-weight: 700; color: var(--teal);
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;
+}
+.reco-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.reco-list li {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 0.83rem; color: var(--text); line-height: 1.6;
+}
+.reco-list li .reco-icon {
+  font-size: 1.1rem; flex-shrink: 0; margin-top: 1px;
+}
+
+/* ── Historique analyses ── */
+.history-section {
+  padding: 32px;
+  background: var(--bg2);
+}
+.history-section h5 {
+  font-size: 0.75rem; font-weight: 700; color: var(--teal);
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;
+}
+.history-table { width: 100%; border-collapse: collapse; }
+.history-table th {
+  font-size: 0.7rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 0 12px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.history-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.8rem; color: var(--text);
+  vertical-align: middle;
+}
+.history-table tr:last-child td { border-bottom: none; }
+.history-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-type {
+  background: rgba(61,158,255,0.12);
+  border: 1px solid rgba(61,158,255,0.25);
+  color: var(--blue);
+  font-size: 0.68rem; font-weight: 700;
+  padding: 2px 9px; border-radius: 10px;
+  font-family: var(--mono); text-transform: uppercase;
+}
+.badge-conf {
+  background: rgba(0,212,170,0.10);
+  border: 1px solid rgba(0,212,170,0.25);
+  color: var(--teal);
+  font-size: 0.68rem; font-weight: 700;
+  padding: 2px 9px; border-radius: 10px;
+  font-family: var(--mono);
+}
+.btn-view {
+  background: rgba(0,212,170,0.1);
+  border: 1px solid rgba(0,212,170,0.25);
+  color: var(--teal);
+  padding: 5px 12px; border-radius: 8px;
+  font-size: 0.75rem; font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.btn-view:hover { background: rgba(0,212,170,0.2); transform: scale(1.03); }
+
+/* ── Méta footer ── */
+.ai-footer {
+  padding: 16px 32px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.ai-footer-left { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
+.ai-footer-right { display: flex; align-items: center; gap: 12px; }
+.conf-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.conf-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+.conf-bar { width: 80px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+.conf-fill { height: 100%; background: linear-gradient(90deg, var(--teal), var(--teal2)); border-radius: 4px; transition: width 1s; width: 0%; }
+.conf-pct { font-size: 0.7rem; font-family: var(--mono); color: var(--teal); font-weight: 700; }
+
+/* ── Error ── */
+.ai-error {
+  display: none;
+  padding: 32px;
+  text-align: center;
+  background: var(--bg2);
+}
+.ai-error-box {
+  background: rgba(255,71,87,0.08);
+  border: 1px solid rgba(255,71,87,0.25);
+  border-radius: 12px;
+  padding: 24px; max-width: 500px; margin: 0 auto;
+  color: #ff7b87; font-size: 0.85rem; line-height: 1.6;
+}
+.ai-error-box h6 { font-weight: 800; margin-bottom: 8px; font-size: 1rem; }
+</style>
+
+<div id="ai-analysis-root">
+
+  <!-- HEADER -->
+  <div class="ai-header">
+    <div class="ai-header-left">
+      <div class="ai-header-icon">🧠</div>
+      <div>
+        <h4><span class="ai-status-dot"></span>Analyse IA & Score Trader</h4>
+        <p>Moteur d'analyse comportementale et psychologique propulsé par Claude AI</p>
+      </div>
+    </div>
+    <span class="ai-model-badge">claude-sonnet-4 · Expert Trading</span>
+  </div>
+
+  <!-- TRIGGER -->
+  <div class="ai-trigger">
+    <div class="ai-trigger-info">
+      <h5>Lancer une analyse complète</h5>
+      <p>L'IA va analyser tes trades, patterns psychologiques, gestion du risque et produire un rapport détaillé avec score et recommandations actionnables.</p>
+      <div class="data-chips">
+        <span class="chip active">📊 Historique trades</span>
+        <span class="chip active">🧠 Psychologie</span>
+        <span class="chip active">⚖️ Gestion risque</span>
+        <span class="chip active">📈 Performance</span>
+        <span class="chip active">🎯 Score /100</span>
+      </div>
+    </div>
+    <button class="btn-analyze" id="btn-run-analysis" onclick="runAIAnalysis()">
+      <span>⚡</span> Analyser maintenant
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div id="ai-loading">
+    <div class="ai-loading-inner">
+      <div class="ai-scanner"></div>
+      <div class="ai-loading-text">Analyse en cours <span class="ai-typing-dots"><span></span><span></span><span></span></span></div>
+      <div class="ai-loading-sub" id="loading-step">Récupération des données de trading...</div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="ai-error" id="ai-error">
+    <div class="ai-error-box">
+      <h6>⚠️ Erreur d'analyse</h6>
+      <div id="error-msg">Une erreur est survenue lors de l'analyse.</div>
+    </div>
+  </div>
+
+  <!-- RÉSULTATS -->
+  <div id="ai-results">
+
+    <!-- Score global -->
+    <div class="score-section">
+      <h5>⭐ Score Global de Trader</h5>
+      <div class="score-grid">
+        <div class="score-donut-wrap">
+          <svg viewBox="0 0 160 160">
+            <circle class="score-donut-bg" cx="80" cy="80" r="70"/>
+            <circle class="score-donut-val" id="donut-circle" cx="80" cy="80" r="70"
+                    stroke="url(#donut-grad)"
+                    stroke-dasharray="439.8"
+                    stroke-dashoffset="439.8"/>
+            <defs>
+              <linearGradient id="donut-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stop-color="#00d4aa"/>
+                <stop offset="100%" stop-color="#00ff88"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="score-donut-center">
+            <div class="num" id="score-num">0</div>
+            <div class="lbl">/ 100</div>
+          </div>
+        </div>
+
+        <div class="sub-scores" id="sub-scores-container">
+          <!-- injecté par JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Patterns Psychologiques -->
+    <div class="patterns-section">
+      <h5>🧠 Patterns Psychologiques Détectés</h5>
+      <div class="patterns-grid" id="patterns-container">
+        <!-- injecté par JS -->
+      </div>
+    </div>
+
+    <!-- Recommandations -->
+    <div class="reco-section" id="reco-section" style="display:none">
+      <h5>🎯 Recommandations Concrètes</h5>
+      <ul class="reco-list" id="reco-list"></ul>
+    </div>
+
+    <!-- Historique Flask -->
+    <div class="history-section">
+      <h5>🕐 Analyses Récentes</h5>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th><th>Type</th><th>Sujet</th><th>Confiance</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for analysis in analyses %}
+          <tr>
+            <td style="font-family:var(--mono);font-size:0.75rem">{{ analysis.created_at[:19] }}</td>
+            <td><span class="badge-type">{{ analysis.analysis_type }}</span></td>
+            <td style="color:var(--muted)">{{ analysis.subject or '—' }}</td>
+            <td>
+              {% if analysis.confidence_score %}
+              <span class="badge-conf">{{ "%.0f"|format(analysis.confidence_score) }}%</span>
+              {% else %}<span style="color:var(--muted)">N/A</span>{% endif %}
+            </td>
+            <td>
+              <button class="btn-view" onclick="viewAnalysis({{ analysis.id }})">
+                👁 Voir
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not analyses %}
+          <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px">Aucune analyse enregistrée</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer confiance -->
+    <div class="ai-footer">
+      <div class="ai-footer-left" id="ai-footer-ts">—</div>
+      <div class="ai-footer-right">
+        <div class="conf-bar-wrap">
+          <span class="conf-label">Confiance</span>
+          <div class="conf-bar"><div class="conf-fill" id="conf-fill"></div></div>
+          <span class="conf-pct" id="conf-pct">—</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#ai-results -->
+
+  <!-- Score section Flask (rendu serveur) masqué — conservé pour compatibilité -->
+  <div style="display:none">
+    <div id="flask-score-overall">{{ "%.0f"|format(trader_score.overall_score) }}</div>
+    <div id="flask-score-profit">{{ "%.1f"|format(trader_score.profitability_score) }}</div>
+    <div id="flask-score-risk">{{ "%.1f"|format(trader_score.risk_management_score) }}</div>
+    <div id="flask-score-disc">{{ "%.1f"|format(trader_score.discipline_score) }}</div>
+    <div id="flask-score-strat">{{ "%.1f"|format(trader_score.strategy_consistency_score) }}</div>
+    <div id="flask-score-emo">{{ "%.1f"|format(trader_score.emotional_control_score) }}</div>
+  </div>
+
+</div><!-- /#ai-analysis-root -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   KENGNI FINANCE — Moteur d'Analyse IA Trading
+   Propulsé par Claude Sonnet (Anthropic API)
+═══════════════════════════════════════════════════════════ */
+
+const STEPS = [
+  'Récupération des données de trading...',
+  'Calcul des métriques de performance...',
+  'Analyse des patterns comportementaux...',
+  'Évaluation du contrôle émotionnel...',
+  'Génération du rapport IA...',
+  'Finalisation des recommandations...',
+];
+
+/* ── Données Flask → JS ── */
+const FLASK_DATA = {
+  overall:     parseFloat(document.getElementById('flask-score-overall').textContent) || 0,
+  profitability: parseFloat(document.getElementById('flask-score-profit').textContent) || 0,
+  risk:        parseFloat(document.getElementById('flask-score-risk').textContent)    || 0,
+  discipline:  parseFloat(document.getElementById('flask-score-disc').textContent)    || 0,
+  strategy:    parseFloat(document.getElementById('flask-score-strat').textContent)   || 0,
+  emotional:   parseFloat(document.getElementById('flask-score-emo').textContent)     || 0,
+};
+
+/* ── Patterns Flask → JS ── */
+const FLASK_PATTERNS = [
+  {% for p in patterns %}
+  {
+    type: "{{ p.type }}",
+    severity: "{{ p.severity }}",
+    description: {{ p.description | tojson }},
+    recommendation: {{ p.recommendation | tojson if p.recommendation else '""' }},
+  },
+  {% endfor %}
+];
+
+/* ═══ ANIMATION SCORE ═══ */
+function animateNumber(el, target, duration=1200) {
+  const start = performance.now();
+  const from = parseFloat(el.textContent) || 0;
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (target - from) * ease);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function animateDonut(score) {
+  const circle = document.getElementById('donut-circle');
+  const circumference = 439.8;
+  const offset = circumference - (score / 100) * circumference;
+  setTimeout(() => { circle.style.strokeDashoffset = offset; }, 100);
+}
+
+function renderSubScores(data) {
+  const subs = [
+    { label: 'Rentabilité',           val: data.profitability_score },
+    { label: 'Gestion du Risque',     val: data.risk_management_score },
+    { label: 'Discipline',            val: data.discipline_score },
+    { label: 'Cohérence Stratégique', val: data.strategy_consistency_score },
+    { label: 'Contrôle Émotionnel',   val: data.emotional_control_score },
+  ];
+  const c = document.getElementById('sub-scores-container');
+  c.innerHTML = subs.map(s => `
+    <div class="sub-row">
+      <div class="sub-row-header">
+        <span class="label">${s.label}</span>
+        <span class="val">${s.val.toFixed(1)}/100</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:0%" data-target="${s.val}"></div>
+      </div>
+    </div>
+  `).join('');
+  // animer les barres
+  setTimeout(() => {
+    c.querySelectorAll('.bar-fill').forEach(b => {
+      b.style.width = b.dataset.target + '%';
+    });
+  }, 200);
+}
+
+function renderPatterns(patterns) {
+  const c = document.getElementById('patterns-container');
+  if (!patterns || patterns.length === 0) {
+    c.innerHTML = `
+      <div class="no-pattern">
+        <div class="no-pattern-icon">✅</div>
+        <div>Aucun pattern psychologique problématique détecté. Excellent travail — continuez comme ça !</div>
+      </div>`;
+    return;
+  }
+  c.innerHTML = patterns.map(p => `
+    <div class="pattern-card severity-${p.severity}">
+      <div class="pattern-top">
+        <span class="pattern-type">${p.type.replace(/_/g,' ')}</span>
+        <span class="severity-badge severity-${p.severity}">${p.severity}</span>
+      </div>
+      <div class="pattern-desc">${p.description}</div>
+      ${p.recommendation ? `<div class="pattern-reco">${p.recommendation}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderRecommendations(recos) {
+  if (!recos || recos.length === 0) return;
+  const icons = ['🎯','📊','🧘','⚡','🔒','📈','💡','🛡️'];
+  const section = document.getElementById('reco-section');
+  const list    = document.getElementById('reco-list');
+  list.innerHTML = recos.map((r, i) => `
+    <li>
+      <span class="reco-icon">${icons[i % icons.length]}</span>
+      <span>${r}</span>
+    </li>
+  `).join('');
+  section.style.display = 'block';
+}
+
+function showResults(data) {
+  document.getElementById('ai-loading').style.display = 'none';
+  document.getElementById('ai-error').style.display   = 'none';
+  document.getElementById('ai-results').style.display = 'block';
+
+  // Score global
+  const numEl = document.getElementById('score-num');
+  animateNumber(numEl, data.overall_score);
+  animateDonut(data.overall_score);
+
+  // Sous-scores
+  renderSubScores(data);
+
+  // Patterns
+  renderPatterns(data.patterns);
+
+  // Recommandations
+  renderRecommendations(data.recommendations);
+
+  // Footer confiance
+  const conf = data.confidence || 80;
+  document.getElementById('ai-footer-ts').textContent =
+    `Analyse générée le ${new Date().toLocaleString('fr-FR')} · Modèle claude-sonnet-4`;
+  setTimeout(() => {
+    document.getElementById('conf-fill').style.width = conf + '%';
+    document.getElementById('conf-pct').textContent  = conf + '%';
+  }, 300);
+}
+
+/* ═══ CONSTRUCTION DU PROMPT ═══ */
+function buildPrompt() {
+  return `Tu es un analyste IA expert en trading pour Kengni Finance.
+
+## DONNÉES DISPONIBLES (scores pré-calculés côté serveur)
+- Score global actuel     : ${FLASK_DATA.overall}/100
+- Rentabilité             : ${FLASK_DATA.profitability}/100
+- Gestion du risque       : ${FLASK_DATA.risk}/100
+- Discipline              : ${FLASK_DATA.discipline}/100
+- Cohérence stratégique   : ${FLASK_DATA.strategy}/100
+- Contrôle émotionnel     : ${FLASK_DATA.emotional}/100
+
+## PATTERNS DÉJÀ DÉTECTÉS CÔTÉ SERVEUR
+${FLASK_PATTERNS.length > 0
+  ? FLASK_PATTERNS.map(p => `- ${p.type} (${p.severity}) : ${p.description}`).join('\n')
+  : '- Aucun pattern détecté côté serveur'}
+
+## TA MISSION
+Produis une analyse experte UNIQUEMENT en JSON valide, sans texte hors du JSON.
+Affine et enrichis les scores si nécessaire. Ajoute tes propres détections de patterns.
+Fournis des recommandations concrètes et actionnables.
+
+Format JSON attendu :
+{
+  "overall_score": <number 0-100>,
+  "profitability_score": <number>,
+  "risk_management_score": <number>,
+  "discipline_score": <number>,
+  "strategy_consistency_score": <number>,
+  "emotional_control_score": <number>,
+  "patterns": [
+    {
+      "type": "<snake_case>",
+      "severity": "<low|medium|high|critical>",
+      "description": "<explication claire et pédagogique>",
+      "recommendation": "<action concrète et mesurable>"
+    }
+  ],
+  "recommendations": [
+    "<recommandation 1 concrète>",
+    "<recommandation 2 concrète>",
+    "<recommandation 3 concrète>"
+  ],
+  "confidence": <number 0-100>
+}`;
+}
+
+/* ═══ APPEL API CLAUDE ═══ */
+async function callClaudeAPI(prompt) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: `Tu es un assistant d'analyse IA spécialisé en trading, psychologie du trader et gestion du risque.
+Tu travailles pour la plateforme Kengni Finance.
+Réponds UNIQUEMENT en JSON valide, sans markdown, sans texte supplémentaire.
+Sois objectif, pédagogique et professionnel. Ne moralise jamais le trader.
+Les recommandations doivent être concrètes et mesurables.`,
+      messages: [{ role: 'user', content: prompt }],
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = (data.content || [])
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('');
+
+  // Strip markdown fences si présents
+  const clean = text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  return JSON.parse(clean);
+}
+
+/* ═══ FALLBACK : données Flask uniquement ═══ */
+function buildFallbackData() {
+  return {
+    overall_score:             FLASK_DATA.overall,
+    profitability_score:       FLASK_DATA.profitability,
+    risk_management_score:     FLASK_DATA.risk,
+    discipline_score:          FLASK_DATA.discipline,
+    strategy_consistency_score:FLASK_DATA.strategy,
+    emotional_control_score:   FLASK_DATA.emotional,
+    patterns: FLASK_PATTERNS.map(p => ({...p, recommendation: p.recommendation || ''})),
+    recommendations: [
+      'Maintenez un journal de trading détaillé pour chaque position.',
+      'Définissez des règles de stop-loss claires avant chaque trade.',
+      'Limitez le risque par trade à 1-2% du capital total.',
+    ],
+    confidence: 65,
+  };
+}
+
+/* ═══ STEPS ANIMATION ═══ */
+let stepInterval;
+function startSteps() {
+  let i = 0;
+  const el = document.getElementById('loading-step');
+  el.textContent = STEPS[0];
+  stepInterval = setInterval(() => {
+    i = (i + 1) % STEPS.length;
+    el.textContent = STEPS[i];
+  }, 1600);
+}
+function stopSteps() { clearInterval(stepInterval); }
+
+/* ═══ FONCTION PRINCIPALE ═══ */
+async function runAIAnalysis() {
+  const btn = document.getElementById('btn-run-analysis');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Analyse en cours...';
+
+  document.getElementById('ai-results').style.display = 'none';
+  document.getElementById('ai-error').style.display   = 'none';
+  document.getElementById('ai-loading').style.display = 'block';
+  startSteps();
+
+  try {
+    const prompt  = buildPrompt();
+    const result  = await callClaudeAPI(prompt);
+    stopSteps();
+    showResults(result);
+  } catch (err) {
+    stopSteps();
+    console.warn('Claude API indisponible, utilisation des données Flask :', err.message);
+
+    // Fallback propre avec les données Flask
+    const fallback = buildFallbackData();
+
+    if (FLASK_DATA.overall > 0 || FLASK_PATTERNS.length > 0) {
+      showResults(fallback);
+    } else {
+      document.getElementById('ai-loading').style.display = 'none';
+      document.getElementById('ai-error').style.display   = 'block';
+      document.getElementById('error-msg').textContent    =
+        `Analyse IA temporairement indisponible (${err.message}). Effectuez d'abord des trades pour alimenter l'analyse.`;
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>🔄</span> Relancer l\'analyse';
+  }
+}
+
+function viewAnalysis(id) {
+  if (typeof showToast === 'function') showToast('Fonctionnalité en développement', 'info');
+}
+
+/* ── Auto-lancement si données Flask disponibles ── */
+window.addEventListener('DOMContentLoaded', () => {
+  if (FLASK_DATA.overall > 0) {
+    // Afficher directement les données Flask sans appel API
+    document.getElementById('ai-results').style.display = 'block';
+    renderSubScores({
+      profitability_score:        FLASK_DATA.profitability,
+      risk_management_score:      FLASK_DATA.risk,
+      discipline_score:           FLASK_DATA.discipline,
+      strategy_consistency_score: FLASK_DATA.strategy,
+      emotional_control_score:    FLASK_DATA.emotional,
+    });
+    animateNumber(document.getElementById('score-num'), FLASK_DATA.overall);
+    animateDonut(FLASK_DATA.overall);
+    renderPatterns(FLASK_PATTERNS);
+    document.getElementById('ai-footer-ts').textContent =
+      `Données serveur · ${new Date().toLocaleString('fr-FR')}`;
+    const c = 65;
+    setTimeout(() => {
+      document.getElementById('conf-fill').style.width = c + '%';
+      document.getElementById('conf-pct').textContent  = c + '%';
+    }, 400);
+  }
+});
+</script>
+
+{% endblock %}

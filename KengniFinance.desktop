@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kengni Finance
+GenericName=Gestion Financière & Trading
+Comment=Application de gestion financière et trading avec IA
+Exec=bash -c "cd /home/keni/Documents/Afin/bak/file/kengni-finance-final && python3 app.py & sleep 3 && xdg-open http://localhost:5001"
+Icon=applications-office
+Terminal=false
+Categories=Office;Finance;
+StartupNotify=true
+Keywords=finance;trading;gestion;argent;

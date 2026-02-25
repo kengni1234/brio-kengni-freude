@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 225" width="400" height="225">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1d27"/>
+      <stop offset="100%" style="stop-color:#21263a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c6aff"/>
+      <stop offset="100%" style="stop-color:#00d4aa"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="225" fill="url(#bg)" rx="12"/>
+  <!-- Grid lines déco -->
+  <line x1="0" y1="45" x2="400" y2="45" stroke="#2e3448" stroke-width="1" opacity="0.5"/>
+  <line x1="0" y1="90" x2="400" y2="90" stroke="#2e3448" stroke-width="1" opacity="0.5"/>
+  <line x1="0" y1="135" x2="400" y2="135" stroke="#2e3448" stroke-width="1" opacity="0.5"/>
+  <line x1="0" y1="180" x2="400" y2="180" stroke="#2e3448" stroke-width="1" opacity="0.5"/>
+  <line x1="80" y1="0" x2="80" y2="225" stroke="#2e3448" stroke-width="1" opacity="0.5"/>
+  <line x1="160" y1="0" x2="160" y2="225" stroke="#2e3448" stroke-width="1" opacity="0.5"/>
+  <line x1="240" y1="0" x2="240" y2="225" stroke="#2e3448" stroke-width="1" opacity="0.5"/>
+  <line x1="320" y1="0" x2="320" y2="225" stroke="#2e3448" stroke-width="1" opacity="0.5"/>
+  <!-- Icône graduation cap -->
+  <circle cx="200" cy="100" r="42" fill="url(#accent)" opacity="0.15"/>
+  <circle cx="200" cy="100" r="32" fill="url(#accent)" opacity="0.2"/>
+  <!-- Cap top -->
+  <polygon points="200,68 234,82 200,96 166,82" fill="url(#accent)" opacity="0.9"/>
+  <!-- Cap body -->
+  <rect x="188" y="90" width="24" height="18" rx="3" fill="url(#accent)" opacity="0.7"/>
+  <!-- Tassel -->
+  <line x1="234" y1="82" x2="234" y2="100" stroke="#00d4aa" stroke-width="2.5" opacity="0.8"/>
+  <circle cx="234" cy="103" r="4" fill="#00d4aa" opacity="0.8"/>
+  <!-- Texte -->
+  <text x="200" y="160" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600" fill="#a8b2d1" text-anchor="middle" opacity="0.7">Formation Trading</text>
+  <text x="200" y="178" font-family="Segoe UI, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" opacity="0.6">Kengni Finance</text>
+  <!-- Border accent -->
+  <rect width="400" height="225" fill="none" stroke="url(#accent)" stroke-width="1.5" rx="12" opacity="0.25"/>
+</svg>

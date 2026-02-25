@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training — K-Ni Htech</title>
+<style>
+/* ══════════════════════════════════════════════════════
+   BASE VARIABLES & RESET
+══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #21262d;
+  --bg4: #2d333b;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #6e7681;
+  --accent: #58a6ff;
+  --accent2: #1f6feb;
+  --green: #3fb950;
+  --red: #f85149;
+  --gold: #d29922;
+  --orange: #e3b341;
+  --purple: #bc8cff;
+  --teal: #39d353;
+  --card-radius: 14px;
+  --shadow: 0 8px 32px rgba(0,0,0,.6);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.3);
+}
+[data-theme="light"] {
+  --bg: #f0f4f8;
+  --bg2: #ffffff;
+  --bg3: #eaeef2;
+  --bg4: #dde3ea;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text2: #57606a;
+  --text3: #6e7781;
+  --shadow: 0 4px 16px rgba(0,0,0,.1);
+  --shadow-sm: 0 2px 6px rgba(0,0,0,.08);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* ══════════════════════════════════════════════════════
+   NAVBAR
+══════════════════════════════════════════════════════ */
+.navbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: var(--shadow-sm);
+}
+.navbar-brand {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-decoration: none;
+  margin-right: auto;
+  letter-spacing: -.5px;
+}
+.navbar a {
+  color: var(--text2);
+  text-decoration: none;
+  font-size: .875rem;
+  padding: 7px 14px;
+  border-radius: 8px;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.navbar a:hover { background: var(--bg3); color: var(--text); }
+.navbar a.active { background: var(--bg3); color: var(--text); font-weight: 600; }
+.btn-add-nav {
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  margin-left: 8px;
+}
+.btn-add-nav:hover { background: var(--accent2) !important; }
+
+/* ══════════════════════════════════════════════════════
+   PAGE HEADER
+══════════════════════════════════════════════════════ */
+.page-header { padding: 32px 28px 0; }
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: -.5px;
+}
+.page-subtitle { color: var(--text2); font-size: .9rem; margin-top: 6px; }
+
+/* ══════════════════════════════════════════════════════
+   STATS STRIP
+══════════════════════════════════════════════════════ */
+.stats-strip {
+  display: flex;
+  gap: 14px;
+  padding: 22px 28px;
+  flex-wrap: wrap;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 14px 22px;
+  min-width: 130px;
+  transition: transform .15s;
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-label { font-size: .75rem; color: var(--text2); text-transform: uppercase; letter-spacing: .8px; font-weight: 600; }
+.stat-value { font-size: 2rem; font-weight: 800; color: var(--accent); line-height: 1.2; margin-top: 2px; }
+
+/* ══════════════════════════════════════════════════════
+   FILTER BAR
+══════════════════════════════════════════════════════ */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  padding: 0 28px 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-input, .filter-select {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 9px 14px;
+  font-size: .875rem;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  font-family: inherit;
+}
+.filter-input { flex: 1; min-width: 220px; }
+.filter-input:focus, .filter-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(88,166,255,.15);
+}
+.filter-select option { background: var(--bg2); }
+
+/* ══════════════════════════════════════════════════════
+   DAY SECTIONS
+══════════════════════════════════════════════════════ */
+.day-section { padding: 0 28px 32px; }
+.day-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.day-title {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+.day-count {
+  background: var(--bg3);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--text2);
+}
+
+/* ══════════════════════════════════════════════════════
+   COURSE GRID & CARDS
+══════════════════════════════════════════════════════ */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+.course-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+  border-color: var(--accent);
+}
+
+/* Thumbnail */
+.card-thumb-wrap {
+  position: relative;
+  height: 175px;
+  overflow: hidden;
+  background: var(--bg3);
+  flex-shrink: 0;
+}
+.card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .35s;
+}
+.course-card:hover .card-thumb { transform: scale(1.06); }
+
+.card-platform {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(6px);
+  border-radius: 7px;
+  padding: 3px 9px;
+  font-size: .7rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .3px;
+}
+
+/* Time badge on thumbnail */
+.card-time-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(6px);
+  border-radius: 7px;
+  padding: 3px 9px;
+  font-size: .7rem;
+  font-weight: 700;
+  color: #ffd;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Position images count badge */
+.card-img-count {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(88,166,255,.85);
+  border-radius: 7px;
+  padding: 3px 9px;
+  font-size: .7rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.card-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  background: rgba(0,0,0,.45);
+  transition: opacity .2s;
+  font-size: 3.5rem;
+  text-decoration: none;
+}
+.course-card:hover .card-play { opacity: 1; }
+
+/* Card Body */
+.card-body {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card-title {
+  font-size: .97rem;
+  font-weight: 700;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+.card-desc {
+  font-size: .8rem;
+  color: var(--text2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+/* Badges */
+.card-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge {
+  border-radius: 7px;
+  padding: 3px 9px;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  white-space: nowrap;
+}
+.badge-debutant      { background: rgba(63,185,80,.14);   color: var(--green); }
+.badge-intermediaire { background: rgba(210,153,34,.14);  color: var(--gold); }
+.badge-avance        { background: rgba(248,81,73,.14);   color: var(--red); }
+.badge-expert        { background: rgba(188,140,255,.14); color: var(--purple); }
+.badge-cat           { background: var(--bg3);            color: var(--text2); }
+
+/* Meta row */
+.card-meta {
+  font-size: .76rem;
+  color: var(--text2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+}
+.card-meta span { display: flex; align-items: center; gap: 4px; }
+
+/* Participants row */
+.card-participants {
+  font-size: .76rem;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.participant-chip {
+  background: var(--bg3);
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Analyses / Stratégies preview */
+.card-analysis-preview {
+  font-size: .76rem;
+  color: var(--accent);
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Position images strip */
+.card-positions-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.card-positions-strip img {
+  height: 56px;
+  width: 80px;
+  object-fit: cover;
+  border-radius: 7px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform .2s;
+  border: 1px solid var(--border);
+}
+.card-positions-strip img:hover { transform: scale(1.08); }
+
+/* Actions */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(.96); }
+.btn:hover  { opacity: .82; }
+.btn-open   { background: var(--accent); color: #fff; flex: 1; }
+.btn-detail { background: var(--bg3); color: var(--text2); }
+.btn-edit   { background: var(--bg3); color: var(--text2); }
+.btn-delete { background: rgba(248,81,73,.12); color: var(--red); }
+
+.empty-day  { color: var(--text3); font-size: .85rem; font-style: italic; padding: 8px 0 4px; }
+
+/* ══════════════════════════════════════════════════════
+   MODAL BASE
+══════════════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 700px;
+  box-shadow: var(--shadow);
+  margin: auto;
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(-16px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-header {
+  padding: 22px 26px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--bg2);
+  z-index: 1;
+  border-radius: 18px 18px 0 0;
+}
+.modal-title { font-size: 1.15rem; font-weight: 800; }
+.modal-close {
+  background: var(--bg3);
+  border: none;
+  color: var(--text2);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background .15s;
+}
+.modal-close:hover { background: var(--bg4); color: var(--text); }
+
+/* Modal tabs */
+.modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 14px 26px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.modal-tab {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: .85rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: color .15s;
+}
+.modal-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.modal-tab:hover { color: var(--text); }
+
+.modal-body { padding: 24px 26px; }
+.tab-content { display: none; flex-direction: column; gap: 18px; }
+.tab-content.active { display: flex; }
+
+/* Thumb preview */
+.thumb-preview {
+  width: 100%;
+  height: 155px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px dashed var(--border);
+  background: var(--bg3);
+  display: none;
+}
+.thumb-preview.visible { display: block; }
+
+/* Form elements */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.form-input, .form-textarea, .form-select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 10px 13px;
+  font-size: .9rem;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  font-family: inherit;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(88,166,255,.12);
+}
+.form-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.form-hint { font-size: .74rem; color: var(--text3); margin-top: 2px; }
+
+/* Section label in modal */
+.section-label {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  padding: 6px 0 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+/* Participants tags input */
+.participants-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 8px 10px;
+  min-height: 44px;
+  cursor: text;
+  transition: border-color .15s;
+}
+.participants-wrap:focus-within { border-color: var(--accent); }
+.participant-tag {
+  background: rgba(88,166,255,.15);
+  border: 1px solid rgba(88,166,255,.3);
+  color: var(--accent);
+  border-radius: 20px;
+  padding: 3px 10px 3px 12px;
+  font-size: .8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.participant-tag button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  font-size: .85rem;
+  line-height: 1;
+}
+.participants-input {
+  background: none;
+  border: none;
+  color: var(--text);
+  outline: none;
+  font-size: .9rem;
+  min-width: 120px;
+  flex: 1;
+  font-family: inherit;
+}
+
+/* Analysis / Strategy tabs inside modal */
+.analysis-blocks { display: flex; flex-direction: column; gap: 12px; }
+.analysis-block {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.analysis-block-header {
+  padding: 8px 14px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text2);
+  background: var(--bg4);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.analysis-block textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: .88rem;
+  padding: 12px 14px;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+/* Image upload zone */
+.img-upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+}
+.img-upload-zone:hover, .img-upload-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(88,166,255,.05);
+}
+.img-upload-zone input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.upload-icon { font-size: 2.2rem; margin-bottom: 8px; }
+.upload-text { font-size: .88rem; color: var(--text2); }
+.upload-subtext { font-size: .75rem; color: var(--text3); margin-top: 4px; }
+
+/* Image preview grid */
+.img-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.img-preview-item {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+}
+.img-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.img-preview-item .img-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(248,81,73,.85);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: .7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.img-preview-item .img-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,.6);
+  padding: 4px 6px;
+}
+.img-preview-item .img-caption input {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: .7rem;
+  outline: none;
+  font-family: inherit;
+}
+.img-preview-item .img-caption input::placeholder { color: rgba(255,255,255,.5); }
+
+/* Modal footer */
+.modal-footer {
+  padding: 16px 26px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  background: var(--bg2);
+  border-radius: 0 0 18px 18px;
+  position: sticky;
+  bottom: 0;
+}
+.btn-primary   { background: var(--accent);  color: #fff; padding: 10px 24px; font-size: .9rem; }
+.btn-secondary { background: var(--bg3);     color: var(--text2); padding: 10px 18px; }
+
+/* ══════════════════════════════════════════════════════
+   DETAIL MODAL (lightbox)
+══════════════════════════════════════════════════════ */
+.detail-modal { max-width: 820px; }
+
+.detail-section {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.detail-section-title {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.detail-text {
+  font-size: .9rem;
+  color: var(--text);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.detail-grid { display: flex; gap: 12px; flex-direction: column; }
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.92);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 10px;
+  box-shadow: 0 0 60px rgba(0,0,0,.8);
+}
+.lightbox-close {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  background: rgba(255,255,255,.1);
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 18px;
+  font-size: .88rem;
+  min-width: 260px;
+  box-shadow: var(--shadow);
+  animation: toastIn .3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: all;
+}
+.toast.success { border-left: 4px solid var(--green); }
+.toast.error   { border-left: 4px solid var(--red); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  .navbar { gap: 0; padding: 0 12px; }
+  .navbar a { padding: 6px 8px; font-size: .8rem; }
+  .page-header, .stats-strip, .filter-bar, .day-section { padding-left: 14px; padding-right: 14px; }
+  .modal { border-radius: 16px; }
+  .modal-header { padding: 18px 16px; }
+  .modal-body { padding: 18px 16px; }
+  .modal-footer { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar">
+  <a href="/dashboard" class="navbar-brand">📊 K-Ni Htech</a>
+  <a href="/dashboard">Dashboard</a>
+  <a href="/trading">Trading</a>
+  <a href="/journal">Journal</a>
+  <a href="/finance">Finance</a>
+  <a href="/training" class="active">🎓 Training</a>
+  <button class="btn btn-add-nav" onclick="openAddModal()">➕ Nouveau cours</button>
+</nav>
+
+<!-- ══ PAGE HEADER ══ -->
+<div class="page-header">
+  <div class="page-title">🎓 Mes Formations Trading</div>
+  <div class="page-subtitle">Organise tes sessions par jour · Suivi des participants · Analyses &amp; stratégies · Images des positions</div>
+</div>
+
+<!-- ══ STATS ══ -->
+<div class="stats-strip">
+  <div class="stat-card">
+    <div class="stat-label">Total cours</div>
+    <div class="stat-value">{{ stats.total }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Publiés</div>
+    <div class="stat-value">{{ stats.published }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Planifiés</div>
+    <div class="stat-value">{{ stats.scheduled }}</div>
+  </div>
+</div>
+
+<!-- ══ FILTER BAR ══ -->
+<div class="filter-bar">
+  <input class="filter-input" type="text" id="searchInput" placeholder="🔍 Rechercher un cours, participant..." oninput="filterCourses()">
+  <select class="filter-select" id="filterDay" onchange="filterCourses()">
+    <option value="">Tous les jours</option>
+    <option>Lundi</option><option>Mardi</option><option>Mercredi</option>
+    <option>Jeudi</option><option>Vendredi</option><option>Samedi</option>
+    <option>Dimanche</option><option>Non défini</option>
+  </select>
+  <select class="filter-select" id="filterLevel" onchange="filterCourses()">
+    <option value="">Tous niveaux</option>
+    <option value="debutant">Débutant</option>
+    <option value="intermediaire">Intermédiaire</option>
+    <option value="avance">Avancé</option>
+    <option value="expert">Expert</option>
+  </select>
+</div>
+
+<!-- ══ DAY SECTIONS ══ -->
+<div id="daysContainer">
+{% set days = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche','Non défini'] %}
+{% set day_icons = {'Lundi':'🗓','Mardi':'🗓','Mercredi':'🗓','Jeudi':'🗓','Vendredi':'🗓','Samedi':'🌟','Dimanche':'☀️','Non défini':'📌'} %}
+
+{% for day in days %}
+  {% set day_courses = courses_by_day.get(day, []) %}
+  <div class="day-section" id="section-{{ day }}" data-day="{{ day }}">
+    <div class="day-header">
+      <div class="day-title">{{ day_icons.get(day,'🗓') }} {{ day }}</div>
+      <span class="day-count" id="count-{{ day }}">{{ day_courses|length }}</span>
+    </div>
+    <div class="course-grid" id="grid-{{ day }}">
+      {% if day_courses %}
+        {% for c in day_courses %}
+          <div class="course-card"
+               id="card-{{ c.id }}"
+               data-title="{{ (c.title or '')|lower }}"
+               data-day="{{ c.day_of_week }}"
+               data-level="{{ c.level }}"
+               data-participants="{{ (c.participant_names or '')|lower }}">
+
+            <!-- Thumbnail -->
+            <div class="card-thumb-wrap">
+              <img class="card-thumb"
+                   src="{{ c.thumbnail_url or '/static/img/course_default.svg' }}"
+                   alt="{{ c.title }}"
+                   onerror="this.src='/static/img/course_default.svg'">
+
+              <span class="card-platform">
+                {% if 'claude.ai' in (c.course_url or '') %}🤖 Claude.ai
+                {% elif 'chatgpt' in (c.course_url or '') or 'openai' in (c.course_url or '') %}🤖 ChatGPT
+                {% elif 'youtube' in (c.course_url or '') or 'youtu.be' in (c.course_url or '') %}▶ YouTube
+                {% else %}🔗 Lien{% endif %}
+              </span>
+
+              {% if c.time_start %}
+              <span class="card-time-badge">
+                ⏰ {{ c.time_start }}{% if c.time_end %} → {{ c.time_end }}{% endif %}
+              </span>
+              {% endif %}
+
+              {% if c.position_images and c.position_images|length > 0 %}
+              <span class="card-img-count">📸 {{ c.position_images|length }} position{{ 's' if c.position_images|length > 1 }}</span>
+              {% endif %}
+
+              {% if c.course_url %}
+              <a class="card-play" href="{{ c.course_url }}" target="_blank" rel="noopener">▶</a>
+              {% endif %}
+            </div>
+
+            <!-- Body -->
+            <div class="card-body">
+              <div class="card-title">{{ c.title }}</div>
+
+              {% if c.description %}
+              <div class="card-desc">{{ c.description }}</div>
+              {% endif %}
+
+              <div class="card-badges">
+                <span class="badge badge-{{ c.level }}">{{ c.level|capitalize }}</span>
+                {% if c.category %}<span class="badge badge-cat">{{ c.category }}</span>{% endif %}
+              </div>
+
+              <!-- Participants -->
+              {% if c.participant_names %}
+              <div class="card-participants">
+                <span style="font-size:.7rem;color:var(--text3);font-weight:700;">👥</span>
+                {% for p in c.participant_names.split(', ') %}
+                  <span class="participant-chip">{{ p }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- Analyses preview -->
+              {% if c.analyses %}
+              <div class="card-analysis-preview">💡 {{ c.analyses[:80] }}{% if c.analyses|length > 80 %}…{% endif %}</div>
+              {% endif %}
+
+              <!-- Position images strip -->
+              {% if c.position_images and c.position_images|length > 0 %}
+              <div class="card-positions-strip">
+                {% for img_path in c.position_images[:4] %}
+                <img src="{{ img_path }}"
+                     alt="Position"
+                     onclick="openLightbox('{{ img_path }}')"
+                     onerror="this.style.display='none'">
+                {% endfor %}
+                {% if c.position_images|length > 4 %}
+                <div style="display:flex;align-items:center;justify-content:center;height:56px;width:60px;background:var(--bg4);border-radius:7px;font-size:.75rem;color:var(--text2);font-weight:700;flex-shrink:0;">+{{ c.position_images|length - 4 }}</div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Meta -->
+              <div class="card-meta">
+                {% if c.duration_minutes and c.duration_minutes > 0 %}<span>⏱ {{ c.duration_minutes }} min</span>{% endif %}
+                {% if c.scheduled_date %}<span>📅 {{ c.scheduled_date }}</span>{% endif %}
+                {% if c.tags %}<span>🏷 {{ c.tags }}</span>{% endif %}
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card-actions">
+              {% if c.course_url %}
+              <a class="btn btn-open" href="{{ c.course_url }}" target="_blank">▶ Ouvrir</a>
+              {% endif %}
+              <button class="btn btn-detail" onclick='showDetail({{ c|tojson }})' title="Voir détail">🔍</button>
+              <button class="btn btn-edit" onclick='editCourse({{ c|tojson }})' title="Modifier">✏</button>
+              <button class="btn btn-delete" onclick="deleteCourse({{ c.id }})" title="Supprimer">🗑</button>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-day" id="empty-{{ day }}">Aucune session. Clique sur "➕ Nouveau cours" pour commencer.</div>
+      {% endif %}
+    </div>
+  </div>
+{% endfor %}
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL AJOUTER
+══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">➕ Nouvelle session de formation</div>
+      <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+    </div>
+
+    <!-- TABS -->
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab('add',0,this)">📋 Infos</button>
+      <button class="modal-tab" onclick="switchTab('add',1,this)">👥 Participants</button>
+      <button class="modal-tab" onclick="switchTab('add',2,this)">💡 Analyses &amp; Stratégies</button>
+      <button class="modal-tab" onclick="switchTab('add',3,this)">📸 Positions</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- TAB 0 : INFOS -->
+      <div class="tab-content active" id="add-tab-0">
+
+        <div class="form-group">
+          <label class="form-label">🔗 Lien du cours</label>
+          <input class="form-input" id="add_url" type="url" placeholder="https://claude.ai/chat/..." oninput="onUrlInput(this.value,'add_thumb_preview')">
+        </div>
+        <img class="thumb-preview" id="add_thumb_preview" alt="Miniature">
+
+        <div class="form-group">
+          <label class="form-label">📝 Titre de la session *</label>
+          <input class="form-input" id="add_title" type="text" placeholder="Ex : Analyse technique — Chandeliers japonais">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📄 Description</label>
+          <textarea class="form-textarea" id="add_desc" placeholder="Thème abordé, objectifs de la session..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">📅 Jour</label>
+            <select class="form-select" id="add_day">
+              <option value="Non défini">Non défini</option>
+              <option>Lundi</option><option>Mardi</option><option>Mercredi</option>
+              <option>Jeudi</option><option>Vendredi</option><option>Samedi</option><option>Dimanche</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">🗓 Date</label>
+            <input class="form-input" id="add_date" type="date">
+          </div>
+        </div>
+
+        <!-- HEURES -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">⏰ Heure de début</label>
+            <input class="form-input" id="add_time_start" type="time">
+            <div class="form-hint">Heure à laquelle la formation commence</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">🏁 Heure de fin</label>
+            <input class="form-input" id="add_time_end" type="time">
+            <div class="form-hint">Heure à laquelle la formation se termine</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">📂 Catégorie</label>
+            <select class="form-select" id="add_cat">
+              <option>Général</option>
+              <option>Analyse Technique</option>
+              <option>Analyse Fondamentale</option>
+              <option>Gestion du risque</option>
+              <option>Psychologie du trader</option>
+              <option>Stratégies</option>
+              <option>Crypto</option>
+              <option>Forex</option>
+              <option>Indices</option>
+              <option>Matières premières</option>
+              <option>Autres</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📊 Niveau</label>
+            <select class="form-select" id="add_level">
+              <option value="debutant">Débutant</option>
+              <option value="intermediaire">Intermédiaire</option>
+              <option value="avance">Avancé</option>
+              <option value="expert">Expert</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">⏱ Durée (min)</label>
+            <input class="form-input" id="add_duration" type="number" min="0" placeholder="90">
+          </div>
+          <div class="form-group">
+            <label class="form-label">🏷 Tags</label>
+            <input class="form-input" id="add_tags" type="text" placeholder="rsi, support, fibonacci">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🖼 Miniature personnalisée (optionnel)</label>
+          <input class="form-input" id="add_thumb_custom" type="url" placeholder="https://...">
+        </div>
+      </div>
+
+      <!-- TAB 1 : PARTICIPANTS -->
+      <div class="tab-content" id="add-tab-1">
+        <div class="form-group">
+          <label class="form-label">👥 Participants à la formation</label>
+          <div class="participants-wrap" id="add_participants_wrap" onclick="document.getElementById('add_part_input').focus()">
+            <input class="participants-input" id="add_part_input"
+                   placeholder="Tapez un prénom + Entrée"
+                   onkeydown="handleParticipantKey(event,'add_participants_wrap','add_part_input','add_participants_hidden')">
+          </div>
+          <input type="hidden" id="add_participants_hidden">
+          <div class="form-hint">Appuie sur <strong>Entrée</strong> ou <strong>virgule</strong> après chaque participant</div>
+        </div>
+
+        <div class="detail-section" style="margin-top:4px;">
+          <div class="detail-section-title">💡 Astuce</div>
+          <div class="detail-text" style="font-size:.82rem;">
+            Ajoute tous les membres qui ont participé à cette session.
+            Ils apparaîtront sur la carte sous forme de badges colorés.
+            La recherche dans le filtre fonctionnera aussi sur leurs noms.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2 : ANALYSES & STRATEGIES -->
+      <div class="tab-content" id="add-tab-2">
+        <div class="analysis-blocks">
+
+          <div class="form-group">
+            <label class="form-label">💡 Analyses réalisées pendant la session</label>
+            <textarea class="form-textarea" id="add_analyses" style="min-height:130px;"
+                      placeholder="Ex : Analyse de BTC/USD en H4 — résistance à 42 000$, signal de vente potentiel...
+Analyse EUR/USD sur niveau support 1.0850..."></textarea>
+            <div class="form-hint">Décris les analyses graphiques, fondamentales ou quantitatives effectuées</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">🎯 Stratégies discutées &amp; appliquées</label>
+            <textarea class="form-textarea" id="add_strategies" style="min-height:130px;"
+                      placeholder="Ex : Stratégie de breakout sur la résistance hebdomadaire
+Risk/Reward minimum 1:2 — stop loss sous le dernier creux...
+Entrée sur pullback avec confirmation en M15"></textarea>
+            <div class="form-hint">Note les stratégies présentées, discutées ou testées durant la formation</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 3 : IMAGES POSITIONS -->
+      <div class="tab-content" id="add-tab-3">
+        <div class="form-group">
+          <label class="form-label">📸 Images des positions prises</label>
+          <div class="img-upload-zone" id="add_drop_zone"
+               ondragover="e=>{e.preventDefault();this.classList.add('dragover')}"
+               ondragleave="this.classList.remove('dragover')"
+               ondrop="handleImageDrop(event,'add_img_preview_grid','add_img_files')">
+            <input type="file" id="add_img_input" accept="image/*" multiple
+                   onchange="handleImageSelect(this,'add_img_preview_grid','add_img_files')">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Clique ou glisse tes captures d'écran ici</div>
+            <div class="upload-subtext">PNG, JPG, WEBP — plusieurs fichiers acceptés</div>
+          </div>
+          <div class="img-preview-grid" id="add_img_preview_grid"></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">💡 Conseil</div>
+          <div class="detail-text" style="font-size:.82rem;">
+            Ajoute les captures d'écran de tes graphiques, tes entrées/sorties de position,
+            et les analyses visuelles réalisées pendant la formation.
+            Tu pourras cliquer dessus pour les agrandir.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end modal-body -->
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('addModal')">Annuler</button>
+      <button class="btn btn-primary" onclick="submitAdd()">✅ Enregistrer la session</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL MODIFIER
+══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏ Modifier la session</div>
+      <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab('edit',0,this)">📋 Infos</button>
+      <button class="modal-tab" onclick="switchTab('edit',1,this)">👥 Participants</button>
+      <button class="modal-tab" onclick="switchTab('edit',2,this)">💡 Analyses &amp; Stratégies</button>
+      <button class="modal-tab" onclick="switchTab('edit',3,this)">📸 Positions</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit_id">
+
+      <!-- TAB 0 -->
+      <div class="tab-content active" id="edit-tab-0">
+        <div class="form-group">
+          <label class="form-label">🔗 Lien du cours</label>
+          <input class="form-input" id="edit_url" type="url" oninput="onUrlInput(this.value,'edit_thumb_preview')">
+        </div>
+        <img class="thumb-preview" id="edit_thumb_preview" alt="Miniature">
+
+        <div class="form-group">
+          <label class="form-label">📝 Titre *</label>
+          <input class="form-input" id="edit_title" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📄 Description</label>
+          <textarea class="form-textarea" id="edit_desc"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">📅 Jour</label>
+            <select class="form-select" id="edit_day">
+              <option value="Non défini">Non défini</option>
+              <option>Lundi</option><option>Mardi</option><option>Mercredi</option>
+              <option>Jeudi</option><option>Vendredi</option><option>Samedi</option><option>Dimanche</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">🗓 Date</label>
+            <input class="form-input" id="edit_date" type="date">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">⏰ Heure de début</label>
+            <input class="form-input" id="edit_time_start" type="time">
+          </div>
+          <div class="form-group">
+            <label class="form-label">🏁 Heure de fin</label>
+            <input class="form-input" id="edit_time_end" type="time">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">📂 Catégorie</label>
+            <select class="form-select" id="edit_cat">
+              <option>Général</option><option>Analyse Technique</option>
+              <option>Analyse Fondamentale</option><option>Gestion du risque</option>
+              <option>Psychologie du trader</option><option>Stratégies</option>
+              <option>Crypto</option><option>Forex</option><option>Indices</option>
+              <option>Matières premières</option><option>Autres</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">📊 Niveau</label>
+            <select class="form-select" id="edit_level">
+              <option value="debutant">Débutant</option>
+              <option value="intermediaire">Intermédiaire</option>
+              <option value="avance">Avancé</option>
+              <option value="expert">Expert</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">⏱ Durée (min)</label>
+            <input class="form-input" id="edit_duration" type="number" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">🏷 Tags</label>
+            <input class="form-input" id="edit_tags" type="text">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🖼 Miniature personnalisée</label>
+          <input class="form-input" id="edit_thumb_custom" type="url">
+        </div>
+      </div>
+
+      <!-- TAB 1 EDIT PARTICIPANTS -->
+      <div class="tab-content" id="edit-tab-1">
+        <div class="form-group">
+          <label class="form-label">👥 Participants</label>
+          <div class="participants-wrap" id="edit_participants_wrap" onclick="document.getElementById('edit_part_input').focus()">
+            <input class="participants-input" id="edit_part_input"
+                   placeholder="Tapez un prénom + Entrée"
+                   onkeydown="handleParticipantKey(event,'edit_participants_wrap','edit_part_input','edit_participants_hidden')">
+          </div>
+          <input type="hidden" id="edit_participants_hidden">
+          <div class="form-hint">Appuie sur <strong>Entrée</strong> ou <strong>virgule</strong> après chaque participant</div>
+        </div>
+      </div>
+
+      <!-- TAB 2 EDIT ANALYSES -->
+      <div class="tab-content" id="edit-tab-2">
+        <div class="form-group">
+          <label class="form-label">💡 Analyses</label>
+          <textarea class="form-textarea" id="edit_analyses" style="min-height:130px;" placeholder="Analyses réalisées..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🎯 Stratégies</label>
+          <textarea class="form-textarea" id="edit_strategies" style="min-height:130px;" placeholder="Stratégies discutées..."></textarea>
+        </div>
+      </div>
+
+      <!-- TAB 3 EDIT POSITIONS -->
+      <div class="tab-content" id="edit-tab-3">
+        <!-- Existing images -->
+        <div id="edit_existing_imgs"></div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label class="form-label">📸 Ajouter de nouvelles images</label>
+          <div class="img-upload-zone"
+               ondragover="e=>{e.preventDefault();this.classList.add('dragover')}"
+               ondragleave="this.classList.remove('dragover')"
+               ondrop="handleImageDrop(event,'edit_img_preview_grid','edit_img_files')">
+            <input type="file" id="edit_img_input" accept="image/*" multiple
+                   onchange="handleImageSelect(this,'edit_img_preview_grid','edit_img_files')">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Clique ou glisse pour ajouter des images</div>
+            <div class="upload-subtext">PNG, JPG, WEBP</div>
+          </div>
+          <div class="img-preview-grid" id="edit_img_preview_grid"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('editModal')">Annuler</button>
+      <button class="btn btn-primary" onclick="submitEdit()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL DETAIL
+══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal detail-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detail_title">Détail de la session</div>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid" id="detail_body"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('detailModal')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ LIGHTBOX ══ -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox_img" src="" alt="">
+</div>
+
+
+<!-- ══ TOASTS ══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+const addImgFiles  = [];
+const editImgFiles = [];
+
+// ═══════════════════════════════════════════════════════
+//  THUMBNAIL DETECTION
+// ═══════════════════════════════════════════════════════
+function onUrlInput(url, previewId) {
+  if (!url) return;
+  const u = url.toLowerCase();
+  let thumb = null;
+  if (u.includes('claude.ai'))
+    thumb = '/static/img/claude_thumb.svg';
+  else if (u.includes('chat.openai') || u.includes('chatgpt.com'))
+    thumb = '/static/img/chatgpt_thumb.svg';
+  else {
+    const yt = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (yt) thumb = `https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg`;
+  }
+  if (thumb) showThumbPreview(thumb, previewId);
+  else fetchThumb(url, previewId);
+}
+
+function fetchThumb(url, previewId) {
+  fetch('/api/training/fetch-thumb', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({url})
+  })
+  .then(r => r.json())
+  .then(d => { if (d.thumbnail) showThumbPreview(d.thumbnail, previewId); })
+  .catch(()=>{});
+}
+
+function showThumbPreview(src, id) {
+  const img = document.getElementById(id);
+  if (!img) return;
+  img.src = src;
+  img.classList.add('visible');
+  img.onerror = () => img.src = '/static/img/course_default.svg';
+}
+
+// ═══════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════
+function switchTab(modal, idx, btn) {
+  // Deactivate all tabs + contents in this modal
+  const overlay = document.getElementById(modal + 'Modal');
+  overlay.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+  overlay.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  overlay.querySelector(`#${modal}-tab-${idx}`).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════════════════
+function openAddModal() {
+  // Reset
+  ['add_url','add_title','add_desc','add_date','add_tags','add_thumb_custom',
+   'add_analyses','add_strategies','add_time_start','add_time_end','add_duration'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  clearParticipants('add_participants_wrap','add_participants_hidden');
+  document.getElementById('add_thumb_preview').classList.remove('visible');
+  document.getElementById('add_img_preview_grid').innerHTML = '';
+  addImgFiles.length = 0;
+  // Reset tabs
+  switchTabByIndex('add', 0);
+  document.getElementById('addModal').classList.add('open');
+}
+
+function switchTabByIndex(modal, idx) {
+  const overlay = document.getElementById(modal+'Modal');
+  const tabs = overlay.querySelectorAll('.modal-tab');
+  const contents = overlay.querySelectorAll('.tab-content');
+  tabs.forEach((t,i) => t.classList.toggle('active', i===idx));
+  contents.forEach((c,i) => c.classList.toggle('active', i===idx));
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════════════════
+//  PARTICIPANTS TAG INPUT
+// ═══════════════════════════════════════════════════════
+function handleParticipantKey(e, wrapId, inputId, hiddenId) {
+  const input = document.getElementById(inputId);
+  if (['Enter','Tab',','].includes(e.key)) {
+    e.preventDefault();
+    const val = input.value.trim().replace(/,/g,'');
+    if (val) {
+      addParticipantTag(val, wrapId, inputId, hiddenId);
+      input.value = '';
+    }
+  } else if (e.key === 'Backspace' && !input.value) {
+    // Remove last tag
+    const wrap = document.getElementById(wrapId);
+    const tags = wrap.querySelectorAll('.participant-tag');
+    if (tags.length) tags[tags.length-1].remove();
+    syncParticipantsHidden(wrapId, hiddenId);
+  }
+}
+
+function addParticipantTag(name, wrapId, inputId, hiddenId) {
+  const wrap = document.getElementById(wrapId);
+  const input = document.getElementById(inputId);
+  const tag = document.createElement('span');
+  tag.className = 'participant-tag';
+  tag.dataset.name = name;
+  tag.innerHTML = `${name}<button type="button" onclick="this.parentElement.remove();syncParticipantsHidden('${wrapId}','${hiddenId}')">✕</button>`;
+  wrap.insertBefore(tag, input);
+  syncParticipantsHidden(wrapId, hiddenId);
+}
+
+function syncParticipantsHidden(wrapId, hiddenId) {
+  const wrap = document.getElementById(wrapId);
+  const names = [...wrap.querySelectorAll('.participant-tag')].map(t => t.dataset.name);
+  document.getElementById(hiddenId).value = names.join(',');
+}
+
+function clearParticipants(wrapId, hiddenId) {
+  const wrap = document.getElementById(wrapId);
+  wrap.querySelectorAll('.participant-tag').forEach(t => t.remove());
+  document.getElementById(hiddenId).value = '';
+}
+
+function loadParticipants(names, wrapId, inputId, hiddenId) {
+  clearParticipants(wrapId, hiddenId);
+  if (!names) return;
+  names.split(',').map(n=>n.trim()).filter(Boolean).forEach(n => {
+    addParticipantTag(n, wrapId, inputId, hiddenId);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  IMAGE UPLOAD
+// ═══════════════════════════════════════════════════════
+function handleImageSelect(input, gridId, filesArr) {
+  [...input.files].forEach(f => addImagePreview(f, gridId, filesArr));
+  input.value = ''; // reset so same file can be re-added
+}
+
+function handleImageDrop(e, gridId, filesArrName) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const filesArr = filesArrName === 'add_img_files' ? addImgFiles : editImgFiles;
+  [...e.dataTransfer.files].filter(f => f.type.startsWith('image/')).forEach(f => {
+    addImagePreview(f, gridId, filesArr);
+  });
+}
+
+function addImagePreview(file, gridId, filesArr) {
+  const idx = filesArr.length;
+  filesArr.push(file);
+  const grid = document.getElementById(gridId);
+  const item = document.createElement('div');
+  item.className = 'img-preview-item';
+  item.id = `prev-${gridId}-${idx}`;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    item.innerHTML = `
+      <img src="${ev.target.result}" alt="">
+      <button class="img-del" type="button" onclick="removePreviewImg('${gridId}',${idx},'${filesArr === addImgFiles ? 'add':'edit'}')">✕</button>
+      <div class="img-caption"><input placeholder="Légende (optionnel)" id="cap-${gridId}-${idx}"></div>
+    `;
+  };
+  reader.readAsDataURL(file);
+  grid.appendChild(item);
+}
+
+function removePreviewImg(gridId, idx, which) {
+  const el = document.getElementById(`prev-${gridId}-${idx}`);
+  if (el) el.remove();
+  const arr = which === 'add' ? addImgFiles : editImgFiles;
+  arr[idx] = null; // mark as removed
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBMIT ADD
+// ═══════════════════════════════════════════════════════
+async function submitAdd() {
+  const title = document.getElementById('add_title').value.trim();
+  if (!title) { toast('Le titre est obligatoire', 'error'); switchTabByIndex('add',0); return; }
+
+  const url  = document.getElementById('add_url').value.trim();
+  const prev = document.getElementById('add_thumb_preview');
+  const customThumb = document.getElementById('add_thumb_custom').value.trim();
+
+  const fd = new FormData();
+  fd.append('course_url',       url);
+  fd.append('title',            title);
+  fd.append('description',      document.getElementById('add_desc').value.trim());
+  fd.append('day_of_week',      document.getElementById('add_day').value);
+  fd.append('scheduled_date',   document.getElementById('add_date').value);
+  fd.append('time_start',       document.getElementById('add_time_start').value);
+  fd.append('time_end',         document.getElementById('add_time_end').value);
+  fd.append('category',         document.getElementById('add_cat').value);
+  fd.append('level',            document.getElementById('add_level').value);
+  fd.append('duration_minutes', document.getElementById('add_duration').value || 0);
+  fd.append('tags',             document.getElementById('add_tags').value.trim());
+  fd.append('thumbnail_url',    customThumb || (prev.classList.contains('visible') ? prev.src : ''));
+  fd.append('participants',     document.getElementById('add_participants_hidden').value);
+  fd.append('analyses',         document.getElementById('add_analyses').value.trim());
+  fd.append('strategies',       document.getElementById('add_strategies').value.trim());
+  fd.append('is_published',     '1');
+
+  // Attach images
+  let imgIdx = 0;
+  addImgFiles.forEach((f, i) => {
+    if (!f) return;
+    const capEl = document.getElementById(`cap-add_img_preview_grid-${i}`);
+    fd.append(`position_img_${imgIdx}`, f, f.name);
+    fd.append(`position_img_${imgIdx}_caption`, capEl ? capEl.value : '');
+    imgIdx++;
+  });
+
+  try {
+    const res = await fetch('/training/add', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      toast('Session ajoutée avec succès ✅', 'success');
+      closeModal('addModal');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      toast('Erreur : ' + (data.error || 'inconnue'), 'error');
+    }
+  } catch(e) {
+    toast('Erreur réseau', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  EDIT COURSE — OPEN
+// ═══════════════════════════════════════════════════════
+function editCourse(c) {
+  document.getElementById('edit_id').value          = c.id;
+  document.getElementById('edit_url').value         = c.course_url || '';
+  document.getElementById('edit_title').value       = c.title || '';
+  document.getElementById('edit_desc').value        = c.description || '';
+  document.getElementById('edit_day').value         = c.day_of_week || 'Non défini';
+  document.getElementById('edit_date').value        = c.scheduled_date || '';
+  document.getElementById('edit_time_start').value  = c.time_start || '';
+  document.getElementById('edit_time_end').value    = c.time_end || '';
+  document.getElementById('edit_cat').value         = c.category || 'Général';
+  document.getElementById('edit_level').value       = c.level || 'debutant';
+  document.getElementById('edit_duration').value    = c.duration_minutes || '';
+  document.getElementById('edit_tags').value        = c.tags || '';
+  document.getElementById('edit_thumb_custom').value = c.thumbnail_url || '';
+  document.getElementById('edit_analyses').value    = c.analyses || '';
+  document.getElementById('edit_strategies').value  = c.strategies || '';
+
+  // Thumbnail preview
+  const prev = document.getElementById('edit_thumb_preview');
+  if (c.thumbnail_url) { prev.src = c.thumbnail_url; prev.classList.add('visible'); }
+  else prev.classList.remove('visible');
+
+  // Participants
+  loadParticipants(c.participant_names || '', 'edit_participants_wrap', 'edit_part_input', 'edit_participants_hidden');
+
+  // Existing position images
+  const existDiv = document.getElementById('edit_existing_imgs');
+  const imgs = c.position_images || [];
+  if (imgs.length) {
+    let html = '<div style="font-size:.78rem;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">📸 Images existantes</div>';
+    html += '<div class="img-preview-grid">';
+    imgs.forEach((src, i) => {
+      if (!src) return;
+      html += `<div class="img-preview-item">
+        <img src="${src}" alt="" onclick="openLightbox('${src}')" onerror="this.parentElement.style.display='none'">
+        <button class="img-del" onclick="deleteExistingImg(this,'${src}')">✕</button>
+      </div>`;
+    });
+    html += '</div>';
+    existDiv.innerHTML = html;
+  } else {
+    existDiv.innerHTML = '';
+  }
+
+  // Reset new images
+  document.getElementById('edit_img_preview_grid').innerHTML = '';
+  editImgFiles.length = 0;
+
+  // Reset tabs
+  switchTabByIndex('edit', 0);
+  document.getElementById('editModal').classList.add('open');
+}
+
+function deleteExistingImg(btn, imgPath) {
+  // Find img id — needs server call ideally, here we just hide
+  // For proper deletion, we'd need the image id from the server
+  // Simple approach: mark as deleted, send to backend on submit via separate field
+  btn.parentElement.style.opacity = '.3';
+  btn.parentElement.style.pointerEvents = 'none';
+  // Store path to delete
+  if (!window._imgToDelete) window._imgToDelete = [];
+  window._imgToDelete.push(imgPath);
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBMIT EDIT
+// ═══════════════════════════════════════════════════════
+async function submitEdit() {
+  const id    = document.getElementById('edit_id').value;
+  const title = document.getElementById('edit_title').value.trim();
+  if (!title) { toast('Le titre est obligatoire', 'error'); return; }
+
+  const url  = document.getElementById('edit_url').value.trim();
+  const prev = document.getElementById('edit_thumb_preview');
+  const customThumb = document.getElementById('edit_thumb_custom').value.trim();
+
+  const fd = new FormData();
+  fd.append('course_url',       url);
+  fd.append('title',            title);
+  fd.append('description',      document.getElementById('edit_desc').value.trim());
+  fd.append('day_of_week',      document.getElementById('edit_day').value);
+  fd.append('scheduled_date',   document.getElementById('edit_date').value);
+  fd.append('time_start',       document.getElementById('edit_time_start').value);
+  fd.append('time_end',         document.getElementById('edit_time_end').value);
+  fd.append('category',         document.getElementById('edit_cat').value);
+  fd.append('level',            document.getElementById('edit_level').value);
+  fd.append('duration_minutes', document.getElementById('edit_duration').value || 0);
+  fd.append('tags',             document.getElementById('edit_tags').value.trim());
+  fd.append('thumbnail_url',    customThumb || (prev.classList.contains('visible') ? prev.src : ''));
+  fd.append('participants',     document.getElementById('edit_participants_hidden').value);
+  fd.append('analyses',         document.getElementById('edit_analyses').value.trim());
+  fd.append('strategies',       document.getElementById('edit_strategies').value.trim());
+  fd.append('is_published',     '1');
+
+  let imgIdx = 0;
+  editImgFiles.forEach((f, i) => {
+    if (!f) return;
+    const capEl = document.getElementById(`cap-edit_img_preview_grid-${i}`);
+    fd.append(`position_img_${imgIdx}`, f, f.name);
+    fd.append(`position_img_${imgIdx}_caption`, capEl ? capEl.value : '');
+    imgIdx++;
+  });
+
+  try {
+    const res = await fetch(`/training/update/${id}`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      toast('Session mise à jour ✅', 'success');
+      closeModal('editModal');
+      setTimeout(() => location.reload(), 800);
+    }
+  } catch(e) { toast('Erreur réseau', 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  DELETE COURSE
+// ═══════════════════════════════════════════════════════
+async function deleteCourse(id) {
+  if (!confirm('Supprimer cette session de formation ? Cette action est irréversible.')) return;
+  const res  = await fetch(`/training/delete/${id}`, { method: 'POST' });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById(`card-${id}`)?.remove();
+    toast('Session supprimée', 'success');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  DETAIL MODAL
+// ═══════════════════════════════════════════════════════
+function showDetail(c) {
+  document.getElementById('detail_title').textContent = c.title || 'Détail de la session';
+
+  let html = '';
+
+  // Horaires
+  if (c.time_start || c.time_end || c.scheduled_date) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">📅 Horaire de la session</div>
+      <div class="detail-text">`;
+    if (c.scheduled_date) html += `<strong>Date :</strong> ${c.scheduled_date}<br>`;
+    if (c.time_start) html += `<strong>Début :</strong> ${c.time_start}`;
+    if (c.time_end) html += ` &nbsp;→&nbsp; <strong>Fin :</strong> ${c.time_end}`;
+    html += `</div></div>`;
+  }
+
+  // Participants
+  if (c.participant_names) {
+    const chips = c.participant_names.split(',').map(p =>
+      `<span class="participant-chip">${p.trim()}</span>`
+    ).join(' ');
+    html += `<div class="detail-section">
+      <div class="detail-section-title">👥 Participants (${c.participant_names.split(',').length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">${chips}</div>
+    </div>`;
+  }
+
+  // Description
+  if (c.description) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">📄 Description</div>
+      <div class="detail-text">${esc(c.description)}</div>
+    </div>`;
+  }
+
+  // Analyses
+  if (c.analyses) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">💡 Analyses réalisées</div>
+      <div class="detail-text">${esc(c.analyses)}</div>
+    </div>`;
+  }
+
+  // Stratégies
+  if (c.strategies) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">🎯 Stratégies</div>
+      <div class="detail-text">${esc(c.strategies)}</div>
+    </div>`;
+  }
+
+  // Position images
+  const imgs = c.position_images || [];
+  if (imgs.length) {
+    const grid = imgs.map(src =>
+      `<div class="img-preview-item" style="cursor:pointer;" onclick="openLightbox('${src}')">
+        <img src="${src}" alt="" onerror="this.parentElement.style.display='none'">
+      </div>`
+    ).join('');
+    html += `<div class="detail-section">
+      <div class="detail-section-title">📸 Images des positions (${imgs.length})</div>
+      <div class="img-preview-grid" style="margin-top:8px;">${grid}</div>
+    </div>`;
+  }
+
+  if (!html) {
+    html = `<div class="detail-section">
+      <div class="detail-text" style="color:var(--text3);font-style:italic;">Aucun détail renseigné. Clique sur ✏ pour modifier.</div>
+    </div>`;
+  }
+
+  document.getElementById('detail_body').innerHTML = html;
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
+}
+
+// ═══════════════════════════════════════════════════════
+//  LIGHTBOX
+// ═══════════════════════════════════════════════════════
+function openLightbox(src) {
+  document.getElementById('lightbox_img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════
+//  FILTER
+// ═══════════════════════════════════════════════════════
+function filterCourses() {
+  const q   = document.getElementById('searchInput').value.toLowerCase();
+  const day = document.getElementById('filterDay').value;
+  const lvl = document.getElementById('filterLevel').value;
+
+  document.querySelectorAll('.course-card').forEach(card => {
+    const mQ = !q || card.dataset.title.includes(q) || (card.dataset.participants||'').includes(q);
+    const mD = !day || card.dataset.day === day;
+    const mL = !lvl || card.dataset.level === lvl;
+    card.style.display = (mQ && mD && mL) ? '' : 'none';
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `${type==='success'?'✅':'❌'} ${msg}`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+</script>
+</body>
+</html>

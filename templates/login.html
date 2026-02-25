@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Kengni Finance 2FA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: radial-gradient(ellipse at 40% 60%, #1a1a2e 0%, #0a0e14 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            font-weight: 700;
+            overflow: hidden;
+            position: relative;
+        }
+        .main-scene {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .character-bg {
+            position: absolute;
+            height: 108vh;
+            bottom: -8%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            pointer-events: none;
+            will-change: transform;
+            filter:
+                drop-shadow(0 0 60px rgba(0,212,170,0.18))
+                drop-shadow(-20px 0 40px rgba(0,0,0,1))
+                drop-shadow(20px  0 40px rgba(0,0,0,1));
+            transform-origin: bottom center;
+        }
+        .login-3d-container {
+            position: relative;
+            z-index: 100;
+            perspective: 800px;
+            perspective-origin: 50% 50%;
+            overflow: visible;
+        }
+        .login-card {
+            width: 420px;
+            background: rgba(12, 17, 23, 0.82);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            padding: 1.5rem 2.2rem 2.2rem;
+            margin-top: 78px;
+            border-radius: 22px;
+            border: 1.5px solid rgba(0,212,170,0.45);
+            text-align: center;
+            position: relative;
+            overflow: visible;
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.95),
+                0  0  50px rgba(0,212,170,0.22),
+                0  0  100px rgba(0,212,170,0.08),
+                inset 0 1px 0 rgba(255,255,255,0.06),
+                inset 0 0 30px rgba(0,212,170,0.04);
+            will-change: transform;
+            transform-style: preserve-3d;
+        }
+        .login-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 10%; right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,212,170,0.7), transparent);
+            border-radius: 50%;
+        }
+        #shineLayer {
+            position: absolute;
+            inset: 0;
+            border-radius: 22px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .card-content { position: relative; z-index: 1; }
+        .login-card { clip-path: none; }
+        .logo-box {
+            width: 106px; height: 106px;
+            margin: -53px auto 18px;
+            position: relative;
+            z-index: 200;
+        }
+        .logo-box img {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 3px solid #00d4aa;
+            box-shadow: 0 0 20px rgba(0,212,170,0.7), 0 0 60px rgba(0,212,170,0.2);
+            background: #0a0e14;
+            display: block;
+        }
+        .card-title {
+            color: #00d4aa;
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+            text-shadow: 0 0 20px rgba(0,212,170,0.4);
+        }
+        .card-subtitle {
+            color: rgba(255,255,255,0.55);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 1.6rem;
+        }
+        .form-label-custom {
+            display: block;
+            text-align: left;
+            color: rgba(255,255,255,0.80);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .form-control {
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(255,255,255,0.10);
+            color: white;
+            font-weight: 700;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            margin-bottom: 1.1rem;
+            transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+            font-size: 0.95rem;
+        }
+        .form-control:focus {
+            background: rgba(0,212,170,0.05);
+            border-color: rgba(0,212,170,0.7);
+            box-shadow: 0 0 0 3px rgba(0,212,170,0.14);
+            color: white;
+            outline: none;
+        }
+        .form-control::placeholder { color: rgba(255,255,255,0.28); font-weight: 600; }
+        .btn-login {
+            background: linear-gradient(135deg, #00c49a, #00ff88);
+            color: #07120d;
+            font-weight: 900;
+            border: none;
+            width: 100%;
+            padding: 0.9rem;
+            border-radius: 11px;
+            font-size: 0.95rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+            cursor: pointer;
+            margin-top: 0.2rem;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,212,170,0.45);
+            filter: brightness(1.08);
+        }
+        .btn-login:active { transform: translateY(0); }
+        .alert-error {
+            background: rgba(255,71,87,0.12);
+            border: 1.5px solid rgba(255,71,87,0.45);
+            color: #ff7b87;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.88rem;
+            font-weight: 800;
+            text-align: left;
+        }
+        /* FLYERS */
+        .flyers-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 35px;
+            pointer-events: none;
+        }
+        .side-column { display: flex; flex-direction: column; gap: 28px; pointer-events: auto; }
+        .slot-wrapper { width: 12cm; height: 12cm; }
+        .flyer-mini {
+            width: 100%; height: 100%;
+            background: rgba(5,10,15,0.90);
+            border-radius: 18px;
+            border: 2px solid rgba(0,212,170,0.65);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            display: block;
+            text-decoration: none;
+            transition: border-color 0.3s, box-shadow 0.3s, transform 0.4s cubic-bezier(0.23,1,0.32,1);
+            box-shadow:
+                0 0 18px rgba(0,212,170,0.25),
+                0 0 40px rgba(0,212,170,0.08),
+                inset 0 0 20px rgba(0,212,170,0.04);
+        }
+        #col-left .flyer-mini:hover {
+            transform: perspective(900px) rotateY(14deg) rotateX(-4deg) translateZ(10px) scale(1.02);
+            border-color: #00ff88;
+            box-shadow:
+                -16px 10px 45px rgba(0,0,0,0.85),
+                0 0 35px rgba(0,255,136,0.45),
+                0 0 70px rgba(0,212,170,0.15),
+                inset 2px 0 0 rgba(0,255,136,0.2);
+        }
+        #col-right .flyer-mini:hover {
+            transform: perspective(900px) rotateY(-14deg) rotateX(-4deg) translateZ(10px) scale(1.02);
+            border-color: #00ff88;
+            box-shadow:
+                16px 10px 45px rgba(0,0,0,0.85),
+                0 0 35px rgba(0,255,136,0.45),
+                0 0 70px rgba(0,212,170,0.15),
+                inset -2px 0 0 rgba(0,255,136,0.2);
+        }
+        .flyer-mini.held {
+            border-color: #00ff88 !important;
+            box-shadow: 0 0 35px rgba(0,255,136,0.4) !important;
+        }
+        .flyer-mini::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 40%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.045) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 2;
+            border-radius: 18px 18px 0 0;
+        }
+        .flyer-badge {
+            position: absolute;
+            top: 10px; left: 10px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.68rem;
+            font-weight: 900;
+            letter-spacing: 1.2px;
+            z-index: 5;
+            text-transform: uppercase;
+        }
+        .product-img-box {
+            height: 58%;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .product-img-box img {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.35s ease;
+        }
+        .flyer-mini:hover .product-img-box img { transform: scale(1.07) translateY(-3px); }
+        .product-info {
+            position: absolute; bottom: 0; width: 100%;
+            background: rgba(0,212,170,0.10);
+            backdrop-filter: blur(8px);
+            padding: 11px 14px;
+            text-align: center;
+            border-top: 1px solid rgba(0,212,170,0.3);
+        }
+        .product-name  { color: white; font-size: 0.95rem; font-weight: 900; display: block; }
+        .product-spec  { font-size: 0.75rem; font-weight: 800; color: #00ff88; margin-top: 2px; display: block; }
+        .price-old     { color: #ff4757; text-decoration: line-through; font-size: 0.82rem; font-weight: 800; }
+        .price-new     { color: #00ff88; font-weight: 900; font-size: 1.25rem; margin-left: 7px; }
+
+        /* PARTICULES */
+        .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0,212,170,0.55);
+            animation: floatUp linear infinite;
+            opacity: 0;
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(100vh) translateX(0);         opacity: 0; }
+            8%   { opacity: 0.9; }
+            92%  { opacity: 0.4; }
+            100% { transform: translateY(-30px) translateX(var(--dx)); opacity: 0; }
+        }
+        @keyframes glowPulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 18px rgba(0,212,170,0.25),
+                    0 0 40px rgba(0,212,170,0.08),
+                    inset 0 0 20px rgba(0,212,170,0.04);
+            }
+            50% {
+                box-shadow:
+                    0 0 28px rgba(0,212,170,0.40),
+                    0 0 60px rgba(0,212,170,0.14),
+                    inset 0 0 25px rgba(0,212,170,0.07);
+            }
+        }
+        .flyer-mini:not(:hover) {
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+        #slot-0 .flyer-mini { animation-delay: 0s; }
+        #slot-1 .flyer-mini { animation-delay: 0.75s; }
+        #slot-2 .flyer-mini { animation-delay: 1.5s; }
+        #slot-3 .flyer-mini { animation-delay: 2.25s; }
+
+        @keyframes cardGlow {
+            0%, 100% {
+                box-shadow:
+                    0 30px 80px rgba(0,0,0,0.95),
+                    0  0  50px rgba(0,212,170,0.22),
+                    0  0  100px rgba(0,212,170,0.08),
+                    inset 0 1px 0 rgba(255,255,255,0.06),
+                    inset 0 0 30px rgba(0,212,170,0.04);
+            }
+            50% {
+                box-shadow:
+                    0 30px 80px rgba(0,0,0,0.95),
+                    0  0  65px rgba(0,212,170,0.35),
+                    0  0  130px rgba(0,212,170,0.14),
+                    inset 0 1px 0 rgba(255,255,255,0.08),
+                    inset 0 0 40px rgba(0,212,170,0.07);
+            }
+        }
+        .login-card {
+            animation: cardGlow 4s ease-in-out infinite;
+        }
+
+        .ground-shadow {
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 280px; height: 28px;
+            background: radial-gradient(ellipse, rgba(0,212,170,0.22) 0%, transparent 70%);
+            filter: blur(8px);
+            z-index: 2;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+
+    <div class="main-scene">
+        <div class="ground-shadow" id="groundShadow"></div>
+
+        <img src="{{ url_for('static', filename='img/ton_image_personnage.png.png') }}"
+             class="character-bg" id="character" alt="K-Guard">
+
+        <div class="login-3d-container">
+            <div class="login-card" id="loginCard">
+                <div id="shineLayer"></div>
+                <div class="logo-box">
+                    <img src="{{ url_for('static', filename='img/logo.jpeg') }}" alt="Logo">
+                </div>
+                <div class="card-content">
+                    <div class="card-title">KENGNI FINANCE</div>
+                    <div class="card-subtitle">Plateforme Sécurisée &middot; 2FA</div>
+
+                    {% if error %}
+                    <div class="alert-error">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" action="/login">
+                        <label class="form-label-custom">Email Professionnel</label>
+                        <input type="email" name="email" class="form-control"
+                               placeholder="votre@email.com" required autocomplete="email">
+                        <label class="form-label-custom">Mot de passe</label>
+                        <input type="password" name="password" class="form-control"
+                               placeholder="••••••••" required autocomplete="current-password">
+                        <button type="submit" class="btn btn-login">
+                            <i class="fas fa-shield-alt me-2"></i>CONNEXION SÉCURISÉE
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flyers-container">
+        <div class="side-column" id="col-left">
+            <div id="slot-0" class="slot-wrapper"></div>
+            <div id="slot-1" class="slot-wrapper"></div>
+        </div>
+        <div class="side-column" id="col-right">
+            <div id="slot-2" class="slot-wrapper"></div>
+            <div id="slot-3" class="slot-wrapper"></div>
+        </div>
+    </div>
+
+<script>
+/* ── PARTICULES ── */
+(function(){
+    const c = document.getElementById('particles');
+    for(let i=0;i<45;i++){
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const s = Math.random()*3+1;
+        p.style.cssText=`left:${Math.random()*100}%;width:${s}px;height:${s}px;
+            animation-duration:${Math.random()*14+8}s;animation-delay:${Math.random()*12}s;
+            --dx:${(Math.random()-0.5)*180}px;`;
+        c.appendChild(p);
+    }
+})();
+
+/* ── EFFET 3D ── */
+const character   = document.getElementById('character');
+const loginCard   = document.getElementById('loginCard');
+const shineLayer  = document.getElementById('shineLayer');
+const groundShadow= document.getElementById('groundShadow');
+
+let mx=0, my=0;
+let charX=0, charY=0;
+let cardX=0, cardY=0;
+
+document.addEventListener('mousemove', e => {
+    mx = (e.clientX / window.innerWidth  - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+window.addEventListener('deviceorientation', e => {
+    if(e.gamma!==null){
+        mx = Math.max(-1,Math.min(1,(e.gamma||0)/40));
+        my = Math.max(-1,Math.min(1,-(e.beta||0)/40));
+    }
+});
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+function animateAll(){
+    charX = lerp(charX, mx, 0.035);
+    charY = lerp(charY, my, 0.035);
+    character.style.transform =
+        `translateX(calc(-50% + ${-charX*22}px)) translateY(${-charY*11}px)`;
+    groundShadow.style.transform =
+        `translateX(calc(-50% + ${-charX*9}px))`;
+
+    cardX = lerp(cardX, mx, 0.09);
+    cardY = lerp(cardY, my, 0.09);
+    const rY =  cardX * 16;
+    const rX = -cardY * 10;
+    const tX =  cardX * 7;
+    const tY =  cardY * 4;
+    loginCard.style.transform =
+        `rotateY(${rY}deg) rotateX(${rX}deg) translate(${tX}px,${tY}px)`;
+
+    const lX = (cardX+1)/2*100;
+    const lY = (cardY+1)/2*100;
+    shineLayer.style.background =
+        `radial-gradient(ellipse 80% 70% at ${lX}% ${lY}%,
+            rgba(255,255,255,0.09) 0%,
+            rgba(0,212,170,0.04) 35%,
+            transparent 70%)`;
+
+    requestAnimationFrame(animateAll);
+}
+requestAnimationFrame(animateAll);
+
+/* ── FLYERS TRADING ── */
+let allItems=[], globalIdx=0;
+const isPaused={}, isHeld={};
+
+async function loadItems(){
+    try{
+        const r = await fetch('/api/login-flyers');
+        const j = await r.json();
+        if(j.success && j.items.length>0) allItems=j.items;
+    } catch(e){ console.warn('Flyers API indisponible.'); }
+
+    if(allItems.length===0){
+        // ════════════════════════════════════════════════════════════
+        // VOS IMAGES DE TRADING — Remplacé les produits tech
+        // ════════════════════════════════════════════════════════════
+        allItems=[
+            {type:'product',img_url:'/static/flyers/trade15h.png',
+             name:'Formation Trading 15H',spec:'Stratégies Avancées · Live',price:'150k',promo:'120k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+            {type:'product',img_url:'/static/flyers/scalping.png',
+             name:'Scalping Pro',spec:'Setup M5 · Indicateurs',price:'85k',promo:'65k',link:null,badge:'HOT 🔥',badge_color:'#ff4757'},
+            {type:'product',img_url:'/static/flyers/FVG.png',
+             name:'Analyse FVG',spec:'Fair Value Gaps · ICT',price:'95k',promo:'75k',link:null,badge:'NOUVEAU',badge_color:'#667eea'},
+            {type:'product',img_url:'/static/flyers/rapport.png',
+             name:'Rapport Trading',spec:'Analyse Mensuelle',price:'45k',promo:'35k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+            {type:'product',img_url:'/static/flyers/ma position2.png',
+             name:'Gestion Position',spec:'Risk Management · SL/TP',price:'120k',promo:'95k',link:null,badge:'PRO',badge_color:'#ffd700'},
+            {type:'product',img_url:'/static/flyers/trai13.png',
+             name:'Trading Journal',spec:'Suivi · Statistiques',price:'55k',promo:'42k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+            {type:'product',img_url:'/static/flyers/volum fixe.png',
+             name:'Volume Profile',spec:'POC · VAH/VAL',price:'75k',promo:'58k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+            {type:'product',img_url:'/static/flyers/tra22.png',
+             name:'Stratégie Breakout',spec:'Price Action · S/R',price:'65k',promo:'50k',link:null,badge:'TRENDING',badge_color:'#ff6b81'},
+            {type:'product',img_url:'/static/flyers/trad2.png',
+             name:'Setup Intraday',spec:'Scalping · Day Trading',price:'80k',promo:'62k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+            {type:'product',img_url:'/static/flyers/12.png',
+             name:'Timeframe 12H',spec:'Swing Trading · Long',price:'90k',promo:'70k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+            {type:'product',img_url:'/static/flyers/15H.png',
+             name:'Analyse 15H Chart',spec:'Multi-TF · Confluence',price:'95k',promo:'75k',link:null,badge:'EXPERT',badge_color:'#9b59b6'},
+            {type:'product',img_url:'/static/flyers/baisse.png',
+             name:'Trade Baissier',spec:'Short · Bear Market',price:'70k',promo:'55k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+            {type:'product',img_url:'/static/flyers/conf.png',
+             name:'Configuration Pro',spec:'Setup · Indicateurs',price:'110k',promo:'85k',link:null,badge:'CONFIG',badge_color:'#3498db'},
+            {type:'product',img_url:'/static/flyers/mmm.png',
+             name:'Money Management',spec:'Capital · Risk Reward',price:'100k',promo:'78k',link:null,badge:'ESSENTIEL',badge_color:'#e74c3c'},
+            {type:'product',img_url:'/static/flyers/sR.png',
+             name:'Support & Résistance',spec:'Zones Clés · PA',price:'60k',promo:'48k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+        ];
+    }
+    ['slot-0','slot-1','slot-2','slot-3'].forEach((id,i)=>{
+        isPaused[id]=false; isHeld[id]=false;
+        setTimeout(()=>refreshSlot(id), i*1300);
+    });
+}
+
+function buildFlyer(slotId, item){
+    const tag  = 'div';
+    const href = '';
+    const priceHtml = (item.type==='product')
+        ? `<div style="margin-top:4px">
+               <span class="price-old">${item.price}</span>
+               <span class="price-new">${item.promo}</span>
+           </div>`
+        : (item.promo
+            ? `<div style="margin-top:4px;color:${item.badge_color};font-weight:900;font-size:1.1rem">P&amp;L : ${item.promo}</div>`
+            : '');
+    const cta = '';
+    return `
+    <${tag} class="flyer-mini" ${href}
+        onmousedown="holdStart('${slotId}',this)"
+        onmouseup="holdEnd('${slotId}',this)"
+        onmouseleave="holdEnd('${slotId}',this)"
+        ontouchstart="holdStart('${slotId}',this)"
+        ontouchend="holdEnd('${slotId}',this)">
+        <div class="flyer-badge" style="background:rgba(0,0,0,0.65);color:${item.badge_color};border:1.5px solid ${item.badge_color}">${item.badge}</div>
+        <div class="product-img-box">
+            <img src="${item.img_url}" alt="${item.name}" onerror="this.src='/static/flyers/conf.png'">
+        </div>
+        <div class="product-info">
+            <span class="product-name">${item.name}</span>
+            <span class="product-spec">${item.spec}</span>
+            ${priceHtml}
+            ${cta}
+        </div>
+    </${tag}>`;
+}
+
+function holdStart(id,el){ isHeld[id]=true; isPaused[id]=true; el.classList.add('held'); }
+function holdEnd(id,el)  { isHeld[id]=false; isPaused[id]=false; if(el) el.classList.remove('held'); }
+
+function refreshSlot(id){
+    if(isPaused[id]){ setTimeout(()=>refreshSlot(id),500); return; }
+    const w = document.getElementById(id);
+    if(!w||allItems.length===0) return;
+    const item = allItems[globalIdx % allItems.length];
+    globalIdx++;
+
+    w.style.transition='opacity 0.35s ease, transform 0.35s ease';
+    w.style.opacity='0';
+    w.style.transform='perspective(900px) rotateY(-22deg) scale(0.90)';
+
+    setTimeout(()=>{
+        w.innerHTML=buildFlyer(id,item);
+        w.style.transform='perspective(900px) rotateY(22deg) scale(0.90)';
+        w.style.opacity='0';
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+            w.style.transition='opacity 0.55s ease, transform 0.7s cubic-bezier(0.23,1,0.32,1)';
+            w.style.opacity='1';
+            w.style.transform='perspective(900px) rotateY(0deg) scale(1)';
+        }));
+        setTimeout(()=>refreshSlot(id), Math.floor(Math.random()*3500)+4000);
+    },380);
+}
+
+window.addEventListener('load', loadItems);
+</script>
+</body>
+</html>

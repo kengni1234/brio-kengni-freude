@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.db
+*.backup.db
+*.backup
+Backup-codes-*.txt
+*.ed
+.env

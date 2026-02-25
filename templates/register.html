@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - Kengni Finance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .register-container {
+            background: #1a1a2e;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 100%;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .logo img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #00d4aa;
+            box-shadow: 0 0 30px rgba(0, 212, 170, 0.5);
+        }
+        h2 {
+            color: #00d4aa;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+        .form-control {
+            background: #0f1419;
+            border: 2px solid #2d3748;
+            color: #ffffff;
+            padding: 0.8rem;
+            border-radius: 10px;
+        }
+        .form-control:focus {
+            background: #0f1419;
+            border-color: #00d4aa;
+            color: #ffffff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 212, 170, 0.25);
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #00d4aa, #00ff88);
+            border: none;
+            color: #0f1419;
+            padding: 0.8rem;
+            border-radius: 10px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .btn-register:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0, 212, 170, 0.4);
+        }
+        .back-to-login {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .back-to-login a {
+            color: #00d4aa;
+            text-decoration: none;
+        }
+        .back-to-login a:hover {
+            text-decoration: underline;
+        }
+        .password-strength {
+            height: 5px;
+            margin-top: 5px;
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo.jpeg') }}" alt="Kengni Finance">
+        </div>
+        <h2><i class="fas fa-user-plus"></i> Créer un Compte</h2>
+        
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        
+        {% if success %}
+        <div class="alert alert-success">{{ success }}</div>
+        {% endif %}
+        
+        <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+            <div class="mb-3">
+                <label class="form-label text-white">Nom d'utilisateur</label>
+                <input type="text" class="form-control" name="username" required minlength="3">
+                <small class="text-muted">Minimum 3 caractères</small>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label text-white">Email</label>
+                <input type="email" class="form-control" name="email" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label text-white">Mot de passe</label>
+                <input type="password" class="form-control" name="password" id="password" required minlength="6">
+                <div class="password-strength" id="passwordStrength"></div>
+                <small class="text-muted">Minimum 6 caractères</small>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label text-white">Confirmer le mot de passe</label>
+                <input type="password" class="form-control" name="confirm_password" id="confirmPassword" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label text-white">Devise préférée</label>
+                <select class="form-control" name="preferred_currency">
+                    <option value="EUR">EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="XAF">XAF (Franc CFA)</option>
+                    <option value="GBP">GBP (£)</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-register">
+                <i class="fas fa-check"></i> Créer mon compte
+            </button>
+        </form>
+        
+        <div class="back-to-login">
+            <p class="text-white">Vous avez déjà un compte ? 
+                <a href="{{ url_for('login') }}">Se connecter</a>
+            </p>
+        </div>
+        
+        <p class="text-center text-muted mt-3">v2.0 - IA Enhanced</p>
+    </div>
+
+    <script>
+        // Password strength indicator
+        document.getElementById('password').addEventListener('input', function(e) {
+            const password = e.target.value;
+            const strength = document.getElementById('passwordStrength');
+            
+            let score = 0;
+            if (password.length >= 6) score++;
+            if (password.length >= 10) score++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+            if (/\d/.test(password)) score++;
+            if (/[^a-zA-Z\d]/.test(password)) score++;
+            
+            if (score === 0 || score === 1) {
+                strength.style.backgroundColor = '#ff4757';
+                strength.style.width = '33%';
+            } else if (score === 2 || score === 3) {
+                strength.style.backgroundColor = '#ffd700';
+                strength.style.width = '66%';
+            } else {
+                strength.style.backgroundColor = '#00ff88';
+                strength.style.width = '100%';
+            }
+        });
+        
+        // Validate passwords match
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Les mots de passe ne correspondent pas!');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

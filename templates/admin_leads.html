@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+{% block title %}Leads Academy — Kengni Finance{% endblock %}
+{% block page_title %}Leads — Kengni Trading Academy{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ════════════════════════════════════════════════════
+   ADMIN LEADS — Design Kengni Finance
+   ════════════════════════════════════════════════════ */
+.al-hero {
+  background:linear-gradient(135deg,#0d1b2a 0%,#1a2a3a 55%,#0f2416 100%);
+  border-radius:18px; padding:26px 30px; margin-bottom:26px;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:14px; border:1px solid rgba(0,212,170,.2); position:relative; overflow:hidden;
+}
+.al-hero::before {
+  content:''; position:absolute; top:-50px; right:-50px;
+  width:180px; height:180px; border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,170,.1),transparent 70%);
+  pointer-events:none;
+}
+/* Stat Cards */
+.al-stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+.al-stat {
+  background:var(--secondary-color); border-radius:14px; padding:16px 14px;
+  text-align:center; border:1px solid var(--border-color); transition:all .25s; position:relative; overflow:hidden;
+}
+.al-stat::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; background:var(--sc,#00d4aa); border-radius:0 0 14px 14px; }
+.al-stat:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
+.al-stat-val { font-size:2rem; font-weight:800; color:var(--sc,#00d4aa); line-height:1; }
+.al-stat-lbl { font-size:.72rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-top:5px; }
+/* Table wrapper */
+.al-table-wrap {
+  background:var(--secondary-color); border-radius:18px; overflow:hidden;
+  border:1px solid var(--border-color); box-shadow:0 4px 20px rgba(0,0,0,.2);
+}
+.al-table { width:100%; border-collapse:collapse; }
+.al-table thead { background:var(--accent-color); }
+.al-table th { padding:13px 14px; font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-secondary); white-space:nowrap; }
+.al-table td { padding:12px 14px; border-top:1px solid var(--border-color); color:var(--text-primary); vertical-align:middle; }
+.al-table tr:hover td { background:rgba(0,212,170,.03); }
+/* Status badges */
+.al-badge { padding:4px 12px; border-radius:100px; font-size:.72rem; font-weight:700; white-space:nowrap; }
+.al-badge-nouveau   { background:rgba(74,158,255,.15); color:#4a9eff; border:1px solid rgba(74,158,255,.3); }
+.al-badge-contacte  { background:rgba(255,215,0,.15);  color:#ffd700; border:1px solid rgba(255,215,0,.3); }
+.al-badge-inscrit   { background:rgba(162,155,254,.15);color:#a29bfe; border:1px solid rgba(162,155,254,.3); }
+.al-badge-paye      { background:rgba(0,212,170,.15);  color:#00d4aa; border:1px solid rgba(0,212,170,.3); }
+/* Payment status */
+.al-pay-badge { padding:3px 10px; border-radius:100px; font-size:.68rem; font-weight:700; }
+.al-pay-en-attente  { background:rgba(255,118,117,.12);color:#ff7675; border:1px solid rgba(255,118,117,.3); }
+.al-pay-partiel     { background:rgba(255,215,0,.12);  color:#ffd700; border:1px solid rgba(255,215,0,.3); }
+.al-pay-complet     { background:rgba(0,212,170,.12);  color:#00d4aa; border:1px solid rgba(0,212,170,.3); }
+/* Sincire button */
+.btn-sincire {
+  background:linear-gradient(135deg,#a29bfe,#6c5ce7);
+  color:#fff; border:none; border-radius:8px;
+  padding:6px 14px; font-size:.77rem; font-weight:700;
+  cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.btn-sincire:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(108,92,231,.4); }
+.btn-sincire:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+/* Action buttons */
+.btn-act {
+  padding:5px 11px; border-radius:7px; font-size:.75rem; font-weight:600;
+  cursor:pointer; border:none; transition:all .2s;
+}
+.btn-wa  { background:rgba(37,211,102,.15); color:#25d366; border:1px solid rgba(37,211,102,.3); }
+.btn-wa:hover { background:rgba(37,211,102,.28); }
+.btn-del { background:rgba(255,71,87,.12); color:#ff4757; border:1px solid rgba(255,71,87,.3); }
+.btn-del:hover { background:rgba(255,71,87,.25); }
+.btn-pay { background:rgba(0,212,170,.12); color:#00d4aa; border:1px solid rgba(0,212,170,.3); }
+.btn-pay:hover { background:rgba(0,212,170,.22); }
+/* Modal */
+.al-modal .modal-content { background:#111827; border:1px solid var(--border-color); border-radius:18px; overflow:hidden; }
+.al-modal .modal-header { background:linear-gradient(135deg,#0d1b2a,#1a2a3a); border-bottom:1px solid var(--border-color); padding:18px 24px; }
+.al-modal .modal-body   { padding:22px 24px; }
+.al-modal .modal-footer { background:#0d1b2a; border-top:1px solid var(--border-color); padding:14px 24px; }
+.al-input {
+  background:#0d1b2a!important; border:1.5px solid var(--border-color)!important;
+  border-radius:9px!important; color:var(--text-primary)!important;
+  padding:9px 13px!important; font-size:.87rem!important;
+}
+.al-input:focus { border-color:var(--primary-color)!important; box-shadow:0 0 0 3px rgba(0,212,170,.1)!important; outline:none!important; }
+.al-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-secondary); margin-bottom:5px; display:block; }
+/* Sincire result popup */
+.al-toast {
+  position:fixed; bottom:28px; right:28px; z-index:9999;
+  padding:14px 20px; border-radius:12px; font-size:.85rem; font-weight:600;
+  max-width:340px; box-shadow:0 6px 24px rgba(0,0,0,.4);
+  animation:toastIn .3s ease; border:1px solid;
+}
+.al-toast.ok  { background:#0d2a1e; color:#00d4aa; border-color:rgba(0,212,170,.4); }
+.al-toast.err { background:#2a0d0e; color:#ff7675; border-color:rgba(255,118,117,.4); }
+@keyframes toastIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+/* Filters */
+.al-filters { display:flex; gap:8px; flex-wrap:wrap; }
+.al-pill { padding:6px 16px; border-radius:100px; font-size:.78rem; font-weight:600; border:1.5px solid var(--border-color); background:transparent; color:var(--text-secondary); cursor:pointer; transition:all .2s; }
+.al-pill:hover,.al-pill.active { border-color:var(--primary-color); color:var(--primary-color); background:rgba(0,212,170,.07); }
+/* Sincire sent indicator */
+.al-sent-tag { font-size:.68rem; color:#a29bfe; display:block; margin-top:3px; }
+/* Responsive */
+@media(max-width:768px) { .al-table thead { display:none; } .al-table tr { display:block; margin-bottom:12px; background:var(--secondary-color); border-radius:12px; border:1px solid var(--border-color); padding:10px; } .al-table td { display:block; border:none; padding:5px 0; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in" style="max-width:1400px;">
+
+<!-- ════════════════════════════════
+     HERO
+     ════════════════════════════════ -->
+<div class="al-hero">
+  <div>
+    <h2 style="font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,#a29bfe,#00d4aa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 4px;">
+      🎓 Leads — Kengni Trading Academy
+    </h2>
+    <p style="color:var(--text-secondary);font-size:.87rem;margin:0;">Gérez vos prospects · Envoyez les invitations de paiement · Suivez les conversions</p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{{ url_for('export_leads') }}?format=excel"
+       style="background:rgba(0,212,170,.12);color:#00d4aa;border:1.5px solid rgba(0,212,170,.3);border-radius:10px;padding:9px 18px;font-size:.82rem;font-weight:700;text-decoration:none;">
+      <i class="fas fa-file-excel me-1"></i>Excel
+    </a>
+    <a href="{{ url_for('export_leads') }}?format=csv"
+       style="background:rgba(74,158,255,.12);color:#4a9eff;border:1.5px solid rgba(74,158,255,.3);border-radius:10px;padding:9px 18px;font-size:.82rem;font-weight:700;text-decoration:none;">
+      <i class="fas fa-file-csv me-1"></i>CSV
+    </a>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     STATS
+     ════════════════════════════════ -->
+<div class="al-stats">
+  <div class="al-stat" style="--sc:#4a9eff;">
+    <div class="al-stat-val">{{ stats.total }}</div>
+    <div class="al-stat-lbl">Total leads</div>
+  </div>
+  <div class="al-stat" style="--sc:#4a9eff;">
+    <div class="al-stat-val">{{ stats.nouveau }}</div>
+    <div class="al-stat-lbl">Nouveaux</div>
+  </div>
+  <div class="al-stat" style="--sc:#ffd700;">
+    <div class="al-stat-val">{{ stats.contacte }}</div>
+    <div class="al-stat-lbl">Contactés</div>
+  </div>
+  <div class="al-stat" style="--sc:#a29bfe;">
+    <div class="al-stat-val">{{ stats.inscrit }}</div>
+    <div class="al-stat-lbl">Inscrits</div>
+  </div>
+  <div class="al-stat" style="--sc:#00d4aa;">
+    <div class="al-stat-val">{{ stats.paye }}</div>
+    <div class="al-stat-lbl">Payés ✅</div>
+  </div>
+  <div class="al-stat" style="--sc:#ff7675;">
+    <div class="al-stat-val">
+      {% if stats.total > 0 %}{{ "%.0f"|format(stats.paye / stats.total * 100) }}%{% else %}0%{% endif %}
+    </div>
+    <div class="al-stat-lbl">Conversion</div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     FILTRES + FLASH MESSAGES
+     ════════════════════════════════ -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  {% for cat, msg in messages %}
+  <div class="alert alert-{{ 'success' if cat == 'success' else 'danger' }} alert-dismissible fade show mb-3" style="border-radius:12px;">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div class="al-filters">
+    <button class="al-pill active" onclick="filterLeads('all',this)">Tous ({{ stats.total }})</button>
+    <button class="al-pill" onclick="filterLeads('Nouveau',this)">🆕 Nouveaux</button>
+    <button class="al-pill" onclick="filterLeads('Contacté',this)">📩 Contactés</button>
+    <button class="al-pill" onclick="filterLeads('Inscrit',this)">📚 Inscrits</button>
+    <button class="al-pill" onclick="filterLeads('Payé',this)">✅ Payés</button>
+  </div>
+  <div style="font-size:.78rem;color:var(--text-secondary);">
+    <i class="fas fa-envelope me-1" style="color:#a29bfe;"></i>
+    Sincire envoyé via <strong style="color:#a29bfe;">fabrice.kengni12@gmail.com</strong>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     TABLE
+     ════════════════════════════════ -->
+{% if leads %}
+<div class="al-table-wrap">
+  <table class="al-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Prospect</th>
+        <th>Formation</th>
+        <th>Statut</th>
+        <th>Paiement</th>
+        <th>Date</th>
+        <th style="text-align:center;">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="leadsTableBody">
+      {% for lead in leads %}
+      <tr data-status="{{ lead.status }}" data-lead-id="{{ lead.id }}">
+
+        <!-- ID -->
+        <td style="color:var(--text-secondary);font-size:.8rem;">#{{ lead.id }}</td>
+
+        <!-- Prospect -->
+        <td>
+          <div style="font-weight:700;color:var(--text-primary);">{{ lead.full_name }}</div>
+          <div style="font-size:.77rem;color:#4a9eff;">{{ lead.email }}</div>
+          <div style="font-size:.77rem;color:#25d366;">
+            <i class="fab fa-whatsapp me-1"></i>{{ lead.whatsapp }}
+          </div>
+          {% if lead.sincire_sent_at %}
+          <span class="al-sent-tag"><i class="fas fa-paper-plane me-1"></i>Sincire envoyé le {{ lead.sincire_sent_at[:16].replace('T',' à ') }}</span>
+          {% endif %}
+        </td>
+
+        <!-- Formation -->
+        <td>
+          <div style="font-weight:600;">{{ lead.level_selected }}</div>
+          {% if lead.capital %}
+          <div style="font-size:.75rem;color:var(--text-secondary);">Capital : {{ lead.capital }}</div>
+          {% endif %}
+          {% if lead.source and lead.source != 'Non renseigné' %}
+          <div style="font-size:.72rem;color:#888;">Source : {{ lead.source }}</div>
+          {% endif %}
+        </td>
+
+        <!-- Statut -->
+        <td>
+          <span class="al-badge
+            {% if lead.status == 'Nouveau'   %}al-badge-nouveau
+            {% elif lead.status == 'Contacté'%}al-badge-contacte
+            {% elif lead.status == 'Inscrit' %}al-badge-inscrit
+            {% elif lead.status == 'Payé'    %}al-badge-paye
+            {% endif %}">
+            {{ lead.status }}
+          </span>
+          <form method="POST" action="{{ url_for('update_lead_status', lead_id=lead.id) }}" class="mt-1">
+            <select name="status" class="form-select form-select-sm"
+                    style="background:#0d1b2a;border-color:var(--border-color);color:var(--text-secondary);border-radius:7px;font-size:.72rem;padding:3px 6px;"
+                    onchange="this.form.submit()">
+              <option value="Nouveau"   {% if lead.status=='Nouveau'   %}selected{% endif %}>Nouveau</option>
+              <option value="Contacté"  {% if lead.status=='Contacté'  %}selected{% endif %}>Contacté</option>
+              <option value="Inscrit"   {% if lead.status=='Inscrit'   %}selected{% endif %}>Inscrit</option>
+              <option value="Payé"      {% if lead.status=='Payé'      %}selected{% endif %}>Payé ✅</option>
+            </select>
+          </form>
+        </td>
+
+        <!-- Paiement -->
+        <td>
+          {% set ps = lead.get('payment_status','En attente') if lead.get else 'En attente' %}
+          <span class="al-pay-badge
+            {% if ps == 'Complet'    %}al-pay-complet
+            {% elif ps == 'Partiel'  %}al-pay-partiel
+            {% else                  %}al-pay-en-attente{% endif %}">
+            {{ ps or 'En attente' }}
+          </span>
+          {% if lead.payment_method %}
+          <div style="font-size:.72rem;color:var(--text-secondary);margin-top:3px;">
+            {{ lead.payment_method }}
+            {% if lead.amount_paid and lead.amount_paid > 0 %}
+            — <span style="color:#00d4aa;font-weight:600;">{{ "{:,.0f}".format(lead.amount_paid) }} FCFA</span>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% if lead.payment_ref %}
+          <div style="font-size:.7rem;color:#666;">Réf: {{ lead.payment_ref }}</div>
+          {% endif %}
+        </td>
+
+        <!-- Date -->
+        <td style="font-size:.77rem;color:var(--text-secondary);white-space:nowrap;">
+          {{ lead.created_at[:16].replace('T',' ') if lead.created_at else '—' }}
+        </td>
+
+        <!-- Actions -->
+        <td>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;">
+
+            <!-- 🟣 SINCIRE -->
+            <button class="btn-sincire"
+                    id="sincire-btn-{{ lead.id }}"
+                    onclick="sendSincire({{ lead.id }}, '{{ lead.full_name|replace("'","\\'")|replace('"','\\"') }}', '{{ lead.email }}')"
+                    title="Envoyer l'email d'invitation paiement">
+              <i class="fas fa-paper-plane me-1"></i>Sincire
+            </button>
+
+            <!-- WhatsApp -->
+            <a href="https://wa.me/{{ lead.whatsapp|replace(' ','')|replace('+','') }}"
+               target="_blank" class="btn-act btn-wa" title="Ouvrir WhatsApp">
+              <i class="fab fa-whatsapp"></i>
+            </a>
+
+            <!-- 💰 Paiement -->
+            <button class="btn-act btn-pay"
+                    onclick="openPayModal({{ lead.id }},'{{ lead.level_selected|replace("'","\\'") }}','{{ (lead.payment_method or '')|replace("'","\\'") }}','{{ (lead.payment_ref or '')|replace("'","\\'") }}','{{ (lead.payment_status or 'En attente')|replace("'","\\'") }}','{{ lead.amount_paid or 0 }}')"
+                    title="Enregistrer le paiement">
+              <i class="fas fa-coins"></i>
+            </button>
+
+            <!-- Supprimer -->
+            <form method="POST" action="{{ url_for('delete_lead', lead_id=lead.id) }}"
+                  onsubmit="return confirm('Supprimer définitivement ce lead ?')">
+              <button type="submit" class="btn-act btn-del" title="Supprimer">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div style="background:var(--secondary-color);border-radius:18px;padding:60px 20px;text-align:center;border:1px dashed var(--border-color);">
+  <i class="fas fa-users fa-3x mb-4" style="color:#2d3748;"></i>
+  <h5 style="color:var(--text-secondary);">Aucun prospect pour le moment</h5>
+  <p style="color:#444;">Les inscriptions de la page publique apparaîtront ici</p>
+</div>
+{% endif %}
+
+
+<!-- ════════════════════════════════
+     MODAL PAIEMENT
+     ════════════════════════════════ -->
+<div class="modal fade al-modal" id="payModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div style="font-size:1rem;font-weight:800;color:#fff;"><i class="fas fa-coins me-2" style="color:#00d4aa;"></i>Enregistrer le paiement</div>
+          <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;" id="payModalSub">—</div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="payLeadId">
+
+        <!-- Moyens de paiement dispo -->
+        <div style="background:#0d1b2a;border-radius:12px;padding:16px;margin-bottom:18px;border:1px solid var(--border-color);">
+          <div style="font-size:.72rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;font-weight:700;">Références de paiement</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:#111827;border-radius:8px;padding:10px;border-left:3px solid #ff6b00;">
+              <div style="font-size:.68rem;color:#ff6b00;font-weight:700;">Orange Money</div>
+              <div style="color:#fff;font-weight:800;letter-spacing:.5px;">695 072 659</div>
+            </div>
+            <div style="background:#111827;border-radius:8px;padding:10px;border-left:3px solid #ffd700;">
+              <div style="font-size:.68rem;color:#ffd700;font-weight:700;">MTN MoMo</div>
+              <div style="color:#fff;font-weight:800;letter-spacing:.5px;">670 695 946</div>
+            </div>
+            <div style="background:#111827;border-radius:8px;padding:10px;border-left:3px solid #009cde;">
+              <div style="font-size:.68rem;color:#009cde;font-weight:700;">PayPal</div>
+              <div style="color:#fff;font-size:.8rem;">fabrice.kengni@icloud.com</div>
+            </div>
+            <div style="background:#111827;border-radius:8px;padding:10px;border-left:3px solid #f7931a;">
+              <div style="font-size:.68rem;color:#f7931a;font-weight:700;">Crypto</div>
+              <div style="color:#fff;font-size:.8rem;">fabrice.kengni@icloud.com</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="al-label">Méthode reçue</label>
+            <select class="form-select al-input" id="payMethod">
+              <option value="">— Choisir —</option>
+              <option value="Orange Money">🟠 Orange Money</option>
+              <option value="MTN MoMo">🟡 MTN Mobile Money</option>
+              <option value="PayPal">🔵 PayPal</option>
+              <option value="Crypto">₿ Crypto</option>
+              <option value="Virement">🏦 Virement</option>
+              <option value="Espèces">💵 Espèces</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="al-label">Montant reçu (FCFA)</label>
+            <input type="number" class="form-control al-input" id="payAmount" placeholder="Ex : 50000">
+          </div>
+          <div class="col-12">
+            <label class="al-label">Référence / ID transaction</label>
+            <input type="text" class="form-control al-input" id="payRef" placeholder="Ex : TXN-1234567890">
+          </div>
+          <div class="col-12">
+            <label class="al-label">Statut du paiement</label>
+            <select class="form-select al-input" id="payStatus">
+              <option value="En attente">⏳ En attente</option>
+              <option value="Partiel">⚠️ Partiel</option>
+              <option value="Complet">✅ Complet</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" onclick="savePayment()"
+                style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:700;border:none;border-radius:8px;padding:8px 22px;font-size:.85rem;cursor:pointer;">
+          <i class="fas fa-save me-1"></i>Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     MODAL SINCIRE CONFIRM
+     ════════════════════════════════ -->
+<div class="modal fade al-modal" id="sincireModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+    <div class="modal-content">
+      <div class="modal-header" style="border-bottom-color:rgba(162,155,254,.3);">
+        <div style="font-size:1rem;font-weight:800;color:#fff;">
+          <i class="fas fa-paper-plane me-2" style="color:#a29bfe;"></i>Envoyer le Sincire
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="background:rgba(162,155,254,.08);border:1px solid rgba(162,155,254,.25);border-radius:12px;padding:16px;margin-bottom:16px;">
+          <div style="font-size:.78rem;color:#a29bfe;font-weight:700;margin-bottom:8px;"><i class="fas fa-info-circle me-1"></i>Ce qui sera envoyé</div>
+          <p style="color:#ccc;font-size:.85rem;margin:0;line-height:1.6;">
+            Un email <strong style="color:#fff;">d'invitation au paiement</strong> avec tous les détails de la formation,
+            les montants, et les <strong style="color:#fff;">4 méthodes de paiement</strong> (OM, MTN, PayPal, Crypto).
+          </p>
+        </div>
+        <div id="sincireInfo" style="background:#0d1b2a;border-radius:10px;padding:14px;font-size:.85rem;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" id="confirmSincireBtn"
+                style="background:linear-gradient(135deg,#a29bfe,#6c5ce7);color:#fff;font-weight:700;border:none;border-radius:8px;padding:8px 22px;font-size:.85rem;cursor:pointer;"
+                onclick="confirmSincire()">
+          <i class="fas fa-paper-plane me-1"></i>Envoyer maintenant
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// ════════════════════════════════════════════════════════
+// FILTER
+// ════════════════════════════════════════════════════════
+function filterLeads(status, btn) {
+  document.querySelectorAll('.al-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#leadsTableBody tr').forEach(row => {
+    row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// SINCIRE
+// ════════════════════════════════════════════════════════
+let _sincireId = null;
+
+function sendSincire(leadId, name, email) {
+  _sincireId = leadId;
+  document.getElementById('sincireInfo').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#888;font-size:.75rem;">Destinataire</span>
+        <strong style="color:#e0e0e0;">${name}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#888;font-size:.75rem;">Email</span>
+        <span style="color:#4a9eff;">${email}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#888;font-size:.75rem;">Expéditeur</span>
+        <span style="color:#a29bfe;">fabrice.kengni12@gmail.com</span>
+      </div>
+    </div>`;
+  new bootstrap.Modal(document.getElementById('sincireModal')).show();
+}
+
+function confirmSincire() {
+  if (!_sincireId) return;
+  const btn = document.getElementById('confirmSincireBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Envoi…';
+
+  fetch(`/admin/leads/${_sincireId}/sincire`, { method: 'POST', headers: {'Content-Type':'application/json'} })
+    .then(r => r.json())
+    .then(data => {
+      bootstrap.Modal.getInstance(document.getElementById('sincireModal')).hide();
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Envoyer maintenant';
+
+      if (data.success) {
+        showToast(`✅ ${data.message}`, true);
+        // Update sincire button
+        const srcBtn = document.getElementById(`sincire-btn-${_sincireId}`);
+        if (srcBtn) {
+          srcBtn.style.background = 'linear-gradient(135deg,#00d4aa,#00b894)';
+          srcBtn.innerHTML = '<i class="fas fa-check me-1"></i>Envoyé';
+        }
+        // Add sent tag under name
+        const row = document.querySelector(`tr[data-lead-id="${_sincireId}"]`);
+        if (row) {
+          const nameCell = row.querySelector('td:nth-child(2)');
+          if (nameCell && !nameCell.querySelector('.al-sent-tag')) {
+            const tag = document.createElement('span');
+            tag.className = 'al-sent-tag';
+            tag.innerHTML = `<i class="fas fa-paper-plane me-1"></i>Sincire envoyé à l'instant`;
+            nameCell.appendChild(tag);
+          }
+          // Update status badge to Contacté
+          const statusSelect = row.querySelector('select[name="status"]');
+          if (statusSelect) statusSelect.value = 'Contacté';
+        }
+      } else {
+        showToast(`❌ ${data.error || 'Échec de l\'envoi'}`, false);
+      }
+      _sincireId = null;
+    })
+    .catch(() => {
+      showToast('❌ Erreur réseau', false);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Envoyer maintenant';
+    });
+}
+
+// ════════════════════════════════════════════════════════
+// PAYMENT MODAL
+// ════════════════════════════════════════════════════════
+function openPayModal(leadId, level, method, ref, status, amount) {
+  document.getElementById('payLeadId').value   = leadId;
+  document.getElementById('payMethod').value   = method  || '';
+  document.getElementById('payRef').value      = ref     || '';
+  document.getElementById('payStatus').value   = status  || 'En attente';
+  document.getElementById('payAmount').value   = amount > 0 ? amount : '';
+  document.getElementById('payModalSub').textContent = `Lead #${leadId} — Formation : ${level}`;
+  new bootstrap.Modal(document.getElementById('payModal')).show();
+}
+
+function savePayment() {
+  const id = document.getElementById('payLeadId').value;
+  fetch(`/admin/leads/${id}/update-payment`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      payment_method: document.getElementById('payMethod').value,
+      payment_ref:    document.getElementById('payRef').value,
+      payment_status: document.getElementById('payStatus').value,
+      amount_paid:    parseFloat(document.getElementById('payAmount').value) || 0,
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      bootstrap.Modal.getInstance(document.getElementById('payModal')).hide();
+      showToast('✅ Paiement enregistré !', true);
+      setTimeout(() => location.reload(), 1200);
+    } else {
+      showToast('❌ Erreur lors de l\'enregistrement', false);
+    }
+  })
+  .catch(() => showToast('❌ Erreur réseau', false));
+}
+
+// ════════════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════════════
+function showToast(msg, ok) {
+  const t = document.createElement('div');
+  t.className = `al-toast ${ok ? 'ok' : 'err'}`;
+  t.innerHTML = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(10px)'; t.style.transition='all .3s'; setTimeout(()=>t.remove(),350); }, 4500);
+}
+</script>
+{% endblock %}

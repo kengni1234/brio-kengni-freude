@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Portfolio - Kengni Finance{% endblock %}
+{% block page_title %}Mon Portfolio{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Service Banner Top -->
+    <div class="alert" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; color: white;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-2"><i class="fas fa-briefcase"></i> Portfolio Professionnel - Analyse IA en Temps Réel</h5>
+                <p class="mb-0"><i class="fas fa-brain"></i> Recommandations personnalisées | <i class="fas fa-chart-pie"></i> Diversification optimale | <i class="fas fa-shield-alt"></i> Rapports sécurisés</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-light btn-sm" onclick="analyzePortfolio()">
+                    <i class="fas fa-robot"></i> Analyser avec l'IA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addPositionModal">
+                <i class="fas fa-plus"></i> Ajouter Position
+            </button>
+            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#uploadPortfolioImageModal">
+                <i class="fas fa-image"></i> Ajouter Capture
+            </button>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group">
+                <button class="btn btn-success-custom" onclick="exportPortfolio('excel')">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button class="btn btn-danger-custom" onclick="exportPortfolio('pdf')">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="btn btn-warning" onclick="exportPortfolio('json')">
+                    <i class="fas fa-code"></i> JSON
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card success">
+                <div class="icon"><i class="fas fa-coins"></i></div>
+                <h6>Valeur Totale</h6>
+                <h2>{{ "%.2f"|format(stats.total_value) }}€</h2>
+                <small class="text-muted">{{ "%.2f"|format(stats.total_value * 655.96) }} XAF</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card primary">
+                <div class="icon"><i class="fas fa-chart-line"></i></div>
+                <h6>P&L Total</h6>
+                <h2 class="{% if stats.total_pnl > 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ "%.2f"|format(stats.total_pnl) }}€
+                </h2>
+                <small>{{ "%.2f"|format(stats.total_pnl_percent) }}%</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card warning">
+                <div class="icon"><i class="fas fa-percentage"></i></div>
+                <h6>Performance</h6>
+                <h2>{{ "%.2f"|format(stats.total_pnl_percent) }}%</h2>
+                <small>Depuis création</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card {% if stats.best_performer %}success{% else %}primary{% endif %}">
+                <div class="icon"><i class="fas fa-trophy"></i></div>
+                <h6>Meilleur Asset</h6>
+                <h2>{{ stats.best_performer.symbol if stats.best_performer else 'N/A' }}</h2>
+                <small>Top performer</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Analysis Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="custom-table p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="fas fa-brain"></i> Analyse IA du Portfolio</h5>
+                    <button class="btn btn-sm btn-primary-custom" onclick="refreshAIAnalysis()">
+                        <i class="fas fa-sync"></i> Rafraîchir
+                    </button>
+                </div>
+                <div id="aiAnalysisContent">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Cliquez sur "Analyser avec l'IA" pour obtenir des recommandations personnalisées
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Images Gallery -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="custom-table p-4">
+                <h5 class="mb-3"><i class="fas fa-images"></i> Galerie de Captures</h5>
+                <div class="row g-3" id="portfolioGallery">
+                    {% for img in portfolio_images %}
+                    <div class="col-md-3">
+                        <div class="card" style="background: var(--secondary-color);">
+                            <img src="{{ img.path }}" class="card-img-top" alt="Portfolio capture" style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <p class="card-text small">{{ img.date }}</p>
+                                <button class="btn btn-sm btn-danger-custom" onclick="deleteImage({{ img.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Positions Table -->
+    <div class="custom-table">
+        <div class="p-4">
+            <h5 class="mb-4"><i class="fas fa-list"></i> Positions Détaillées</h5>
+        </div>
+        <table class="table" id="portfolioTable">
+            <thead>
+                <tr>
+                    <th>Symbole</th>
+                    <th>Quantité</th>
+                    <th>Prix Moyen</th>
+                    <th>Prix Actuel</th>
+                    <th>Valeur Marché</th>
+                    <th>P&L (EUR)</th>
+                    <th>P&L (XAF)</th>
+                    <th>P&L %</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pos in positions %}
+                <tr>
+                    <td><strong>{{ pos.symbol }}</strong></td>
+                    <td>{{ pos.quantity }}</td>
+                    <td>{{ "%.2f"|format(pos.avg_price) }}€</td>
+                    <td>{{ "%.2f"|format(pos.current_price) }}€</td>
+                    <td>{{ "%.2f"|format(pos.market_value) }}€</td>
+                    <td class="{% if pos.pnl > 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "%.2f"|format(pos.pnl) }}€
+                    </td>
+                    <td class="{% if pos.pnl > 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "%.2f"|format(pos.pnl * 655.96) }} XAF
+                    </td>
+                    <td class="{% if pos.pnl_percent > 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "%.2f"|format(pos.pnl_percent) }}%
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewPositionDetails({{ pos.id }})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Service Banner Bottom -->
+    <div class="alert alert-dark mt-4" style="background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); border: none; color: white;">
+        <div class="text-center">
+            <h6 class="mb-3"><i class="fas fa-certificate"></i> Rapports Certifiés Kengni Finance</h6>
+            <p class="mb-3">Tous vos exports sont signés avec notre filigrane officiel pour garantir leur authenticité</p>
+            <div class="btn-group">
+                <button class="btn btn-outline-light" onclick="exportPortfolio('pdf')">
+                    <i class="fas fa-file-pdf"></i> Rapport PDF
+                </button>
+                <button class="btn btn-outline-light" onclick="exportPortfolio('excel')">
+                    <i class="fas fa-file-excel"></i> Rapport Excel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Position Modal -->
+<div class="modal fade" id="addPositionModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background: var(--secondary-color); color: var(--text-primary);">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajouter une Position au Portfolio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPositionForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Symbole / Ticker</label>
+                        <input type="text" class="form-control" name="symbol" required placeholder="Ex: AAPL, BTC, EURUSD">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Quantité</label>
+                            <input type="number" step="0.001" class="form-control" name="quantity" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Prix d'Achat Moyen</label>
+                            <input type="number" step="0.01" class="form-control" name="avg_price" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Devise</label>
+                        <select class="form-control" name="currency">
+                            <option value="EUR" selected>EUR - Euro</option>
+                            <option value="USD">USD - Dollar</option>
+                            <option value="XAF">XAF - Franc CFA</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date d'Achat</label>
+                        <input type="date" class="form-control" name="purchase_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Capture / Confirmation (optionnel)</label>
+                        <input type="file" class="form-control" name="position_image" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Raison de l'achat, stratégie..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom w-100">Ajouter la Position</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Portfolio Image Modal -->
+<div class="modal fade" id="uploadPortfolioImageModal">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: var(--secondary-color); color: var(--text-primary);">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajouter une Capture du Portfolio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadImageForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Image</label>
+                        <input type="file" class="form-control" name="portfolio_image" accept="image/*" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-control" name="description" placeholder="Ex: Portfolio état Février 2026">
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom w-100">Télécharger</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addPositionForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const response = await fetch('/api/add-position', {
+        method: 'POST',
+        body: formData
+    });
+    if (response.ok) {
+        location.reload();
+    } else {
+        alert('Erreur lors de l\'ajout de la position');
+    }
+});
+
+document.getElementById('uploadImageForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const response = await fetch('/api/upload-portfolio-image', {
+        method: 'POST',
+        body: formData
+    });
+    if (response.ok) {
+        location.reload();
+    } else {
+        alert('Erreur lors du téléchargement');
+    }
+});
+
+function exportPortfolio(format) {
+    window.location.href = `/api/export-portfolio?format=${format}`;
+}
+
+function viewPositionDetails(id) {
+    window.location.href = `/position/${id}`;
+}
+
+function deleteImage(id) {
+    if (confirm('Supprimer cette image ?')) {
+        fetch(`/api/delete-portfolio-image/${id}`, { method: 'DELETE' })
+            .then(() => location.reload());
+    }
+}
+
+async function analyzePortfolio() {
+    const response = await fetch('/api/analyze-portfolio');
+    const data = await response.json();
+    document.getElementById('aiAnalysisContent').innerHTML = `
+        <div class="alert alert-success">
+            <h6><i class="fas fa-check-circle"></i> Analyse Complétée</h6>
+            <p><strong>Recommandations:</strong> ${data.recommendations}</p>
+            <p><strong>Risque:</strong> ${data.risk_level}</p>
+            <p><strong>Diversification:</strong> ${data.diversification_score}/10</p>
+        </div>
+    `;
+}
+
+function refreshAIAnalysis() {
+    analyzePortfolio();
+}
+</script>
+{% endblock %}

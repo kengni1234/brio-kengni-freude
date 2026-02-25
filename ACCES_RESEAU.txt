@@ -1,0 +1,42 @@
+╔══════════════════════════════════════════════════╗
+║    KENGNI FINANCE — ACCÈS POINT D'ACCÈS MOBILE   ║
+╚══════════════════════════════════════════════════╝
+
+URL D'ACCÈS: http://192.168.1.144:5001
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 ANDROID (Chrome/Firefox):
+   1. Connectez-vous au hotspot du PC
+   2. Ouvrez Chrome
+   3. Tapez: http://192.168.1.144:5001
+   OU: Scannez le QR code avec l'appareil photo
+
+🍎 IPHONE/IPAD (Safari):
+   1. Réglages → WiFi → Connectez au hotspot
+   2. Ouvrez Safari
+   3. Tapez: http://192.168.1.144:5001
+
+💻 WINDOWS:
+   1. Connectez au hotspot
+   2. Copiez Kengni-Finance-Windows.url → Bureau Windows
+   3. Double-clic sur le raccourci
+   OU: Ouvrez Chrome → http://192.168.1.144:5001
+
+🐧 LINUX (autre machine):
+   1. Connectez au hotspot
+   2. Firefox/Chrome → http://192.168.1.144:5001
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔐 IDENTIFIANTS:
+   Email:    fabrice.kengni@icloud.com
+   Password: kengni
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  CONDITIONS REQUISES:
+   ✓ Ce PC (Parrot OS) est le serveur
+   ✓ Tous les appareils sur LE MÊME hotspot
+   ✓ Lancer: ./setup_hotspot.sh avant utilisation
+   ✓ Ne pas éteindre ce PC pendant l'utilisation
+
+Généré: 17/02/2026 à 13:33
+IP serveur: 192.168.1.144:5001

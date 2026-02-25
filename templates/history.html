@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Historique - Kengni Finance{% endblock %}
+{% block page_title %}Historique des Transactions{% endblock %}
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1"><i class="fas fa-history"></i> Historique Complet</h4>
+            <small class="text-muted">{{ transactions|length }} transaction(s) trouvée(s)</small>
+        </div>
+        <button class="btn btn-sm btn-outline-success" onclick="exportHistory('csv')">
+            <i class="fas fa-file-csv"></i> Exporter CSV
+        </button>
+    </div>
+
+    <div class="custom-table p-3 mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Rechercher symbole, type...">
+            </div>
+            <div class="col-md-2">
+                <select id="filterType" class="form-control form-control-sm">
+                    <option value="">Tous les types</option>
+                    <option value="buy">Achat</option>
+                    <option value="sell">Vente</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-sm btn-primary-custom" onclick="filterTable()"><i class="fas fa-search"></i> Filtrer</button>
+                <button class="btn btn-sm btn-secondary ms-1" onclick="resetFilter()"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-table">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="historyTable">
+                <thead style="background: rgba(0,212,170,0.1);">
+                    <tr>
+                        <th><i class="fas fa-calendar"></i> Date</th>
+                        <th><i class="fas fa-tag"></i> Symbole</th>
+                        <th><i class="fas fa-exchange-alt"></i> Type</th>
+                        <th><i class="fas fa-boxes"></i> Quantité</th>
+                        <th><i class="fas fa-euro-sign"></i> Prix</th>
+                        <th><i class="fas fa-coins"></i> Montant</th>
+                        <th><i class="fas fa-percent"></i> Frais</th>
+                        <th><i class="fas fa-chess"></i> Stratégie</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    {% if transactions %}
+                        {% for t in transactions %}
+                        <tr class="history-row">
+                            <td><small>{{ t.created_at[:10] if t.created_at else 'N/A' }}</small></td>
+                            <td><strong style="color:#00d4aa;">{{ t.symbol or 'N/A' }}</strong></td>
+                            <td>
+                                <span class="status-badge {% if t.type == 'buy' %}success{% else %}danger{% endif %}">
+                                    {% if t.type == 'buy' %}📈 Achat{% else %}📉 Vente{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ "%.4f"|format(t.quantity|float) if t.quantity else '0' }}</td>
+                            <td>{{ "%.2f"|format(t.price|float) if t.price else '0' }} €</td>
+                            <td class="{% if t.amount and t.amount|float > 0 %}text-success{% else %}text-danger{% endif %}">
+                                <strong>{{ "%.2f"|format(t.amount|float) if t.amount else '0' }} €</strong>
+                            </td>
+                            <td>{{ "%.2f"|format(t.fees|float) if t.fees else '0' }} €</td>
+                            <td><small class="text-muted">{{ t.strategy or '-' }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div style="color:#666;">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <h5>Aucune transaction trouvée</h5>
+                                    <p class="text-muted">Exécutez des trades dans la page Trading</p>
+                                    <a href="/trading" class="btn btn-primary-custom btn-sm mt-2">
+                                        <i class="fas fa-chart-line"></i> Aller au Trading
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if transactions %}
+    <div class="row g-3 mt-3">
+        <div class="col-md-3">
+            <div class="stat-card primary p-3 text-center">
+                <h6 class="text-muted">Total Trades</h6>
+                <h3>{{ transactions|length }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card success p-3 text-center">
+                <h6 class="text-muted">Achats</h6>
+                <h3>{{ transactions|selectattr('type','equalto','buy')|list|length }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card warning p-3 text-center">
+                <h6 class="text-muted">Ventes</h6>
+                <h3>{{ transactions|selectattr('type','equalto','sell')|list|length }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card danger p-3 text-center">
+                <h6 class="text-muted">Symboles Uniques</h6>
+                <h3>{{ transactions|map(attribute='symbol')|unique|list|length }}</h3>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function filterTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const typeFilter = document.getElementById('filterType').value.toLowerCase();
+    document.querySelectorAll('.history-row').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const typeCell = row.cells[2]?.textContent.toLowerCase() || '';
+        const ok = (!search || text.includes(search)) && (!typeFilter || typeCell.includes(typeFilter));
+        row.style.display = ok ? '' : 'none';
+    });
+}
+function resetFilter() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterType').value = '';
+    document.querySelectorAll('.history-row').forEach(r => r.style.display = '');
+}
+function exportHistory(format) { window.location.href = `/api/export-history?format=${format}`; }
+document.getElementById('searchInput').addEventListener('keyup', filterTable);
+</script>
+{% endblock %}

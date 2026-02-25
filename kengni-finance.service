@@ -1,0 +1,16 @@
+[Unit]
+Description=Kengni Finance - Application de gestion financière et trading
+After=network.target
+
+[Service]
+Type=simple
+User=VOTRE_NOM_UTILISATEUR
+WorkingDirectory=/chemin/vers/votre/app
+ExecStart=/usr/bin/python3 /chemin/vers/votre/app/app.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

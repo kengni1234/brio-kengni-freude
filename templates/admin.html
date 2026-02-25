@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration — Kengni Finance</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--bg:#0f1117;--surface:#1a1d27;--card:#21263a;--border:#2e3448;--accent:#00d4aa;--accent2:#7c6aff;--danger:#ff4d6a;--warning:#ffb93a;--success:#00c878;--text:#e8ecf1;--muted:#6b7280}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .header{background:linear-gradient(135deg,#0a0e1a,#1a1d27);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+        .hb{display:flex;align-items:center;gap:.75rem;font-size:1.15rem;font-weight:700;color:var(--accent)}
+        .hb span{color:var(--text)}.hr{display:flex;align-items:center;gap:1rem}
+        .badge{background:var(--accent2);color:#fff;font-size:.7rem;font-weight:700;padding:.25rem .6rem;border-radius:20px;text-transform:uppercase}
+        .back{background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:.45rem 1rem;border-radius:8px;text-decoration:none;font-size:.85rem;transition:.2s}
+        .back:hover{color:var(--text);border-color:var(--accent)}
+        .container{max-width:1300px;margin:0 auto;padding:2rem}
+        .secret-banner{background:rgba(255,185,58,.07);border:1px solid rgba(255,185,58,.25);border-radius:10px;padding:.75rem 1.25rem;font-size:.83rem;color:var(--warning);margin-bottom:1.5rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+        .secret-url{font-family:monospace;background:rgba(0,0,0,.3);padding:.2rem .5rem;border-radius:4px;cursor:pointer;user-select:all}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem}
+        .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center}
+        .sn{font-size:2rem;font-weight:800;color:var(--accent);line-height:1}.sl{font-size:.8rem;color:var(--muted);margin-top:.35rem}
+        .roles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;margin-bottom:2rem}
+        .role-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;font-size:.82rem}
+        .rn{font-weight:700;font-size:.88rem;margin-bottom:.5rem}
+        .perm{color:var(--muted);display:flex;align-items:center;gap:.4rem;margin:.15rem 0}
+        .ok{color:var(--success)}.no{color:var(--danger)}
+        .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+        .st{font-size:1.1rem;font-weight:700}
+        .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:.2s}
+        .btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00bfa3}
+        .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#e0364f}
+        .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
+        .btn-sm{padding:.35rem .7rem;font-size:.78rem}
+        .tw{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+        .tb{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+        .si{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;outline:none;width:220px;transition:.2s}
+        .si:focus{border-color:var(--accent)}
+        .fs{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;outline:none;cursor:pointer}
+        table{width:100%;border-collapse:collapse}
+        thead th{background:var(--surface);padding:.9rem 1.25rem;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
+        tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+        tbody tr:last-child{border-bottom:none}
+        tbody tr:hover{background:rgba(255,255,255,.025)}
+        td{padding:.85rem 1.25rem;font-size:.88rem;vertical-align:middle}
+        .tda{display:flex;gap:.4rem;flex-wrap:wrap}
+        .chip{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase}
+        .chip-admin{background:rgba(124,106,255,.2);color:var(--accent2);border:1px solid var(--accent2)}
+        .chip-superadmin{background:rgba(255,185,58,.15);color:var(--warning);border:1px solid var(--warning)}
+        .chip-editor{background:rgba(0,212,170,.15);color:var(--accent);border:1px solid var(--accent)}
+        .chip-viewer,.chip-user{background:rgba(107,114,128,.1);color:var(--muted);border:1px solid #3e4355}
+        .chip-active{background:rgba(0,200,120,.15);color:var(--success)}
+        .chip-inactive{background:rgba(255,77,106,.15);color:var(--danger)}
+        .chip-suspended{background:rgba(255,185,58,.15);color:var(--warning)}
+        .mb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+        .mb.open{display:flex}
+        .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:460px;animation:su .2s ease}
+        @keyframes su{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+        .mt{font-size:1.1rem;font-weight:700;margin-bottom:1.25rem}
+        .fg{margin-bottom:1rem}
+        .fg label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.35rem}
+        .fc{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:8px;font-size:.9rem;outline:none;transition:.2s}
+        .fc:focus{border-color:var(--accent)}
+        .fh{font-size:.74rem;color:var(--muted);margin-top:.3rem}
+        .ma{display:flex;gap:.75rem;margin-top:1.5rem;justify-content:flex-end}
+        .tc{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem}
+        .toast{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);color:var(--text);padding:.75rem 1.25rem;border-radius:10px;font-size:.875rem;min-width:260px;animation:ti .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+        .toast.error{border-left-color:var(--danger)}.toast.warning{border-left-color:var(--warning)}
+        @keyframes ti{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+        @media(max-width:768px){.container{padding:1rem}.header{padding:0 1rem}table{font-size:.8rem}td,th{padding:.7rem .8rem}.tda{flex-direction:column}}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="hb">🛡️ <span>Kengni Finance</span> — Admin</div>
+    <div class="hr">
+        <span class="badge">{{ current_role }}</span>
+        <a href="/" class="back">← App</a>
+    </div>
+</div>
+<div class="container">
+    <div class="secret-banner">
+        🔒 Votre URL secrète :
+        <span class="secret-url" onclick="copyToken()" title="Cliquer pour copier">http://localhost:5001/{{ token }}</span>
+        — Ne partagez jamais ce lien
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="sn">{{ stats.total_users }}</div><div class="sl">Utilisateurs</div></div>
+        <div class="stat-card"><div class="sn">{{ stats.active_users }}</div><div class="sl">Actifs</div></div>
+        <div class="stat-card"><div class="sn">{{ stats.admins }}</div><div class="sl">Admins</div></div>
+        <div class="stat-card"><div class="sn">{{ stats.total_transactions }}</div><div class="sl">Transactions</div></div>
+    </div>
+    <div class="sh" style="margin-bottom:.75rem"><div class="st">📋 Niveaux d'accès</div></div>
+    <div class="roles-grid">
+        <div class="role-card"><div class="rn" style="color:var(--muted)">👁️ viewer</div><div class="perm"><span class="ok">✓</span> Consulter</div><div class="perm"><span class="no">✗</span> Modifier</div><div class="perm"><span class="no">✗</span> Supprimer</div></div>
+        <div class="role-card"><div class="rn">👤 user</div><div class="perm"><span class="ok">✓</span> Consulter</div><div class="perm"><span class="ok">✓</span> Ajouter</div><div class="perm"><span class="no">✗</span> Supprimer</div></div>
+        <div class="role-card"><div class="rn" style="color:var(--accent)">✏️ editor</div><div class="perm"><span class="ok">✓</span> Consulter</div><div class="perm"><span class="ok">✓</span> Ajouter / modifier</div><div class="perm"><span class="no">✗</span> Supprimer</div></div>
+        <div class="role-card"><div class="rn" style="color:var(--accent2)">🛡️ admin (vous)</div><div class="perm"><span class="ok">✓</span> Accès total</div><div class="perm"><span class="ok">✓</span> Supprimer tout</div><div class="perm"><span class="ok">✓</span> Gérer les comptes</div></div>
+    </div>
+    <div class="sh">
+        <div class="st">👥 Comptes utilisateurs</div>
+        <button class="btn btn-primary" onclick="openModal('create')">+ Nouveau compte</button>
+    </div>
+    <div class="tw">
+        <div class="tb">
+            <input class="si" id="searchInput" type="text" placeholder="🔍 Rechercher…" oninput="filterTable()">
+            <select class="fs" id="filterRole" onchange="filterTable()">
+                <option value="">Tous les rôles</option>
+                <option>admin</option><option>editor</option><option>user</option><option>viewer</option>
+            </select>
+            <select class="fs" id="filterStatus" onchange="filterTable()">
+                <option value="">Tous les statuts</option>
+                <option>active</option><option>inactive</option><option>suspended</option>
+            </select>
+        </div>
+        {% if users %}
+        <table id="usersTable">
+            <thead><tr><th>#</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Créé</th><th>Dernière connexion</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for u in users %}
+            <tr data-role="{{ u.role }}" data-status="{{ u.status }}">
+                <td style="color:var(--muted)">{{ u.id }}</td>
+                <td><strong>{{ u.username }}</strong></td>
+                <td style="color:var(--muted)">{{ u.email }}</td>
+                <td><span class="chip chip-{{ u.role }}">{{ u.role }}</span></td>
+                <td><span class="chip chip-{{ u.status }}">{{ u.status }}</span></td>
+                <td style="color:var(--muted);font-size:.78rem">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+                <td style="color:var(--muted);font-size:.78rem">{{ u.last_login[:16].replace('T',' ') if u.last_login else 'jamais' }}</td>
+                <td><div class="tda">
+                    <button class="btn btn-ghost btn-sm" title="Modifier" onclick="openEditModal({{ u.id }},'{{ u.role }}','{{ u.status }}','{{ u.username }}')">✏️</button>
+                    <button class="btn btn-ghost btn-sm" title="Réinitialiser MDP" onclick="openResetModal({{ u.id }},'{{ u.username }}')">🔑</button>
+                    <button class="btn btn-danger btn-sm" title="Supprimer" onclick="confirmDelete({{ u.id }},'{{ u.username }}')">🗑️</button>
+                </div></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--muted)">Aucun utilisateur</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- MODALS -->
+<div class="mb" id="modalCreate"><div class="modal">
+    <div class="mt">➕ Créer un compte</div>
+    <div class="fg"><label>Nom *</label><input class="fc" id="newUsername" type="text" placeholder="ex: Pierre"></div>
+    <div class="fg"><label>Email *</label><input class="fc" id="newEmail" type="email" placeholder="pierre@email.com"></div>
+    <div class="fg"><label>Mot de passe *</label><input class="fc" id="newPassword" type="password" placeholder="Min. 6 caractères"></div>
+    <div class="fg"><label>Niveau d'accès</label>
+        <select class="fc" id="newRole">
+            <option value="viewer">👁️ viewer — Lecture seule</option>
+            <option value="user" selected>👤 user — Peut ajouter</option>
+            <option value="editor">✏️ editor — Peut ajouter et modifier</option>
+            {% if current_role == 'superadmin' %}<option value="admin">🛡️ admin — Accès complet</option>{% endif %}
+        </select>
+        <div class="fh">💡 Seul l'admin peut supprimer des données.</div>
+    </div>
+    <div class="fg"><label>Statut</label>
+        <select class="fc" id="newStatus"><option value="active">✅ Actif</option><option value="inactive">⛔ Inactif</option><option value="suspended">⚠️ Suspendu</option></select>
+    </div>
+    <div class="ma"><button class="btn btn-ghost" onclick="closeModal('create')">Annuler</button><button class="btn btn-primary" onclick="createUser()">Créer</button></div>
+</div></div>
+
+<div class="mb" id="modalEdit"><div class="modal">
+    <div class="mt">✏️ Modifier — <span id="editName" style="color:var(--accent)"></span></div>
+    <input type="hidden" id="editUserId">
+    <div class="fg"><label>Niveau d'accès</label>
+        <select class="fc" id="editRole">
+            <option value="viewer">👁️ viewer</option><option value="user">👤 user</option>
+            <option value="editor">✏️ editor</option>
+            {% if current_role == 'superadmin' %}<option value="admin">🛡️ admin</option>{% endif %}
+        </select></div>
+    <div class="fg"><label>Statut</label>
+        <select class="fc" id="editStatus"><option value="active">✅ Actif</option><option value="inactive">⛔ Inactif</option><option value="suspended">⚠️ Suspendu</option></select></div>
+    <div class="ma"><button class="btn btn-ghost" onclick="closeModal('edit')">Annuler</button><button class="btn btn-primary" onclick="updateUser()">Enregistrer</button></div>
+</div></div>
+
+<div class="mb" id="modalReset"><div class="modal">
+    <div class="mt">🔑 Nouveau MDP pour <span id="resetName" style="color:var(--accent)"></span></div>
+    <input type="hidden" id="resetUserId">
+    <div class="fg"><label>Nouveau mot de passe *</label><input class="fc" id="resetPassword" type="password" placeholder="Min. 6 caractères"></div>
+    <div class="ma"><button class="btn btn-ghost" onclick="closeModal('reset')">Annuler</button><button class="btn btn-primary" onclick="resetPassword()">Réinitialiser</button></div>
+</div></div>
+
+<div class="mb" id="modalDelete"><div class="modal">
+    <div class="mt" style="color:var(--danger)">⚠️ Supprimer ce compte ?</div>
+    <input type="hidden" id="deleteUserId">
+    <p style="color:var(--muted);margin:.5rem 0 1.5rem">Supprimer définitivement <strong id="deleteName" style="color:var(--text)"></strong> ? Action <strong>irréversible</strong>.</p>
+    <div class="ma"><button class="btn btn-ghost" onclick="closeModal('delete')">Annuler</button><button class="btn btn-danger" onclick="deleteUser()">Supprimer</button></div>
+</div></div>
+
+<div class="tc" id="toasts"></div>
+
+<script>
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function openModal(t){document.getElementById('modal'+cap(t)).classList.add('open')}
+function closeModal(t){document.getElementById('modal'+cap(t)).classList.remove('open')}
+document.querySelectorAll('.mb').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
+function openEditModal(id,role,status,name){document.getElementById('editUserId').value=id;document.getElementById('editName').textContent=name;document.getElementById('editRole').value=role;document.getElementById('editStatus').value=status;openModal('edit')}
+function openResetModal(id,name){document.getElementById('resetUserId').value=id;document.getElementById('resetName').textContent=name;document.getElementById('resetPassword').value='';openModal('reset')}
+function confirmDelete(id,name){document.getElementById('deleteUserId').value=id;document.getElementById('deleteName').textContent=name;openModal('delete')}
+function toast(msg,type='success'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast'+(type==='error'?' error':type==='warning'?' warning':'');t.textContent=(type==='error'?'❌ ':type==='warning'?'⚠️ ':'✅ ')+msg;c.appendChild(t);setTimeout(()=>t.remove(),4000)}
+async function api(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return r.json()}
+async function createUser(){const u=document.getElementById('newUsername').value.trim(),e=document.getElementById('newEmail').value.trim(),p=document.getElementById('newPassword').value.trim(),r=document.getElementById('newRole').value,s=document.getElementById('newStatus').value;if(!u||!e||!p){toast('Remplissez tous les champs','warning');return}const res=await api('/admin/create-user',{username:u,email:e,password:p,role:r,status:s});if(res.success){toast(res.message);closeModal('create');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
+async function updateUser(){const id=document.getElementById('editUserId').value,r=document.getElementById('editRole').value,s=document.getElementById('editStatus').value;const res=await api(`/admin/update-user/${id}`,{role:r,status:s});if(res.success){toast(res.message);closeModal('edit');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
+async function resetPassword(){const id=document.getElementById('resetUserId').value,p=document.getElementById('resetPassword').value.trim();if(p.length<6){toast('Mot de passe trop court','warning');return}const res=await api(`/admin/reset-password/${id}`,{password:p});if(res.success){toast(res.message);closeModal('reset')}else toast(res.message,'error')}
+async function deleteUser(){const id=document.getElementById('deleteUserId').value;const res=await api(`/admin/delete-user/${id}`,{});if(res.success){toast(res.message);closeModal('delete');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
+function filterTable(){const q=document.getElementById('searchInput').value.toLowerCase(),r=document.getElementById('filterRole').value,s=document.getElementById('filterStatus').value;document.querySelectorAll('#usersTable tbody tr').forEach(row=>{const m=(!q||row.textContent.toLowerCase().includes(q))&&(!r||row.dataset.role===r)&&(!s||row.dataset.status===s);row.style.display=m?'':'none'})}
+function copyToken(){navigator.clipboard.writeText('http://localhost:5001/{{ token }}');toast('URL secrète copiée !')}
+</script>
+</body></html>

@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% block title %}Rapports - Kengni Finance{% endblock %}
+{% block page_title %}Centre de Rapports Professionnels{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Service Banner Top -->
+    <div class="alert" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; color: white; margin-bottom: 2rem;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-2"><i class="fas fa-file-alt"></i> Rapports Certifiés avec Filigrane Kengni Finance</h5>
+                <p class="mb-0"><i class="fas fa-shield-alt"></i> Documents officiels | <i class="fas fa-stamp"></i> Filigrane de sécurité | <i class="fas fa-download"></i> Multi-formats</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#generateReportModal">
+                    <i class="fas fa-plus"></i> Nouveau Rapport
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card primary">
+                <div class="icon"><i class="fas fa-file-pdf"></i></div>
+                <h6>Rapports Générés</h6>
+                <h2>{{ reports|length }}</h2>
+                <small>Au total</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card success">
+                <div class="icon"><i class="fas fa-chart-line"></i></div>
+                <h6>Dernier Rapport</h6>
+                <h2>{% if reports %}{{ reports[0].created_at[:10] }}{% else %}N/A{% endif %}</h2>
+                <small>Date</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card warning">
+                <div class="icon"><i class="fas fa-download"></i></div>
+                <h6>Formats Disponibles</h6>
+                <h2>7</h2>
+                <small>PDF, Excel, Word...</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card info">
+                <div class="icon"><i class="fas fa-robot"></i></div>
+                <h6>Analyse IA</h6>
+                <h2>Activée</h2>
+                <small>Recommandations incluses</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports List -->
+    <div class="custom-table">
+        <div class="p-4">
+            <h5 class="mb-4"><i class="fas fa-history"></i> Historique des Rapports</h5>
+        </div>
+        
+        {% if reports %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Titre</th>
+                    <th>Type</th>
+                    <th>Période</th>
+                    <th>Format</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.created_at[:19] }}</td>
+                    <td><strong>{{ report.title }}</strong></td>
+                    <td>
+                        <span class="status-badge 
+                            {% if report.report_type == 'financial' %}success
+                            {% elif report.report_type == 'portfolio' %}primary
+                            {% else %}info{% endif %}">
+                            {{ report.report_type }}
+                        </span>
+                    </td>
+                    <td>{{ report.period_start }} → {{ report.period_end }}</td>
+                    <td>
+                        <span class="status-badge warning">{{ report.format|default('PDF')|upper }}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge success">
+                            <i class="fas fa-check-circle"></i> Généré
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewReport({{ report.id }})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-primary-custom" onclick="downloadReport({{ report.id }})">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger-custom" onclick="deleteReport({{ report.id }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-4 text-center">
+            <i class="fas fa-file-alt" style="font-size: 4rem; color: var(--text-secondary); opacity: 0.3;"></i>
+            <p class="mt-3 text-muted">Aucun rapport généré. Cliquez sur "Nouveau Rapport" pour commencer.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Generate Report Modal -->
+<div class="modal fade" id="generateReportModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background: var(--secondary-color); color: var(--text-primary);">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-alt"></i> Générer un Nouveau Rapport</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="generateReportForm">
+                    <div class="mb-4">
+                        <label class="form-label"><i class="fas fa-clipboard-list"></i> Type de Rapport</label>
+                        <select class="form-control" name="report_type" id="reportType" required>
+                            <option value="financial">📊 Rapport Financier</option>
+                            <option value="portfolio">💼 Rapport Portfolio</option>
+                            <option value="trading">📈 Rapport Trading</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar"></i> Période</label>
+                            <select class="form-control" name="period" id="period" onchange="updateDateRange()">
+                                <option value="monthly">📅 Mensuel</option>
+                                <option value="quarterly">📆 Trimestriel</option>
+                                <option value="yearly">📊 Annuel</option>
+                                <option value="custom">🔧 Personnalisé</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-file-export"></i> Format d'Export</label>
+                            <select class="form-control" name="format" required>
+                                <option value="pdf">📄 PDF (avec filigrane)</option>
+                                <option value="excel">📊 Excel (.xlsx)</option>
+                                <option value="word">📝 Word (.docx)</option>
+                                <option value="csv">📋 CSV</option>
+                                <option value="json">💾 JSON</option>
+                                <option value="html">🌐 HTML</option>
+                                <option value="txt">📄 Texte (.txt)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="customDateRange" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date de Début</label>
+                            <input type="date" class="form-control" name="start_date" id="startDate">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date de Fin</label>
+                            <input type="date" class="form-control" name="end_date" id="endDate">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Devise du Rapport</label>
+                        <select class="form-control" name="currency">
+                            <option value="EUR" selected>EUR (€)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="XAF">XAF (FCFA)</option>
+                            <option value="GBP">GBP (£)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-heading"></i> Titre du Rapport (optionnel)</label>
+                        <input type="text" class="form-control" name="custom_title" placeholder="Ex: Rapport Mensuel Janvier 2026">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="mb-3"><i class="fas fa-cog"></i> Options Avancées</h6>
+                        
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="include_ai" id="includeAI" checked>
+                            <label class="form-check-label" for="includeAI">
+                                <i class="fas fa-robot"></i> Inclure l'Analyse IA et Recommandations
+                            </label>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="include_charts" id="includeCharts" checked>
+                            <label class="form-check-label" for="includeCharts">
+                                <i class="fas fa-chart-pie"></i> Inclure les Graphiques
+                            </label>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="include_watermark" id="includeWatermark" checked>
+                            <label class="form-check-label" for="includeWatermark">
+                                <i class="fas fa-stamp"></i> Ajouter le Filigrane Kengni Finance
+                            </label>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="include_summary" id="includeSummary" checked>
+                            <label class="form-check-label" for="includeSummary">
+                                <i class="fas fa-list"></i> Inclure le Résumé Exécutif
+                            </label>
+                        </div>
+                        
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="include_details" id="includeDetails" checked>
+                            <label class="form-check-label" for="includeDetails">
+                                <i class="fas fa-table"></i> Inclure les Transactions Détaillées
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> <strong>Note:</strong> Tous les rapports générés incluent automatiquement le logo et le filigrane Kengni Finance pour garantir leur authenticité.
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary-custom w-100">
+                        <i class="fas fa-magic"></i> Générer le Rapport
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateDateRange() {
+    const period = document.getElementById('period').value;
+    const customRange = document.getElementById('customDateRange');
+    
+    if (period === 'custom') {
+        customRange.style.display = 'flex';
+        document.getElementById('startDate').required = true;
+        document.getElementById('endDate').required = true;
+    } else {
+        customRange.style.display = 'none';
+        document.getElementById('startDate').required = false;
+        document.getElementById('endDate').required = false;
+        
+        // Auto-set dates based on period
+        const today = new Date();
+        const endDate = today.toISOString().split('T')[0];
+        let startDate;
+        
+        if (period === 'monthly') {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        } else if (period === 'quarterly') {
+            const quarter = Math.floor(today.getMonth() / 3);
+            startDate = new Date(today.getFullYear(), quarter * 3, 1).toISOString().split('T')[0];
+        } else if (period === 'yearly') {
+            startDate = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+        }
+        
+        document.getElementById('startDate').value = startDate;
+        document.getElementById('endDate').value = endDate;
+    }
+}
+
+document.getElementById('generateReportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    showToast('Génération du rapport en cours...', 'info');
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    // Convert checkboxes
+    data.include_ai = e.target.include_ai.checked;
+    data.include_charts = e.target.include_charts.checked;
+    data.include_watermark = e.target.include_watermark.checked;
+    data.include_summary = e.target.include_summary.checked;
+    data.include_details = e.target.include_details.checked;
+    
+    try {
+        const response = await fetch('/api/generate-report', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast('Rapport généré avec succès!', 'success');
+            
+            // Download the report
+            if (result.download_url) {
+                window.location.href = result.download_url;
+            }
+            
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showToast('Erreur lors de la génération', 'danger');
+        }
+    } catch (error) {
+        showToast('Erreur: ' + error.message, 'danger');
+    }
+});
+
+function viewReport(id) {
+    window.location.href = `/report/${id}`;
+}
+
+function downloadReport(id) {
+    showToast('Téléchargement en cours...', 'info');
+    window.location.href = `/api/download-report/${id}`;
+}
+
+function deleteReport(id) {
+    if (confirm('Supprimer ce rapport ?')) {
+        fetch(`/api/delete-report/${id}`, { method: 'DELETE' })
+            .then(() => {
+                showToast('Rapport supprimé', 'success');
+                location.reload();
+            });
+    }
+}
+
+// Initialize date range on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateDateRange();
+});
+</script>
+
+<!-- Certification Banner Bottom -->
+<div class="alert alert-dark mt-4" style="background: linear-gradient(135deg, #141e30 0%, #243b55 100%); border: none; color: white;">
+    <div class="text-center">
+        <h6 class="mb-3"><i class="fas fa-certificate"></i> Rapports Certifiés Kengni Finance</h6>
+        <p class="mb-3">Tous vos exports sont signés avec notre filigrane officiel pour garantir leur authenticité</p>
+        <div class="row">
+            <div class="col-md-3">
+                <i class="fas fa-shield-alt" style="font-size: 2rem; color: #00d4aa;"></i>
+                <p class="mt-2 mb-0"><strong>Sécurisé</strong></p>
+                <small>Chiffrement de bout en bout</small>
+            </div>
+            <div class="col-md-3">
+                <i class="fas fa-stamp" style="font-size: 2rem; color: #00d4aa;"></i>
+                <p class="mt-2 mb-0"><strong>Certifié</strong></p>
+                <small>Filigrane authentique</small>
+            </div>
+            <div class="col-md-3">
+                <i class="fas fa-file-signature" style="font-size: 2rem; color: #00d4aa;"></i>
+                <p class="mt-2 mb-0"><strong>Professionnel</strong></p>
+                <small>Format entreprise</small>
+            </div>
+            <div class="col-md-3">
+                <i class="fas fa-download" style="font-size: 2rem; color: #00d4aa;"></i>
+                <p class="mt-2 mb-0"><strong>Multi-format</strong></p>
+                <small>7 formats disponibles</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+{% block title %}Trading - Kengni Finance{% endblock %}
+{% block page_title %}Trading{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#tradeModal">
+                <i class="fas fa-exchange-alt"></i> Nouvelle Transaction
+            </button>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="custom-table p-4">
+                <h5 class="mb-4">Positions Ouvertes</h5>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Symbole</th>
+                            <th>Quantité</th>
+                            <th>Prix Moyen</th>
+                            <th>Prix Actuel</th>
+                            <th>P&L</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pos in positions %}
+                        <tr>
+                            <td><strong>{{ pos.symbol }}</strong></td>
+                            <td>{{ pos.quantity }}</td>
+                            <td>{{ "%.2f"|format(pos.avg_price) }}€</td>
+                            <td>{{ "%.2f"|format(pos.current_price) }}€</td>
+                            <td class="{% if (pos.current_price - pos.avg_price) * pos.quantity > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ "%.2f"|format((pos.current_price - pos.avg_price) * pos.quantity) }}€
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-danger-custom" onclick="closePosition('{{pos.symbol}}', {{pos.quantity}})">Fermer</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="custom-table p-4">
+                <h5 class="mb-4">Analyse Rapide</h5>
+                <div id="quickAnalysis">
+                    <p class="text-muted">Entrez un symbole pour analyse...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trade Modal -->
+<div class="modal fade" id="tradeModal">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: var(--secondary-color); color: var(--text-primary);">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouvelle Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="tradeForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Symbole</label>
+                        <input type="text" class="form-control" name="symbol" id="symbolInput" required placeholder="Ex: EURUSD, GBPUSD, BTCUSD">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select class="form-control" name="type" required>
+                            <option value="buy">Achat</option>
+                            <option value="sell">Vente</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Quantité / Lots</label>
+                            <input type="number" step="0.001" class="form-control" name="quantity" id="quantityInput" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Prix d'Entrée</label>
+                            <input type="number" step="0.00001" class="form-control" name="price" id="entryPrice" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Prix de Sortie (optionnel)</label>
+                            <input type="number" step="0.00001" class="form-control" name="exit_price" id="exitPrice" placeholder="Pour calcul P&L">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Pips</label>
+                            <input type="number" step="0.1" class="form-control" name="pips" id="pipsCalculated" readonly placeholder="Auto">
+                            <small class="text-muted">Calculé automatiquement</small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Devise du Compte</label>
+                        <select class="form-control" name="account_currency" id="accountCurrency" required>
+                            <option value="XAF">XAF - Franc CFA</option>
+                            <option value="USD">USD - Dollar US</option>
+                            <option value="EUR" selected>EUR - Euro</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Montant (XAF)</label>
+                            <input type="number" step="0.01" class="form-control" name="amount_xaf" id="amountXAF" placeholder="0.00">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Montant (USD)</label>
+                            <input type="number" step="0.01" class="form-control" name="amount_usd" id="amountUSD" placeholder="0.00">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Montant (EUR)</label>
+                            <input type="number" step="0.01" class="form-control" name="amount_eur" id="amountEUR" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="alert alert-info" style="background: rgba(0, 123, 255, 0.1); border: 1px solid rgba(0, 123, 255, 0.3);">
+                        <small>
+                            <strong>💱 Taux de change (estimatifs):</strong><br>
+                            1 EUR = 655.96 XAF | 1 USD = 590.00 XAF | 1 EUR = 1.11 USD
+                        </small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" name="trade_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Heure</label>
+                            <input type="time" class="form-control" name="trade_time" value="{{ now.strftime('%H:%M') if now else '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Niveau d'Énergie</label>
+                        <select class="form-control" name="energy_level">
+                            <option value="">-- Sélectionner --</option>
+                            <option value="très_bas">⚡ Très Bas</option>
+                            <option value="bas">⚡⚡ Bas</option>
+                            <option value="moyen">⚡⚡⚡ Moyen</option>
+                            <option value="bon">⚡⚡⚡⚡ Bon</option>
+                            <option value="excellent">⚡⚡⚡⚡⚡ Excellent</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Émotions</label>
+                        <select class="form-control" name="emotions" multiple size="4">
+                            <option value="calme">😌 Calme</option>
+                            <option value="confiant">😎 Confiant</option>
+                            <option value="anxieux">😰 Anxieux</option>
+                            <option value="euphorique">🤩 Euphorique</option>
+                            <option value="frustré">😤 Frustré</option>
+                            <option value="peur">😨 Peur</option>
+                            <option value="FOMO">🤯 FOMO</option>
+                            <option value="patient">🧘 Patient</option>
+                        </select>
+                        <small class="text-muted">Maintenez Ctrl/Cmd pour sélectionner plusieurs</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stratégie</label>
+                        <input type="text" class="form-control" name="strategy" placeholder="Ex: Breakout, Support/Resistance...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Capture d'Écran / Graphique</label>
+                        <input type="file" class="form-control" name="trade_image" accept="image/*" id="tradeImage">
+                        <small class="text-muted">Formats acceptés: PNG, JPG, JPEG, GIF, WEBP (Max 16MB)</small>
+                        <div id="imagePreview" class="mt-2" style="display: none;">
+                            <img id="previewImg" src="" alt="Aperçu" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes / Détails</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Raison du trade, configuration, conditions du marché..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom w-100">Exécuter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Exchange rates (can be updated from API)
+const EXCHANGE_RATES = {
+    EUR_TO_XAF: 655.96,
+    USD_TO_XAF: 590.00,
+    EUR_TO_USD: 1.11,
+    USD_TO_EUR: 0.90,
+    XAF_TO_EUR: 1 / 655.96,
+    XAF_TO_USD: 1 / 590.00
+};
+
+// Calculate pips based on symbol and prices
+function calculatePips(symbol, entryPrice, exitPrice) {
+    if (!entryPrice || !exitPrice || entryPrice <= 0 || exitPrice <= 0) return 0;
+    
+    const priceDiff = Math.abs(exitPrice - entryPrice);
+    
+    // For JPY pairs (2 decimal places)
+    if (symbol.includes('JPY')) {
+        return (priceDiff * 100).toFixed(1);
+    }
+    // For crypto and other instruments
+    else if (symbol.includes('BTC') || symbol.includes('ETH')) {
+        return (priceDiff * 10).toFixed(1);
+    }
+    // For standard forex pairs (4 decimal places)
+    else {
+        return (priceDiff * 10000).toFixed(1);
+    }
+}
+
+// Convert between currencies
+function convertCurrency(amount, fromCurrency, toCurrency) {
+    if (fromCurrency === toCurrency) return amount;
+    
+    const key = `${fromCurrency}_TO_${toCurrency}`;
+    const rate = EXCHANGE_RATES[key];
+    
+    if (rate) {
+        return amount * rate;
+    }
+    
+    // Try reverse conversion
+    const reverseKey = `${toCurrency}_TO_${fromCurrency}`;
+    const reverseRate = EXCHANGE_RATES[reverseKey];
+    if (reverseRate) {
+        return amount / reverseRate;
+    }
+    
+    return amount;
+}
+
+// Update all currency fields when one changes
+function updateCurrencyFields(changedField, changedCurrency) {
+    const amount = parseFloat(document.getElementById(changedField).value) || 0;
+    
+    if (amount <= 0) {
+        document.getElementById('amountXAF').value = '';
+        document.getElementById('amountUSD').value = '';
+        document.getElementById('amountEUR').value = '';
+        return;
+    }
+    
+    // Update XAF
+    if (changedCurrency !== 'XAF') {
+        const xafAmount = convertCurrency(amount, changedCurrency, 'XAF');
+        document.getElementById('amountXAF').value = xafAmount.toFixed(2);
+    }
+    
+    // Update USD
+    if (changedCurrency !== 'USD') {
+        const usdAmount = convertCurrency(amount, changedCurrency, 'USD');
+        document.getElementById('amountUSD').value = usdAmount.toFixed(2);
+    }
+    
+    // Update EUR
+    if (changedCurrency !== 'EUR') {
+        const eurAmount = convertCurrency(amount, changedCurrency, 'EUR');
+        document.getElementById('amountEUR').value = eurAmount.toFixed(2);
+    }
+}
+
+// Auto-calculate pips when prices change
+document.getElementById('entryPrice')?.addEventListener('input', function() {
+    const symbol = document.getElementById('symbolInput').value.toUpperCase();
+    const entryPrice = parseFloat(this.value);
+    const exitPrice = parseFloat(document.getElementById('exitPrice').value);
+    
+    if (symbol && entryPrice && exitPrice) {
+        const pips = calculatePips(symbol, entryPrice, exitPrice);
+        document.getElementById('pipsCalculated').value = pips;
+    }
+});
+
+document.getElementById('exitPrice')?.addEventListener('input', function() {
+    const symbol = document.getElementById('symbolInput').value.toUpperCase();
+    const entryPrice = parseFloat(document.getElementById('entryPrice').value);
+    const exitPrice = parseFloat(this.value);
+    
+    if (symbol && entryPrice && exitPrice) {
+        const pips = calculatePips(symbol, entryPrice, exitPrice);
+        document.getElementById('pipsCalculated').value = pips;
+    }
+});
+
+// Currency conversion listeners
+document.getElementById('amountXAF')?.addEventListener('input', function() {
+    updateCurrencyFields('amountXAF', 'XAF');
+});
+
+document.getElementById('amountUSD')?.addEventListener('input', function() {
+    updateCurrencyFields('amountUSD', 'USD');
+});
+
+document.getElementById('amountEUR')?.addEventListener('input', function() {
+    updateCurrencyFields('amountEUR', 'EUR');
+});
+
+// Image preview functionality
+document.getElementById('tradeImage')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            document.getElementById('previewImg').src = event.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+});
+
+document.getElementById('tradeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    // Get selected emotions as array
+    const emotionSelect = document.querySelector('select[name="emotions"]');
+    const selectedEmotions = Array.from(emotionSelect.selectedOptions).map(opt => opt.value);
+    formData.delete('emotions');
+    formData.append('emotions', JSON.stringify(selectedEmotions));
+    
+    const response = await fetch('/api/execute-trade', {
+        method: 'POST',
+        body: formData
+    });
+    
+    if (response.ok) {
+        location.reload();
+    } else {
+        alert('Erreur lors de l\'exécution du trade');
+    }
+});
+
+function closePosition(symbol, quantity) {
+    if (confirm(`Fermer la position ${symbol}?`)) {
+        const formData = new FormData();
+        formData.append('symbol', symbol);
+        formData.append('type', 'sell');
+        formData.append('quantity', quantity);
+        formData.append('price', 0); // Will use market price
+        
+        fetch('/api/execute-trade', {
+            method: 'POST',
+            body: formData
+        }).then(() => location.reload());
+    }
+}
+</script>
+{% endblock %}

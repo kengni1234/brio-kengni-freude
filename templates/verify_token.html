@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification 2FA — Kengni Finance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{box-sizing:border-box;}
+        body {
+            background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 50%, #0d0f1f 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Particules background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 50%, rgba(0,212,170,.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 20%, rgba(102,126,234,.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .verify-container {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 3rem 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 60px rgba(0,212,170,.04);
+            border: 1px solid rgba(0,212,170,.12);
+            max-width: 520px;
+            width: 95%;
+            position: relative;
+            z-index: 1;
+            animation: slideUp .5s cubic-bezier(.175,.885,.32,1.275);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(.97); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        .shield-wrap {
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
+        .shield-icon {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #00d4aa, #00ff88);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #0f1419;
+            animation: shieldPulse 2.5s ease-in-out infinite;
+            box-shadow: 0 0 0 0 rgba(0,212,170,.4);
+        }
+        @keyframes shieldPulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(0,212,170,.4); transform: scale(1); }
+            50%      { box-shadow: 0 0 0 18px rgba(0,212,170,0); transform: scale(1.06); }
+        }
+
+        h2 {
+            color: #e0e6f8;
+            text-align: center;
+            margin-bottom: .4rem;
+            font-weight: 800;
+            font-size: 1.55rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #a8b2d1;
+            font-size: .88rem;
+            margin-bottom: 2rem;
+        }
+        .email-tag {
+            background: rgba(0,212,170,.1);
+            border: 1px solid rgba(0,212,170,.2);
+            color: #00d4aa;
+            border-radius: 20px;
+            padding: .2rem .75rem;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+
+        /* Token affiché (démo) */
+        .token-box {
+            background: linear-gradient(135deg, rgba(0,212,170,.15), rgba(0,255,136,.08));
+            border: 1px solid rgba(0,212,170,.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .token-box::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,.04) 50%, transparent 70%);
+            animation: shimmer 3s linear infinite;
+        }
+        @keyframes shimmer { 0%{left:-100%} 100%{left:200%} }
+        .token-label {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #00d4aa;
+            margin-bottom: .6rem;
+        }
+        .token-value {
+            font-size: 2.6rem;
+            font-weight: 900;
+            letter-spacing: 12px;
+            font-family: 'Courier New', monospace;
+            color: #00d4aa;
+            text-shadow: 0 0 20px rgba(0,212,170,.4);
+            position: relative;
+            z-index: 1;
+        }
+        .token-note {
+            font-size: .74rem;
+            color: #a8b2d1;
+            margin-top: .5rem;
+            position: relative;
+            z-index: 1;
+        }
+        .copy-btn {
+            background: rgba(0,212,170,.15);
+            border: 1px solid rgba(0,212,170,.3);
+            color: #00d4aa;
+            border-radius: 8px;
+            padding: .3rem .8rem;
+            font-size: .75rem;
+            cursor: pointer;
+            margin-top: .6rem;
+            transition: all .2s;
+            position: relative;
+            z-index: 1;
+        }
+        .copy-btn:hover { background: rgba(0,212,170,.3); }
+
+        /* Input code */
+        .code-input-wrap {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+        .code-input {
+            background: rgba(255,255,255,.05);
+            border: 2px solid rgba(255,255,255,.1);
+            color: #e0e6f8;
+            padding: 1.1rem;
+            border-radius: 14px;
+            font-size: 2rem;
+            text-align: center;
+            letter-spacing: 12px;
+            font-family: 'Courier New', monospace;
+            width: 100%;
+            outline: none;
+            transition: all .3s ease;
+        }
+        .code-input:focus {
+            border-color: #00d4aa;
+            box-shadow: 0 0 0 4px rgba(0,212,170,.14);
+            background: rgba(0,212,170,.05);
+        }
+        .code-input::placeholder { color: #3a4060; letter-spacing: 8px; }
+
+        /* Bouton verify */
+        .btn-verify {
+            background: linear-gradient(135deg, #00d4aa, #00ff88);
+            border: none;
+            color: #0f1419;
+            padding: 1rem;
+            border-radius: 14px;
+            font-weight: 800;
+            width: 100%;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all .3s cubic-bezier(.175,.885,.32,1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-verify::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+            transition: left .4s;
+        }
+        .btn-verify:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,212,170,.4); }
+        .btn-verify:hover::after { left: 100%; }
+        .btn-verify:active { transform: scale(.98); }
+        .btn-verify:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Alertes */
+        .alert-custom {
+            border-radius: 12px;
+            padding: .85rem 1.1rem;
+            margin-bottom: 1.25rem;
+            font-size: .88rem;
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+        .alert-success-c { background: rgba(46,213,115,.1); border: 1px solid rgba(46,213,115,.25); color: #2ed573; }
+        .alert-danger-c  { background: rgba(255,71,87,.1);  border: 1px solid rgba(255,71,87,.25);  color: #ff4757; }
+        .alert-info-c    { background: rgba(0,212,170,.08); border: 1px solid rgba(0,212,170,.2);   color: #00d4aa; }
+
+        /* Timer */
+        .timer-bar-wrap {
+            background: rgba(255,255,255,.06);
+            border-radius: 50px;
+            height: 5px;
+            margin: .75rem 0 .4rem;
+            overflow: hidden;
+        }
+        .timer-bar {
+            height: 100%;
+            border-radius: 50px;
+            background: linear-gradient(90deg, #00d4aa, #00ff88);
+            transition: width 1s linear, background 1s ease;
+        }
+        .timer-text {
+            text-align: center;
+            font-size: .8rem;
+            color: #a8b2d1;
+        }
+
+        /* Info box */
+        .info-box {
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 12px;
+            padding: 1rem 1.1rem;
+            margin-top: 1.25rem;
+            font-size: .8rem;
+            color: #a8b2d1;
+            line-height: 1.6;
+        }
+        .info-box strong { color: #e0e6f8; }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .back-link a {
+            color: #a8b2d1;
+            text-decoration: none;
+            font-size: .85rem;
+            transition: color .2s;
+        }
+        .back-link a:hover { color: #00d4aa; }
+
+        /* Sécurité badges */
+        .security-badges {
+            display: flex;
+            justify-content: center;
+            gap: .75rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .s-badge {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            font-size: .72rem;
+            color: #5a6380;
+        }
+        .s-badge i { color: #00d4aa; }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+
+        <!-- Icône -->
+        <div class="shield-wrap">
+            <div class="shield-icon">🛡️</div>
+        </div>
+
+        <h2>Vérification 2FA</h2>
+        <div class="subtitle">
+            Authentification à deux facteurs
+            {% if email %}
+            — <span class="email-tag">{{ email }}</span>
+            {% endif %}
+        </div>
+
+        <!-- Alertes -->
+        {% if error %}
+        <div class="alert-custom alert-danger-c">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        {% if message %}
+        <div class="alert-custom alert-info-c">
+            <i class="fas fa-info-circle"></i> {{ message }}
+        </div>
+        {% endif %}
+
+        <!-- Token généré (mode démo — en production envoyé par email/SMS) -->
+        {% if token %}
+        <div class="alert-custom alert-success-c">
+            <i class="fas fa-check-circle"></i> Code généré — valable <strong>5 minutes</strong>
+        </div>
+        <div class="token-box">
+            <div class="token-label">🔑 Votre code de sécurité</div>
+            <div class="token-value" id="tokenDisplay">{{ token }}</div>
+            <div class="token-note">⚠️ Mode démo — en production, ce code est envoyé par email ou SMS</div>
+            <button class="copy-btn" onclick="copyToken('{{ token }}')">
+                <i class="fas fa-copy me-1"></i> Copier le code
+            </button>
+        </div>
+        {% endif %}
+
+        <!-- Formulaire -->
+        <form method="POST" action="{{ url_for('verify_token_page') }}{% if email %}?email={{ email }}{% endif %}" id="verifyForm">
+            <input type="hidden" name="email" value="{{ email }}">
+
+            <div class="code-input-wrap">
+                <label style="display:block;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#a8b2d1;margin-bottom:.5rem;">
+                    <i class="fas fa-key me-1"></i> Entrez le code à 6 chiffres
+                </label>
+                <input
+                    type="text"
+                    class="code-input"
+                    name="token"
+                    id="tokenInput"
+                    required
+                    maxlength="6"
+                    pattern="[0-9]{6}"
+                    placeholder="000000"
+                    autofocus
+                    autocomplete="off"
+                    inputmode="numeric"
+                    oninput="onTokenInput(this)"
+                >
+            </div>
+
+            <!-- Timer bar -->
+            <div class="timer-bar-wrap">
+                <div class="timer-bar" id="timerBar" style="width:100%;"></div>
+            </div>
+            <div class="timer-text" id="timerText">
+                <i class="fas fa-hourglass-half me-1"></i> Code valide encore <strong id="countdown">5:00</strong>
+            </div>
+
+            <div style="margin-top:1.25rem;">
+                <button type="submit" class="btn-verify" id="verifyBtn" disabled>
+                    <i class="fas fa-unlock-alt me-2"></i> Vérifier et Continuer
+                </button>
+            </div>
+        </form>
+
+        <!-- Info -->
+        <div class="info-box">
+            <strong>🔒 Sécurité Kengni Finance :</strong><br>
+            • Le code expire automatiquement après 5 minutes<br>
+            • En cas d'expiration, reconnectez-vous pour obtenir un nouveau code<br>
+            • Ne partagez jamais votre code de vérification<br>
+            • Activité suspecte ? Contactez l'administrateur
+        </div>
+
+        <!-- Badges sécurité -->
+        <div class="security-badges">
+            <span class="s-badge"><i class="fas fa-lock"></i> Chiffrement AES-256</span>
+            <span class="s-badge"><i class="fas fa-shield-alt"></i> 2FA Activé</span>
+            <span class="s-badge"><i class="fas fa-clock"></i> Token 5 min</span>
+        </div>
+
+        <div class="back-link">
+            <a href="{{ url_for('login') }}"><i class="fas fa-arrow-left me-1"></i> Retour à la connexion</a>
+        </div>
+    </div>
+
+    <script>
+    // ── Auto-activer le bouton quand 6 chiffres saisis ──
+    function onTokenInput(input) {
+        input.value = input.value.replace(/\D/g, '').slice(0, 6);
+        const btn = document.getElementById('verifyBtn');
+        btn.disabled = input.value.length !== 6;
+    }
+
+    // ── Auto-submit quand 6 chiffres ──
+    document.getElementById('tokenInput').addEventListener('input', function() {
+        if (this.value.length === 6) {
+            setTimeout(() => document.getElementById('verifyForm').submit(), 250);
+        }
+    });
+
+    // ── Copier le token ──
+    function copyToken(t) {
+        navigator.clipboard.writeText(t).then(() => {
+            document.getElementById('tokenInput').value = t;
+            onTokenInput(document.getElementById('tokenInput'));
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> Copié !';
+            setTimeout(() => btn.innerHTML = '<i class="fas fa-copy me-1"></i> Copier le code', 2000);
+        });
+    }
+
+    // ── Timer 5 minutes ──
+    let timeLeft = 300;
+    const bar = document.getElementById('timerBar');
+    const countdown = document.getElementById('countdown');
+    const timerText = document.getElementById('timerText');
+
+    const interval = setInterval(() => {
+        timeLeft--;
+        const pct = (timeLeft / 300) * 100;
+        bar.style.width = pct + '%';
+
+        if (timeLeft <= 60) {
+            bar.style.background = 'linear-gradient(90deg,#ff4757,#ff6b6b)';
+        } else if (timeLeft <= 120) {
+            bar.style.background = 'linear-gradient(90deg,#FFD700,#FFA500)';
+        }
+
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        countdown.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            bar.style.width = '0%';
+            timerText.innerHTML = '<span style="color:#ff4757"><i class="fas fa-exclamation-circle me-1"></i> Code expiré — <a href="/login" style="color:#ff4757">Reconnectez-vous</a></span>';
+            document.getElementById('verifyBtn').disabled = true;
+        }
+    }, 1000);
+
+    // ── Submit feedback ──
+    document.getElementById('verifyForm').addEventListener('submit', function() {
+        const btn = document.getElementById('verifyBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Vérification...';
+        btn.disabled = true;
+    });
+    </script>
+</body>
+</html>

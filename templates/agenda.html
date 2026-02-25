@@ -1,0 +1,735 @@
+{% extends "base.html" %}
+{% block title %}Agenda — Kengni Finance{% endblock %}
+{% block page_title %}Agenda Intelligent{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   AGENDA — Kengni Finance Design System
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --ag-trading:   #00d4aa; --ag-finance:   #4a9eff;
+  --ag-formation: #a29bfe; --ag-personnel: #fd79a8;
+  --ag-reunion:   #ffd700; --ag-revue:     #ff7675;
+}
+/* ── Hero ── */
+.ag-hero {
+  background: linear-gradient(135deg,#0d1b2a 0%,#1a2a3a 60%,#0f2a20 100%);
+  border-radius:18px; padding:28px 32px; margin-bottom:28px;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:16px;
+  border:1px solid rgba(0,212,170,.2); position:relative; overflow:hidden;
+}
+.ag-hero::before {
+  content:''; position:absolute; top:-60px; right:-60px;
+  width:200px; height:200px;
+  background:radial-gradient(circle,rgba(0,212,170,.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+.ag-hero-title {
+  font-size:1.5rem; font-weight:800;
+  background:linear-gradient(135deg,#00d4aa,#00ff88);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin:0 0 4px 0;
+}
+.ag-hero-sub { color:var(--text-secondary); font-size:.88rem; margin:0; }
+/* ── Stats Grid ── */
+.ag-stat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+.ag-stat {
+  background:var(--secondary-color); border-radius:14px; padding:18px 14px;
+  text-align:center; border:1px solid var(--border-color); transition:all .25s;
+  position:relative; overflow:hidden; cursor:default;
+}
+.ag-stat::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; background:var(--sc,#4a9eff); border-radius:0 0 14px 14px; }
+.ag-stat:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,.35); }
+.ag-stat-icon { font-size:1.5rem; margin-bottom:6px; }
+.ag-stat-val  { font-size:1.9rem; font-weight:800; line-height:1; color:var(--sc,#4a9eff); }
+.ag-stat-lbl  { font-size:.7rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+/* ── Next Event ── */
+.ag-next {
+  border-radius:14px; padding:18px 24px; margin-bottom:24px;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  border-left:5px solid var(--nc,#00d4aa);
+  background:linear-gradient(135deg,rgba(0,212,170,.09),rgba(0,212,170,.03));
+}
+.ag-pulse {
+  width:10px; height:10px; border-radius:50%; background:var(--nc,#00d4aa); flex-shrink:0;
+  animation:pulse-ag 1.8s ease-out infinite;
+}
+@keyframes pulse-ag {
+  0%   { box-shadow:0 0 0 0 rgba(0,212,170,.6); }
+  70%  { box-shadow:0 0 0 10px rgba(0,212,170,0); }
+  100% { box-shadow:0 0 0 0 rgba(0,212,170,0); }
+}
+/* ── View Tabs ── */
+.ag-tabs { display:flex; gap:4px; background:var(--accent-color); border-radius:10px; padding:4px; }
+.ag-tab {
+  padding:7px 16px; border-radius:7px; font-size:.8rem; font-weight:600;
+  border:none; background:transparent; color:var(--text-secondary); cursor:pointer; transition:all .2s;
+}
+.ag-tab.active { background:var(--secondary-color); color:var(--primary-color); }
+/* ── Filters ── */
+.ag-filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+.ag-pill {
+  padding:6px 16px; border-radius:100px; font-size:.8rem; font-weight:600;
+  border:1.5px solid var(--border-color); background:transparent;
+  color:var(--text-secondary); cursor:pointer; transition:all .2s;
+}
+.ag-pill:hover,.ag-pill.active { border-color:var(--pc,#00d4aa); color:var(--pc,#00d4aa); background:rgba(0,212,170,.07); }
+/* ── Calendar Wrapper ── */
+.ag-cal-wrap {
+  background:var(--secondary-color); border-radius:18px; padding:24px;
+  margin-bottom:24px; border:1px solid var(--border-color); box-shadow:0 4px 20px rgba(0,0,0,.2);
+}
+/* ── FullCalendar Dark ── */
+.fc { color:var(--text-primary)!important; font-family:'Inter',sans-serif; }
+.fc .fc-toolbar-title { font-size:1.1rem!important; font-weight:700!important; color:var(--text-primary)!important; }
+.fc .fc-button { background:var(--accent-color)!important; border:1px solid var(--border-color)!important; color:var(--text-secondary)!important; font-size:.78rem!important; border-radius:8px!important; padding:.38rem .9rem!important; font-weight:500!important; transition:all .2s!important; }
+.fc .fc-button:hover,.fc .fc-button-active { background:var(--primary-color)!important; color:#000!important; border-color:var(--primary-color)!important; }
+.fc .fc-daygrid-day { background:transparent!important; }
+.fc .fc-daygrid-day:hover { background:rgba(0,212,170,.04)!important; }
+.fc .fc-daygrid-day-number { color:var(--text-secondary)!important; font-size:.78rem; padding:6px!important; }
+.fc .fc-day-today .fc-daygrid-day-number { color:var(--primary-color)!important; font-weight:800; }
+.fc .fc-day-today { background:rgba(0,212,170,.06)!important; }
+.fc .fc-col-header-cell-cushion { color:var(--text-secondary)!important; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+.fc-theme-standard td,.fc-theme-standard th { border-color:var(--border-color)!important; }
+.fc .fc-timegrid-slot-label { color:#555!important; font-size:.72rem; }
+.fc .fc-timegrid-now-indicator-line { border-color:var(--primary-color)!important; }
+.fc .fc-list-event:hover td { background:rgba(0,212,170,.05)!important; }
+.fc .fc-list-day-cushion { background:var(--accent-color)!important; }
+.fc .fc-list-event-title a { color:var(--text-primary)!important; }
+.fc .fc-scrollgrid { border-color:var(--border-color)!important; }
+.fc .fc-event { border-radius:5px!important; font-size:.75rem!important; font-weight:600!important; cursor:pointer!important; }
+/* ── Event Cards ── */
+.ag-event-card {
+  background:var(--secondary-color); border-radius:14px; padding:15px 20px; margin-bottom:10px;
+  border:1px solid var(--border-color); border-left:5px solid var(--ec,#4a9eff);
+  display:flex; align-items:center; gap:14px; transition:all .25s; cursor:pointer;
+}
+.ag-event-card:hover { transform:translateX(4px); box-shadow:0 6px 20px rgba(0,0,0,.25); }
+.ag-ev-date { min-width:54px; text-align:center; padding:7px 4px; border-radius:10px; background:rgba(255,255,255,.04); flex-shrink:0; }
+.ag-ev-day  { font-size:.68rem; color:var(--text-secondary); text-transform:uppercase; }
+.ag-ev-time { font-size:1rem; font-weight:700; }
+.ag-ev-title{ font-weight:700; color:var(--text-primary); margin-bottom:2px; font-size:.95rem; }
+.ag-ev-meta { font-size:.77rem; color:var(--text-secondary); }
+.ag-ev-actions { display:flex; gap:6px; align-items:center; margin-left:auto; flex-shrink:0; }
+.ag-badge-pill { padding:3px 10px; border-radius:100px; font-size:.7rem; font-weight:700; }
+/* ── Section sep ── */
+.ag-sep {
+  font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
+  color:var(--text-secondary); margin:18px 0 12px 0; display:flex; align-items:center; gap:8px;
+}
+.ag-sep::after { content:''; flex:1; height:1px; background:var(--border-color); }
+/* ── Empty ── */
+.ag-empty {
+  background:var(--secondary-color); border-radius:18px; padding:60px 20px;
+  text-align:center; border:1px dashed var(--border-color);
+}
+/* ── Modal ── */
+.ag-modal-content { background:#111827; border:1px solid var(--border-color); border-radius:18px; overflow:hidden; }
+.ag-modal-header { background:linear-gradient(135deg,#0d1b2a,#1a2a3a); border-bottom:1px solid var(--border-color); padding:20px 26px; }
+.ag-modal-body   { padding:22px 26px; }
+.ag-modal-footer { background:#0d1b2a; border-top:1px solid var(--border-color); padding:14px 26px; }
+.ag-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-secondary); margin-bottom:6px; display:block; }
+.ag-input {
+  background:#0d1b2a!important; border:1.5px solid var(--border-color)!important;
+  border-radius:10px!important; color:var(--text-primary)!important;
+  padding:10px 14px!important; font-size:.88rem!important; transition:border-color .2s!important;
+}
+.ag-input:focus { border-color:var(--primary-color)!important; box-shadow:0 0 0 3px rgba(0,212,170,.12)!important; outline:none!important; }
+.ag-input::placeholder { color:#444!important; }
+/* Type buttons */
+.ag-type-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.ag-type-btn {
+  padding:10px 6px; border-radius:10px; border:1.5px solid var(--border-color);
+  background:#0d1b2a; color:var(--text-secondary); cursor:pointer; text-align:center;
+  transition:all .2s; font-size:.77rem; font-weight:600;
+}
+.ag-type-btn .te { font-size:1.2rem; display:block; margin-bottom:4px; }
+.ag-type-btn:hover,.ag-type-btn.sel { border-color:var(--tc,#00d4aa); color:var(--tc,#00d4aa); box-shadow:inset 0 0 0 2px var(--tc,#00d4aa); background:rgba(255,255,255,.03); }
+/* Reminder box */
+.ag-rem-box { background:#0d1b2a; border:1px solid var(--border-color); border-radius:12px; padding:16px 18px; }
+.ag-sw-row  { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+/* Animations */
+@keyframes ag-up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+.ag-ani { animation:ag-up .35s ease both; }
+/* Responsive */
+@media(max-width:768px){
+  .ag-hero { padding:18px; }
+  .ag-hero-title { font-size:1.15rem; }
+  .ag-type-grid { grid-template-columns:repeat(2,1fr); }
+  .ag-cal-wrap { padding:10px; }
+  .ag-ev-actions .ag-badge-pill { display:none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in" style="max-width:1400px;">
+
+<!-- ═══════════════════════════════════════
+     HERO
+     ═══════════════════════════════════════ -->
+<div class="ag-hero ag-ani">
+  <div>
+    <h2 class="ag-hero-title">📅 Mon Agenda Intelligent</h2>
+    <p class="ag-hero-sub">Planifiez et recevez vos rappels automatiquement par email</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <span style="background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);border-radius:20px;padding:4px 12px;font-size:.73rem;color:#00d4aa;font-weight:600;">
+        <i class="fas fa-envelope me-1"></i> fabricekengni90@gmail.com → fabrice.kengni@icloud.com
+      </span>
+      <span style="background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.3);border-radius:20px;padding:4px 12px;font-size:.73rem;color:#4a9eff;font-weight:600;">
+        <i class="fas fa-sync-alt me-1"></i> Rappels actifs • 60s
+      </span>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <button onclick="openModal()" style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:700;border:none;border-radius:10px;padding:10px 22px;font-size:.88rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,212,170,.3);">
+      <i class="fas fa-plus me-2"></i>Nouvel événement
+    </button>
+    <div class="ag-tabs">
+      <button class="ag-tab active" id="tab-cal"  onclick="switchView('cal')"><i class="fas fa-calendar"></i></button>
+      <button class="ag-tab"        id="tab-list" onclick="switchView('list')"><i class="fas fa-list"></i></button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     STATS
+     ═══════════════════════════════════════ -->
+<div class="ag-stat-grid ag-ani">
+  <div class="ag-stat" style="--sc:#00d4aa;">
+    <div class="ag-stat-icon">📊</div>
+    <div class="ag-stat-val">{{ stats.values()|sum }}</div>
+    <div class="ag-stat-lbl">Total à venir</div>
+  </div>
+  {% for etype,color,icon,lbl in [
+    ('trading','#00d4aa','📈','Trading'),
+    ('finance','#4a9eff','💰','Finance'),
+    ('formation','#a29bfe','📚','Formation'),
+    ('reunion','#ffd700','🤝','Réunion'),
+    ('revue','#ff7675','🔍','Revue'),
+    ('personnel','#fd79a8','👤','Personnel'),
+  ] %}
+  <div class="ag-stat" style="--sc:{{ color }};">
+    <div class="ag-stat-icon">{{ icon }}</div>
+    <div class="ag-stat-val">{{ stats.get(etype,0) }}</div>
+    <div class="ag-stat-lbl">{{ lbl }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     PROCHAIN ÉVÉNEMENT
+     ═══════════════════════════════════════ -->
+{% if next_event %}
+{% set nc = event_colors.get(next_event.event_type, {'bg':'#00d4aa','icon':'📅','label':'Événement'}) %}
+<div class="ag-next custom-table ag-ani" style="--nc:{{ nc.bg }};">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div class="ag-pulse" style="background:{{ nc.bg }};"></div>
+    <div>
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:{{ nc.bg }};">⚡ Prochain événement</div>
+      <div style="font-size:1.1rem;font-weight:800;color:#fff;margin:3px 0;">{{ next_event.title }}</div>
+      <div style="font-size:.82rem;color:var(--text-secondary);">
+        <i class="fas fa-clock me-1"></i>{{ next_event.start_datetime[:16].replace('T',' à ') }}
+        {% if next_event.location %}&nbsp;·&nbsp;<i class="fas fa-map-marker-alt me-1"></i>{{ next_event.location }}{% endif %}
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="background:{{ nc.bg }}22;color:{{ nc.bg }};border:1px solid {{ nc.bg }}55;border-radius:100px;padding:6px 16px;font-size:.77rem;font-weight:700;">
+      {{ nc.icon }} {{ nc.label }}
+    </span>
+    <button onclick="switchView('list')" style="border:1.5px solid {{ nc.bg }};color:{{ nc.bg }};border-radius:8px;background:transparent;font-size:.77rem;font-weight:600;padding:6px 14px;cursor:pointer;">
+      Voir tout <i class="fas fa-arrow-right ms-1"></i>
+    </button>
+  </div>
+</div>
+{% endif %}
+
+
+<!-- ═══════════════════════════════════════
+     CALENDRIER
+     ═══════════════════════════════════════ -->
+<div id="view-cal" class="ag-ani">
+  <div class="ag-cal-wrap">
+    <div id="calendar"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     LISTE
+     ═══════════════════════════════════════ -->
+<div id="view-list" style="display:none;">
+
+  <!-- Filtres -->
+  <div class="ag-filters ag-ani">
+    <button class="ag-pill active" style="--pc:#00d4aa;" onclick="filterEvs('all',this)">
+      <i class="fas fa-layer-group me-1"></i>Tous ({{ events|length }})
+    </button>
+    {% for etype,color,icon,lbl in [
+      ('trading','#00d4aa','📈','Trading'),
+      ('finance','#4a9eff','💰','Finance'),
+      ('formation','#a29bfe','📚','Formation'),
+      ('reunion','#ffd700','🤝','Réunion'),
+      ('revue','#ff7675','🔍','Revue'),
+      ('personnel','#fd79a8','👤','Personnel'),
+    ] %}
+    {% if stats.get(etype,0) > 0 %}
+    <button class="ag-pill" style="--pc:{{ color }};" onclick="filterEvs('{{ etype }}',this)">
+      {{ icon }} {{ lbl }} ({{ stats.get(etype,0) }})
+    </button>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  {% if events %}
+    {% set ns = namespace(prev_d='') %}
+    {% for ev in events %}
+    {% set ec = event_colors.get(ev.event_type, {'bg':'#4a9eff','icon':'📅','label':'Événement'}) %}
+    {% set ev_d = ev.start_datetime[:10] %}
+
+    {% if ev_d != ns.prev_d %}
+      {% set ns.prev_d = ev_d %}
+      <div class="ag-sep">
+        <i class="fas fa-calendar-day"></i>
+        {% if ev_d == now.strftime('%Y-%m-%d') %}Aujourd'hui — {{ ev_d }}
+        {% else %}{{ ev_d }}{% endif %}
+      </div>
+    {% endif %}
+
+    <div class="ag-event-card ag-ani" data-type="{{ ev.event_type }}" data-id="{{ ev.id }}"
+         style="--ec:{{ ec.bg }};" onclick="openEditModal({{ ev.id }})">
+
+      <div class="ag-ev-date" style="border-top:2px solid {{ ec.bg }};">
+        <div class="ag-ev-day">{{ ev.start_datetime[8:10] }}/{{ ev.start_datetime[5:7] }}</div>
+        <div class="ag-ev-time" style="color:{{ ec.bg }};">
+          {{ ev.start_datetime[11:16] if 'T' in ev.start_datetime else '——' }}
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:0;">
+        <div class="ag-ev-title">{{ ec.icon }} {{ ev.title }}</div>
+        <div class="ag-ev-meta">
+          {% if ev.description %}<span>{{ ev.description[:55] }}{% if ev.description|length > 55 %}…{% endif %}</span>{% endif %}
+          {% if ev.location %}<span class="ms-2"><i class="fas fa-map-marker-alt me-1"></i>{{ ev.location }}</span>{% endif %}
+          <span class="ms-2">→ {{ ev.end_datetime[11:16] if 'T' in ev.end_datetime else ev.end_datetime[:10] }}</span>
+        </div>
+      </div>
+
+      <div class="ag-ev-actions">
+        <span class="ag-badge-pill" style="color:{{ ec.bg }};background:{{ ec.bg }}18;border:1px solid {{ ec.bg }}33;">{{ ec.label }}</span>
+        {% if ev.email_reminder %}<i class="fas fa-envelope" style="color:#4a9eff;font-size:.8rem;" title="Rappel email"></i>{% endif %}
+        {% if ev.app_reminder  %}<i class="fas fa-bell"     style="color:#ffd700;font-size:.8rem;" title="Rappel app"></i>{% endif %}
+        <button onclick="event.stopPropagation();deleteEvent({{ ev.id }},this)"
+                style="border:1px solid #ff475766;color:#ff4757;border-radius:7px;background:transparent;padding:5px 10px;font-size:.75rem;cursor:pointer;">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+
+  {% else %}
+  <div class="ag-empty ag-ani">
+    <i class="fas fa-calendar-plus fa-3x mb-4" style="color:#2d3748;"></i>
+    <h5 style="color:var(--text-secondary);">Aucun événement planifié</h5>
+    <p style="color:#444;margin-bottom:20px;">Créez votre premier événement pour organiser votre temps</p>
+    <button onclick="openModal()" style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:700;border:none;border-radius:10px;padding:12px 28px;cursor:pointer;">
+      <i class="fas fa-plus me-2"></i>Créer un événement
+    </button>
+  </div>
+  {% endif %}
+</div><!-- /view-list -->
+
+</div><!-- /container -->
+
+
+<!-- ═══════════════════════════════════════
+     MODAL CRÉATION / ÉDITION
+     ═══════════════════════════════════════ -->
+<div class="modal fade" id="agendaModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content ag-modal-content">
+
+      <div class="ag-modal-header" id="modalHeader">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+          <div>
+            <div style="font-size:1.05rem;font-weight:800;color:#fff;" id="modalTitle">📅 Nouvel événement</div>
+            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:3px;">
+              <i class="fas fa-envelope me-1" style="color:#4a9eff;"></i>
+              Rappel → fabrice.kengni@icloud.com (Gmail)
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+
+      <div class="ag-modal-body">
+        <input type="hidden" id="eventId">
+        <div class="row g-3">
+
+          <!-- Titre -->
+          <div class="col-12">
+            <label class="ag-label">Titre *</label>
+            <input type="text" class="form-control ag-input" id="evTitle" placeholder="Ex : Analyse BTC, Revue mensuelle…">
+          </div>
+
+          <!-- Type -->
+          <div class="col-12">
+            <label class="ag-label">Type d'événement *</label>
+            <div class="ag-type-grid">
+              <button class="ag-type-btn" style="--tc:#00d4aa;" data-type="trading"   onclick="selType('trading',this)"><span class="te">📈</span>Trading</button>
+              <button class="ag-type-btn" style="--tc:#4a9eff;" data-type="finance"   onclick="selType('finance',this)"><span class="te">💰</span>Finance</button>
+              <button class="ag-type-btn" style="--tc:#a29bfe;" data-type="formation" onclick="selType('formation',this)"><span class="te">📚</span>Formation</button>
+              <button class="ag-type-btn" style="--tc:#ffd700;" data-type="reunion"   onclick="selType('reunion',this)"><span class="te">🤝</span>Réunion</button>
+              <button class="ag-type-btn" style="--tc:#ff7675;" data-type="revue"     onclick="selType('revue',this)"><span class="te">🔍</span>Revue</button>
+              <button class="ag-type-btn sel" style="--tc:#fd79a8;" data-type="personnel" onclick="selType('personnel',this)"><span class="te">👤</span>Personnel</button>
+            </div>
+            <input type="hidden" id="evType" value="personnel">
+          </div>
+
+          <!-- Dates -->
+          <div class="col-md-6">
+            <label class="ag-label">Début *</label>
+            <input type="datetime-local" class="form-control ag-input" id="evStart">
+          </div>
+          <div class="col-md-6">
+            <label class="ag-label">Fin *</label>
+            <input type="datetime-local" class="form-control ag-input" id="evEnd">
+          </div>
+
+          <!-- Lieu & Récurrence -->
+          <div class="col-md-6">
+            <label class="ag-label">Lieu</label>
+            <input type="text" class="form-control ag-input" id="evLocation" placeholder="Bureau, En ligne…">
+          </div>
+          <div class="col-md-6">
+            <label class="ag-label">Récurrence</label>
+            <select class="form-select ag-input" id="evRecurrence">
+              <option value="none">Ponctuel (aucune)</option>
+              <option value="daily">Quotidienne</option>
+              <option value="weekly">Hebdomadaire</option>
+              <option value="monthly">Mensuelle</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="col-12">
+            <label class="ag-label">Description</label>
+            <textarea class="form-control ag-input" id="evDesc" rows="2" placeholder="Objectifs, ordre du jour…"></textarea>
+          </div>
+
+          <!-- Notes -->
+          <div class="col-12">
+            <label class="ag-label">Notes privées</label>
+            <textarea class="form-control ag-input" id="evNotes" rows="2" placeholder="Check-list, stratégie, mémo…"></textarea>
+          </div>
+
+          <!-- Rappels -->
+          <div class="col-12">
+            <label class="ag-label"><i class="fas fa-bell me-1"></i>Configuration des rappels</label>
+            <div class="ag-rem-box">
+              <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                  <label class="ag-label" style="font-size:.68rem;">Délai avant l'événement</label>
+                  <select class="form-select ag-input" id="evReminder">
+                    <option value="5">5 min avant</option>
+                    <option value="15">15 min avant</option>
+                    <option value="30" selected>30 min avant</option>
+                    <option value="60">1 heure avant</option>
+                    <option value="120">2 heures avant</option>
+                    <option value="360">6 heures avant</option>
+                    <option value="1440">1 jour avant</option>
+                    <option value="2880">2 jours avant</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <div class="ag-sw-row">
+                    <div>
+                      <div style="font-size:.83rem;font-weight:600;color:#e0e0e0;"><i class="fas fa-envelope" style="color:#4a9eff;margin-right:6px;"></i>Email</div>
+                      <div style="font-size:.7rem;color:#555;">Gmail → iCloud</div>
+                    </div>
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input" type="checkbox" id="evEmailRem" checked>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="ag-sw-row">
+                    <div>
+                      <div style="font-size:.83rem;font-weight:600;color:#e0e0e0;"><i class="fas fa-bell" style="color:#ffd700;margin-right:6px;"></i>In-App</div>
+                      <div style="font-size:.7rem;color:#555;">Notification app</div>
+                    </div>
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input" type="checkbox" id="evAppRem" checked>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="ag-modal-footer d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" id="saveBtn" onclick="saveEvent()"
+                style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:700;border:none;border-radius:8px;padding:8px 24px;font-size:.85rem;cursor:pointer;">
+          <i class="fas fa-save me-1"></i>Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+    <div class="modal-content" style="background:#111827;border:1px solid var(--border-color);border-radius:16px;">
+      <div class="modal-body p-0">
+        <div id="detHead" style="padding:22px;border-radius:16px 16px 0 0;"></div>
+        <div id="detBody" style="padding:18px 22px 22px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/fr.global.min.js"></script>
+<script>
+// ════════════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════════════
+const EVDATA = {{ events_json | safe }};
+const EVCOLORS = {
+  trading:   {bg:'#00d4aa',icon:'📈',label:'Trading'},
+  finance:   {bg:'#4a9eff',icon:'💰',label:'Finance'},
+  formation: {bg:'#a29bfe',icon:'📚',label:'Formation'},
+  personnel: {bg:'#fd79a8',icon:'👤',label:'Personnel'},
+  reunion:   {bg:'#ffd700',icon:'🤝',label:'Réunion'},
+  revue:     {bg:'#ff7675',icon:'🔍',label:'Revue'},
+};
+
+// ════════════════════════════════════════════════════════
+// FULLCALENDAR
+// ════════════════════════════════════════════════════════
+let cal;
+document.addEventListener('DOMContentLoaded', () => {
+  cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+    locale: 'fr',
+    initialView: 'dayGridMonth',
+    headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,timeGridDay,listWeek' },
+    height: 'auto',
+    events: '/api/agenda/events',
+    selectable: true,
+    nowIndicator: true,
+    dayMaxEvents: 3,
+    select(info) {
+      openModal({start: info.startStr.slice(0,16), end: info.endStr.slice(0,16)});
+    },
+    eventClick(info) {
+      showDetail(info.event);
+    },
+    eventContent(arg) {
+      const ep = arg.event.extendedProps;
+      return { html:`<div style="padding:2px 6px;font-size:.73rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ep.icon||''} ${arg.event.title}</div>` };
+    }
+  });
+  cal.render();
+});
+
+// ════════════════════════════════════════════════════════
+// VIEW SWITCH
+// ════════════════════════════════════════════════════════
+function switchView(v) {
+  document.getElementById('view-cal').style.display  = v==='cal'  ? '':'none';
+  document.getElementById('view-list').style.display = v==='list' ? '':'none';
+  document.getElementById('tab-cal').classList.toggle('active',  v==='cal');
+  document.getElementById('tab-list').classList.toggle('active', v==='list');
+  if(v==='cal' && cal) cal.updateSize();
+}
+
+// ════════════════════════════════════════════════════════
+// FILTER
+// ════════════════════════════════════════════════════════
+function filterEvs(type, btn) {
+  document.querySelectorAll('.ag-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.ag-event-card').forEach(c => {
+    c.style.display = (type==='all' || c.dataset.type===type) ? '' : 'none';
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// MODAL OPEN
+// ════════════════════════════════════════════════════════
+function openModal(prefill={}) {
+  document.getElementById('modalTitle').textContent = '📅 Nouvel événement';
+  document.getElementById('eventId').value = '';
+  ['evTitle','evDesc','evNotes','evLocation'].forEach(id => { document.getElementById(id).value=''; });
+  document.getElementById('evRecurrence').value = 'none';
+  document.getElementById('evReminder').value   = '30';
+  document.getElementById('evEmailRem').checked = true;
+  document.getElementById('evAppRem').checked   = true;
+  selType('personnel', document.querySelector('[data-type="personnel"]'));
+
+  const now = new Date();
+  now.setMinutes(Math.ceil(now.getMinutes()/15)*15, 0, 0);
+  document.getElementById('evStart').value = prefill.start || fdt(now);
+  document.getElementById('evEnd').value   = prefill.end   || fdt(new Date(now.getTime()+3600000));
+  new bootstrap.Modal(document.getElementById('agendaModal')).show();
+}
+
+function openEditModal(id) {
+  const ev = EVDATA.find(e => String(e.id)===String(id));
+  if (!ev) { openModal(); return; }
+  document.getElementById('modalTitle').textContent = '✏️ Modifier l\'événement';
+  document.getElementById('eventId').value  = id;
+  document.getElementById('evTitle').value  = ev.title;
+  document.getElementById('evDesc').value   = ev.extendedProps.description||'';
+  document.getElementById('evNotes').value  = ev.extendedProps.notes||'';
+  document.getElementById('evLocation').value = ev.extendedProps.location||'';
+  document.getElementById('evStart').value  = (ev.start||'').slice(0,16);
+  document.getElementById('evEnd').value    = (ev.end||'').slice(0,16);
+  selType(ev.extendedProps.type||'personnel', document.querySelector(`[data-type="${ev.extendedProps.type}"]`));
+  new bootstrap.Modal(document.getElementById('agendaModal')).show();
+}
+
+// ════════════════════════════════════════════════════════
+// TYPE SELECT
+// ════════════════════════════════════════════════════════
+function selType(type, btn) {
+  document.querySelectorAll('.ag-type-btn').forEach(b => b.classList.remove('sel'));
+  if (btn) btn.classList.add('sel');
+  document.getElementById('evType').value = type;
+  const c = (EVCOLORS[type]||{}).bg || '#00d4aa';
+  document.getElementById('modalHeader').style.borderBottom = `2px solid ${c}44`;
+}
+
+// ════════════════════════════════════════════════════════
+// SAVE EVENT
+// ════════════════════════════════════════════════════════
+function saveEvent() {
+  const title = document.getElementById('evTitle').value.trim();
+  const start = document.getElementById('evStart').value;
+  const end   = document.getElementById('evEnd').value;
+  if (!title)        { showToast('⚠️ Titre obligatoire','warning'); return; }
+  if (!start||!end)  { showToast('⚠️ Dates obligatoires','warning'); return; }
+  if (start >= end)  { showToast('⚠️ La fin doit être après le début','warning'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>…';
+
+  const id  = document.getElementById('eventId').value;
+  fetch(id ? `/api/agenda/events/${id}` : '/api/agenda/events', {
+    method:  id ? 'PUT' : 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      title, event_type: document.getElementById('evType').value,
+      start_datetime:   start + (start.length===16?':00':''),
+      end_datetime:     end   + (end.length===16?':00':''),
+      description:      document.getElementById('evDesc').value,
+      location:         document.getElementById('evLocation').value,
+      notes:            document.getElementById('evNotes').value,
+      recurrence:       document.getElementById('evRecurrence').value,
+      reminder_minutes: parseInt(document.getElementById('evReminder').value),
+      email_reminder:   document.getElementById('evEmailRem').checked?1:0,
+      app_reminder:     document.getElementById('evAppRem').checked?1:0,
+      all_day: 0,
+    })
+  })
+  .then(r=>r.json())
+  .then(d => {
+    if (d.success) {
+      bootstrap.Modal.getInstance(document.getElementById('agendaModal')).hide();
+      showToast('✅ Événement enregistré ! Rappel configuré.','success');
+      setTimeout(()=>location.reload(), 1200);
+    } else {
+      showToast('❌ '+(d.error||'Erreur'),'danger');
+      btn.disabled=false; btn.innerHTML='<i class="fas fa-save me-1"></i>Enregistrer';
+    }
+  })
+  .catch(()=>{ showToast('❌ Erreur réseau','danger'); btn.disabled=false; btn.innerHTML='<i class="fas fa-save me-1"></i>Enregistrer'; });
+}
+
+// ════════════════════════════════════════════════════════
+// DELETE
+// ════════════════════════════════════════════════════════
+function deleteEvent(id, btnEl) {
+  if (!confirm('Supprimer cet événement ?')) return;
+  if (btnEl) { btnEl.disabled=true; btnEl.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; }
+  fetch(`/api/agenda/events/${id}`,{method:'DELETE'})
+    .then(r=>r.json())
+    .then(d=>{
+      if(d.success){
+        const c=document.querySelector(`[data-id="${id}"]`);
+        if(c){c.style.transition='all .3s';c.style.opacity='0';c.style.transform='translateX(20px)';setTimeout(()=>c.remove(),320);}
+        showToast('🗑️ Supprimé','info');
+        if(cal) cal.refetchEvents();
+      }
+    });
+}
+
+// ════════════════════════════════════════════════════════
+// EVENT DETAIL POPUP
+// ════════════════════════════════════════════════════════
+function showDetail(fcEv) {
+  const ep  = fcEv.extendedProps;
+  const cfg = EVCOLORS[ep.type] || EVCOLORS.personnel;
+  const s   = (fcEv.startStr||'').slice(0,16).replace('T',' à ');
+  const e   = (fcEv.endStr  ||'').slice(0,16).replace('T',' à ');
+
+  document.getElementById('detHead').style.cssText =
+    `padding:22px;background:linear-gradient(135deg,${cfg.bg}14,${cfg.bg}06);border-bottom:2px solid ${cfg.bg}44;border-radius:16px 16px 0 0;`;
+  document.getElementById('detHead').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;border-radius:12px;background:${cfg.bg}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">${cfg.icon}</div>
+      <div style="flex:1;">
+        <div style="font-size:.7rem;color:${cfg.bg};font-weight:700;text-transform:uppercase;letter-spacing:.5px;">${cfg.label}</div>
+        <h5 style="color:#fff;margin:2px 0 0;font-weight:800;font-size:1.05rem;">${fcEv.title}</h5>
+      </div>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>`;
+
+  const locR  = ep.location    ? `<div style="color:#aaa;font-size:.83rem;margin-top:10px;"><i class="fas fa-map-marker-alt me-2" style="color:${cfg.bg};"></i>${ep.location}</div>` : '';
+  const descR = ep.description ? `<div style="background:#0d1b2a;border-radius:10px;padding:14px;margin-top:12px;font-size:.84rem;color:#ccc;">${ep.description}</div>` : '';
+  const notR  = ep.notes       ? `<div style="background:#0d1b2a;border-radius:10px;padding:14px;margin-top:8px;"><div style="font-size:.66rem;color:#444;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Notes</div><div style="font-size:.82rem;color:#888;">${ep.notes}</div></div>` : '';
+
+  document.getElementById('detBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;">
+      <div style="background:#0d1b2a;border-radius:10px;padding:12px;"><div style="font-size:.66rem;color:#444;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Début</div><div style="font-weight:700;color:#e0e0e0;font-size:.87rem;">${s}</div></div>
+      <div style="background:#0d1b2a;border-radius:10px;padding:12px;"><div style="font-size:.66rem;color:#444;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Fin</div><div style="font-weight:700;color:#e0e0e0;font-size:.87rem;">${e}</div></div>
+    </div>
+    ${locR}${descR}${notR}
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button onclick="bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();openEditModal(${fcEv.id});"
+              style="flex:1;background:${cfg.bg}22;color:${cfg.bg};border:1px solid ${cfg.bg}44;border-radius:8px;font-weight:600;padding:8px;cursor:pointer;font-size:.83rem;">
+        <i class="fas fa-edit me-1"></i>Modifier
+      </button>
+      <button onclick="bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide();deleteEvent(${fcEv.id});"
+              style="background:#ff475722;color:#ff4757;border:1px solid #ff475744;border-radius:8px;font-weight:600;padding:8px 14px;cursor:pointer;font-size:.83rem;">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>`;
+
+  new bootstrap.Modal(document.getElementById('detailModal')).show();
+}
+
+// ════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════
+function fdt(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Kengni Finance{% endblock %}
+{% block page_title %}Tableau de Bord{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+
+    <!-- ── Accès rapide Training ── -->
+    <div class="mb-4">
+        <a href="{{ url_for('training') }}" style="text-decoration:none;">
+            <div style="
+                background: linear-gradient(135deg, rgba(124,106,255,.18) 0%, rgba(0,212,170,.12) 100%);
+                border: 1px solid rgba(124,106,255,.35);
+                border-radius: 16px;
+                padding: 1rem 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 1rem;
+                transition: all .25s;
+                cursor: pointer;
+            "
+            onmouseover="this.style.borderColor='rgba(124,106,255,.7)';this.style.boxShadow='0 6px 28px rgba(124,106,255,.2)'"
+            onmouseout="this.style.borderColor='rgba(124,106,255,.35)';this.style.boxShadow='none'">
+                <!-- Icône + Titre -->
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#7c6aff,#00d4aa);display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:0 4px 16px rgba(124,106,255,.4);flex-shrink:0;">
+                        🎓
+                    </div>
+                    <div>
+                        <div style="font-size:1rem;font-weight:800;color:#e8ecf1;letter-spacing:.3px;">Formations & Training</div>
+                        <div style="font-size:.78rem;color:#a8b2d1;margin-top:.1rem;">Gérer vos sessions de formation</div>
+                    </div>
+                </div>
+                <!-- Stats rapides -->
+                <div style="display:flex;gap:2rem;flex-wrap:wrap;">
+                    <div style="text-align:center;">
+                        <div style="font-size:1.6rem;font-weight:900;color:#7c6aff;line-height:1;">{{ training_total }}</div>
+                        <div style="font-size:.7rem;color:#a8b2d1;text-transform:uppercase;letter-spacing:.5px;">Sessions</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:1.6rem;font-weight:900;color:#00d4aa;line-height:1;">{{ training_this_month }}</div>
+                        <div style="font-size:.7rem;color:#a8b2d1;text-transform:uppercase;letter-spacing:.5px;">Ce mois</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:1.6rem;font-weight:900;color:#ffd700;line-height:1;">
+                            {% if training_total_min >= 60 %}{{ training_total_min // 60 }}h{% else %}{{ training_total_min }}m{% endif %}
+                        </div>
+                        <div style="font-size:.7rem;color:#a8b2d1;text-transform:uppercase;letter-spacing:.5px;">Durée totale</div>
+                    </div>
+                </div>
+                <!-- Flèche -->
+                <div style="color:#7c6aff;font-size:1.3rem;flex-shrink:0;">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- ── Stats Cards ── -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card success">
+                <div class="icon"><i class="fas fa-coins"></i></div>
+                <h6>Valeur Nette</h6>
+                <h2>{{ "%.2f"|format(stats.net_worth) }}€</h2>
+                <div class="change {% if stats.net_worth >= 0 %}positive{% else %}negative{% endif %}">
+                    <small style="opacity:.7">
+                        ≈ {{ "{:,.0f}".format(stats.net_worth * 655.957) }} FCFA
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card primary">
+                <div class="icon"><i class="fas fa-exchange-alt"></i></div>
+                <h6>Flux Mensuel</h6>
+                <h2>{{ "%.2f"|format(stats.monthly_cashflow) }}€</h2>
+                <div class="change {% if stats.monthly_cashflow > 0 %}positive{% else %}negative{% endif %}">
+                    <i class="fas fa-arrow-{% if stats.monthly_cashflow > 0 %}up{% else %}down{% endif %}"></i>
+                    {% if stats.total_revenue > 0 %}
+                        {{ "%.1f"|format(((stats.monthly_cashflow / stats.total_revenue * 100)|abs)) }}% du revenu
+                    {% else %}—{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card warning">
+                <div class="icon"><i class="fas fa-chart-pie"></i></div>
+                <h6>Ratio Dépenses</h6>
+                <h2>{{ "%.0f"|format(stats.expense_ratio) }}%</h2>
+                <div class="change {% if stats.expense_ratio < 70 %}positive{% else %}negative{% endif %}">
+                    <i class="fas fa-arrow-{% if stats.expense_ratio < 70 %}down{% else %}up{% endif %}"></i>
+                    Gestion {{ 'bonne' if stats.expense_ratio < 70 else 'à surveiller' }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card {% if stats.trader_score >= 70 %}success{% elif stats.trader_score >= 50 %}warning{% else %}danger{% endif %}">
+                <div class="icon"><i class="fas fa-trophy"></i></div>
+                <h6>Score Trader</h6>
+                <h2>{{ "%.0f"|format(stats.trader_score) }}/100</h2>
+                <div class="change {% if stats.trader_score >= 70 %}positive{% else %}negative{% endif %}">
+                    <i class="fas fa-star"></i>
+                    {{ 'Excellent' if stats.trader_score >= 70 else 'En progression' if stats.trader_score >= 50 else 'À améliorer' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Revenus / Dépenses summary ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="custom-table p-3 d-flex align-items-center gap-3">
+                <div style="width:46px;height:46px;border-radius:12px;background:rgba(0,200,120,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">💰</div>
+                <div>
+                    <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Revenus 30j</div>
+                    <div style="font-size:1.25rem;font-weight:800;color:#00c878;">
+                        {{ "%.2f"|format(stats.total_revenue) }}€
+                        <span style="font-size:.7rem;font-weight:400;color:var(--text-muted)">≈ {{ "{:,.0f}".format(stats.total_revenue * 655.957) }} FCFA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="custom-table p-3 d-flex align-items-center gap-3">
+                <div style="width:46px;height:46px;border-radius:12px;background:rgba(255,77,106,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">📤</div>
+                <div>
+                    <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Dépenses 30j</div>
+                    <div style="font-size:1.25rem;font-weight:800;color:#ff4d6a;">
+                        {{ "%.2f"|format(stats.total_expenses) }}€
+                        <span style="font-size:.7rem;font-weight:400;color:var(--text-muted)">≈ {{ "{:,.0f}".format(stats.total_expenses * 655.957) }} FCFA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Charts Row ── -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="custom-table p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Performance 6 mois</h5>
+                    <div style="display:flex;gap:.5rem;">
+                        <span style="font-size:.72rem;background:rgba(0,200,120,.15);color:#00c878;border-radius:20px;padding:.2rem .7rem;">● Revenus</span>
+                        <span style="font-size:.72rem;background:rgba(255,77,106,.15);color:#ff4d6a;border-radius:20px;padding:.2rem .7rem;">● Dépenses</span>
+                        <span style="font-size:.72rem;background:rgba(255,215,0,.15);color:#ffd700;border-radius:20px;padding:.2rem .7rem;">— Solde</span>
+                    </div>
+                </div>
+                <canvas id="performanceChart" height="110"></canvas>
+                {% if not chart_labels %}
+                <div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:.85rem;">
+                    <i class="fas fa-chart-bar" style="font-size:2rem;margin-bottom:.5rem;display:block;opacity:.3"></i>
+                    Aucune donnée — ajoutez des transactions dans Finances
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="custom-table p-4">
+                <h5 class="mb-3"><i class="fas fa-chart-pie me-2"></i>Dépenses / Catégorie</h5>
+                {% if donut_labels %}
+                <canvas id="distributionChart"></canvas>
+                {% else %}
+                <div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:.85rem;">
+                    <i class="fas fa-chart-pie" style="font-size:2rem;margin-bottom:.5rem;display:block;opacity:.3"></i>
+                    Aucune catégorie à afficher
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ── Formations récentes ── -->
+    <div class="custom-table mb-4">
+        <div class="p-4 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-graduation-cap me-2" style="color:#7c6aff;"></i>Formations & Sessions</h5>
+            <div class="d-flex align-items-center gap-3">
+                <div style="display:flex;gap:1rem;">
+                    <span style="font-size:.78rem;color:var(--text-muted);">
+                        <strong style="color:#7c6aff;">{{ training_total }}</strong> total
+                    </span>
+                    <span style="font-size:.78rem;color:var(--text-muted);">
+                        <strong style="color:#00d4aa;">{{ training_this_month }}</strong> ce mois
+                    </span>
+                    <span style="font-size:.78rem;color:var(--text-muted);">
+                        <strong style="color:#ffd700;">
+                            {% if training_total_min >= 60 %}
+                                {{ (training_total_min // 60) }}h {{ training_total_min % 60 }}min
+                            {% else %}
+                                {{ training_total_min }} min
+                            {% endif %}
+                        </strong> total
+                    </span>
+                </div>
+                <a href="{{ url_for('training') }}" class="btn btn-sm" style="background:rgba(124,106,255,.15);color:#7c6aff;border:1px solid rgba(124,106,255,.3);border-radius:8px;padding:.3rem .8rem;font-size:.8rem;font-weight:600;text-decoration:none;">
+                    Voir tout <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+
+        {% if recent_trainings %}
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Titre</th>
+                    <th>Catégorie</th>
+                    <th>Niveau</th>
+                    <th>Durée</th>
+                    <th>Participants</th>
+                    <th>Horaire</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in recent_trainings %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:.82rem;">
+                        {{ f.scheduled_date[:10] if f.scheduled_date else f.created_at[:10] }}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('training') }}" style="color:#e8ecf1;font-weight:600;text-decoration:none;">
+                            {{ f.title }}
+                        </a>
+                    </td>
+                    <td>
+                        <span style="background:rgba(124,106,255,.15);color:#7c6aff;border-radius:20px;padding:.15rem .6rem;font-size:.72rem;font-weight:700;">
+                            {{ f.category or 'Général' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% set lvl_colors = {'debutant':'#00c878','intermediaire':'#ffb93a','avance':'#ff4d6a','expert':'#7c6aff'} %}
+                        <span style="background:rgba(0,0,0,.2);color:{{ lvl_colors.get(f.level,'#a8b2d1') }};border-radius:20px;padding:.15rem .6rem;font-size:.72rem;">
+                            {{ f.level|capitalize if f.level else '—' }}
+                        </span>
+                    </td>
+                    <td style="color:var(--text-muted);font-size:.82rem;">
+                        {% if f.duration_minutes %}
+                            {% if f.duration_minutes >= 60 %}
+                                {{ f.duration_minutes // 60 }}h{{ f.duration_minutes % 60 if f.duration_minutes % 60 else '' }}
+                            {% else %}
+                                {{ f.duration_minutes }}min
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td style="font-size:.82rem;">
+                        {% if f.participant_names %}
+                            {% set parts = f.participant_names.split(',') %}
+                            {% for p in parts[:2] %}
+                                <span style="background:rgba(0,212,170,.1);color:#00d4aa;border-radius:20px;padding:.1rem .5rem;font-size:.7rem;margin:.1rem;">{{ p.strip() }}</span>
+                            {% endfor %}
+                            {% if parts|length > 2 %}
+                                <span style="color:var(--text-muted);font-size:.7rem;">+{{ parts|length - 2 }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color:var(--text-muted)">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:var(--text-muted);font-size:.82rem;">
+                        {% if f.time_start %}{{ f.time_start }}{% if f.time_end %} → {{ f.time_end }}{% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+            <i class="fas fa-graduation-cap" style="font-size:2rem;margin-bottom:.5rem;display:block;opacity:.3;color:#7c6aff;"></i>
+            Aucune formation enregistrée —
+            <a href="{{ url_for('training') }}" style="color:#7c6aff;">Ajouter une session</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ── Transactions récentes ── -->
+    <div class="custom-table mb-4">
+        <div class="p-4 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-history me-2"></i>Transactions Récentes</h5>
+            <a href="{{ url_for('history') }}" class="btn btn-sm btn-primary-custom">Voir tout</a>
+        </div>
+        {% if transactions %}
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Symbole</th>
+                    <th>Type</th>
+                    <th>Quantité</th>
+                    <th>Prix</th>
+                    <th>Montant</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td>{{ t.created_at[:16] if t.created_at else '—' }}</td>
+                    <td><strong>{{ t.symbol or '—' }}</strong></td>
+                    <td>
+                        <span class="status-badge {% if t.type == 'buy' %}info{% else %}warning{% endif %}">
+                            {{ t.type }}
+                        </span>
+                    </td>
+                    <td>{{ t.quantity }}</td>
+                    <td>{{ "%.2f"|format(t.price) }}€</td>
+                    <td class="{% if t.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "%.2f"|format(t.amount) }}€
+                    </td>
+                    <td><span class="status-badge success">{{ t.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+            <i class="fas fa-inbox" style="font-size:2rem;margin-bottom:.5rem;display:block;opacity:.3"></i>
+            Aucune transaction récente
+        </div>
+        {% endif %}
+    </div>
+
+</div><!-- /container-fluid -->
+
+
+{# ════════════════════════════════════════════
+   PANNEAU ADMIN FLOTTANT — admin seulement
+   ════════════════════════════════════════════ #}
+{% if user_role in ('admin', 'superadmin') %}
+<style>
+#adminBtn {
+    position:fixed; bottom:2rem; right:2rem; z-index:900;
+    width:48px; height:48px; border-radius:50%;
+    background:linear-gradient(135deg,#7c6aff,#00d4aa);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; box-shadow:0 4px 20px rgba(124,106,255,.45);
+    font-size:1.25rem; transition:transform .2s, box-shadow .2s;
+    border:none; outline:none;
+}
+#adminBtn:hover { transform:scale(1.1); box-shadow:0 6px 28px rgba(124,106,255,.65); }
+#adminPanel {
+    display:none; position:fixed; bottom:5.5rem; right:2rem; z-index:900;
+    width:310px; background:#1a1d27; border:1px solid #2e3448;
+    border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,.6);
+    overflow:hidden; animation:apSlide .2s ease;
+}
+@keyframes apSlide { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+.ap-header { display:flex; align-items:center; justify-content:space-between; padding:.9rem 1.1rem; border-bottom:1px solid #2e3448; background:#21263a; }
+.ap-title { font-weight:700; font-size:.9rem; color:#e8ecf1; }
+.ap-close { background:none; border:none; color:#6b7280; font-size:1rem; cursor:pointer; padding:.1rem .3rem; border-radius:4px; transition:color .15s; }
+.ap-close:hover { color:#e8ecf1; }
+.ap-body { max-height:280px; overflow-y:auto; padding:.5rem 0; }
+.ap-body::-webkit-scrollbar { width:4px; }
+.ap-body::-webkit-scrollbar-thumb { background:#2e3448; border-radius:2px; }
+.ap-loading { text-align:center; padding:1.5rem; color:#6b7280; font-size:.83rem; }
+.ap-user-row { display:flex; align-items:center; gap:.6rem; padding:.55rem 1.1rem; border-bottom:1px solid rgba(46,52,72,.6); transition:background .15s; }
+.ap-user-row:last-child { border-bottom:none; }
+.ap-user-row:hover { background:rgba(255,255,255,.03); }
+.ap-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#7c6aff,#00d4aa); display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; color:#fff; flex-shrink:0; }
+.ap-user-info { flex:1; min-width:0; }
+.ap-user-name { font-size:.83rem; font-weight:600; color:#e8ecf1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ap-user-email { font-size:.7rem; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ap-role-select { background:#0f1117; border:1px solid #2e3448; color:#e8ecf1; padding:.25rem .45rem; border-radius:6px; font-size:.73rem; cursor:pointer; outline:none; transition:border-color .15s; flex-shrink:0; }
+.ap-role-select:focus { border-color:#00d4aa; }
+.ap-role-select:disabled { opacity:.4; cursor:not-allowed; }
+.ap-status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.ap-footer { padding:.75rem 1.1rem; border-top:1px solid #2e3448; display:flex; gap:.5rem; }
+.ap-btn-full { flex:1; background:#7c6aff; color:#fff; border:none; padding:.5rem; border-radius:8px; font-size:.8rem; font-weight:600; cursor:pointer; text-decoration:none; text-align:center; transition:background .15s; }
+.ap-btn-full:hover { background:#6a58ee; color:#fff; }
+.ap-btn-add { background:#00d4aa; color:#000; border:none; padding:.5rem .75rem; border-radius:8px; font-size:.8rem; font-weight:700; cursor:pointer; transition:background .15s; }
+.ap-btn-add:hover { background:#00bfa3; }
+.ap-toast { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:#21263a; border:1px solid #2e3448; color:#e8ecf1; padding:.55rem 1.2rem; border-radius:8px; font-size:.82rem; z-index:9999; box-shadow:0 4px 16px rgba(0,0,0,.5); white-space:nowrap; }
+</style>
+
+<button id="adminBtn" onclick="toggleAdminPanel()" title="Gestion des accès — Ctrl+Shift+A">🛡️</button>
+
+<div id="adminPanel">
+    <div class="ap-header">
+        <span class="ap-title">👥 Gestion des accès</span>
+        <button class="ap-close" onclick="toggleAdminPanel()">✕</button>
+    </div>
+    <div class="ap-body" id="apBody">
+        <div class="ap-loading">Chargement…</div>
+    </div>
+    <div class="ap-footer">
+        <a href="/admin" class="ap-btn-full">⚙️ Panel complet</a>
+        <button class="ap-btn-add" onclick="window.location.href='/admin'">+ Nouveau</button>
+    </div>
+</div>
+
+<script>
+let _apOpen = false;
+
+function toggleAdminPanel() {
+    _apOpen = !_apOpen;
+    document.getElementById('adminPanel').style.display = _apOpen ? 'block' : 'none';
+    if (_apOpen) loadApUsers();
+}
+
+async function loadApUsers() {
+    const body = document.getElementById('apBody');
+    body.innerHTML = '<div class="ap-loading">Chargement…</div>';
+    try {
+        const r = await fetch('/api/admin/users');
+        const d = await r.json();
+        if (!d.success || !d.users.length) {
+            body.innerHTML = '<div class="ap-loading">Aucun utilisateur</div>'; return;
+        }
+        const currentId = {{ session.get('user_id', 0) }};
+        body.innerHTML = d.users.map(u => {
+            const initials = u.username.slice(0,2).toUpperCase();
+            const statusColor = u.status === 'active' ? '#00c878' : u.status === 'suspended' ? '#ffb93a' : '#ff4d6a';
+            const isMe = u.id === currentId;
+            return `<div class="ap-user-row">
+                <div class="ap-avatar">${initials}</div>
+                <div class="ap-user-info">
+                    <div class="ap-user-name">${u.username}${isMe ? ' <span style="color:#6b7280;font-size:.68rem">(vous)</span>' : ''}</div>
+                    <div class="ap-user-email">${u.email}</div>
+                </div>
+                <div class="ap-status-dot" style="background:${statusColor}" title="${u.status}"></div>
+                <select class="ap-role-select" onchange="apUpdateRole(${u.id}, this.value)" ${isMe ? 'disabled' : ''}>
+                    <option value="viewer" ${u.role==='viewer'?'selected':''}>👁️ viewer</option>
+                    <option value="user"   ${u.role==='user'  ?'selected':''}>👤 user</option>
+                    <option value="editor" ${u.role==='editor'?'selected':''}>✏️ editor</option>
+                    <option value="admin"  ${u.role==='admin' ?'selected':''}>🛡️ admin</option>
+                </select>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        body.innerHTML = '<div class="ap-loading" style="color:#ff4d6a">Erreur réseau</div>';
+    }
+}
+
+async function apUpdateRole(userId, role) {
+    try {
+        const r = await fetch(`/admin/update-user/${userId}`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ role })
+        });
+        const d = await r.json();
+        apToast(d.success ? '✅ ' + d.message : '❌ ' + d.message);
+    } catch { apToast('❌ Erreur réseau'); }
+}
+
+function apToast(msg) {
+    document.querySelectorAll('.ap-toast').forEach(t => t.remove());
+    const t = document.createElement('div'); t.className = 'ap-toast'; t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+
+document.addEventListener('click', e => {
+    if (!_apOpen) return;
+    const panel = document.getElementById('adminPanel'), btn = document.getElementById('adminBtn');
+    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+        _apOpen = false; panel.style.display = 'none';
+    }
+});
+
+(function() {
+    let keys = new Set();
+    document.addEventListener('keydown', e => {
+        keys.add(e.key);
+        if (keys.has('Control') && keys.has('Shift') && keys.has('A')) {
+            e.preventDefault(); toggleAdminPanel();
+        }
+    });
+    document.addEventListener('keyup', e => keys.delete(e.key));
+})();
+</script>
+{% endif %}
+{# ════════════════════════════════════════════ #}
+
+
+<script>
+// ── Performance Chart (données réelles backend) ──
+const perfLabels   = {{ chart_labels   | tojson }};
+const perfRevenus  = {{ chart_revenus  | tojson }};
+const perfDepenses = {{ chart_depenses | tojson }};
+const perfSolde    = {{ chart_solde    | tojson }};
+
+{% if chart_labels %}
+const ctx1 = document.getElementById('performanceChart').getContext('2d');
+new Chart(ctx1, {
+    type: 'bar',
+    data: {
+        labels: perfLabels,
+        datasets: [
+            {
+                label: 'Revenus',
+                data: perfRevenus,
+                backgroundColor: 'rgba(0,200,120,.7)',
+                borderColor: '#00c878',
+                borderWidth: 1,
+                borderRadius: 6,
+                order: 2
+            },
+            {
+                label: 'Dépenses',
+                data: perfDepenses,
+                backgroundColor: 'rgba(255,77,106,.7)',
+                borderColor: '#ff4d6a',
+                borderWidth: 1,
+                borderRadius: 6,
+                order: 2
+            },
+            {
+                label: 'Solde Net',
+                data: perfSolde,
+                type: 'line',
+                borderColor: '#ffd700',
+                backgroundColor: 'rgba(255,215,0,.08)',
+                borderWidth: 2.5,
+                pointRadius: 4,
+                pointBackgroundColor: '#ffd700',
+                tension: 0.4,
+                fill: true,
+                order: 1
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#1a1d27',
+                borderColor: '#2e3448',
+                borderWidth: 1,
+                titleColor: '#e8ecf1',
+                bodyColor: '#a8b2d1',
+                callbacks: {
+                    label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}€`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255,255,255,.06)' },
+                ticks: { color: '#a8b2d1', callback: v => v + '€' }
+            },
+            x: {
+                grid: { color: 'rgba(255,255,255,.04)' },
+                ticks: { color: '#a8b2d1' }
+            }
+        }
+    }
+});
+{% endif %}
+
+// ── Donut Chart (dépenses par catégorie) ──
+const donutLabels = {{ donut_labels | tojson }};
+const donutData   = {{ donut_data   | tojson }};
+const donutColors = ['#00d4aa','#7c6aff','#ffd700','#ff4d6a','#00ff88','#ff8c00'];
+
+{% if donut_labels %}
+const ctx2 = document.getElementById('distributionChart').getContext('2d');
+new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+        labels: donutLabels,
+        datasets: [{
+            data: donutData,
+            backgroundColor: donutColors.slice(0, donutLabels.length),
+            borderColor: '#1a1d27',
+            borderWidth: 3,
+            hoverOffset: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: '68%',
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: '#a8b2d1',
+                    padding: 12,
+                    font: { size: 11 },
+                    usePointStyle: true,
+                    pointStyleWidth: 8
+                }
+            },
+            tooltip: {
+                backgroundColor: '#1a1d27',
+                borderColor: '#2e3448',
+                borderWidth: 1,
+                titleColor: '#e8ecf1',
+                bodyColor: '#a8b2d1',
+                callbacks: {
+                    label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)}€`
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kengni Finance
+Comment=Application de gestion financière et trading avec IA
+Exec=bash -c "cd /chemin/vers/votre/app && python3 app.py"
+Icon=utilities-finance
+Terminal=false
+Categories=Finance;Office;
+StartupNotify=true

@@ -1,0 +1,726 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Kengni Finance{% endblock %}
+{% block content %}
+
+<!-- Image Spam Manager Popup -->
+<div id="imageSpamPopup" class="image-spam-container">
+    <div class="image-spam-content">
+        <div class="spam-header">
+            <h3><i class="fas fa-images"></i> Gestionnaire d'Images Animées</h3>
+            <button class="spam-close" onclick="closeSpamPopup()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="spam-body">
+            <!-- Upload Section -->
+            <div class="upload-zone" id="dropZone">
+                <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                <p>Glissez vos images ici ou cliquez pour sélectionner</p>
+                <input type="file" id="imageUpload" multiple accept="image/*" style="display:none;">
+                <button class="btn-upload" onclick="document.getElementById('imageUpload').click()">
+                    <i class="fas fa-plus"></i> Ajouter Images
+                </button>
+            </div>
+
+            <!-- Gallery Grid -->
+            <div class="spam-gallery" id="imageGallery">
+                <!-- Images will be added here -->
+            </div>
+
+            <!-- Animation Controls -->
+            <div class="animation-controls">
+                <h4><i class="fas fa-magic"></i> Paramètres d'Animation</h4>
+                
+                <div class="control-row">
+                    <label>Type d'animation</label>
+                    <select id="animationType" class="spam-select">
+                        <option value="rain">💧 Pluie (haut → bas)</option>
+                        <option value="bounce">⚡ Rebond</option>
+                        <option value="float">🎈 Flottant</option>
+                        <option value="spin">🌀 Rotation</option>
+                        <option value="zoom">🔍 Zoom In/Out</option>
+                        <option value="slide">➡️ Glissement</option>
+                    </select>
+                </div>
+
+                <div class="control-row">
+                    <label>Vitesse</label>
+                    <input type="range" id="speedSlider" min="1" max="10" value="5">
+                    <span id="speedValue">5</span>
+                </div>
+
+                <div class="control-row">
+                    <label>Nombre d'images simultanées</label>
+                    <input type="range" id="countSlider" min="1" max="20" value="5">
+                    <span id="countValue">5</span>
+                </div>
+
+                <div class="control-row">
+                    <label>Taille des images</label>
+                    <input type="range" id="sizeSlider" min="50" max="300" value="100">
+                    <span id="sizeValue">100px</span>
+                </div>
+
+                <div class="control-row">
+                    <label>Fréquence (secondes)</label>
+                    <input type="range" id="frequencySlider" min="0.5" max="5" step="0.5" value="2">
+                    <span id="frequencyValue">2s</span>
+                </div>
+
+                <div class="control-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="enableSound">
+                        <span>Activer sons</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="spam-actions">
+                <button class="btn-action btn-start" onclick="startImageSpam()">
+                    <i class="fas fa-play"></i> Démarrer Animation
+                </button>
+                <button class="btn-action btn-stop" onclick="stopImageSpam()">
+                    <i class="fas fa-stop"></i> Arrêter
+                </button>
+                <button class="btn-action btn-preview" onclick="previewAnimation()">
+                    <i class="fas fa-eye"></i> Aperçu
+                </button>
+                <button class="btn-action btn-clear" onclick="clearAllImages()">
+                    <i class="fas fa-trash"></i> Tout Effacer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Button to open popup -->
+<button class="spam-trigger-btn" onclick="openSpamPopup()" title="Gestionnaire d'Images">
+    <i class="fas fa-image"></i>
+    <span class="pulse-dot"></span>
+</button>
+
+<!-- Animation Container -->
+<div id="animationLayer"></div>
+
+<style>
+/* Popup Container */
+.image-spam-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.3s ease;
+}
+
+.image-spam-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 212, 170, 0.3);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 2px solid #00d4aa;
+}
+
+.spam-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    background: linear-gradient(135deg, #00d4aa, #00ff88);
+    color: #0f1419;
+    border-radius: 18px 18px 0 0;
+}
+
+.spam-header h3 {
+    margin: 0;
+    font-weight: 700;
+}
+
+.spam-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #0f1419;
+    font-size: 18px;
+    transition: all 0.3s;
+}
+
+.spam-close:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: rotate(90deg);
+}
+
+.spam-body {
+    padding: 30px;
+}
+
+/* Upload Zone */
+.upload-zone {
+    border: 3px dashed #00d4aa;
+    border-radius: 15px;
+    padding: 40px;
+    text-align: center;
+    background: rgba(0, 212, 170, 0.05);
+    margin-bottom: 30px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.upload-zone:hover {
+    background: rgba(0, 212, 170, 0.1);
+    border-color: #00ff88;
+}
+
+.upload-zone.drag-over {
+    background: rgba(0, 212, 170, 0.2);
+    border-color: #00ff88;
+    transform: scale(1.02);
+}
+
+.btn-upload {
+    background: linear-gradient(135deg, #00d4aa, #00ff88);
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    color: #0f1419;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: all 0.3s;
+}
+
+.btn-upload:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 20px rgba(0, 212, 170, 0.4);
+}
+
+/* Gallery */
+.spam-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.gallery-item {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.gallery-item:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gallery-item .delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #ff4757;
+    border: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.gallery-item:hover .delete-btn {
+    opacity: 1;
+}
+
+/* Animation Controls */
+.animation-controls {
+    background: rgba(0, 212, 170, 0.05);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.animation-controls h4 {
+    color: #00d4aa;
+    margin-bottom: 20px;
+}
+
+.control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.control-row label {
+    color: #fff;
+    font-weight: 500;
+    flex: 1;
+}
+
+.spam-select {
+    flex: 2;
+    background: #0f1419;
+    border: 2px solid #00d4aa;
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+input[type="range"] {
+    flex: 2;
+    margin-right: 15px;
+}
+
+.control-row span {
+    background: #00d4aa;
+    color: #0f1419;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    min-width: 60px;
+    text-align: center;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* Action Buttons */
+.spam-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.btn-action {
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.btn-start {
+    background: linear-gradient(135deg, #00d4aa, #00ff88);
+    color: #0f1419;
+}
+
+.btn-stop {
+    background: linear-gradient(135deg, #ff4757, #ff6b81);
+    color: white;
+}
+
+.btn-preview {
+    background: linear-gradient(135deg, #4a9eff, #5f27cd);
+    color: white;
+}
+
+.btn-clear {
+    background: linear-gradient(135deg, #666, #888);
+    color: white;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Floating Trigger Button */
+.spam-trigger-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00d4aa, #00ff88);
+    border: none;
+    color: #0f1419;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(0, 212, 170, 0.4);
+    z-index: 1000;
+    transition: all 0.3s;
+}
+
+.spam-trigger-btn:hover {
+    transform: scale(1.1);
+}
+
+.pulse-dot {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 15px;
+    height: 15px;
+    background: #ff4757;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Animation Layer */
+#animationLayer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.animated-image {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+}
+
+@keyframes rainFall {
+    0% { transform: translateY(-100%) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-50px); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-30px); }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes zoomInOut {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.5); }
+}
+
+@keyframes slideAcross {
+    0% { transform: translateX(-100%); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateX(100vw); opacity: 0; }
+}
+
+/* Scrollbar */
+.spam-gallery::-webkit-scrollbar,
+.image-spam-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.spam-gallery::-webkit-scrollbar-track,
+.image-spam-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.spam-gallery::-webkit-scrollbar-thumb,
+.image-spam-content::-webkit-scrollbar-thumb {
+    background: #00d4aa;
+    border-radius: 10px;
+}
+</style>
+
+<script>
+let uploadedImages = [];
+let animationInterval = null;
+let isAnimating = false;
+
+// Open/Close Popup
+function openSpamPopup() {
+    document.getElementById('imageSpamPopup').style.display = 'block';
+}
+
+function closeSpamPopup() {
+    document.getElementById('imageSpamPopup').style.display = 'none';
+}
+
+// File Upload
+document.getElementById('imageUpload').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                addImageToGallery(event.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+// Drag & Drop
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    
+    const files = Array.from(e.dataTransfer.files);
+    files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                addImageToGallery(event.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+// Add image to gallery
+function addImageToGallery(imageSrc) {
+    uploadedImages.push(imageSrc);
+    
+    const gallery = document.getElementById('imageGallery');
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    item.innerHTML = `
+        <img src="${imageSrc}" alt="Image">
+        <button class="delete-btn" onclick="deleteImage(${uploadedImages.length - 1})">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    gallery.appendChild(item);
+}
+
+// Delete image
+function deleteImage(index) {
+    uploadedImages.splice(index, 1);
+    updateGallery();
+}
+
+// Update gallery display
+function updateGallery() {
+    const gallery = document.getElementById('imageGallery');
+    gallery.innerHTML = '';
+    uploadedImages.forEach((src, index) => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.innerHTML = `
+            <img src="${src}" alt="Image">
+            <button class="delete-btn" onclick="deleteImage(${index})">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        gallery.appendChild(item);
+    });
+}
+
+// Clear all images
+function clearAllImages() {
+    if (confirm('Supprimer toutes les images ?')) {
+        uploadedImages = [];
+        document.getElementById('imageGallery').innerHTML = '';
+        stopImageSpam();
+    }
+}
+
+// Sliders updates
+document.getElementById('speedSlider').addEventListener('input', function(e) {
+    document.getElementById('speedValue').textContent = e.target.value;
+});
+
+document.getElementById('countSlider').addEventListener('input', function(e) {
+    document.getElementById('countValue').textContent = e.target.value;
+});
+
+document.getElementById('sizeSlider').addEventListener('input', function(e) {
+    document.getElementById('sizeValue').textContent = e.target.value + 'px';
+});
+
+document.getElementById('frequencySlider').addEventListener('input', function(e) {
+    document.getElementById('frequencyValue').textContent = e.target.value + 's';
+});
+
+// Start Animation
+function startImageSpam() {
+    if (uploadedImages.length === 0) {
+        alert('⚠️ Ajoutez d\'abord des images!');
+        return;
+    }
+    
+    if (isAnimating) {
+        alert('✅ Animation déjà en cours!');
+        return;
+    }
+    
+    isAnimating = true;
+    const frequency = parseFloat(document.getElementById('frequencySlider').value) * 1000;
+    
+    animationInterval = setInterval(spawnImage, frequency);
+    
+    // Spawn initial batch
+    const count = parseInt(document.getElementById('countSlider').value);
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => spawnImage(), i * (frequency / count));
+    }
+}
+
+// Stop Animation
+function stopImageSpam() {
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+    isAnimating = false;
+    document.getElementById('animationLayer').innerHTML = '';
+}
+
+// Spawn single image
+function spawnImage() {
+    if (uploadedImages.length === 0) return;
+    
+    const layer = document.getElementById('animationLayer');
+    const img = document.createElement('img');
+    
+    // Random image
+    const randomImg = uploadedImages[Math.floor(Math.random() * uploadedImages.length)];
+    img.src = randomImg;
+    img.className = 'animated-image';
+    
+    // Get settings
+    const animationType = document.getElementById('animationType').value;
+    const size = parseInt(document.getElementById('sizeSlider').value);
+    const speed = parseInt(document.getElementById('speedSlider').value);
+    
+    // Size
+    img.style.width = size + 'px';
+    img.style.height = size + 'px';
+    
+    // Random position
+    img.style.left = Math.random() * (window.innerWidth - size) + 'px';
+    
+    // Animation duration
+    const duration = (11 - speed) + 's';
+    
+    // Apply animation
+    switch(animationType) {
+        case 'rain':
+            img.style.top = '-' + size + 'px';
+            img.style.animation = `rainFall ${duration} linear`;
+            break;
+        case 'bounce':
+            img.style.top = Math.random() * (window.innerHeight - size) + 'px';
+            img.style.animation = `bounce ${duration} ease-in-out infinite`;
+            break;
+        case 'float':
+            img.style.top = Math.random() * (window.innerHeight - size) + 'px';
+            img.style.animation = `float ${duration} ease-in-out infinite`;
+            break;
+        case 'spin':
+            img.style.top = Math.random() * (window.innerHeight - size) + 'px';
+            img.style.animation = `spin ${duration} linear infinite`;
+            break;
+        case 'zoom':
+            img.style.top = Math.random() * (window.innerHeight - size) + 'px';
+            img.style.animation = `zoomInOut ${duration} ease-in-out infinite`;
+            break;
+        case 'slide':
+            img.style.top = Math.random() * (window.innerHeight - size) + 'px';
+            img.style.animation = `slideAcross ${duration} linear`;
+            break;
+    }
+    
+    layer.appendChild(img);
+    
+    // Remove after animation
+    setTimeout(() => {
+        if (img.parentNode) {
+            img.remove();
+        }
+    }, parseFloat(duration) * 1000);
+}
+
+// Preview Animation
+function previewAnimation() {
+    if (uploadedImages.length === 0) {
+        alert('⚠️ Ajoutez d\'abord des images!');
+        return;
+    }
+    
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => spawnImage(), i * 500);
+    }
+}
+
+// Close popup on ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeSpamPopup();
+    }
+});
+</script>
+
+{% endblock %}

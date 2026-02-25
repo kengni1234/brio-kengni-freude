@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Double Sécurité Admin — Kengni Finance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{box-sizing:border-box;}
+        body {
+            background: linear-gradient(135deg, #0f1117 0%, #1a1a2e 50%, #0a0e1a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        body::before {
+            content:'';
+            position:fixed; inset:0;
+            background: radial-gradient(ellipse at 30% 60%, rgba(124,106,255,.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 30%, rgba(255,185,58,.05) 0%, transparent 60%);
+            pointer-events:none;
+        }
+        .card {
+            background: linear-gradient(135deg,#1a1d27,#21263a);
+            border: 1px solid rgba(124,106,255,.2);
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            max-width: 480px;
+            width: 95%;
+            box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 60px rgba(124,106,255,.05);
+            position: relative;
+            z-index: 1;
+            animation: slideUp .4s cubic-bezier(.175,.885,.32,1.275);
+        }
+        @keyframes slideUp {
+            from{opacity:0;transform:translateY(24px) scale(.97)}
+            to{opacity:1;transform:none}
+        }
+        .lock-icon {
+            width:80px; height:80px;
+            background: linear-gradient(135deg,#7c6aff,#4a90d9);
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:2rem;
+            margin: 0 auto 1.75rem;
+            box-shadow: 0 0 0 0 rgba(124,106,255,.5);
+            animation: lockPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes lockPulse {
+            0%,100%{box-shadow:0 0 0 0 rgba(124,106,255,.5)}
+            50%{box-shadow:0 0 0 18px rgba(124,106,255,0)}
+        }
+        h2{color:#e0e6f8;text-align:center;font-weight:800;font-size:1.5rem;margin-bottom:.4rem;}
+        .sub{text-align:center;color:#6b7280;font-size:.88rem;margin-bottom:2rem;}
+        .step-badge {
+            display:inline-flex;align-items:center;gap:.4rem;
+            background:rgba(124,106,255,.12);border:1px solid rgba(124,106,255,.25);
+            color:#7c6aff;border-radius:20px;padding:.25rem .9rem;font-size:.75rem;font-weight:700;
+            text-transform:uppercase;letter-spacing:.5px;margin-bottom:1.5rem;
+            display:flex;justify-content:center;
+        }
+        .form-label {
+            font-size:.78rem;font-weight:700;text-transform:uppercase;
+            letter-spacing:.8px;color:#6b7280;margin-bottom:.4rem;display:block;
+        }
+        .pwd-wrap { position:relative; margin-bottom:1.25rem; }
+        .form-control-custom {
+            background:rgba(255,255,255,.05);
+            border:2px solid rgba(255,255,255,.08);
+            color:#e0e6f8;
+            border-radius:14px;
+            padding:.9rem 3rem .9rem 1.1rem;
+            font-size:1rem;
+            width:100%;
+            outline:none;
+            transition:all .3s;
+            font-family:inherit;
+        }
+        .form-control-custom:focus {
+            border-color:#7c6aff;
+            box-shadow:0 0 0 4px rgba(124,106,255,.14);
+            background:rgba(124,106,255,.05);
+        }
+        .form-control-custom::placeholder{color:#3a4060;}
+        .toggle-pw {
+            position:absolute; right:.9rem; top:50%; transform:translateY(-50%);
+            background:none;border:none;color:#6b7280;cursor:pointer;font-size:.95rem;
+            transition:color .2s;
+        }
+        .toggle-pw:hover{color:#e0e6f8;}
+        .btn-access {
+            background:linear-gradient(135deg,#7c6aff,#4a90d9);
+            border:none;color:#fff;
+            padding:1rem;border-radius:14px;
+            font-weight:800;font-size:1.05rem;width:100%;
+            cursor:pointer;transition:all .3s cubic-bezier(.175,.885,.32,1.275);
+            position:relative;overflow:hidden;
+        }
+        .btn-access::after {
+            content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+            transition:left .4s;
+        }
+        .btn-access:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(124,106,255,.4);}
+        .btn-access:hover::after{left:100%;}
+        .btn-access:active{transform:scale(.98);}
+        .btn-access:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+        .error-box {
+            background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.25);
+            color:#ff4757;border-radius:12px;padding:.85rem 1.1rem;
+            margin-bottom:1.25rem;font-size:.88rem;
+            display:flex;align-items:center;gap:.6rem;
+        }
+        .info-strip {
+            display:flex;justify-content:center;gap:1.25rem;margin-top:1.5rem;flex-wrap:wrap;
+        }
+        .info-item{font-size:.72rem;color:#3e4355;display:flex;align-items:center;gap:.3rem;}
+        .info-item i{color:#7c6aff;}
+        .back-link {
+            text-align:center;margin-top:1.25rem;
+        }
+        .back-link a{color:#6b7280;text-decoration:none;font-size:.85rem;transition:color .2s;}
+        .back-link a:hover{color:#7c6aff;}
+        .attempts-warn {
+            background:rgba(255,185,58,.08);border:1px solid rgba(255,185,58,.2);
+            color:#ffb93a;border-radius:10px;padding:.65rem 1rem;
+            font-size:.8rem;margin-top:1rem;text-align:center;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="lock-icon">🔐</div>
+    <h2>Double Sécurité Admin</h2>
+    <div class="sub">Vérification supplémentaire requise pour accéder au panneau d'administration</div>
+
+    <div class="step-badge">
+        <i class="fas fa-shield-alt"></i>
+        Étape 2 sur 2 — Mot de passe secondaire
+    </div>
+
+    {% if error %}
+    <div class="error-box">
+        <i class="fas fa-times-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('admin_secondary_verify') }}" id="secForm">
+        <label class="form-label">
+            <i class="fas fa-key me-1"></i> Mot de passe administrateur secondaire
+        </label>
+        <div class="pwd-wrap">
+            <input
+                type="password"
+                class="form-control-custom"
+                name="secondary_password"
+                id="secPwd"
+                required
+                placeholder="••••••••••••••"
+                autofocus
+                autocomplete="off"
+                oninput="document.getElementById('accessBtn').disabled = this.value.length < 6"
+            >
+            <button type="button" class="toggle-pw" onclick="togglePw()">
+                <i class="fas fa-eye" id="pwEye"></i>
+            </button>
+        </div>
+
+        <button type="submit" class="btn-access" id="accessBtn" disabled>
+            <i class="fas fa-unlock-alt me-2"></i> Accéder au Panneau Admin
+        </button>
+    </form>
+
+    <div class="attempts-warn">
+        <i class="fas fa-exclamation-triangle me-1"></i>
+        3 tentatives incorrectes = déconnexion automatique
+    </div>
+
+    <div class="info-strip">
+        <span class="info-item"><i class="fas fa-lock"></i> Session chiffrée</span>
+        <span class="info-item"><i class="fas fa-eye-slash"></i> Accès invisible</span>
+        <span class="info-item"><i class="fas fa-history"></i> Journalisé</span>
+    </div>
+
+    <div class="back-link">
+        <a href="{{ url_for('dashboard') }}"><i class="fas fa-arrow-left me-1"></i> Retour au tableau de bord</a>
+    </div>
+</div>
+
+<script>
+function togglePw() {
+    const inp = document.getElementById('secPwd');
+    const eye = document.getElementById('pwEye');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        eye.className = 'fas fa-eye-slash';
+    } else {
+        inp.type = 'password';
+        eye.className = 'fas fa-eye';
+    }
+}
+
+let failCount = 0;
+{% if error %}
+failCount++;
+{% endif %}
+
+document.getElementById('secForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('accessBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Vérification...';
+    btn.disabled = true;
+});
+</script>
+</body>
+</html>

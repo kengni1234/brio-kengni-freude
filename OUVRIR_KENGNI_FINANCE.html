@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kengni Finance — Accès Réseau</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh; display:flex; align-items:center; justify-content:center;
+    color: white;
+  }
+  .card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(0,212,170,0.3);
+    border-radius: 24px; padding: 3rem 2.5rem;
+    text-align: center; max-width: 480px; width: 90%;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(0,212,170,0.1);
+  }
+  .logo { font-size: 3.5rem; margin-bottom: 1rem; }
+  h1 { font-size: 1.8rem; font-weight: 800; color: #00d4aa; margin-bottom: 0.3rem; }
+  .sub { color: #a8b2d1; font-size: 0.9rem; margin-bottom: 2rem; }
+  .url-box {
+    background: rgba(0,212,170,0.1); border: 2px solid #00d4aa;
+    border-radius: 14px; padding: 1.2rem 1.5rem;
+    font-size: 1.3rem; font-weight: 800; color: #00d4aa;
+    margin-bottom: 2rem; word-break: break-all;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .url-box:hover { background: rgba(0,212,170,0.2); transform: scale(1.02); }
+  .btn-open {
+    display: block; width: 100%;
+    background: linear-gradient(135deg, #00d4aa, #00ff88);
+    color: #0f1419; border: none; border-radius: 14px;
+    padding: 1.1rem; font-size: 1.1rem; font-weight: 800;
+    text-decoration: none; cursor: pointer;
+    transition: all 0.3s; margin-bottom: 1rem;
+  }
+  .btn-open:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(0,212,170,0.4); color: #0f1419; }
+  .creds {
+    background: rgba(255,255,255,0.04); border-radius: 12px;
+    padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: #a8b2d1;
+  }
+  .creds strong { color: #e0e6f8; }
+  .devices { display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; }
+  .dev { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 0.6rem 1rem; font-size: 0.85rem; }
+  .note { font-size: 0.78rem; color: #666; margin-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">📊</div>
+  <h1>Kengni Finance</h1>
+  <p class="sub">k-ni chez Htech-training — Finance & Trading avec IA</p>
+
+  <div class="url-box" onclick="window.location.href='http://192.168.1.144:5001'" title="Cliquez pour ouvrir">
+    🌐 http://192.168.1.144:5001
+  </div>
+
+  <a class="btn-open" href="http://192.168.1.144:5001">
+    🚀 Ouvrir Kengni Finance
+  </a>
+
+  <div class="devices">
+    <span class="dev">📱 Android</span>
+    <span class="dev">🍎 iPhone</span>
+    <span class="dev">💻 Windows</span>
+    <span class="dev">🐧 Linux</span>
+  </div>
+
+  <div class="creds">
+    <strong>Email:</strong> fabrice.kengni@icloud.com<br>
+    <strong>Password:</strong> kengni
+  </div>
+
+  <p class="note">⚠️ Connectez-vous au même point d'accès mobile que le PC serveur</p>
+</div>
+
+<script>
+  // Redirection automatique après 3 secondes
+  setTimeout(() => { window.location.href = 'http://192.168.1.144:5001'; }, 3000);
+  // Compte à rebours
+  let n = 3;
+  const btn = document.querySelector('.btn-open');
+  const timer = setInterval(() => {
+    n--;
+    btn.textContent = n > 0 ? '🚀 Redirection dans ' + n + 's...' : '🚀 Ouverture...';
+    if (n <= 0) clearInterval(timer);
+  }, 1000);
+</script>
+</body>
+</html>
