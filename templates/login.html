@@ -369,6 +369,78 @@
             z-index: 2;
             pointer-events: none;
         }
+
+        /* ═══════════════════════════════════════
+           RESPONSIVE MOBILE - LOGIN
+        ═══════════════════════════════════════ */
+        @media (max-width: 900px) {
+            /* Cacher les flyers lateraux sur tablette/mobile */
+            .flyers-container { display: none !important; }
+
+            /* Personnage en arriere-plan discret */
+            .character-bg {
+                opacity: 0.15;
+                height: 75vh;
+                filter: drop-shadow(0 0 30px rgba(0,212,170,0.1));
+            }
+        }
+
+        @media (max-width: 768px) {
+            body { overflow-y: auto; align-items: flex-start; }
+
+            .main-scene {
+                align-items: flex-start;
+                padding: 1.5rem 1rem 2rem;
+                min-height: 100vh;
+            }
+
+            .login-3d-container {
+                perspective: none;
+                width: 100%;
+                max-width: 420px;
+                margin: 0 auto;
+            }
+
+            .login-card {
+                width: 100% !important;
+                margin-top: 60px;
+                padding: 1.2rem 1.4rem 1.8rem;
+                border-radius: 18px;
+                animation: none; /* desactiver glow intense sur mobile */
+            }
+
+            .logo-box {
+                width: 84px !important;
+                height: 84px !important;
+                margin: -42px auto 14px !important;
+            }
+
+            .card-title { font-size: 1.25rem !important; }
+            .card-subtitle { font-size: 0.76rem !important; margin-bottom: 1.2rem !important; }
+
+            .form-control {
+                font-size: 16px !important; /* evite zoom iOS */
+                padding: 0.7rem 0.9rem !important;
+            }
+
+            .btn-login {
+                padding: 0.85rem !important;
+                font-size: 0.88rem !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-scene { padding: 1rem 0.75rem 2rem; }
+
+            .login-card {
+                margin-top: 50px;
+                padding: 1rem 1.1rem 1.5rem;
+                border-radius: 14px;
+            }
+
+            .card-title { font-size: 1.1rem !important; letter-spacing: 1.5px !important; }
+            .character-bg { opacity: 0.08; }
+        }
     </style>
 </head>
 <body>
