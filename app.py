@@ -451,6 +451,12 @@ def init_db():
         )
         ''')
 
+        # Migration: add allowed_pages column if not exists
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN allowed_pages TEXT DEFAULT NULL")
+        except Exception:
+            pass
+
         # Check if default user exists
         cursor.execute("SELECT COUNT(*) as count FROM users WHERE email = ?", ('fabrice.kengni@icloud.com',))
         if cursor.fetchone()[0] == 0:
@@ -479,8 +485,10 @@ ADMIN_SECONDARY_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Kengni@fablo12')
 @app.context_processor
 def inject_global_context():
     """Injecte des variables globales disponibles dans tous les templates"""
-    ctx = {'training_total_nav': 0}
+    ctx = {'training_total_nav': 0, 'user_allowed_pages': None, 'ALL_USER_PAGES': ALL_USER_PAGES}
     if 'user_id' in session:
+        if session.get('role') not in ('admin', 'superadmin'):
+            ctx['user_allowed_pages'] = get_user_allowed_pages(session['user_id'])
         conn = get_db_connection()
         if conn:
             try:
@@ -514,7 +522,48 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# AI Analysis Functions
+# Page-level access decorator — checks user's allowed_pages JSON
+# If allowed_pages is NULL (not set), user has access to everything.
+# If set, the page key must be in the list.
+ALL_USER_PAGES = [
+    'dashboard', 'finances', 'history', 'portfolio', 'reports',
+    'settings', 'trading', 'trading_journal', 'analysis', 'ai_assistant',
+    'agenda', 'bloc_notes', 'notifications', 'inscription_trading'
+]
+
+def get_user_allowed_pages(user_id):
+    """Returns the list of allowed pages for a user, or None (= all pages)."""
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT allowed_pages FROM users WHERE id=?", (user_id,))
+        row = cursor.fetchone()
+        conn.close()
+        if row and row['allowed_pages']:
+            try:
+                return json.loads(row['allowed_pages'])
+            except Exception:
+                return None
+    return None
+
+def page_access_required(page_key):
+    """Decorator: if user's allowed_pages is set and page_key not in it, show locked page."""
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if 'user_id' not in session:
+                return redirect(url_for('login'))
+            # Admins always have full access
+            if session.get('role') in ('admin', 'superadmin'):
+                return f(*args, **kwargs)
+            allowed = get_user_allowed_pages(session['user_id'])
+            if allowed is not None and page_key not in allowed:
+                return render_template('locked_page.html', page_key=page_key), 403
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+
 
 def analyze_trading_psychology(user_id):
     """Analyze psychological trading patterns"""
@@ -1062,7 +1111,7 @@ def index():
 def login():
     """User login"""
     if request.method == 'POST':
-        data = request.get_json() if request.is_json else request.form
+        data = request.get_json(force=True, silent=True) or request.form
         email = data.get('email')
         password = data.get('password')
         
@@ -1253,7 +1302,7 @@ def login_flyers():
 def register():
     """User registration"""
     if request.method == 'POST':
-        data = request.get_json() if request.is_json else request.form
+        data = request.get_json(force=True, silent=True) or request.form
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
@@ -1311,6 +1360,7 @@ def register():
                 session['username'] = username
                 session['email'] = email
                 session['theme'] = 'dark'
+                session['role'] = 'user'
                 
                 if request.is_json:
                     return jsonify({'success': True, 'redirect': url_for('dashboard')})
@@ -1331,7 +1381,7 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/dashboard')
-@login_required
+@page_access_required('dashboard')
 def dashboard():
     """Main dashboard"""
     user_id = session['user_id']
@@ -1490,7 +1540,7 @@ def dashboard():
                            recent_trainings=[], training_total=0,
                            training_total_min=0, training_this_month=0)
 @app.route('/finances')
-@login_required
+@page_access_required('finances')
 def finances():
     """Gestion financière avancée avec filtres, statistiques et graphiques"""
     user_id = session['user_id']
@@ -1627,7 +1677,7 @@ def delete_journal(id):
 @login_required
 def add_financial_transaction():
     """Add new financial transaction"""
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     user_id = session['user_id']
     
     required_fields = ['type', 'category', 'reason', 'amount', 'date', 'time']
@@ -1682,7 +1732,7 @@ def add_financial_transaction():
     return jsonify({'success': False, 'message': 'Erreur de connexion'}), 500
 
 @app.route('/journal')
-@login_required
+@page_access_required('trading_journal')
 def trading_journal():
     """Trading journal with images"""
     user_id = session['user_id']
@@ -1719,7 +1769,7 @@ def add_journal_entry():
             image_path = filepath
     
     # Get form data
-    data = request.form if not request.is_json else request.get_json()
+    data = request.form if not request.is_json else request.get_json(force=True, silent=True)
     
     conn = get_db_connection()
     if conn:
@@ -1784,7 +1834,7 @@ def add_journal_entry():
     return jsonify({'success': False, 'message': 'Erreur de connexion'}), 500
 
 @app.route('/trading')
-@login_required
+@page_access_required('trading')
 def trading():
     """Trading interface"""
     user_id = session['user_id']
@@ -1809,7 +1859,7 @@ def trading():
 def execute_trade():
     """Execute trade - accepte JSON et form-data"""
     if request.is_json:
-        data = request.get_json()
+        data = request.get_json(force=True, silent=True)
     else:
         data = request.form.to_dict()
     user_id = session['user_id']
@@ -1888,7 +1938,7 @@ def execute_trade():
     return jsonify({'success': False, 'message': 'Erreur de connexion'}), 500
 
 @app.route('/portfolio')
-@login_required
+@page_access_required('portfolio')
 def portfolio():
     """Portfolio management with enhanced structure"""
     user_id = session['user_id']
@@ -1944,7 +1994,7 @@ def portfolio():
 @login_required
 def add_position():
     """Add new portfolio position"""
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     user_id = session['user_id']
     
     required_fields = ['symbol', 'quantity', 'avg_price']
@@ -2480,7 +2530,7 @@ def ai_analyze_finances():
 
 
 @app.route('/ai-assistant')
-@login_required
+@page_access_required('ai_assistant')
 def ai_assistant():
     """AI Assistant conversational page"""
     return render_template('ai_assistant.html')
@@ -2489,7 +2539,7 @@ def ai_assistant():
 @login_required
 def ai_chat():
     """AI conversational assistant endpoint"""
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     user_id = session['user_id']
     question = data.get('question', '').lower()
     
@@ -2711,7 +2761,7 @@ def ai_chat():
     return jsonify(response)
 
 @app.route('/analysis')
-@login_required
+@page_access_required('analysis')
 def analysis():
     """Analysis and insights page"""
     user_id = session['user_id']
@@ -2787,7 +2837,7 @@ def get_trading_recommendation(symbol):
     return jsonify(recommendation)
 
 @app.route('/settings')
-@login_required
+@page_access_required('settings')
 def settings():
     """User settings page"""
     user_id = session['user_id']
@@ -2809,7 +2859,7 @@ def settings():
 @login_required
 def update_settings():
     """Update user settings"""
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     user_id = session['user_id']
     
     conn = get_db_connection()
@@ -2852,7 +2902,7 @@ def update_settings():
     return jsonify({'success': False, 'message': 'Erreur de connexion'}), 500
 
 @app.route('/notifications')
-@login_required
+@page_access_required('notifications')
 def notifications():
     """Notifications page"""
     user_id = session['user_id']
@@ -2893,7 +2943,7 @@ def mark_notification_read(notification_id):
     return jsonify({'success': False}), 500
 
 @app.route('/reports')
-@login_required
+@page_access_required('reports')
 def reports():
     """Reports page"""
     user_id = session['user_id']
@@ -2917,7 +2967,7 @@ def reports():
 @login_required
 def generate_report():
     """Generate financial report"""
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     user_id = session['user_id']
     
     report_type = data.get('type', 'monthly')
@@ -3074,7 +3124,7 @@ def view_report(report_id):
 
 
 @app.route('/history')
-@login_required
+@page_access_required('history')
 def history():
     """Transaction history"""
     user_id = session['user_id']
@@ -3164,7 +3214,7 @@ def delete_trade(id):
         return jsonify({'success': False, 'error': str(e)}), 500
         
 @app.route('/image-spam')
-@login_required
+@admin_required
 def image_spam():
     return render_template('image_spam_manager.html')
 
@@ -3205,7 +3255,7 @@ def admin_secret_entry():
 
 @app.route(f'/{ADMIN_SECRET_TOKEN}/auth', methods=['POST'])
 def admin_auth():
-    data = request.get_json() if request.is_json else request.form
+    data = request.get_json(force=True, silent=True) or request.form
     email    = data.get('email','').strip()
     password = data.get('password','').strip()
     conn = get_db_connection()
@@ -3258,7 +3308,7 @@ def admin_secondary_verify():
     """Double sécurité admin — mot de passe secondaire Kengni@fablo12"""
     error = None
     if request.method == 'POST':
-        pwd = (request.get_json() or request.form).get('secondary_password', '')
+        pwd = (request.get_json(force=True, silent=True) or request.form).get('secondary_password', '')
         # Compteur de tentatives
         session['admin_sec_attempts'] = session.get('admin_sec_attempts', 0) + 1
         if session['admin_sec_attempts'] > 3:
@@ -3284,7 +3334,7 @@ def admin_secondary_verify():
 @app.route('/admin/create-user', methods=['POST'])
 @admin_required
 def admin_create_user():
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     username,email,password = data.get('username','').strip(), data.get('email','').strip(), data.get('password','').strip()
     role, status = data.get('role','user'), data.get('status','active')
     allowed = ['viewer','user','editor','admin']
@@ -3305,7 +3355,7 @@ def admin_create_user():
 @app.route('/admin/update-user/<int:user_id>', methods=['POST'])
 @admin_required
 def admin_update_user(user_id):
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     role, status = data.get('role'), data.get('status')
     allowed = ['viewer','user','editor','admin']
     if session.get('role')=='superadmin': allowed.append('superadmin')
@@ -3322,7 +3372,7 @@ def admin_update_user(user_id):
 @app.route('/admin/reset-password/<int:user_id>', methods=['POST'])
 @admin_required
 def admin_reset_password(user_id):
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     password = data.get('password','').strip()
     if len(password)<6: return jsonify({'success':False,'message':'Mot de passe trop court'}),400
     conn = get_db_connection()
@@ -3346,7 +3396,35 @@ def admin_delete_user(user_id):
         return jsonify({'success':True,'message':'Utilisateur supprimé'})
     return jsonify({'success':False,'message':'Erreur DB'}),500
 
-# API pour le mini-panel admin intégré (dashboard + settings)
+@app.route('/admin/update-permissions/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_update_permissions(user_id):
+    """Set allowed pages for a user. Empty list = blocked everywhere, None = all access."""
+    data = request.get_json(force=True, silent=True) or {}
+    pages = data.get('pages')  # list or None
+    if pages is not None:
+        # Validate
+        pages = [p for p in pages if p in ALL_USER_PAGES]
+        pages_json = json.dumps(pages)
+    else:
+        pages_json = None  # NULL = unrestricted
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET allowed_pages=?,updated_at=? WHERE id=?",
+                       (pages_json, datetime.now().isoformat(), user_id))
+        conn.commit(); conn.close()
+        return jsonify({'success': True, 'message': 'Permissions mises à jour'})
+    return jsonify({'success': False, 'message': 'Erreur DB'}), 500
+
+@app.route('/admin/get-permissions/<int:user_id>')
+@admin_required
+def admin_get_permissions(user_id):
+    """Get allowed pages for a user."""
+    allowed = get_user_allowed_pages(user_id)
+    return jsonify({'success': True, 'pages': allowed})
+
+
 @app.route('/api/admin/users')
 @admin_required
 def api_admin_users():
@@ -3392,18 +3470,20 @@ def detect_thumbnail(url):
 
 
 @app.route('/training')
-@login_required
 def training():
-    """Page de gestion des cours de formation."""
+    """Page de gestion des cours de formation — contenu visible par tous."""
+    empty_days = {d: [] for d in ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche','Non défini']}
     conn = get_db_connection()
     if not conn:
-        return render_template('training.html', courses_by_day={}, stats={})
+        return render_template('training.html', courses_by_day=empty_days, stats={})
     cursor = conn.cursor()
+    # Charger TOUS les cours de TOUS les utilisateurs + nom de l'auteur
     cursor.execute('''
-        SELECT * FROM training_courses
-        WHERE user_id = ?
-        ORDER BY day_of_week, created_at DESC
-    ''', (session['user_id'],))
+        SELECT tc.*, u.username AS author_name, u.email AS author_email
+        FROM training_courses tc
+        LEFT JOIN users u ON tc.user_id = u.id
+        ORDER BY tc.day_of_week, tc.created_at DESC
+    ''')
     courses = [dict(r) for r in cursor.fetchall()]
     conn.close()
 
@@ -3557,7 +3637,7 @@ def training_delete(cid):
 @app.route('/api/training/fetch-thumb', methods=['POST'])
 @login_required
 def training_fetch_thumb():
-    data = request.get_json() or {}
+    data = request.get_json(force=True, silent=True) or {}
     url = data.get('url', '')
     thumb = detect_thumbnail(url)
     return jsonify({'thumbnail': thumb})
@@ -3879,7 +3959,7 @@ def sincire_lead(lead_id):
 @admin_required
 def update_lead_payment(lead_id):
     """Met à jour les infos de paiement d'un lead."""
-    data = request.get_json() or {}
+    data = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
     if not conn:
         return jsonify({'success': False}), 500
@@ -4163,7 +4243,7 @@ def start_agenda_scheduler():
 # ── ROUTES AGENDA ──────────────────────────────────────────────────────────────
 
 @app.route('/agenda')
-@login_required
+@page_access_required('agenda')
 def agenda():
     """Page principale de l'agenda."""
     user_id = session['user_id']
@@ -4232,7 +4312,7 @@ def agenda():
 @login_required
 def agenda_create_event():
     user_id = session['user_id']
-    data    = request.get_json() or {}
+    data    = request.get_json(force=True, silent=True) or {}
 
     title      = (data.get('title') or '').strip()
     event_type = data.get('event_type', 'personnel')
@@ -4312,7 +4392,7 @@ def agenda_get_events():
 @login_required
 def agenda_update_event(event_id):
     user_id = session['user_id']
-    data    = request.get_json() or {}
+    data    = request.get_json(force=True, silent=True) or {}
     conn    = get_db_connection()
     if not conn:
         return jsonify({'success': False}), 500
@@ -4421,7 +4501,7 @@ def _get_unread_count(user_id):
 
 
 @app.route('/bloc-notes')
-@login_required
+@page_access_required('bloc_notes')
 def bloc_notes():
     """Page principale du bloc-notes avec tableau et calculatrice."""
     user_id = session['user_id']
@@ -4513,7 +4593,7 @@ def bloc_notes_clear():
 def bloc_notes_memo():
     """Sauvegarde le mémo rapide (appel AJAX JSON)."""
     user_id = session['user_id']
-    data    = request.get_json(silent=True) or {}
+    data    = request.get_json(force=True, silent=True) or {}
     memo    = str(data.get('memo', ''))[:5000]
 
     conn = get_db_connection()

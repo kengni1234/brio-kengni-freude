@@ -338,6 +338,22 @@ body {
 }
 .card-meta span { display: flex; align-items: center; gap: 4px; }
 
+/* Auteur du cours */
+.card-author {
+  margin-top: 6px;
+  font-size: .72rem;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  background: rgba(88,166,255,.06);
+  border: 1px solid rgba(88,166,255,.18);
+  border-radius: 20px;
+  width: fit-content;
+}
+.card-author strong { color: var(--accent); font-weight: 700; }
+
 /* Participants row */
 .card-participants {
   font-size: .76rem;
@@ -853,13 +869,15 @@ body {
   <a href="/journal">Journal</a>
   <a href="/finance">Finance</a>
   <a href="/training" class="active">🎓 Training</a>
+  {% if session.get('user_id') %}
   <button class="btn btn-add-nav" onclick="openAddModal()">➕ Nouveau cours</button>
+  {% endif %}
 </nav>
 
 <!-- ══ PAGE HEADER ══ -->
 <div class="page-header">
-  <div class="page-title">🎓 Mes Formations Trading</div>
-  <div class="page-subtitle">Organise tes sessions par jour · Suivi des participants · Analyses &amp; stratégies · Images des positions</div>
+  <div class="page-title">🎓 Formations Trading</div>
+  <div class="page-subtitle">Sessions partagées par tous les membres · Accès libre · Modifier uniquement vos propres cours</div>
 </div>
 
 <!-- ══ STATS ══ -->
@@ -996,6 +1014,11 @@ body {
                 {% if c.scheduled_date %}<span>📅 {{ c.scheduled_date }}</span>{% endif %}
                 {% if c.tags %}<span>🏷 {{ c.tags }}</span>{% endif %}
               </div>
+
+              <!-- Auteur -->
+              <div class="card-author">
+                👤 Ajouté par <strong>{{ c.author_name or 'Inconnu' }}</strong>
+              </div>
             </div>
 
             <!-- Actions -->
@@ -1004,8 +1027,10 @@ body {
               <a class="btn btn-open" href="{{ c.course_url }}" target="_blank">▶ Ouvrir</a>
               {% endif %}
               <button class="btn btn-detail" onclick='showDetail({{ c|tojson }})' title="Voir détail">🔍</button>
+              {% if session.get('user_id') and (session.get('user_id') == c.user_id or session.get('role') in ('admin','superadmin')) %}
               <button class="btn btn-edit" onclick='editCourse({{ c|tojson }})' title="Modifier">✏</button>
               <button class="btn btn-delete" onclick="deleteCourse({{ c.id }})" title="Supprimer">🗑</button>
+              {% endif %}
             </div>
           </div>
         {% endfor %}

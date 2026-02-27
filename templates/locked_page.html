@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accès restreint — Kengni Finance</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0f1117; --surface: #1a1d27; --card: #21263a;
+            --border: #2e3448; --accent: #00d4aa; --danger: #ff4d6a;
+            --warning: #ffb93a; --text: #e8ecf1; --muted: #6b7280;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh; display: flex; flex-direction: column;
+        }
+        .header {
+            background: linear-gradient(135deg, #0a0e1a, #1a1d27);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem; display: flex; align-items: center;
+            justify-content: space-between; height: 64px;
+        }
+        .hb { display: flex; align-items: center; gap: .75rem; font-size: 1.15rem; font-weight: 700; color: var(--accent); }
+        .hb span { color: var(--text); }
+        .back { background: var(--surface); color: var(--muted); border: 1px solid var(--border);
+                padding: .45rem 1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; transition: .2s; }
+        .back:hover { color: var(--text); border-color: var(--accent); }
+
+        .page-container {
+            flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem;
+        }
+        .lock-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+            padding: 3rem 2.5rem; text-align: center; max-width: 480px; width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,.5);
+            animation: fadeUp .4s ease;
+        }
+        @keyframes fadeUp { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+        .lock-icon {
+            width: 80px; height: 80px; background: rgba(255,77,106,.1);
+            border: 2px solid rgba(255,77,106,.3); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; margin: 0 auto 1.5rem; position: relative;
+        }
+        /* Blur "preview" strips */
+        .blur-preview {
+            margin: 1.5rem 0; display: flex; flex-direction: column; gap: .5rem;
+            filter: blur(4px); pointer-events: none; user-select: none; opacity: .35;
+        }
+        .blur-bar { height: 14px; border-radius: 6px; background: var(--border); }
+        .blur-bar:nth-child(1) { width: 90%; }
+        .blur-bar:nth-child(2) { width: 70%; }
+        .blur-bar:nth-child(3) { width: 85%; }
+        .blur-bar:nth-child(4) { width: 55%; }
+        .blur-block { height: 60px; border-radius: 10px; background: var(--border); }
+
+        .lock-title { font-size: 1.35rem; font-weight: 800; margin-bottom: .5rem; }
+        .lock-sub { color: var(--muted); font-size: .9rem; line-height: 1.6; }
+        .page-badge {
+            display: inline-block; background: rgba(255,185,58,.1); color: var(--warning);
+            border: 1px solid rgba(255,185,58,.3); border-radius: 6px;
+            padding: .25rem .7rem; font-size: .78rem; font-weight: 700;
+            font-family: monospace; margin: .75rem 0;
+        }
+        .btn-back {
+            display: inline-flex; align-items: center; gap: .5rem;
+            background: var(--accent); color: #000; border: none;
+            padding: .65rem 1.5rem; border-radius: 10px; font-size: .9rem; font-weight: 700;
+            cursor: pointer; text-decoration: none; margin-top: 1.5rem;
+            transition: .2s;
+        }
+        .btn-back:hover { background: #00bfa3; }
+        .info-note {
+            margin-top: 1.25rem; font-size: .78rem; color: var(--muted);
+            background: rgba(255,255,255,.03); border-radius: 8px; padding: .6rem 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="hb">📊 <span>Kengni Finance</span></div>
+    <a href="/dashboard" class="back">← Tableau de bord</a>
+</div>
+<div class="page-container">
+    <div class="lock-card">
+        <div class="lock-icon">🔒</div>
+
+        <!-- Blurred preview of content -->
+        <div class="blur-preview">
+            <div class="blur-block"></div>
+            <div class="blur-bar"></div>
+            <div class="blur-bar"></div>
+            <div class="blur-bar"></div>
+            <div class="blur-bar"></div>
+        </div>
+
+        <div class="lock-title">Accès restreint</div>
+        <div class="page-badge">{{ page_key }}</div>
+        <div class="lock-sub">
+            Vous n'avez pas accès à cette section.<br>
+            Contactez votre administrateur pour obtenir les droits nécessaires.
+        </div>
+
+        <a href="/dashboard" class="btn-back">← Retour au tableau de bord</a>
+
+        <div class="info-note">
+            💡 Un administrateur peut activer cet accès depuis le panneau admin → Permissions utilisateur
+        </div>
+    </div>
+</div>
+</body>
+</html>
