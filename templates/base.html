@@ -427,40 +427,199 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
+        /* ═══════════════════════════════════════════════
+           RESPONSIVE MOBILE — SYSTÈME COMPLET
+        ═══════════════════════════════════════════════ */
 
-            .sidebar.active {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .mobile-menu-toggle {
-                display: block !important;
-            }
-        }
-
-        .mobile-menu-toggle {
+        /* Overlay sombre derrière le sidebar */
+        .sidebar-overlay {
             display: none;
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1001;
-            background: var(--primary-color);
-            color: var(--secondary-color);
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            font-size: 1.5rem;
+            inset: 0;
+            background: rgba(0,0,0,.65);
+            z-index: 999;
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+        .sidebar-overlay.active { display: block; }
+
+        /* Bouton fermer dans le sidebar */
+        .sidebar-close-btn {
+            display: none;
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255,71,87,.15);
+            border: 1px solid rgba(255,71,87,.3);
+            color: var(--danger-color);
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            font-size: .9rem;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 212, 170, 0.5);
+            align-items: center;
+            justify-content: center;
+            transition: background .2s;
+            z-index: 10;
+        }
+        .sidebar-close-btn:hover { background: rgba(255,71,87,.3); }
+
+        /* Bouton hamburger dans la topbar */
+        .hamburger-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(0,212,170,.12);
+            border: 1px solid rgba(0,212,170,.25);
+            border-radius: 10px;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background .2s;
+            flex-shrink: 0;
+        }
+        .hamburger-btn:hover { background: rgba(0,212,170,.25); }
+
+        /* Cacher l'ancien bouton flottant */
+        .mobile-menu-toggle { display: none !important; }
+
+        @media (max-width: 768px) {
+
+            /* ── Sidebar drawer ── */
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1000;
+                transition: transform .3s cubic-bezier(.4,0,.2,1);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+                box-shadow: 8px 0 40px rgba(0,0,0,.6);
+            }
+            .sidebar-close-btn { display: flex; }
+
+            /* ── Main content pleine largeur ── */
+            .main-content {
+                margin-left: 0 !important;
+                padding: .875rem !important;
+                width: 100% !important;
+            }
+
+            /* ── Hamburger visible ── */
+            .hamburger-btn { display: flex; }
+
+            /* ── Top bar mobile ── */
+            .top-bar {
+                padding: .75rem 1rem !important;
+                border-radius: 12px !important;
+                margin-bottom: 1rem !important;
+                flex-wrap: nowrap;
+                gap: .5rem;
+            }
+            .top-bar h1 {
+                font-size: 1.15rem !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 160px;
+            }
+            .top-bar-actions { gap: .4rem !important; }
+
+            /* Masquer le nom d'utilisateur, garder l'avatar */
+            .user-profile span { display: none; }
+            .user-profile {
+                padding: .4rem !important;
+                min-width: 36px;
+                justify-content: center;
+            }
+            .theme-toggle,
+            .notification-badge {
+                padding: .45rem .7rem !important;
+            }
+
+            /* ── Tables — scroll horizontal ── */
+            .custom-table {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                border-radius: 12px !important;
+            }
+            .custom-table table {
+                min-width: 520px;
+            }
+            .custom-table th,
+            .custom-table td {
+                padding: .6rem .75rem !important;
+                font-size: .82rem !important;
+                white-space: nowrap;
+            }
+
+            /* ── Stat cards — 2 colonnes ── */
+            .row.g-4 > .col-md-3,
+            .row.g-4 > .col-lg-3 {
+                flex: 0 0 50% !important;
+                max-width: 50% !important;
+            }
+            .stat-card { padding: 1rem !important; }
+            .stat-card h2 { font-size: 1.5rem !important; }
+            .stat-card .icon {
+                width: 44px !important;
+                height: 44px !important;
+                font-size: 1.3rem !important;
+            }
+
+            /* ── Colonnes Bootstrap → pleine largeur ── */
+            .col-lg-8, .col-lg-7, .col-lg-6,
+            .col-md-8, .col-md-7, .col-md-6 {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+            }
+
+            /* ── Modals Bootstrap ── */
+            .modal-dialog {
+                margin: .5rem !important;
+                max-width: calc(100vw - 1rem) !important;
+            }
+            .modal-body  { padding: 1rem !important; }
+            .modal-header { padding: .875rem 1rem !important; }
+            .modal-footer {
+                padding: .75rem 1rem !important;
+                flex-wrap: wrap !important;
+                gap: .5rem !important;
+            }
+
+            /* ── Formulaires ── */
+            .form-control,
+            .form-select,
+            input, select, textarea {
+                font-size: 16px !important; /* évite le zoom iOS */
+            }
+            .row.g-2 > [class*="col-"] {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+            }
+
+            /* ── Barres d'actions ── */
+            .d-flex.justify-content-between,
+            .action-bar {
+                flex-wrap: wrap !important;
+                gap: .5rem !important;
+            }
+
+            /* ── Espacements ── */
+            .mb-4 { margin-bottom: 1rem !important; }
+            .p-4  { padding: 1rem !important; }
+            .container-fluid { padding: 0 !important; }
+        }
+
+        @media (max-width: 480px) {
+            .top-bar h1 { font-size: 1rem !important; max-width: 120px; }
+            .row.g-4 > .col-md-3,
+            .row.g-4 > .col-lg-3 {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+            }
+            .main-content { padding: .625rem !important; }
         }
 
         /* Scrollbar */
@@ -498,8 +657,15 @@
 </head>
 <body class="{{ session.get('theme', 'dark') }}-theme">
     
+    <!-- Overlay mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
+        <!-- Bouton fermer (mobile) -->
+        <button class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Fermer le menu">
+            <i class="fas fa-times"></i>
+        </button>
         <div class="logo">
             <img src="{{ url_for('static', filename='img/logo.jpeg') }}" alt="Kengni Finance Logo">
             <h4>Kengni Finance</h4>
@@ -647,6 +813,10 @@
     <main class="main-content">
         <!-- Top Bar -->
         <div class="top-bar">
+            <!-- Hamburger mobile -->
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menu">
+                <i class="fas fa-bars" id="hamburger-icon"></i>
+            </button>
             <h1>{% block page_title %}Dashboard{% endblock %}</h1>
             
             <div class="top-bar-actions">
@@ -671,11 +841,6 @@
         <!-- Page Content -->
         {% block content %}{% endblock %}
     </main>
-
-    <!-- Mobile Menu Toggle -->
-    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
-        <i class="fas fa-bars"></i>
-    </button>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -718,10 +883,60 @@
             }
         }
 
-        // Sidebar Toggle for Mobile
+        // Sidebar Toggle — Système complet mobile
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('active')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
         }
+
+        function openSidebar() {
+            document.getElementById('sidebar').classList.add('active');
+            document.getElementById('sidebarOverlay').classList.add('active');
+            const icon = document.getElementById('hamburger-icon');
+            if (icon) { icon.classList.replace('fa-bars', 'fa-times'); }
+            document.body.style.overflow = 'hidden'; // empêche scroll body
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+            const icon = document.getElementById('hamburger-icon');
+            if (icon) { icon.classList.replace('fa-times', 'fa-bars'); }
+            document.body.style.overflow = '';
+        }
+
+        // Fermer sidebar en cliquant un lien (mobile)
+        document.querySelectorAll('.sidebar-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) closeSidebar();
+            });
+        });
+
+        // Fermer avec Echap
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeSidebar();
+        });
+
+        // Fermer si resize vers desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) closeSidebar();
+        });
+
+        // Wrapper scroll horizontal auto sur les tableaux
+        function wrapTablesForMobile() {
+            if (window.innerWidth > 768) return;
+            document.querySelectorAll('.custom-table').forEach(ct => {
+                // S'assurer que overflow-x est bien appliqué
+                ct.style.overflowX = 'auto';
+                ct.style.webkitOverflowScrolling = 'touch';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', wrapTablesForMobile);
 
         // Initialize theme on page load
         document.addEventListener('DOMContentLoaded', function() {

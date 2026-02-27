@@ -146,6 +146,30 @@
             outline: none;
         }
         .form-control::placeholder { color: rgba(255,255,255,0.28); font-weight: 600; }
+
+        .pwd-wrapper {
+            position: relative;
+            margin-bottom: 1.1rem;
+        }
+        .pwd-wrapper .form-control {
+            margin-bottom: 0;
+            padding-right: 3rem;
+        }
+        .pwd-toggle {
+            position: absolute;
+            right: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.4);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        .pwd-toggle:hover { color: #00d4aa; }
         .btn-login {
             background: linear-gradient(135deg, #00c49a, #00ff88);
             color: #07120d;
@@ -377,8 +401,13 @@
                         <input type="email" name="email" class="form-control"
                                placeholder="votre@email.com" required autocomplete="email">
                         <label class="form-label-custom">Mot de passe</label>
-                        <input type="password" name="password" class="form-control"
-                               placeholder="••••••••" required autocomplete="current-password">
+                        <div class="pwd-wrapper">
+                            <input type="password" name="password" id="passwordInput" class="form-control"
+                                   placeholder="••••••••" required autocomplete="current-password">
+                            <button type="button" class="pwd-toggle" onclick="togglePassword()" title="Afficher / Masquer">
+                                <i class="fas fa-eye" id="eyeIcon"></i>
+                            </button>
+                        </div>
                         <button type="submit" class="btn btn-login">
                             <i class="fas fa-shield-alt me-2"></i>CONNEXION SÉCURISÉE
                         </button>
@@ -580,6 +609,18 @@ function refreshSlot(id){
 }
 
 window.addEventListener('load', loadItems);
+
+function togglePassword() {
+    const input = document.getElementById('passwordInput');
+    const icon  = document.getElementById('eyeIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
 </script>
 </body>
 </html>
