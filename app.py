@@ -34,7 +34,9 @@ from datetime import date as _date
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'kengni-finance-default-key-change-in-prod-2024')
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
@@ -1060,6 +1062,7 @@ def verify_token_page():
             session.pop('pending_2fa_token',   None)
             session.pop('pending_2fa_expires', None)
             session['admin_secondary_verified'] = False  # Reset secondary check on new login
+            session.permanent = False  # Session expire a la fermeture du navigateur
             
             if is_admin_login:
                 return redirect(url_for('admin_secondary_verify'))
