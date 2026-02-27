@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% block title %}📓 Bloc-Notes — Kengni Finance{% endblock %}
+{% block page_title %}📓 Bloc-Notes & Calculatrice{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+
+<style>
+    .bn-card {
+        background: var(--secondary-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        margin-bottom: 1.5rem;
+    }
+    .bn-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .bn-input {
+        width: 100%;
+        background: var(--accent-color);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.88rem;
+        padding: 0.55rem 0.9rem;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+    .bn-input:focus { border-color: var(--primary-color); }
+    select.bn-input option { background: var(--secondary-color); }
+    .bn-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: 'Inter', sans-serif;
+    }
+    .bn-btn:hover { transform: translateY(-1px); opacity: 0.9; }
+    .bn-btn-primary  { background: var(--primary-color); color: #000; }
+    .bn-btn-danger   { background: rgba(255,71,87,0.15); color: var(--danger-color); border: 1px solid var(--danger-color); }
+    .bn-btn-purple   { background: rgba(124,106,255,0.15); color: #7c6aff; border: 1px solid #7c6aff; }
+    .bn-btn-warning  { background: rgba(255,215,0,0.15); color: var(--warning-color); border: 1px solid var(--warning-color); }
+    .bn-tag {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .bn-tag-green  { background: rgba(0,255,136,0.12); color: var(--success-color); }
+    .bn-tag-red    { background: rgba(255,71,87,0.12);  color: var(--danger-color); }
+    .bn-tag-purple { background: rgba(124,106,255,0.12); color: #7c6aff; }
+    .bn-tag-yellow { background: rgba(255,215,0,0.12);   color: var(--warning-color); }
+    table.bn-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    table.bn-table thead th {
+        background: var(--accent-color);
+        color: var(--primary-color);
+        padding: 0.7rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--border-color);
+        white-space: nowrap;
+    }
+    table.bn-table tbody tr { border-bottom: 1px solid var(--border-color); transition: background 0.15s; }
+    table.bn-table tbody tr:hover { background: rgba(0,212,170,0.04); }
+    table.bn-table tbody td { padding: 0.65rem 1rem; vertical-align: middle; }
+    .del-note-btn {
+        background: none; border: none; cursor: pointer;
+        color: var(--danger-color); padding: 0.2rem 0.5rem; border-radius: 6px; transition: background 0.2s;
+    }
+    .del-note-btn:hover { background: rgba(255,71,87,0.15); }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1rem; }
+    .stat-box {
+        background: var(--accent-color); border-radius: 10px; padding: 0.9rem 1rem;
+        text-align: center; border: 1px solid var(--border-color);
+    }
+    .stat-box .val { font-size: 1.25rem; font-weight: 700; font-family: 'JetBrains Mono', 'Courier New', monospace; }
+    .stat-box .lbl { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.2rem; }
+    /* ── CALCULATRICE ── */
+    .calc-display {
+        background: var(--accent-color); border-radius: 12px; padding: 1rem 1.2rem;
+        margin-bottom: 1rem; text-align: right; border: 1px solid var(--border-color);
+    }
+    .calc-expr { font-size: 0.78rem; color: var(--text-secondary); min-height: 1.1rem; word-break: break-all; font-family: 'Courier New', monospace; }
+    .calc-result { font-size: 1.9rem; font-weight: 700; color: var(--text-primary); font-family: 'Courier New', monospace; margin-top: 0.2rem; }
+    .calc-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.45rem; }
+    .calc-btn {
+        padding: 0.85rem 0.4rem; border: none; border-radius: 10px; cursor: pointer;
+        font-family: 'Courier New', monospace; font-size: 1rem; font-weight: 700; transition: all 0.12s;
+    }
+    .calc-btn:active { transform: scale(0.91); }
+    .calc-btn.num { background: var(--accent-color); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .calc-btn.num:hover { background: var(--secondary-color); }
+    .calc-btn.op  { background: rgba(0,212,170,0.1); color: var(--primary-color); border: 1px solid rgba(0,212,170,0.25); }
+    .calc-btn.op:hover { background: rgba(0,212,170,0.22); }
+    .calc-btn.eq  { background: var(--primary-color); color: #000; grid-column: span 2; }
+    .calc-btn.clr { background: rgba(255,71,87,0.12); color: var(--danger-color); border: 1px solid rgba(255,71,87,0.25); }
+    .calc-btn.bksp { background: rgba(255,215,0,0.1); color: var(--warning-color); border: 1px solid rgba(255,215,0,0.25); }
+    .sticky-note {
+        background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.2);
+        border-radius: 12px; padding: 1rem;
+    }
+    .sticky-note textarea {
+        width: 100%; background: transparent; border: none; color: var(--warning-color);
+        font-family: 'Inter', sans-serif; font-size: 0.88rem; resize: none; outline: none; min-height: 80px;
+    }
+    @media (max-width: 900px) { .bn-layout { grid-template-columns: 1fr !important; } .stats-row { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show mb-3" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="bn-layout" style="display:grid;grid-template-columns:1fr 330px;gap:1.5rem;">
+
+    <!-- ══ GAUCHE : FORMULAIRE + TABLEAU ══ -->
+    <div>
+        <!-- Ajouter une entrée -->
+        <div class="bn-card">
+            <div class="bn-title">➕ Ajouter une entrée</div>
+            <form method="POST" action="{{ url_for('bloc_notes_add') }}">
+                <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token','') }}">
+                <div class="row g-2 mb-2">
+                    <div class="col-md-4">
+                        <input class="bn-input" name="label" placeholder="📝 Description..." required>
+                    </div>
+                    <div class="col-md-4">
+                        <input class="bn-input" name="note_text" placeholder="🗒️ Note / Commentaire...">
+                    </div>
+                    <div class="col-md-2">
+                        <input class="bn-input" name="amount" type="number" step="0.01" placeholder="💰 Montant">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="bn-input" name="entry_type">
+                            <option value="revenu">💚 Revenu</option>
+                            <option value="depense">❤️ Dépense</option>
+                            <option value="tache">💜 Tâche</option>
+                            <option value="info">💛 Information</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-3">
+                        <input class="bn-input" name="entry_date" type="date" value="{{ today }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="bn-input" name="currency">
+                            <option value="EUR">€ EUR</option>
+                            <option value="XAF">FCFA XAF</option>
+                            <option value="USD">$ USD</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="bn-btn bn-btn-primary">➕ Ajouter</button>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{{ url_for('bloc_notes_export') }}" class="bn-btn bn-btn-warning">📥 Exporter CSV</a>
+                    </div>
+                    {% if notes %}
+                    <div class="col-auto">
+                        <button type="button" class="bn-btn bn-btn-danger" onclick="confirmClear()">🗑️ Tout effacer</button>
+                    </div>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- Tableau -->
+        <div class="bn-card">
+            <div class="bn-title" style="justify-content:space-between;">
+                <span>📊 Tableau de Suivi</span>
+                <input class="bn-input" id="search" placeholder="🔍 Rechercher..." oninput="filterRows()" style="width:220px;">
+            </div>
+            <div class="table-responsive">
+                <table class="bn-table" id="notes-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>📅 Date</th>
+                            <th>📝 Description</th>
+                            <th>🗒️ Note</th>
+                            <th>💰 Montant</th>
+                            <th>🏷️ Type</th>
+                            <th>⚙️</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if notes %}
+                            {% for n in notes %}
+                            <tr class="note-row">
+                                <td style="color:var(--text-secondary);font-family:monospace;">{{ loop.index }}</td>
+                                <td style="font-size:0.8rem;color:var(--text-secondary);">{{ n.entry_date }}</td>
+                                <td style="font-weight:500;">{{ n.label }}</td>
+                                <td style="color:var(--text-secondary);font-size:0.85rem;">{{ n.note_text or '—' }}</td>
+                                <td style="font-family:monospace;font-weight:600;color:
+                                    {%- if n.entry_type == 'revenu' %}var(--success-color)
+                                    {%- elif n.entry_type == 'depense' %}var(--danger-color)
+                                    {%- else %}var(--text-primary){% endif %};">
+                                    {% if n.amount %}
+                                        {{ "%.2f"|format(n.amount) }} {{ n.currency }}
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>
+                                    {% if n.entry_type == 'revenu' %}
+                                        <span class="bn-tag bn-tag-green">💚 Revenu</span>
+                                    {% elif n.entry_type == 'depense' %}
+                                        <span class="bn-tag bn-tag-red">❤️ Dépense</span>
+                                    {% elif n.entry_type == 'tache' %}
+                                        <span class="bn-tag bn-tag-purple">💜 Tâche</span>
+                                    {% else %}
+                                        <span class="bn-tag bn-tag-yellow">💛 Info</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('bloc_notes_delete', note_id=n.id) }}" style="display:inline;" onsubmit="return confirm('Supprimer cette entrée ?');">
+                                        <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token','') }}">
+                                        <button type="submit" class="del-note-btn">🗑️</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:2rem;">Aucune entrée — commencez à ajouter ! 🚀</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="val" style="color:var(--primary-color);">{{ notes|length }}</div>
+                    <div class="lbl">📋 Total entrées</div>
+                </div>
+                <div class="stat-box">
+                    <div class="val" style="color:var(--success-color);">
+                        {% set rev = notes|selectattr('entry_type','eq','revenu')|map(attribute='amount')|select|sum %}
+                        {{ "%.2f"|format(rev) }} €
+                    </div>
+                    <div class="lbl">💚 Revenus</div>
+                </div>
+                <div class="stat-box">
+                    <div class="val" style="color:var(--danger-color);">
+                        {% set exp = notes|selectattr('entry_type','eq','depense')|map(attribute='amount')|select|sum %}
+                        {{ "%.2f"|format(exp) }} €
+                    </div>
+                    <div class="lbl">❤️ Dépenses</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ DROITE : CALCULATRICE + MÉMO ══ -->
+    <div>
+        <div class="bn-card">
+            <div class="bn-title">🧮 Calculatrice</div>
+            <div class="calc-display">
+                <div class="calc-expr" id="calc-expr"></div>
+                <div class="calc-result" id="calc-result">0</div>
+            </div>
+            <div class="calc-grid">
+                <button class="calc-btn clr" onclick="calcClear()" style="grid-column:span 2">🗑️ AC</button>
+                <button class="calc-btn bksp" onclick="calcBack()">⌫</button>
+                <button class="calc-btn op" onclick="calcOp('%')">%</button>
+
+                <button class="calc-btn num" onclick="calcNum('7')">7</button>
+                <button class="calc-btn num" onclick="calcNum('8')">8</button>
+                <button class="calc-btn num" onclick="calcNum('9')">9</button>
+                <button class="calc-btn op" onclick="calcOp('/')">÷</button>
+
+                <button class="calc-btn num" onclick="calcNum('4')">4</button>
+                <button class="calc-btn num" onclick="calcNum('5')">5</button>
+                <button class="calc-btn num" onclick="calcNum('6')">6</button>
+                <button class="calc-btn op" onclick="calcOp('*')">×</button>
+
+                <button class="calc-btn num" onclick="calcNum('1')">1</button>
+                <button class="calc-btn num" onclick="calcNum('2')">2</button>
+                <button class="calc-btn num" onclick="calcNum('3')">3</button>
+                <button class="calc-btn op" onclick="calcOp('-')">−</button>
+
+                <button class="calc-btn num" onclick="calcNum('0')" style="grid-column:span 2">0</button>
+                <button class="calc-btn num" onclick="calcNum('.')">.</button>
+                <button class="calc-btn op" onclick="calcOp('+')">+</button>
+
+                <button class="calc-btn eq" onclick="calcEquals()">=</button>
+                <button class="calc-btn op" onclick="calcOp('√')">√</button>
+                <button class="calc-btn op" onclick="calcOp('±')">±</button>
+            </div>
+
+            <!-- Historique -->
+            <div style="margin-top:1rem;">
+                <div class="bn-title" style="font-size:0.85rem;justify-content:space-between;">
+                    <span>📜 Historique calcul</span>
+                    <button id="share-btn" class="bn-btn bn-btn-purple" style="font-size:0.72rem;padding:0.25rem 0.7rem;" onclick="calcShare()">📤 Copier</button>
+                </div>
+                <div id="calc-history" style="font-family:'Courier New',monospace;font-size:0.8rem;color:var(--text-secondary);max-height:110px;overflow-y:auto;">
+                    <div style="text-align:center;padding:0.5rem;opacity:0.4;">Vide</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mémo Rapide — Sauvegardé en base -->
+        <div class="sticky-note">
+            <div class="bn-title" style="color:var(--warning-color);font-size:0.9rem;">📌 Mémo rapide</div>
+            <textarea id="sticky-memo" placeholder="Écris tes idées rapides ici... 💡" oninput="saveMemoDebounce()">{{ memo }}</textarea>
+            <div style="text-align:right;margin-top:0.4rem;">
+                <span id="memo-status" style="font-size:0.72rem;color:var(--text-secondary);"></span>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /bn-layout -->
+
+<!-- Confirmation effacement total -->
+<form method="POST" action="{{ url_for('bloc_notes_clear') }}" id="clear-form" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token','') }}">
+</form>
+
+</div><!-- /container -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ═══ CALCULATRICE ═══
+let calcExpr = '';
+let justCalc = false;
+const OPS = ['+','-','*','/'];
+
+function updateCalcDisplay() {
+    const pretty = calcExpr.replace(/\*/g,' × ').replace(/\//g,' ÷ ');
+    document.getElementById('calc-expr').textContent = pretty;
+}
+function livePreview() {
+    try {
+        const v = Function('"use strict"; return (' + calcExpr + ')')();
+        document.getElementById('calc-result').textContent = Math.round(v*1e10)/1e10;
+    } catch(e) {
+        document.getElementById('calc-result').textContent = calcExpr || '0';
+    }
+}
+function calcNum(n) {
+    if (justCalc && n !== '.') { calcExpr = ''; justCalc = false; }
+    if (n === '.') {
+        const parts = calcExpr.split(/[+\-*/]/);
+        if (parts[parts.length-1].includes('.')) return;
+    }
+    calcExpr += n;
+    updateCalcDisplay(); livePreview();
+}
+function calcOp(op) {
+    justCalc = false;
+    if (op === '√') {
+        try {
+            const last = parseFloat(calcExpr.split(/[+\-*/]/).pop());
+            const v = Math.round(Math.sqrt(last)*1e10)/1e10;
+            calcExpr = calcExpr.replace(/[\d.]+$/, String(v));
+            addCalcHistory('√' + last + ' = ' + v);
+            document.getElementById('calc-result').textContent = v;
+            updateCalcDisplay();
+        } catch(e) {}
+        return;
+    }
+    if (op === '±') {
+        try {
+            calcExpr = calcExpr.replace(/([\d.]+)$/, m => String(-parseFloat(m)));
+            updateCalcDisplay(); livePreview();
+        } catch(e) {}
+        return;
+    }
+    if (op === '%') {
+        try {
+            const match = calcExpr.match(/^(-?[0-9.]+)([+\-*/])(-?[0-9.]+)$/);
+            if (match) {
+                const base = parseFloat(match[1]);
+                const operator = match[2];
+                const pct  = parseFloat(match[3]);
+                const pctVal = (operator==='+' || operator==='-') ? base*pct/100 : pct/100;
+                const newExpr = match[1] + operator + pctVal;
+                const result  = Math.round(Function('"use strict"; return ('+newExpr+')')() * 1e10) / 1e10;
+                const sym = {'+':'✚','-':'−','*':'×','/':'÷'}[operator]||operator;
+                addCalcHistory(base+' '+sym+' '+pct+'% = '+result);
+                calcExpr = newExpr;
+                document.getElementById('calc-result').textContent = result;
+                updateCalcDisplay();
+            } else {
+                const v = Math.round(parseFloat(calcExpr)/100*1e10)/1e10;
+                addCalcHistory(calcExpr+'% = '+v);
+                calcExpr = String(v);
+                document.getElementById('calc-result').textContent = v;
+                updateCalcDisplay();
+            }
+        } catch(e) {}
+        return;
+    }
+    if (OPS.includes(calcExpr.slice(-1))) calcExpr = calcExpr.slice(0,-1);
+    calcExpr += op;
+    updateCalcDisplay();
+}
+function calcEquals() {
+    try {
+        const expr = calcExpr;
+        const result = Function('"use strict"; return ('+calcExpr+')')();
+        const rounded = Math.round(result*1e10)/1e10;
+        const pretty = expr.replace(/\*/g,'×').replace(/\//g,'÷');
+        addCalcHistory(pretty+' = '+rounded);
+        document.getElementById('calc-result').textContent = rounded;
+        calcExpr = String(rounded);
+        updateCalcDisplay();
+        justCalc = true;
+    } catch(e) {
+        document.getElementById('calc-result').textContent = '❌ Erreur';
+        calcExpr = '';
+    }
+}
+function calcClear() {
+    calcExpr = ''; justCalc = false;
+    document.getElementById('calc-result').textContent = '0';
+    document.getElementById('calc-expr').textContent = '';
+}
+function calcBack() {
+    calcExpr = calcExpr.slice(0,-1);
+    updateCalcDisplay(); livePreview();
+}
+function calcShare() {
+    const result = document.getElementById('calc-result').textContent;
+    const expr   = document.getElementById('calc-expr').textContent.trim();
+    const text   = expr ? expr+' = '+result : result;
+    const btn    = document.getElementById('share-btn');
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✅ Copié !';
+        setTimeout(() => { btn.textContent = '📤 Copier'; }, 2000);
+    }).catch(() => { btn.textContent = '❌ Erreur'; setTimeout(() => { btn.textContent = '📤 Copier'; }, 2000); });
+}
+function addCalcHistory(line) {
+    const h = document.getElementById('calc-history');
+    const empty = h.querySelector('div[style*="opacity"]');
+    if (empty) h.innerHTML = '';
+    const d = document.createElement('div');
+    d.textContent = line;
+    d.style.cssText = 'border-bottom:1px solid var(--border-color);padding:0.22rem 0;cursor:pointer;';
+    d.onmouseenter = () => d.style.color = 'var(--primary-color)';
+    d.onmouseleave = () => d.style.color = '';
+    d.onclick = () => {
+        const val = line.split(' = ').pop();
+        if (val) { calcExpr = val; justCalc = true; updateCalcDisplay(); document.getElementById('calc-result').textContent = val; }
+    };
+    h.prepend(d);
+    if (h.children.length > 10) h.lastChild.remove();
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+    const a = document.activeElement;
+    if (a && (a.tagName==='INPUT' || a.tagName==='TEXTAREA' || a.tagName==='SELECT')) return;
+    if ('0123456789.'.includes(e.key)) calcNum(e.key);
+    else if (e.key==='+') calcOp('+');
+    else if (e.key==='-') calcOp('-');
+    else if (e.key==='*') calcOp('*');
+    else if (e.key==='/') { e.preventDefault(); calcOp('/'); }
+    else if (e.key==='Enter' || e.key==='=') calcEquals();
+    else if (e.key==='Escape') calcClear();
+    else if (e.key==='Backspace') calcBack();
+});
+
+// ═══ MÉMO — sauvegarde serveur ═══
+let memoTimer = null;
+function saveMemoDebounce() {
+    clearTimeout(memoTimer);
+    document.getElementById('memo-status').textContent = '⏳ En cours...';
+    memoTimer = setTimeout(saveMemo, 800);
+}
+function saveMemo() {
+    const text = document.getElementById('sticky-memo').value;
+    fetch('{{ url_for("bloc_notes_memo") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ memo: text })
+    })
+    .then(r => r.json())
+    .then(d => {
+        document.getElementById('memo-status').textContent = d.ok ? '✅ Sauvegardé' : '❌ Erreur';
+        setTimeout(() => { document.getElementById('memo-status').textContent = ''; }, 2500);
+    })
+    .catch(() => { document.getElementById('memo-status').textContent = '❌ Erreur réseau'; });
+}
+
+// ═══ FILTRAGE TABLE ═══
+function filterRows() {
+    const q = document.getElementById('search').value.toLowerCase();
+    document.querySelectorAll('.note-row').forEach(tr => {
+        tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+// ═══ CLEAR TOTAL ═══
+function confirmClear() {
+    if (confirm('⚠️ Supprimer TOUTES les entrées ? Cette action est irréversible.')) {
+        document.getElementById('clear-form').submit();
+    }
+}
+</script>
+{% endblock %}

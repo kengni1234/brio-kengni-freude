@@ -598,6 +598,18 @@
             </li>
             {% endif %}
             <li>
+                <a href="{{ url_for('bloc_notes') }}" class="{% if request.endpoint == 'bloc_notes' %}active{% endif %}">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Bloc-Notes</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('image_spam') }}" class="{% if request.endpoint == 'image_spam' %}active{% endif %}">
+                    <i class="fas fa-images"></i>
+                    <span>Images Animées</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
                     <i class="fas fa-bell"></i>
                     <span>Notifications</span>

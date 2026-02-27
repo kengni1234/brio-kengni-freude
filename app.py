@@ -29,9 +29,11 @@ import threading
 import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import csv
+from datetime import date as _date
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)
+app.secret_key = os.environ.get('SECRET_KEY', 'kengni-finance-default-key-change-in-prod-2024')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -43,7 +45,7 @@ GMAIL_CONFIG = {
     'receiver_email':  'fabrice.kengni@icloud.com',
     'smtp_host':       'smtp.gmail.com',
     'smtp_port':       587,
-    'smtp_password':   'hmoz eelj nckb npqi',
+    'smtp_password':   os.environ.get('GMAIL_PASSWORD', ''),
 }
 
 # ── Types et couleurs des événements d'agenda ─────────────────────────────────
@@ -87,7 +89,7 @@ app.jinja_env.globals.update({
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Database Configuration
-DB_FILE = 'kengni_finance.db'
+DB_FILE = os.environ.get('DB_PATH', 'kengni_finance.db')
 
 # Allowed extensions for image uploads
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -421,17 +423,45 @@ def init_db():
             except Exception:
                 pass
 
+        # ── TABLE : Bloc-Notes (entrées) ──────────────────────────────────────
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bloc_notes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL,
+            label       TEXT    NOT NULL,
+            note_text   TEXT,
+            amount      REAL,
+            currency    TEXT    DEFAULT 'EUR',
+            entry_type  TEXT    DEFAULT 'info'
+                        CHECK(entry_type IN ('revenu','depense','tache','info')),
+            entry_date  TEXT    NOT NULL,
+            created_at  TEXT    DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+        ''')
+
+        # ── TABLE : Bloc-Notes Mémo rapide ─────────────────────────────────────
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bloc_notes_memo (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL UNIQUE,
+            memo        TEXT    DEFAULT '',
+            updated_at  TEXT    DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+        ''')
+
         # Check if default user exists
         cursor.execute("SELECT COUNT(*) as count FROM users WHERE email = ?", ('fabrice.kengni@icloud.com',))
         if cursor.fetchone()[0] == 0:
-            hashed_password = generate_password_hash('Kengni@fablo12')
+            hashed_password = generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'Kengni@fablo12'))
             cursor.execute('''
                 INSERT INTO users (username, email, password, role, created_at)
                 VALUES (?, ?, ?, ?, ?)
             ''', ('kengni', 'fabrice.kengni@icloud.com', hashed_password, 'admin', datetime.now().isoformat()))
         else:
             # Ensure admin always has the correct password (double sécurité)
-            hashed_password = generate_password_hash('Kengni@fablo12')
+            hashed_password = generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'Kengni@fablo12'))
             cursor.execute(
                 "UPDATE users SET password=? WHERE email=? AND role='admin'",
                 (hashed_password, 'fabrice.kengni@icloud.com')
@@ -442,8 +472,8 @@ def init_db():
         print("✅ Database initialized successfully!")
 
 # ── URL secrète admin ──
-ADMIN_SECRET_TOKEN = 'kengni-control-7749'
-ADMIN_SECONDARY_PASSWORD = 'Kengni@fablo12'
+ADMIN_SECRET_TOKEN = os.environ.get('ADMIN_TOKEN', 'kengni-control-7749')
+ADMIN_SECONDARY_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Kengni@fablo12')
 
 
 @app.context_processor
@@ -4368,6 +4398,169 @@ def agenda_test_email():
         }), 500
 
 
+
+
+# ══════════════════════════════════════════════════════════════
+# MODULE BLOC-NOTES — Notes, Tableau, Calculatrice & Mémo
+# ══════════════════════════════════════════════════════════════
+
+def _get_unread_count(user_id):
+    """Retourne le nombre de notifications non lues."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user_id,)
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return result['cnt'] if result else 0
+    except Exception:
+        return 0
+
+
+@app.route('/bloc-notes')
+@login_required
+def bloc_notes():
+    """Page principale du bloc-notes avec tableau et calculatrice."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM bloc_notes WHERE user_id = ? ORDER BY entry_date DESC, created_at DESC",
+        (user_id,)
+    )
+    notes = [dict(row) for row in cursor.fetchall()]
+
+    cursor.execute("SELECT memo FROM bloc_notes_memo WHERE user_id = ?", (user_id,))
+    memo_row = cursor.fetchone()
+    memo = memo_row['memo'] if memo_row else ''
+    conn.close()
+
+    return render_template(
+        'bloc_notes.html',
+        notes=notes,
+        memo=memo,
+        today=_date.today().isoformat(),
+        unread_notifications=_get_unread_count(user_id),
+    )
+
+
+@app.route('/bloc-notes/add', methods=['POST'])
+@login_required
+def bloc_notes_add():
+    """Ajoute une entrée au bloc-notes."""
+    user_id    = session['user_id']
+    label      = request.form.get('label', '').strip()
+    note_text  = request.form.get('note_text', '').strip()
+    amount_raw = request.form.get('amount', '').strip()
+    entry_type = request.form.get('entry_type', 'info')
+    currency   = request.form.get('currency', 'EUR')
+    entry_date = request.form.get('entry_date', _date.today().isoformat())
+
+    if not label:
+        flash('📝 La description est obligatoire.', 'danger')
+        return redirect(url_for('bloc_notes'))
+
+    amount = float(amount_raw) if amount_raw else None
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """INSERT INTO bloc_notes (user_id, label, note_text, amount, currency, entry_type, entry_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (user_id, label, note_text or None, amount, currency, entry_type, entry_date)
+    )
+    conn.commit()
+    conn.close()
+    flash('✅ Entrée ajoutée avec succès !', 'success')
+    return redirect(url_for('bloc_notes'))
+
+
+@app.route('/bloc-notes/delete/<int:note_id>', methods=['POST'])
+@login_required
+def bloc_notes_delete(note_id):
+    """Supprime une entrée du bloc-notes."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    conn.execute(
+        "DELETE FROM bloc_notes WHERE id = ? AND user_id = ?",
+        (note_id, user_id)
+    )
+    conn.commit()
+    conn.close()
+    flash('🗑️ Entrée supprimée.', 'success')
+    return redirect(url_for('bloc_notes'))
+
+
+@app.route('/bloc-notes/clear', methods=['POST'])
+@login_required
+def bloc_notes_clear():
+    """Efface toutes les entrées du bloc-notes de l'utilisateur."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    conn.execute("DELETE FROM bloc_notes WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    flash('🗑️ Toutes les entrées ont été supprimées.', 'success')
+    return redirect(url_for('bloc_notes'))
+
+
+@app.route('/bloc-notes/memo', methods=['POST'])
+@login_required
+def bloc_notes_memo():
+    """Sauvegarde le mémo rapide (appel AJAX JSON)."""
+    user_id = session['user_id']
+    data    = request.get_json(silent=True) or {}
+    memo    = str(data.get('memo', ''))[:5000]
+
+    conn = get_db_connection()
+    conn.execute(
+        """INSERT INTO bloc_notes_memo (user_id, memo, updated_at)
+           VALUES (?, ?, datetime('now'))
+           ON CONFLICT(user_id) DO UPDATE SET memo = excluded.memo, updated_at = excluded.updated_at""",
+        (user_id, memo)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+
+@app.route('/bloc-notes/export')
+@login_required
+def bloc_notes_export():
+    """Exporte les entrées du bloc-notes en CSV."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT entry_date, label, note_text, amount, currency, entry_type "
+        "FROM bloc_notes WHERE user_id = ? ORDER BY entry_date DESC",
+        (user_id,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    from io import StringIO
+    si = StringIO()
+    si.write('﻿')  # BOM UTF-8 pour Excel
+    writer = csv.writer(si)
+    writer.writerow(['Date', 'Description', 'Note', 'Montant', 'Devise', 'Type'])
+    for r in rows:
+        writer.writerow([
+            r['entry_date'], r['label'], r['note_text'] or '',
+            r['amount'] or '', r['currency'], r['entry_type']
+        ])
+
+    from flask import Response
+    return Response(
+        si.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=bloc-notes-{_date.today()}.csv'}
+    )
+
 if __name__ == '__main__':
 
     # Initialize database on startup
@@ -4383,9 +4576,12 @@ if __name__ == '__main__':
     print("📊 Application de gestion financière et trading avec IA")
     print("🌐 URL: http://localhost:5001")
     print("👤 Email: fabrice.kengni@icloud.com")
-    print("🔐 Password: Kengni@fablo12")
     print("📅 Agenda: http://localhost:5001/agenda")
-    print("📧 Rappels Gmail: fabricekengni90@gmail.com → fabrice.kengni@icloud.com")
     print("=" * 60)
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
+
+else:
+    # Exécuté par Gunicorn (PythonAnywhere, Fly.io, etc.)
+    init_db()
+    start_agenda_scheduler()
