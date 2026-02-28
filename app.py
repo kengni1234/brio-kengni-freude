@@ -47,7 +47,7 @@ GMAIL_CONFIG = {
     'receiver_email':  'fabrice.kengni@icloud.com',
     'smtp_host':       'smtp.gmail.com',
     'smtp_port':       587,
-    'smtp_password':   os.environ.get('yszy bsjd cxme yjye', ''),
+    'smtp_password':   os.environ.get('GMAIL_APP_PASSWORD', ''),
 }
 
 # ── Types et couleurs des événements d'agenda ─────────────────────────────────
