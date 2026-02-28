@@ -47,7 +47,7 @@ GMAIL_CONFIG = {
     'receiver_email':  'fabrice.kengni@icloud.com',
     'smtp_host':       'smtp.gmail.com',
     'smtp_port':       587,
-    'smtp_password':   os.environ.get('GMAIL_PASSWORD', ''),
+    'smtp_password':   os.environ.get('yszy bsjd cxme yjye', ''),
 }
 
 # ── Types et couleurs des événements d'agenda ─────────────────────────────────
@@ -3898,25 +3898,41 @@ def _send_sincire_email(lead: dict) -> bool:
             f"Après paiement, envoyez la capture sur WhatsApp : +237 695 072 759\n\n"
             f"— Kengni Trading Academy")
 
-    try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"🎓 Finalisez votre inscription — {level} | Kengni Trading Academy"
-        msg['From']    = f"Kengni Trading Academy <{cfg['sender_email']}>"
-        msg['To']      = prospect_email
-        msg['Reply-To'] = cfg['sender_email']
-        msg.attach(MIMEText(text, 'plain', 'utf-8'))
-        msg.attach(MIMEText(html, 'html', 'utf-8'))
-
-        with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port']) as s:
-            s.ehlo(); s.starttls()
-            s.login(cfg['sender_email'], cfg['smtp_password'])
-            s.sendmail(cfg['sender_email'], prospect_email, msg.as_string())
-
-        print(f"[Sincire] ✅ Email envoyé à {prospect_email}")
-        return True
-    except Exception as e:
-        print(f"[Sincire] ❌ Erreur : {e}")
+    if not cfg.get('smtp_password'):
+        print("[Sincire] ❌ GMAIL_PASSWORD manquant — configurez la variable d'environnement sur PythonAnywhere")
         return False
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = f"🎓 Finalisez votre inscription — {level} | Kengni Trading Academy"
+    msg['From']    = f"Kengni Trading Academy <{cfg['sender_email']}>"
+    msg['To']      = prospect_email
+    msg['Reply-To'] = cfg['sender_email']
+    msg.attach(MIMEText(text, 'plain', 'utf-8'))
+    msg.attach(MIMEText(html, 'html', 'utf-8'))
+
+    for attempt in range(1, 4):  # 3 tentatives
+        try:
+            with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port'], timeout=15) as s:
+                s.ehlo()
+                s.starttls()
+                s.ehlo()
+                s.login(cfg['sender_email'], cfg['smtp_password'])
+                s.sendmail(cfg['sender_email'], prospect_email, msg.as_string())
+            print(f"[Sincire] ✅ Email envoyé à {prospect_email} (tentative {attempt})")
+            return True
+        except smtplib.SMTPAuthenticationError:
+            print("[Sincire] ❌ Authentification Gmail échouée — vérifiez le mot de passe d'application sur PythonAnywhere")
+            return False  # Inutile de réessayer si le mot de passe est faux
+        except smtplib.SMTPException as e:
+            print(f"[Sincire] ⚠️ Tentative {attempt}/3 échouée : {e}")
+            if attempt < 3:
+                time.sleep(2 * attempt)
+        except Exception as e:
+            print(f"[Sincire] ❌ Erreur inattendue : {e}")
+            return False
+
+    print(f"[Sincire] ❌ Échec après 3 tentatives pour {prospect_email}")
+    return False
 
 
 @app.route('/admin/leads/<int:lead_id>/sincire', methods=['POST'])
@@ -4141,34 +4157,50 @@ def _build_agenda_email_html(event: dict, minutes_before: int) -> str:
 
 
 def _send_agenda_email(event: dict, minutes_before: int) -> bool:
-    """Envoie un email de rappel via Gmail SMTP."""
+    """Envoie un email de rappel via Gmail SMTP avec retry automatique."""
     cfg = GMAIL_CONFIG
-    try:
-        msg = MIMEMultipart('alternative')
-        h = f"{'%dh' % (minutes_before//60) if minutes_before >= 60 else '%dmin' % minutes_before}"
-        msg['Subject'] = f"⏰ Rappel dans {h} : {event['title']}"
-        msg['From']    = f"{cfg['sender_name']} <{cfg['sender_email']}>"
-        msg['To']      = cfg['receiver_email']
 
-        text = (f"RAPPEL — {event['title']}\n"
-                f"Début   : {(event.get('start_datetime') or '')[:16]}\n"
-                f"Fin     : {(event.get('end_datetime') or '')[:16]}\n"
-                f"Lieu    : {event.get('location') or 'Non précisé'}\n\n"
-                f"{event.get('description') or ''}\n\n---\nKengni Finance")
-        msg.attach(MIMEText(text, 'plain', 'utf-8'))
-        msg.attach(MIMEText(_build_agenda_email_html(event, minutes_before), 'html', 'utf-8'))
+    if not cfg.get('smtp_password'):
+        print("[Agenda] ❌ GMAIL_PASSWORD manquant — configurez la variable d'environnement sur PythonAnywhere")
+        return False
 
-        with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port']) as s:
-            s.ehlo(); s.starttls(); s.login(cfg['sender_email'], cfg['smtp_password'])
-            s.sendmail(cfg['sender_email'], cfg['receiver_email'], msg.as_string())
-        print(f"[Agenda] ✅ Email envoyé : {event['title']} ({minutes_before}min avant)")
-        return True
-    except smtplib.SMTPAuthenticationError:
-        print(f"[Agenda] ❌ Auth Gmail échouée — vérifiez le mot de passe d'application")
-        return False
-    except Exception as e:
-        print(f"[Agenda] ❌ Erreur email : {e}")
-        return False
+    h = f"{'%dh' % (minutes_before//60) if minutes_before >= 60 else '%dmin' % minutes_before}"
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = f"⏰ Rappel dans {h} : {event['title']}"
+    msg['From']    = f"{cfg['sender_name']} <{cfg['sender_email']}>"
+    msg['To']      = cfg['receiver_email']
+
+    text = (f"RAPPEL — {event['title']}\n"
+            f"Début   : {(event.get('start_datetime') or '')[:16]}\n"
+            f"Fin     : {(event.get('end_datetime') or '')[:16]}\n"
+            f"Lieu    : {event.get('location') or 'Non précisé'}\n\n"
+            f"{event.get('description') or ''}\n\n---\nKengni Finance")
+    msg.attach(MIMEText(text, 'plain', 'utf-8'))
+    msg.attach(MIMEText(_build_agenda_email_html(event, minutes_before), 'html', 'utf-8'))
+
+    for attempt in range(1, 4):  # 3 tentatives
+        try:
+            with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port'], timeout=15) as s:
+                s.ehlo()
+                s.starttls()
+                s.ehlo()
+                s.login(cfg['sender_email'], cfg['smtp_password'])
+                s.sendmail(cfg['sender_email'], cfg['receiver_email'], msg.as_string())
+            print(f"[Agenda] ✅ Email envoyé : {event['title']} ({minutes_before}min avant, tentative {attempt})")
+            return True
+        except smtplib.SMTPAuthenticationError:
+            print("[Agenda] ❌ Auth Gmail échouée — vérifiez le mot de passe d'application sur PythonAnywhere")
+            return False
+        except smtplib.SMTPException as e:
+            print(f"[Agenda] ⚠️ Tentative {attempt}/3 échouée : {e}")
+            if attempt < 3:
+                time.sleep(2 * attempt)
+        except Exception as e:
+            print(f"[Agenda] ❌ Erreur inattendue : {e}")
+            return False
+
+    print(f"[Agenda] ❌ Échec après 3 tentatives pour : {event['title']}")
+    return False
 
 
 def _agenda_check_reminders():
