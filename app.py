@@ -4676,6 +4676,319 @@ def bloc_notes_export():
         headers={'Content-Disposition': f'attachment; filename=bloc-notes-{_date.today()}.csv'}
     )
 
+# ══════════════════════════════════════════════════════════════
+# MODULE CHAT — Messagerie commune Kengni Finance
+# ══════════════════════════════════════════════════════════════
+
+CHAT_ENCRYPT_KEY = os.environ.get('CHAT_KEY', 'KengniFinance2024SecretChatKey!!').encode()[:32].ljust(32, b'0')
+
+def _xor_encrypt(text: str) -> str:
+    key  = CHAT_ENCRYPT_KEY
+    data = text.encode('utf-8')
+    enc  = bytes([data[i] ^ key[i % len(key)] for i in range(len(data))])
+    return base64.b64encode(enc).decode()
+
+def _xor_decrypt(token: str) -> str:
+    try:
+        key  = CHAT_ENCRYPT_KEY
+        enc  = base64.b64decode(token.encode())
+        data = bytes([enc[i] ^ key[i % len(key)] for i in range(len(enc))])
+        return data.decode('utf-8')
+    except Exception:
+        return '🔒 Impossible de déchiffrer'
+
+def init_chat_db():
+    conn = get_db_connection()
+    if not conn:
+        return
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      INTEGER NOT NULL,
+        content      TEXT    NOT NULL,
+        content_enc  TEXT,
+        is_encrypted INTEGER DEFAULT 0,
+        reply_to_id  INTEGER,
+        reactions    TEXT    DEFAULT '{}',
+        tags         TEXT    DEFAULT '[]',
+        edited       INTEGER DEFAULT 0,
+        deleted      INTEGER DEFAULT 0,
+        created_at   TEXT    DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )''')
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS chat_notifications_sent (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id INTEGER NOT NULL,
+        user_id    INTEGER NOT NULL,
+        method     TEXT    NOT NULL,
+        sent_at    TEXT    DEFAULT (datetime('now'))
+    )''')
+    # Colonne whatsapp sur users si absente
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN whatsapp TEXT")
+    except Exception:
+        pass
+    conn.commit()
+    conn.close()
+
+init_chat_db()
+
+def _chat_notify_email(tagged_user: dict, sender_name: str, message_preview: str, msg_id: int):
+    cfg = GMAIL_CONFIG
+    if not cfg.get('smtp_password') or not tagged_user.get('email'):
+        return False
+    chat_url = f"https://kengni1234.pythonanywhere.com/chat#{msg_id}"
+    html = f'''<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#0a0f1a;font-family:'Segoe UI',Arial,sans-serif;">
+<div style="max-width:560px;margin:0 auto;padding:24px;">
+  <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:16px;padding:28px;border:1px solid #1e2a3a;">
+    <div style="font-size:2rem;text-align:center;margin-bottom:8px;">💬</div>
+    <h2 style="color:#00d4aa;text-align:center;margin:0 0 4px;font-size:18px;">Nouveau message</h2>
+    <p style="color:#aaa;text-align:center;font-size:12px;margin:0 0 20px;">Kengni Finance — Messagerie</p>
+    <div style="background:#111827;border-radius:12px;padding:16px;border-left:4px solid #00d4aa;margin-bottom:20px;">
+      <p style="color:#888;font-size:12px;margin:0 0 6px;">
+        <strong style="color:#fff;">{sender_name}</strong> vous a tagué(e)
+      </p>
+      <p style="color:#e0e0e0;font-size:14px;margin:0;line-height:1.6;">
+        {message_preview[:200]}{'…' if len(message_preview)>200 else ''}
+      </p>
+    </div>
+    <div style="text-align:center;">
+      <a href="{chat_url}" style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:800;
+         font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;display:inline-block;">
+        📨 Voir le message
+      </a>
+    </div>
+    <p style="color:#333;font-size:10px;text-align:center;margin-top:16px;">Kengni Finance · Messagerie interne</p>
+  </div>
+</div></body></html>'''
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f"💬 {sender_name} vous a tagué dans le chat — Kengni Finance"
+        msg['From']    = f"Kengni Finance Chat <{cfg['sender_email']}>"
+        msg['To']      = tagged_user['email']
+        msg.attach(MIMEText(f"{sender_name} vous a tagué : {message_preview}", 'plain', 'utf-8'))
+        msg.attach(MIMEText(html, 'html', 'utf-8'))
+        for attempt in range(1, 4):
+            try:
+                with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port'], timeout=15) as s:
+                    s.ehlo(); s.starttls(); s.ehlo()
+                    s.login(cfg['sender_email'], cfg['smtp_password'])
+                    s.sendmail(cfg['sender_email'], tagged_user['email'], msg.as_string())
+                print(f"[Chat] ✅ Email tag envoyé à {tagged_user['email']}")
+                return True
+            except smtplib.SMTPAuthenticationError:
+                return False
+            except smtplib.SMTPException:
+                if attempt < 3:
+                    time.sleep(2 * attempt)
+    except Exception as e:
+        print(f"[Chat] ❌ Erreur email : {e}")
+    return False
+
+def _chat_whatsapp_link(tagged_user: dict, sender_name: str, message_preview: str, msg_id: int) -> str:
+    import urllib.parse
+    chat_url = f"https://kengni1234.pythonanywhere.com/chat#{msg_id}"
+    text = f"💬 *Kengni Finance*\n{sender_name} vous a tagué :\n_{message_preview[:100]}_\n\n👉 {chat_url}"
+    phone = (tagged_user.get('whatsapp') or '').replace(' ', '').replace('+', '')
+    if phone:
+        return f"https://wa.me/{phone}?text={urllib.parse.quote(text)}"
+    return f"https://wa.me/?text={urllib.parse.quote(text)}"
+
+def _get_all_members():
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, email FROM users WHERE status='active' ORDER BY username")
+    members = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return members
+
+if 'chat' not in ALL_USER_PAGES:
+    ALL_USER_PAGES.append('chat')
+
+@app.route('/chat')
+@page_access_required('chat')
+def chat_page():
+    members = _get_all_members()
+    user_id = session['user_id']
+    return render_template('chat.html',
+                           members=members,
+                           unread_notifications=_get_unread_count(user_id),
+                           current_user_id=user_id,
+                           current_username=session.get('username', ''))
+
+@app.route('/api/chat/messages')
+@login_required
+def api_chat_messages():
+    since_id = request.args.get('since', 0, type=int)
+    limit    = min(request.args.get('limit', 50, type=int), 100)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'messages': []})
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT m.id, m.content, m.content_enc, m.is_encrypted,
+               m.reply_to_id, m.reactions, m.tags, m.edited, m.deleted,
+               m.created_at, u.username, u.id as user_id
+        FROM chat_messages m
+        JOIN users u ON u.id = m.user_id
+        WHERE m.id > ? AND m.deleted = 0
+        ORDER BY m.id ASC LIMIT ?
+    ''', (since_id, limit))
+    rows = []
+    for r in cursor.fetchall():
+        d = dict(r)
+        try: d['reactions'] = json.loads(d['reactions'] or '{}')
+        except: d['reactions'] = {}
+        try: d['tags'] = json.loads(d['tags'] or '[]')
+        except: d['tags'] = []
+        rows.append(d)
+    conn.close()
+    return jsonify({'messages': rows})
+
+@app.route('/api/chat/send', methods=['POST'])
+@login_required
+def api_chat_send():
+    data       = request.get_json(force=True, silent=True) or {}
+    content    = str(data.get('content', '')).strip()[:2000]
+    reply_to   = data.get('reply_to_id')
+    encrypt_it = bool(data.get('encrypt', False))
+    tags       = data.get('tags', [])
+    if not content:
+        return jsonify({'success': False, 'error': 'Message vide'}), 400
+    user_id     = session['user_id']
+    sender_name = session.get('username', 'Membre')
+    content_enc = _xor_encrypt(content) if encrypt_it else None
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO chat_messages (user_id, content, content_enc, is_encrypted, reply_to_id, tags)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (user_id,
+          content if not encrypt_it else '🔒 Message chiffré',
+          content_enc, 1 if encrypt_it else 0,
+          reply_to, json.dumps(tags)))
+    msg_id  = cursor.lastrowid
+    preview = content[:120]
+    for tid in tags:
+        try:
+            cursor.execute('''
+                INSERT INTO notifications (user_id, type, title, message, action_url, created_at)
+                VALUES (?,?,?,?,?,datetime('now'))
+            ''', (int(tid), 'info', f"💬 {sender_name} vous a tagué dans le chat", preview, '/chat'))
+        except Exception:
+            pass
+    conn.commit()
+    if tags:
+        cursor.execute("SELECT id, username, email, whatsapp FROM users WHERE id IN (%s)" %
+                       ','.join('?' * len(tags)), [int(t) for t in tags])
+        tagged_users = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        def _notify():
+            for u in tagged_users:
+                _chat_notify_email(u, sender_name, preview, msg_id)
+        threading.Thread(target=_notify, daemon=True).start()
+    else:
+        conn.close()
+    return jsonify({'success': True, 'id': msg_id})
+
+@app.route('/api/chat/decrypt', methods=['POST'])
+@login_required
+def api_chat_decrypt():
+    data   = request.get_json(force=True, silent=True) or {}
+    msg_id = data.get('id')
+    conn   = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    cursor = conn.cursor()
+    cursor.execute('SELECT content_enc, is_encrypted FROM chat_messages WHERE id=?', (msg_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row or not row['is_encrypted']:
+        return jsonify({'success': False, 'error': 'Non chiffré'})
+    return jsonify({'success': True, 'content': _xor_decrypt(row['content_enc'])})
+
+@app.route('/api/chat/react', methods=['POST'])
+@login_required
+def api_chat_react():
+    data    = request.get_json(force=True, silent=True) or {}
+    msg_id  = data.get('id')
+    emoji   = str(data.get('emoji', ''))[:8]
+    user_id = session['user_id']
+    if not msg_id or not emoji:
+        return jsonify({'success': False}), 400
+    conn   = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT reactions FROM chat_messages WHERE id=?', (msg_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return jsonify({'success': False}), 404
+    try: reactions = json.loads(row['reactions'] or '{}')
+    except: reactions = {}
+    users_reacted = reactions.get(emoji, [])
+    if user_id in users_reacted:
+        users_reacted.remove(user_id)
+    else:
+        users_reacted.append(user_id)
+    if users_reacted:
+        reactions[emoji] = users_reacted
+    else:
+        reactions.pop(emoji, None)
+    cursor.execute('UPDATE chat_messages SET reactions=? WHERE id=?', (json.dumps(reactions), msg_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'reactions': reactions})
+
+@app.route('/api/chat/delete/<int:msg_id>', methods=['POST'])
+@login_required
+def api_chat_delete(msg_id):
+    user_id = session['user_id']
+    conn    = get_db_connection()
+    cursor  = conn.cursor()
+    cursor.execute('SELECT user_id FROM chat_messages WHERE id=?', (msg_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return jsonify({'success': False}), 404
+    if row['user_id'] != user_id and session.get('role') not in ('admin', 'superadmin'):
+        conn.close()
+        return jsonify({'success': False, 'error': 'Interdit'}), 403
+    cursor.execute('UPDATE chat_messages SET deleted=1 WHERE id=?', (msg_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/chat/members')
+@login_required
+def api_chat_members():
+    return jsonify({'members': _get_all_members()})
+
+@app.route('/api/chat/whatsapp-tag')
+@login_required
+def api_chat_whatsapp_tag():
+    user_id = request.args.get('user_id', type=int)
+    msg_id  = request.args.get('msg_id', type=int)
+    preview = request.args.get('preview', '')
+    sender  = session.get('username', 'Un membre')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT username, email, whatsapp FROM users WHERE id=?', (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'link': '#'})
+    return jsonify({'link': _chat_whatsapp_link(dict(row), sender, preview, msg_id)})
+
+# ── Fin module Chat ────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
 
     # Initialize database on startup

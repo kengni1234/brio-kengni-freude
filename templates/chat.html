@@ -1,0 +1,759 @@
+{% extends "base.html" %}
+{% block title %}💬 Chat — Kengni Finance{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:        #07090f;
+  --surface:   #0d1117;
+  --surface2:  #131a24;
+  --border:    rgba(255,255,255,.07);
+  --green:     #00e676;
+  --green2:    #00c853;
+  --blue:      #4a9eff;
+  --purple:    #a855f7;
+  --gold:      #ffd700;
+  --danger:    #ff4757;
+  --text:      #f0f0f0;
+  --muted:     #5a6478;
+  --font:      'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ══ LAYOUT ════════════════════════════════════════════════════ */
+.chat-root {
+  display: flex;
+  height: calc(100vh - 90px);
+  background: var(--bg);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  font-family: var(--font);
+  box-shadow:
+    0 0 80px rgba(0,230,118,.04),
+    0 0 140px rgba(74,158,255,.03),
+    0 0 200px rgba(168,85,247,.02);
+}
+
+/* ══ SIDEBAR ═══════════════════════════════════════════════════ */
+.chat-sidebar {
+  width: 230px; min-width: 230px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.sidebar-top {
+  padding: 18px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1.2px;
+}
+.sidebar-members { overflow-y: auto; flex: 1; padding: 8px; }
+.member-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 12px;
+  cursor: pointer; transition: background .15s;
+}
+.member-row:hover { background: var(--surface2); }
+.member-row:hover .member-tag { opacity: 1; }
+.member-av {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: #000;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(0,230,118,.25);
+}
+.member-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.member-tag  { font-size: 10px; color: var(--green); opacity: 0; transition: opacity .15s; font-weight: 700; }
+
+/* ══ ZONE PRINCIPALE ═══════════════════════════════════════════ */
+.chat-main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
+}
+/* Fond lumineux animé */
+.chat-main::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 500px 350px at 15% 85%, rgba(0,200,83,.05) 0%, transparent 65%),
+    radial-gradient(ellipse 400px 300px at 85% 15%, rgba(74,158,255,.05) 0%, transparent 65%),
+    radial-gradient(ellipse 350px 250px at 55% 55%, rgba(168,85,247,.03) 0%, transparent 65%);
+  animation: glowShift 8s ease-in-out infinite alternate;
+}
+@keyframes glowShift {
+  from { opacity: .6; }
+  to   { opacity: 1; }
+}
+
+/* Header */
+.chat-header {
+  position: relative; z-index: 1;
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+  background: rgba(13,17,23,.85); backdrop-filter: blur(14px);
+  display: flex; align-items: center; gap: 14px;
+}
+.header-icon {
+  width: 44px; height: 44px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0,230,118,.18), rgba(74,158,255,.18));
+  border: 1px solid rgba(0,230,118,.2);
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+  box-shadow: 0 0 24px rgba(0,230,118,.15), inset 0 0 14px rgba(0,230,118,.05);
+}
+.header-title { font-size: 17px; font-weight: 800; color: var(--text); }
+.header-sub   { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.online-pill {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 700; color: var(--green);
+  background: rgba(0,230,118,.08);
+  border: 1px solid rgba(0,230,118,.2);
+  border-radius: 20px; padding: 5px 13px;
+  box-shadow: 0 0 14px rgba(0,230,118,.1);
+}
+.online-pill b { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1;box-shadow:0 0 6px var(--green);} 50%{opacity:.3;box-shadow:none;} }
+
+/* Onglets */
+.chat-tabs {
+  position: relative; z-index: 1;
+  display: flex; border-bottom: 1px solid var(--border);
+  background: rgba(13,17,23,.7);
+}
+.chat-tab {
+  flex: 1; padding: 12px; text-align: center;
+  font-size: 14px; font-weight: 700; color: var(--muted);
+  cursor: pointer; transition: all .2s;
+  border-bottom: 2px solid transparent; user-select: none;
+}
+.chat-tab.active { color: var(--text); border-bottom-color: var(--green); }
+.chat-tab:hover  { color: var(--text); }
+
+/* ══ MESSAGES ══════════════════════════════════════════════════ */
+.chat-messages {
+  flex: 1; overflow-y: auto;
+  padding: 20px 24px; display: flex; flex-direction: column; gap: 6px;
+  scroll-behavior: smooth; position: relative; z-index: 1;
+}
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.06); border-radius: 4px; }
+
+.chat-msg {
+  display: flex; align-items: flex-end; gap: 10px;
+  animation: msgIn .3s cubic-bezier(.34,1.56,.64,1);
+  max-width: 80%;
+}
+@keyframes msgIn { from{opacity:0;transform:translateY(14px) scale(.97);} to{opacity:1;transform:none;} }
+.chat-msg.is-me    { align-self: flex-end;   flex-direction: row-reverse; }
+.chat-msg.is-other { align-self: flex-start; }
+
+.msg-av {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  color: #fff;
+}
+.chat-msg.is-me .msg-av {
+  background: linear-gradient(135deg, var(--green2), #009944);
+  color: #000;
+  box-shadow: 0 0 14px rgba(0,200,83,.35);
+}
+
+.msg-wrap { display: flex; flex-direction: column; gap: 3px; }
+.msg-name {
+  font-size: 11px; font-weight: 700; color: var(--muted); padding: 0 5px;
+}
+.chat-msg.is-me .msg-name { text-align: right; color: var(--green); }
+
+/* Bulle REÇUE */
+.msg-bubble {
+  padding: 13px 18px;
+  border-radius: 20px 20px 20px 5px;
+  font-size: 16px; line-height: 1.65;
+  color: var(--text); word-break: break-word;
+  cursor: pointer; transition: all .22s; position: relative;
+  background: var(--surface2);
+  border: 1px solid rgba(255,255,255,.07);
+  box-shadow:
+    0 0 0 1px rgba(74,158,255,.04),
+    0 4px 20px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.03);
+}
+.msg-bubble:hover {
+  border-color: rgba(74,158,255,.25);
+  box-shadow:
+    0 0 22px rgba(74,158,255,.1),
+    0 4px 24px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* Bulle ENVOYÉE — lueur verte */
+.chat-msg.is-me .msg-bubble {
+  border-radius: 20px 20px 5px 20px;
+  background: linear-gradient(135deg, rgba(0,200,83,.2), rgba(0,150,60,.13));
+  border: 1px solid rgba(0,230,118,.24);
+  color: #eaffea;
+  box-shadow:
+    0 0 28px rgba(0,200,83,.14),
+    0 0 70px rgba(0,200,83,.06),
+    0 4px 20px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(0,230,118,.12);
+}
+.chat-msg.is-me .msg-bubble:hover {
+  border-color: rgba(0,230,118,.45);
+  box-shadow:
+    0 0 40px rgba(0,200,83,.22),
+    0 0 90px rgba(0,200,83,.09),
+    0 4px 24px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(0,230,118,.18);
+}
+
+/* Chiffré */
+.msg-bubble.encrypted {
+  background: linear-gradient(135deg, rgba(255,215,0,.07), rgba(255,100,0,.04));
+  border-color: rgba(255,215,0,.22);
+  color: var(--gold); font-style: italic;
+  box-shadow: 0 0 20px rgba(255,215,0,.07), 0 4px 20px rgba(0,0,0,.45);
+}
+.msg-bubble.encrypted::after { content:' · double-tap 🔓'; font-size:11px; opacity:.5; }
+
+.msg-tag {
+  background: rgba(74,158,255,.15); color: var(--blue);
+  border-radius: 6px; padding: 1px 6px; font-weight: 700;
+  box-shadow: 0 0 8px rgba(74,158,255,.15);
+}
+.msg-time { font-size: 11px; color: var(--muted); padding: 0 5px; }
+.chat-msg.is-me .msg-time { text-align: right; }
+
+.msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.react-badge {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 9px; font-size: 15px;
+  cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; gap: 3px; user-select: none;
+}
+.react-badge:hover { transform: scale(1.12); border-color: var(--green); box-shadow: 0 0 10px rgba(0,230,118,.18); }
+.react-badge .rc { font-size: 11px; color: var(--muted); }
+
+/* Séparateur date */
+.date-sep { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+.date-sep::before, .date-sep::after { content:''; flex:1; height:1px; background:var(--border); }
+.date-sep span { font-size:11px; color:var(--muted); white-space:nowrap; text-transform:uppercase; letter-spacing:.5px; }
+
+/* ══ PANEL IA ══════════════════════════════════════════════════ */
+.ai-panel {
+  flex:1; overflow-y:auto; padding:20px 24px;
+  display:flex; flex-direction:column; gap:14px;
+  position:relative; z-index:1;
+}
+.ai-panel::-webkit-scrollbar { width:4px; }
+.ai-panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,.06); border-radius:4px; }
+
+.ai-welcome { text-align:center; padding:30px 20px; }
+.ai-icon {
+  width:68px; height:68px; border-radius:20px; margin:0 auto 16px;
+  background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(74,158,255,.2));
+  border:1px solid rgba(168,85,247,.25);
+  display:flex; align-items:center; justify-content:center; font-size:2rem;
+  box-shadow:0 0 35px rgba(168,85,247,.18),0 0 70px rgba(74,158,255,.08);
+  animation: iconPulse 3s ease-in-out infinite;
+}
+@keyframes iconPulse {
+  0%,100%{ box-shadow:0 0 35px rgba(168,85,247,.18),0 0 70px rgba(74,158,255,.08); }
+  50%    { box-shadow:0 0 50px rgba(168,85,247,.3),0 0 100px rgba(74,158,255,.12); }
+}
+.ai-welcome h3 { font-size:19px; font-weight:800; color:var(--text); margin-bottom:8px; }
+.ai-welcome p  { font-size:15px; color:var(--muted); line-height:1.65; }
+.ai-sugs { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:18px; }
+.ai-sug {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:20px; padding:8px 15px; font-size:13px;
+  color:var(--text); cursor:pointer; transition:all .2s; font-weight:600;
+}
+.ai-sug:hover {
+  border-color:rgba(168,85,247,.4); color:var(--purple);
+  box-shadow:0 0 14px rgba(168,85,247,.14);
+  transform: translateY(-1px);
+}
+
+/* Messages IA */
+.ai-msg { display:flex; gap:10px; align-items:flex-start; }
+.ai-msg.user-msg { flex-direction:row-reverse; }
+.ai-av {
+  width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; flex-shrink:0;
+  background:linear-gradient(135deg,var(--purple),var(--blue));
+  box-shadow:0 0 14px rgba(168,85,247,.3);
+}
+.ai-bubble {
+  padding:13px 18px; border-radius:18px;
+  font-size:16px; line-height:1.65; max-width:82%; word-break:break-word;
+  animation: msgIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+.ai-reply .ai-bubble {
+  background:linear-gradient(135deg,rgba(168,85,247,.12),rgba(74,158,255,.08));
+  border:1px solid rgba(168,85,247,.2); color:var(--text);
+  border-radius:18px 18px 18px 4px;
+  box-shadow:0 0 22px rgba(168,85,247,.09),0 4px 18px rgba(0,0,0,.35);
+}
+.user-msg .ai-bubble {
+  background:linear-gradient(135deg,rgba(0,200,83,.16),rgba(0,150,60,.1));
+  border:1px solid rgba(0,230,118,.2); color:#eaffea;
+  border-radius:18px 18px 4px 18px;
+  box-shadow:0 0 20px rgba(0,200,83,.1),0 4px 18px rgba(0,0,0,.35);
+}
+.ai-typing { display:flex; gap:5px; align-items:center; padding:6px 2px; }
+.ai-typing span {
+  width:8px; height:8px; border-radius:50%; background:var(--purple);
+  animation:typing 1.2s infinite;
+}
+.ai-typing span:nth-child(2){animation-delay:.2s;}
+.ai-typing span:nth-child(3){animation-delay:.4s;}
+@keyframes typing{0%,100%{transform:translateY(0);opacity:.3;}50%{transform:translateY(-7px);opacity:1;}}
+
+/* ══ BARRE SAISIE ═══════════════════════════════════════════════ */
+.chat-input-area {
+  position:relative; z-index:1;
+  padding:14px 18px; border-top:1px solid var(--border);
+  background:rgba(13,17,23,.88); backdrop-filter:blur(14px);
+}
+.tag-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.tag-chip {
+  background:rgba(74,158,255,.12); border:1px solid rgba(74,158,255,.25);
+  color:var(--blue); border-radius:20px; padding:3px 12px;
+  font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px;
+  box-shadow:0 0 8px rgba(74,158,255,.1);
+}
+.tag-chip-x { cursor:pointer; opacity:.5; }
+.tag-chip-x:hover { opacity:1; color:var(--danger); }
+.reply-bar {
+  background:rgba(0,230,118,.06); border-left:3px solid var(--green);
+  border-radius:8px; padding:7px 12px; margin-bottom:8px;
+  font-size:13px; color:var(--muted);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.input-row { display:flex; gap:8px; align-items:flex-end; position:relative; }
+
+.input-mention-dd {
+  position:absolute; bottom:100%; left:0; right:0;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden; z-index:300;
+  box-shadow:0 -6px 28px rgba(0,0,0,.6);
+  animation:fadeUp .15s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.mention-item {
+  padding:10px 14px; display:flex; align-items:center; gap:9px;
+  cursor:pointer; color:var(--text); font-size:14px; transition:background .1s;
+}
+.mention-item:hover { background:var(--surface2); }
+
+.chat-textarea {
+  flex:1; background:var(--surface2);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px; color:var(--text);
+  font-size:16px; font-family:var(--font);
+  padding:12px 16px; resize:none;
+  min-height:48px; max-height:130px; line-height:1.5;
+  transition:border-color .2s, box-shadow .2s;
+}
+.chat-textarea:focus {
+  outline:none; border-color:rgba(0,230,118,.4);
+  box-shadow:0 0 18px rgba(0,230,118,.1);
+}
+.chat-textarea::placeholder { color:var(--muted); }
+
+.cbtn {
+  border:none; cursor:pointer;
+  width:48px; height:48px; border-radius:13px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:19px; transition:all .18s; flex-shrink:0;
+}
+.cbtn-send {
+  background:linear-gradient(135deg,var(--green2),#00994a);
+  color:#000; font-size:22px;
+  box-shadow:0 0 22px rgba(0,200,83,.28);
+}
+.cbtn-send:hover { transform:scale(1.09); box-shadow:0 0 34px rgba(0,200,83,.45); }
+.cbtn-emoji { background:var(--surface2); border:1px solid var(--border); color:var(--text); font-size:21px; }
+.cbtn-emoji:hover { border-color:var(--green); box-shadow:0 0 12px rgba(0,230,118,.12); }
+.cbtn-lock { background:var(--surface2); border:1px solid var(--border); color:var(--gold); }
+.cbtn-lock.on { background:rgba(255,215,0,.1); border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,0,.18); }
+
+/* Emoji picker */
+.emoji-picker {
+  position:absolute; bottom:58px; left:0;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:10px;
+  display:flex; gap:4px; flex-wrap:wrap; width:280px;
+  z-index:200; box-shadow:0 -6px 32px rgba(0,0,0,.6);
+  animation:fadeUp .15s ease;
+}
+.ej { font-size:23px; cursor:pointer; padding:5px; border-radius:9px; transition:all .1s; }
+.ej:hover { background:var(--surface2); transform:scale(1.25); }
+
+/* Toast */
+.glow-toast {
+  position:fixed; bottom:24px; right:24px;
+  background:var(--surface); border:1px solid rgba(0,230,118,.3);
+  border-radius:14px; padding:11px 18px;
+  color:var(--green); font-size:14px; font-weight:700; font-family:var(--font);
+  box-shadow:0 0 22px rgba(0,230,118,.14),0 8px 28px rgba(0,0,0,.5);
+  z-index:9999; animation:toastIn .3s ease; pointer-events:none;
+}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+@keyframes decrypt{0%{filter:blur(8px);opacity:.2;}100%{filter:blur(0);opacity:1;}}
+.decrypting { animation:decrypt .45s ease forwards; }
+
+@media(max-width:640px){ .chat-sidebar{display:none;} }
+</style>
+
+<div class="chat-root">
+
+  <!-- SIDEBAR -->
+  <div class="chat-sidebar">
+    <div class="sidebar-top">👥 Membres · {{ members|length }}</div>
+    <div class="sidebar-members">
+      {% for m in members %}
+      <div class="member-row" onclick="tagMember({{ m.id }},'{{ m.username }}')">
+        <div class="member-av">{{ m.username[0]|upper }}</div>
+        <span class="member-name">{{ m.username }}</span>
+        <span class="member-tag">@tag</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="chat-main">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="header-icon">💬</div>
+      <div>
+        <div class="header-title">Kengni Finance Chat</div>
+        <div class="header-sub">Messagerie commune · tous les membres</div>
+      </div>
+      <div class="online-pill" id="onlineBadge"><b></b> En ligne</div>
+    </div>
+
+    <!-- Onglets -->
+    <div class="chat-tabs">
+      <div class="chat-tab active" id="tabChat" onclick="switchTab('chat')">💬 Chat</div>
+      <div class="chat-tab"        id="tabAI"   onclick="switchTab('ai')">🤖 Assistant IA</div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <!-- Panel IA -->
+    <div class="ai-panel" id="aiPanel" style="display:none;">
+      <div class="ai-welcome" id="aiWelcome">
+        <div class="ai-icon">🤖</div>
+        <h3>Assistant IA — Kengni Finance</h3>
+        <p>Expert en trading, marchés financiers, gestion de portefeuille<br>et stratégies d'investissement. Posez votre question.</p>
+        <div class="ai-sugs">
+          <span class="ai-sug" onclick="aiAsk('Quelle est la meilleure stratégie de gestion du risque en trading ?')">📊 Gestion du risque</span>
+          <span class="ai-sug" onclick="aiAsk('Comment analyser un graphique en chandeliers japonais ?')">📈 Chandeliers</span>
+          <span class="ai-sug" onclick="aiAsk('Explique-moi le ratio risque/rendement')">⚖️ Risque/rendement</span>
+          <span class="ai-sug" onclick="aiAsk('Quelles erreurs les traders débutants font-ils le plus souvent ?')">🎯 Erreurs courantes</span>
+          <span class="ai-sug" onclick="aiAsk('Comment diversifier un portefeuille efficacement ?')">💼 Diversification</span>
+          <span class="ai-sug" onclick="aiAsk('Explique le trading en FCFA et les paires africaines')">🌍 Trading Afrique</span>
+          <span class="ai-sug" onclick="aiAsk('Qu\'est-ce que le money management en trading ?')">💰 Money management</span>
+          <span class="ai-sug" onclick="aiAsk('Comment lire les indicateurs RSI et MACD ?')">📉 RSI & MACD</span>
+        </div>
+      </div>
+      <div id="aiMessages"></div>
+    </div>
+
+    <!-- Saisie -->
+    <div class="chat-input-area">
+      <div class="tag-chips" id="tagChips"></div>
+      <div class="reply-bar" id="replyBar" style="display:none;">
+        <span id="replyText"></span>
+        <span style="cursor:pointer;color:var(--danger);" onclick="cancelReply()">✕</span>
+      </div>
+      <div class="input-row">
+        <div class="input-mention-dd" id="mentionDd" style="display:none;"></div>
+        <div class="emoji-picker" id="emojiPicker" style="display:none;">
+          {% set EMOJIS = ['😀','😂','🥰','😎','🤔','😢','🔥','💯','👍','👎','❤️','💚','⭐','🎉','💰','📈','📉','🚀','⚡','💎','🙏','✅','❌','⚠️','🎯','🏆','💡','🔒','🔓','👀','🤝','💪','🫡','🧠','📊','💸','🏦','🌍','🎰'] %}
+          {% for e in EMOJIS %}<span class="ej" onclick="insertEmoji('{{ e }}')">{{ e }}</span>{% endfor %}
+        </div>
+        <button class="cbtn cbtn-emoji" onclick="toggleEmoji()" title="Émojis">😊</button>
+        <button class="cbtn cbtn-lock" id="lockBtn" onclick="toggleEncrypt()" title="Chiffrer">🔒</button>
+        <textarea class="chat-textarea" id="msgInput" rows="1"
+                  placeholder="Écrivez un message… (@mention pour taguer)"
+                  oninput="autoResize(this); handleMention(this.value)"
+                  onkeydown="handleKey(event)"></textarea>
+        <button class="cbtn cbtn-send" id="sendBtn" onclick="handleSend()">➤</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const ME_ID       = {{ current_user_id }};
+const ME_NAME     = "{{ current_username }}";
+const ALL_MEMBERS = {{ members | tojson }};
+
+let lastId      = 0;
+let encrypted   = false;
+let replyToId   = null;
+let taggedUsers = [];
+let tapTimers   = {};
+let currentTab  = 'chat';
+let aiHistory   = [];
+
+/* ── ONGLETS ──────────────────────────────────── */
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('chatMessages').style.display = tab==='chat' ? 'flex' : 'none';
+  document.getElementById('aiPanel').style.display      = tab==='ai'   ? 'flex' : 'none';
+  document.getElementById('tabChat').classList.toggle('active', tab==='chat');
+  document.getElementById('tabAI').classList.toggle('active',   tab==='ai');
+  const inp = document.getElementById('msgInput');
+  inp.placeholder = tab==='ai'
+    ? 'Posez une question à l\'assistant IA…'
+    : 'Écrivez un message… (@mention pour taguer)';
+}
+
+function handleSend() { currentTab==='ai' ? sendToAI() : sendMessage(); }
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();} }
+
+/* ── ASSISTANT IA LLM ─────────────────────────── */
+async function sendToAI() {
+  const inp = document.getElementById('msgInput');
+  const q   = inp.value.trim();
+  if (!q) return;
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('aiWelcome').style.display = 'none';
+  aiHistory.push({role:'user', content:q});
+  addAIMessage('user', q);
+  const tid = 'typing-' + Date.now();
+  addAITyping(tid);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `Tu es l'assistant IA de Kengni Finance, plateforme de trading et gestion financière basée au Cameroun.
+Tu es expert en : trading forex, crypto, actions, gestion de portefeuille, analyse technique et fondamentale, psychologie du trading, money management.
+Tu connais le contexte financier africain, les marchés FCFA, et la Kengni Trading Academy.
+Réponds TOUJOURS en français. Sois clair, structuré, pédagogue et professionnel.
+Utilise des exemples concrets et adaptés au contexte camerounais/africain quand c'est pertinent.`,
+        messages: aiHistory
+      })
+    });
+    const data  = await res.json();
+    const reply = data.content?.[0]?.text || 'Désolé, je n\'ai pas pu générer une réponse.';
+    aiHistory.push({role:'assistant', content:reply});
+    document.getElementById(tid)?.remove();
+    addAIMessage('ai', reply);
+  } catch(e) {
+    document.getElementById(tid)?.remove();
+    addAIMessage('ai', '❌ Erreur de connexion. Vérifiez votre connexion internet et réessayez.');
+  }
+}
+
+function addAIMessage(who, text) {
+  const box = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${who==='user' ? 'user-msg' : 'ai-reply'}`;
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-size:14px;font-family:monospace;">$1</code>')
+    .replace(/\n/g, '<br>');
+  div.innerHTML = `
+    <div class="ai-av">${who==='user' ? (ME_NAME[0]||'U').toUpperCase() : '🤖'}</div>
+    <div class="ai-bubble">${formatted}</div>
+  `;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function addAITyping(id) {
+  const box = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.id = id; div.className = 'ai-msg ai-reply';
+  div.innerHTML = `<div class="ai-av">🤖</div>
+    <div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
+  box.appendChild(div); box.scrollTop = box.scrollHeight;
+}
+
+function aiAsk(q) {
+  document.getElementById('msgInput').value = q;
+  switchTab('ai'); sendToAI();
+}
+
+/* ── CHAT ─────────────────────────────────────── */
+function renderMessage(m) {
+  const isMe    = m.user_id === ME_ID;
+  const initial = (m.username||'?')[0].toUpperCase();
+  const time    = (m.created_at||'').slice(11,16);
+  let content   = (m.content||'').replace(/@(\w+)/g,'<span class="msg-tag">@$1</span>');
+
+  const reactions = m.reactions||{};
+  let reactHtml = '';
+  for(const[emoji,users] of Object.entries(reactions)){
+    if(users.length){
+      const mine = users.includes(ME_ID)?'border-color:var(--green);box-shadow:0 0 8px rgba(0,230,118,.2);':'';
+      reactHtml += `<span class="react-badge" style="${mine}" onclick="reactMsg(${m.id},'${emoji}')">${emoji}<span class="rc">${users.length}</span></span>`;
+    }
+  }
+  const replyHtml = m.reply_to_id
+    ? `<div style="background:rgba(255,255,255,.04);border-left:3px solid var(--green);padding:5px 9px;border-radius:6px;font-size:12px;color:var(--muted);margin-bottom:5px;">↩ Réponse</div>`
+    : '';
+  const encCls = m.is_encrypted?'encrypted':'';
+  const isEnc  = m.is_encrypted?'true':'false';
+
+  const div = document.createElement('div');
+  div.className = `chat-msg ${isMe?'is-me':'is-other'}`;
+  div.dataset.id = m.id;
+  div.innerHTML = `
+    <div class="msg-av">${initial}</div>
+    <div class="msg-wrap">
+      <div class="msg-name">${isMe?'Vous':m.username}</div>
+      ${replyHtml}
+      <div class="msg-bubble ${encCls}" id="bubble-${m.id}"
+           ontouchend="onTap(${m.id},${isEnc})"
+           ondblclick="onDbl(${m.id},${isEnc})"
+           oncontextmenu="ctxMenu(event,${m.id},${isMe})">${content}</div>
+      ${reactHtml?`<div class="msg-reactions">${reactHtml}</div>`:''}
+      <div class="msg-time">${time}${m.is_encrypted?'<span style="color:var(--gold);"> 🔒</span>':''}</div>
+    </div>`;
+  return div;
+}
+
+async function pollMessages() {
+  try {
+    const res  = await fetch(`/api/chat/messages?since=${lastId}&limit=60`);
+    const data = await res.json();
+    const box  = document.getElementById('chatMessages');
+    const atBot = box.scrollHeight-box.scrollTop-box.clientHeight < 80;
+    if(data.messages?.length){
+      let lastDate='';
+      data.messages.forEach(m=>{
+        const d=(m.created_at||'').slice(0,10);
+        if(d&&d!==lastDate){
+          lastDate=d;
+          const sep=document.createElement('div');
+          sep.className='date-sep';
+          sep.innerHTML=`<span>${formatDate(d)}</span>`;
+          box.appendChild(sep);
+        }
+        box.appendChild(renderMessage(m));
+        lastId=Math.max(lastId,m.id);
+      });
+      if(atBot) box.scrollTop=box.scrollHeight;
+      if(data.messages.some(m=>m.user_id!==ME_ID)) playPing();
+    }
+    document.getElementById('onlineBadge').innerHTML='<b></b> En ligne';
+    document.getElementById('onlineBadge').style.color='var(--green)';
+  } catch(e){
+    document.getElementById('onlineBadge').textContent='● Hors ligne';
+    document.getElementById('onlineBadge').style.color='var(--danger)';
+  }
+}
+
+function formatDate(iso){
+  const d=new Date(iso), now=new Date(); now.setHours(0,0,0,0);
+  const yest=new Date(now); yest.setDate(now.getDate()-1);
+  if(d>=now) return "Aujourd'hui";
+  if(d>=yest) return "Hier";
+  return d.toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+}
+
+async function sendMessage() {
+  const inp=document.getElementById('msgInput'), content=inp.value.trim();
+  if(!content) return;
+  try{
+    const res=await fetch('/api/chat/send',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({content,encrypt:encrypted,tags:taggedUsers.map(u=>u.id),reply_to_id:replyToId})});
+    const data=await res.json();
+    if(data.success){ inp.value=''; inp.style.height='auto'; clearTags(); cancelReply(); if(encrypted)toggleEncrypt(); await pollMessages(); }
+  }catch(e){toast('❌ Erreur d\'envoi');}
+}
+
+function toggleEncrypt(){
+  encrypted=!encrypted;
+  document.getElementById('lockBtn').classList.toggle('on',encrypted);
+  document.getElementById('msgInput').placeholder=encrypted?'🔒 Message chiffré…':'Écrivez un message… (@mention pour taguer)';
+  toast(encrypted?'🔒 Chiffrement activé':'🔓 Chiffrement désactivé');
+}
+
+function onTap(id,isEnc){if(!isEnc)return;const now=Date.now();if(tapTimers[id]&&now-tapTimers[id]<400){decrypt(id);delete tapTimers[id];}else tapTimers[id]=now;}
+function onDbl(id,isEnc){if(isEnc)decrypt(id);}
+async function decrypt(id){
+  const b=document.getElementById(`bubble-${id}`); if(!b)return;
+  const res=await fetch('/api/chat/decrypt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  const data=await res.json();
+  if(data.success){b.classList.remove('encrypted');b.classList.add('decrypting');b.textContent=data.content;setTimeout(()=>b.classList.remove('decrypting'),500);}
+}
+
+function toggleEmoji(){const p=document.getElementById('emojiPicker');p.style.display=p.style.display==='none'?'flex':'none';}
+function insertEmoji(e){const inp=document.getElementById('msgInput'),pos=inp.selectionStart;inp.value=inp.value.slice(0,pos)+e+inp.value.slice(pos);inp.selectionStart=inp.selectionEnd=pos+e.length;inp.focus();document.getElementById('emojiPicker').style.display='none';}
+
+function handleMention(val){
+  const m=val.match(/@(\w*)$/),dd=document.getElementById('mentionDd');
+  if(!m){dd.style.display='none';return;}
+  const filtered=ALL_MEMBERS.filter(u=>u.username.toLowerCase().startsWith(m[1].toLowerCase())&&u.id!==ME_ID);
+  if(!filtered.length){dd.style.display='none';return;}
+  dd.innerHTML=filtered.map(u=>`<div class="mention-item" onclick="selectMention(${u.id},'${u.username}')"><div class="msg-av" style="width:26px;height:26px;font-size:11px;">${u.username[0].toUpperCase()}</div>@${u.username}</div>`).join('');
+  dd.style.display='block';
+}
+function selectMention(id,username){document.getElementById('msgInput').value=document.getElementById('msgInput').value.replace(/@\w*$/,'');document.getElementById('mentionDd').style.display='none';tagMember(id,username);document.getElementById('msgInput').focus();}
+
+function tagMember(id,username){if(taggedUsers.find(u=>u.id===id))return;taggedUsers.push({id,username});renderTagChips();toast(`✅ @${username} tagué(e)`);}
+function renderTagChips(){document.getElementById('tagChips').innerHTML=taggedUsers.map(u=>`<span class="tag-chip">@${u.username}<span class="tag-chip-x" onclick="rmTag(${u.id})">✕</span></span>`).join('');}
+function rmTag(id){taggedUsers=taggedUsers.filter(u=>u.id!==id);renderTagChips();}
+function clearTags(){taggedUsers=[];renderTagChips();}
+
+function replyTo(id,preview){replyToId=id;document.getElementById('replyBar').style.display='flex';document.getElementById('replyText').textContent=`↩ ${preview.slice(0,60)}…`;document.getElementById('msgInput').focus();}
+function cancelReply(){replyToId=null;document.getElementById('replyBar').style.display='none';}
+
+async function reactMsg(id,emoji){await fetch('/api/chat/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,emoji})});lastId=Math.max(0,lastId-1);await pollMessages();}
+
+function ctxMenu(e,id,isMe){
+  e.preventDefault(); document.getElementById('ctxMenu')?.remove();
+  const b=document.getElementById(`bubble-${id}`), preview=(b?.textContent||'').slice(0,60);
+  const menu=document.createElement('div'); menu.id='ctxMenu';
+  menu.style.cssText=`position:fixed;top:${e.clientY}px;left:${e.clientX}px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px;z-index:9999;min-width:175px;box-shadow:0 0 30px rgba(0,0,0,.65),0 0 16px rgba(0,230,118,.05);animation:fadeUp .15s ease;font-size:14px;font-family:var(--font);`;
+  [['↩ Répondre',()=>replyTo(id,preview)],['😊 Réagir',()=>quickReact(id,e.clientX,e.clientY)],...(isMe?[['🗑 Supprimer',()=>deleteMsg(id)]]:[])]
+    .forEach(([label,fn])=>{const i=document.createElement('div');i.textContent=label;i.style.cssText='padding:9px 13px;border-radius:9px;cursor:pointer;color:var(--text);transition:background .1s;';i.onmouseenter=()=>i.style.background='var(--surface2)';i.onmouseleave=()=>i.style.background='';i.onclick=()=>{fn();menu.remove();};menu.appendChild(i);});
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',()=>menu.remove(),{once:true}),50);
+}
+
+function quickReact(id,x,y){
+  document.getElementById('qrm')?.remove();
+  const emojis=['👍','❤️','😂','🔥','💯','🎉','👎','🚀'];
+  const menu=document.createElement('div');menu.id='qrm';
+  menu.style.cssText=`position:fixed;top:${y-58}px;left:${x}px;background:var(--surface);border:1px solid var(--border);border-radius:30px;padding:8px 12px;display:flex;gap:5px;z-index:9999;box-shadow:0 0 22px rgba(0,0,0,.55);animation:fadeUp .15s ease;`;
+  emojis.forEach(em=>{const s=document.createElement('span');s.textContent=em;s.style.cssText='font-size:25px;cursor:pointer;padding:3px;border-radius:8px;transition:transform .1s;';s.onmouseenter=()=>s.style.transform='scale(1.4)';s.onmouseleave=()=>s.style.transform='';s.onclick=()=>{reactMsg(id,em);menu.remove();};menu.appendChild(s);});
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',()=>menu.remove(),{once:true}),50);
+}
+
+async function deleteMsg(id){if(!confirm('Supprimer ce message ?'))return;await fetch(`/api/chat/delete/${id}`,{method:'POST'});document.querySelector(`[data-id="${id}"]`)?.remove();toast('🗑 Message supprimé');}
+
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
+
+function playPing(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=920;g.gain.setValueAtTime(.04,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.25);o.start();o.stop(ctx.currentTime+.25);}catch(e){}}
+
+function toast(msg,ms=2600){const t=document.createElement('div');t.className='glow-toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
+
+document.addEventListener('click',e=>{if(!e.target.closest('#emojiPicker')&&!e.target.closest('.cbtn-emoji'))document.getElementById('emojiPicker').style.display='none';});
+
+(async()=>{await pollMessages();const box=document.getElementById('chatMessages');box.scrollTop=box.scrollHeight;setInterval(pollMessages,2000);})();
+</script>
+{% endblock %}
