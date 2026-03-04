@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}🗄️ Mes fichiers — Kengni Finance NAS{% endblock %}
+{% block page_title %}🗄️ Vos fichiers — Kengni Finance{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ds:#07090f;--ds1:#0d1117;--ds2:#131a24;
+  --db:rgba(255,255,255,.07);
+  --dg:#00e676;--dg2:#00c853;--db2:#4a9eff;
+  --dp:#a855f7;--dteal:#2dd4bf;
+  --dgold:#ffd700;--derr:#ff4757;
+  --dt:#f0f0f0;--dm:#5a6478;
+  --dfont:'Plus Jakarta Sans',sans-serif;
+  --dmono:'JetBrains Mono',monospace;
+}
+.nf-page{font-family:var(--dfont);animation:nfIn .4s ease}
+@keyframes nfIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* Token info bar */
+.token-bar{
+  background:var(--ds1);border:1px solid rgba(0,230,118,.2);border-radius:16px;
+  padding:16px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  box-shadow:0 0 24px rgba(0,200,83,.06)
+}
+.tb-user{display:flex;align-items:center;gap:10px;flex:1;min-width:200px}
+.tb-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--dg2),#009944);
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#000;flex-shrink:0}
+.tb-name{font-size:14px;font-weight:800;color:var(--dt)}
+.tb-email{font-size:11px;color:var(--dm);font-family:var(--dmono)}
+.tb-meta{display:flex;gap:12px;flex-wrap:wrap}
+.tb-chip{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;
+  font-size:11px;font-weight:700;white-space:nowrap}
+.tb-chip-ok{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);color:var(--dg)}
+.tb-chip-warn{background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.2);color:var(--dgold)}
+.tb-chip-blue{background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.2);color:var(--db2)}
+
+/* Toolbar */
+.nf-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.nf-srch-w{flex:1;min-width:180px;position:relative}
+.nf-srch-w i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--dm);font-size:13px}
+.nf-search{width:100%;background:var(--ds1);border:1px solid var(--db);border-radius:10px;
+  color:var(--dt);font-size:14px;font-family:var(--dfont);padding:9px 12px 9px 34px;
+  outline:none;transition:border-color .2s;box-sizing:border-box}
+.nf-search:focus{border-color:rgba(0,230,118,.4)}
+.nf-search::placeholder{color:var(--dm)}
+.cat-pills{display:flex;gap:6px;flex-wrap:wrap}
+.cat-pill{padding:5px 12px;border-radius:20px;border:1px solid var(--db);
+  background:var(--ds2);color:var(--dm);font-size:12px;font-weight:700;cursor:pointer;
+  font-family:var(--dfont);transition:all .15s}
+.cat-pill.active,.cat-pill:hover{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.4);color:var(--dg)}
+
+/* File grid */
+.nf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:30px}
+.nf-card{
+  background:var(--ds1);border:1px solid var(--db);border-radius:18px;
+  overflow:hidden;transition:all .25s;display:flex;flex-direction:column
+}
+.nf-card:hover{transform:translateY(-4px);border-color:rgba(0,230,118,.2);box-shadow:0 0 40px rgba(0,200,83,.08)}
+.nf-thumb{height:120px;background:linear-gradient(145deg,var(--ds2),#0a0f18);
+  display:flex;align-items:center;justify-content:center;position:relative;font-size:3rem;opacity:.7}
+.nf-cat-badge{position:absolute;top:8px;left:8px;background:rgba(74,158,255,.2);color:var(--db2);
+  border:1px solid rgba(74,158,255,.3);font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;
+  text-transform:uppercase;letter-spacing:.7px}
+.nf-body{padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:5px}
+.nf-title{font-size:14px;font-weight:800;color:var(--dt);line-height:1.3}
+.nf-desc{font-size:12px;color:var(--dm);line-height:1.6;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;flex:1}
+.nf-meta{display:flex;gap:10px;font-size:11px;color:var(--dm);margin-top:4px}
+.nf-footer{padding:10px 16px;border-top:1px solid var(--db);display:flex;gap:7px}
+.nf-btn{flex:1;padding:8px 6px;border-radius:8px;border:none;font-size:12px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;
+  font-family:var(--dfont);transition:all .15s;white-space:nowrap}
+.nf-btn-dl{background:rgba(0,200,83,.15);border:1px solid rgba(0,230,118,.3);color:var(--dg)}
+.nf-btn-dl:hover{background:rgba(0,200,83,.28)}
+.nf-btn-prev{background:rgba(74,158,255,.12);border:1px solid rgba(74,158,255,.25);color:var(--db2)}
+.nf-btn-prev:hover{background:rgba(74,158,255,.25)}
+
+/* Empty */
+.nf-empty{text-align:center;padding:60px 20px;background:var(--ds1);
+  border:1px solid var(--db);border-radius:16px;grid-column:1/-1}
+.nf-empty-ico{font-size:3rem;margin-bottom:12px;opacity:.35}
+.nf-empty p{color:var(--dm);font-size:13px;margin:6px 0 0}
+
+/* Preview modal */
+.prev-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;
+  display:none;flex-direction:column;padding:16px}
+.prev-overlay.open{display:flex}
+.prev-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+  padding:0 4px}
+.prev-head span{color:var(--dt);font-size:14px;font-weight:700}
+.prev-head button{background:var(--ds2);border:1px solid var(--db);color:var(--dm);
+  width:34px;height:34px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center}
+.prev-head button:hover{color:var(--dt)}
+.prev-frame{flex:1;border:none;border-radius:12px;background:#000;width:100%}
+.prev-img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;margin:auto;display:block}
+
+/* Toast */
+#nfToast{position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--ds1);border:1px solid var(--db);border-radius:12px;
+  padding:12px 20px;font-size:13px;font-weight:700;color:var(--dt);
+  box-shadow:0 8px 32px rgba(0,0,0,.4);transform:translateY(80px);opacity:0;
+  transition:all .3s;pointer-events:none}
+#nfToast.show{transform:none;opacity:1}
+
+@media(max-width:600px){.token-bar{flex-direction:column;align-items:flex-start}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nf-page">
+
+  <!-- Token info bar -->
+  <div class="token-bar">
+    <div class="tb-user">
+      <div class="tb-avatar">{{ req.full_name[0].upper() if req.full_name else '?' }}</div>
+      <div>
+        <div class="tb-name">{{ req.full_name }}</div>
+        <div class="tb-email">{{ req.email }}</div>
+      </div>
+    </div>
+    <div class="tb-meta">
+      <div class="tb-chip tb-chip-ok">✅ Accès actif</div>
+      {% if token_expires %}
+      <div class="tb-chip tb-chip-warn">⏰ Expire le {{ token_expires.strftime('%d/%m/%Y') }}</div>
+      {% else %}
+      <div class="tb-chip tb-chip-ok">∞ Sans expiration</div>
+      {% endif %}
+      {% if uses_left >= 0 %}
+      <div class="tb-chip tb-chip-blue">🔢 {{ uses_left }} téléch. restants</div>
+      {% else %}
+      <div class="tb-chip tb-chip-blue">🔢 Téléchargements illimités</div>
+      {% endif %}
+      <div class="tb-chip" style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2);color:var(--dp)">
+        📁 {{ files|length }} fichier{% if files|length > 1 %}s{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  {% set categories = files | map(attribute='category') | unique | list %}
+  <div class="nf-toolbar">
+    <div class="nf-srch-w">
+      <i>🔍</i>
+      <input class="nf-search" type="text" id="nfSearch" placeholder="Rechercher un fichier…" oninput="filterFiles()">
+    </div>
+    <div class="cat-pills">
+      <button class="cat-pill active" onclick="filterCat('',this)">Tout</button>
+      {% for cat in categories %}
+      <button class="cat-pill" onclick="filterCat('{{ cat|e }}',this)">{{ cat }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- File grid -->
+  <div class="nf-grid" id="nfGrid">
+    {% if files %}
+    {% for f in files %}
+    <div class="nf-card" data-title="{{ f.title|lower }}" data-cat="{{ f.category }}">
+      <div class="nf-thumb">
+        <span>{{ f.icon }}</span>
+        <span class="nf-cat-badge">{{ f.category }}</span>
+      </div>
+      <div class="nf-body">
+        <div class="nf-title">{{ f.title }}</div>
+        {% if f.description %}
+        <div class="nf-desc">{{ f.description }}</div>
+        {% endif %}
+        <div class="nf-meta">
+          <span>💾 {{ f.filesize }}</span>
+          <span>⬇️ {{ f.download_count }} téléch.</span>
+        </div>
+      </div>
+      <div class="nf-footer">
+        <button class="nf-btn nf-btn-dl" onclick="dlFile({{ f.id }})">⬇️ Télécharger</button>
+        {% if f.previewable %}
+        <button class="nf-btn nf-btn-prev" onclick="previewFile({{ f.id }}, '{{ f.title|e }}', '{{ f.mimetype }}')">👁 Voir</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="nf-empty">
+      <div class="nf-empty-ico">📂</div>
+      <p>Aucun fichier disponible pour votre accès</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div><!-- .nf-page -->
+
+<!-- Preview modal -->
+<div class="prev-overlay" id="prevModal">
+  <div class="prev-head">
+    <span id="prevTitle"></span>
+    <button onclick="document.getElementById('prevModal').classList.remove('open')">✕</button>
+  </div>
+  <iframe class="prev-frame" id="prevFrame" style="display:none"></iframe>
+  <img class="prev-img" id="prevImg" style="display:none" alt="preview">
+</div>
+
+<div id="nfToast"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const TOKEN = '{{ token }}';
+
+function toast(msg){
+  const t=document.getElementById('nfToast');t.textContent=msg;t.className='show';
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.className=''},3000);
+}
+
+function dlFile(id){
+  toast('⬇️ Téléchargement en cours…');
+  window.location.href=`/nas/download/${TOKEN}/${id}`;
+}
+
+function previewFile(id,title,mime){
+  const url=`/nas/preview/${TOKEN}/${id}`;
+  document.getElementById('prevTitle').textContent=title;
+  const frame=document.getElementById('prevFrame');
+  const img=document.getElementById('prevImg');
+  if(mime.startsWith('image/')){
+    img.src=url;img.style.display='block';frame.style.display='none';
+  }else{
+    frame.src=url;frame.style.display='block';img.style.display='none';
+  }
+  document.getElementById('prevModal').classList.add('open');
+}
+document.getElementById('prevModal')?.addEventListener('click',function(e){
+  if(e.target===this)this.classList.remove('open');
+});
+
+/* Filtres */
+let activeCat='';
+function filterCat(cat,el){
+  activeCat=cat;
+  document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  filterFiles();
+}
+function filterFiles(){
+  const q=document.getElementById('nfSearch').value.toLowerCase().trim();
+  document.querySelectorAll('.nf-card').forEach(card=>{
+    const titleMatch=!q||card.dataset.title.includes(q);
+    const catMatch=!activeCat||card.dataset.cat===activeCat;
+    card.style.display=(titleMatch&&catMatch)?'':'none';
+  });
+}
+</script>
+{% endblock %}

@@ -334,6 +334,931 @@
 
 </div><!-- /bn-layout -->
 
+<!-- ══════════════════════════════════════════════════════
+     ÉDITEUR DE DOCUMENT — STYLE WORD / RICH TEXT
+══════════════════════════════════════════════════════ -->
+<style>
+/* ── 3D Card System ── */
+.word-editor-card {
+    background: linear-gradient(145deg, var(--secondary-color) 0%, rgba(10,14,26,.97) 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.07);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow:
+        0 2px 0 rgba(255,255,255,.05) inset,
+        0 20px 60px rgba(0,0,0,.5),
+        0 8px 30px rgba(0,0,0,.35),
+        4px 4px 20px rgba(0,0,0,.3);
+    transition: box-shadow .3s ease;
+}
+.word-editor-card:hover {
+    box-shadow:
+        0 2px 0 rgba(255,255,255,.07) inset,
+        0 28px 80px rgba(0,0,0,.6),
+        0 12px 40px rgba(0,0,0,.4),
+        4px 4px 25px rgba(0,0,0,.35);
+}
+
+/* ── Title bar ── */
+.word-titlebar {
+    display: flex; align-items: center; gap: .8rem;
+    padding: .9rem 1.2rem;
+    background: linear-gradient(90deg, rgba(0,212,170,.08) 0%, rgba(99,102,241,.05) 100%);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,.3), 0 1px 0 rgba(255,255,255,.04) inset;
+}
+.word-doc-title {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    padding: .3rem .6rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.word-doc-title:focus {
+    border-color: rgba(0,212,170,.4);
+    background: rgba(0,0,0,.2);
+    box-shadow: 0 0 0 3px rgba(0,212,170,.08);
+}
+.word-doc-title::placeholder { color: var(--text-secondary); font-weight: 400; }
+
+/* ── Ribbons ── */
+.word-ribbon {
+    display: flex; flex-wrap: wrap; gap: .3rem; align-items: center;
+    padding: .55rem .9rem;
+    background: linear-gradient(180deg, rgba(12,18,34,.97) 0%, rgba(10,14,26,1) 100%);
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 4px 10px rgba(0,0,0,.25);
+}
+.rib-sep {
+    width: 1px; height: 22px;
+    background: rgba(255,255,255,.1);
+    flex-shrink: 0; margin: 0 .2rem;
+}
+.rib-label {
+    font-size: .58rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .8px; color: rgba(148,163,184,.5);
+    padding: 0 .3rem; white-space: nowrap; align-self: center;
+}
+
+/* ── Ribbon Controls ── */
+.rib-select {
+    background: rgba(8,12,24,.9);
+    border: 1px solid rgba(255,255,255,.1);
+    color: var(--text-primary);
+    border-radius: 5px;
+    font-size: .78rem;
+    font-family: 'Inter', sans-serif;
+    padding: .25rem .5rem;
+    outline: none;
+    cursor: pointer;
+    height: 26px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.4) inset, 0 -1px 0 rgba(255,255,255,.04) inset, 1px 1px 4px rgba(0,0,0,.3);
+    transition: border-color .15s;
+}
+.rib-select:focus { border-color: rgba(0,212,170,.4); }
+.rib-select option { background: #0f1525; }
+
+#rib-fontfamily { width: 130px; }
+#rib-fontsize   { width: 58px; }
+
+/* ── Ribbon Buttons ── */
+.rib-btn {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: .8rem;
+    font-weight: 700;
+    transition: all .12s ease;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: none;
+    font-family: 'Inter', sans-serif;
+}
+.rib-btn:hover {
+    background: rgba(255,255,255,.1);
+    border-color: rgba(255,255,255,.15);
+    color: var(--text-primary);
+    box-shadow: 0 1px 0 rgba(255,255,255,.07) inset, 0 3px 8px rgba(0,0,0,.3);
+    transform: translateY(-1px);
+}
+.rib-btn:active { transform: translateY(0) scale(.95); }
+.rib-btn.active {
+    background: rgba(0,212,170,.15);
+    border-color: rgba(0,212,170,.4);
+    color: var(--accent, #00d4aa);
+    box-shadow: 0 1px 0 rgba(255,255,255,.1) inset, 0 0 10px rgba(0,212,170,.15);
+}
+.rib-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%; transform: translateX(-50%);
+    background: rgba(10,14,26,.96);
+    border: 1px solid rgba(255,255,255,.1);
+    color: var(--text-primary);
+    font-size: .63rem;
+    padding: .2rem .5rem;
+    border-radius: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 100;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,.5);
+}
+
+/* ── Color pickers ── */
+.rib-color {
+    width: 26px; height: 26px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 1px;
+    background: transparent;
+    box-shadow: 0 1px 0 rgba(255,255,255,.07) inset, 1px 1px 4px rgba(0,0,0,.3);
+    transition: transform .12s, box-shadow .12s;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.rib-color:hover { transform: scale(1.1); box-shadow: 0 0 10px rgba(255,255,255,.15); }
+.rib-color-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0; cursor: pointer; position: relative;
+}
+.rib-color-indicator {
+    width: 22px; height: 3px; border-radius: 2px; margin-top: 1px;
+    transition: background .15s;
+}
+
+/* ── Document area ── */
+.word-doc-area-wrap {
+    background: linear-gradient(180deg, #0d1020 0%, #090d1a 100%);
+    padding: 1.5rem;
+    min-height: 200px;
+    display: flex;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4) inset;
+}
+.word-doc-page {
+    width: 100%;
+    max-width: 860px;
+    background: linear-gradient(145deg, #111827 0%, #0d1120 100%);
+    border-radius: 6px;
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,.06),
+        0 4px 30px rgba(0,0,0,.5),
+        4px 4px 20px rgba(0,0,0,.4),
+        0 2px 0 rgba(255,255,255,.04) inset;
+    padding: 2rem 2.5rem;
+    min-height: 320px;
+    position: relative;
+    transition: box-shadow .3s;
+}
+.word-doc-page::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
+    border-radius: 6px 6px 0 0;
+}
+.word-doc-page:focus-within {
+    box-shadow:
+        0 0 0 1px rgba(0,212,170,.2),
+        0 8px 40px rgba(0,0,0,.6),
+        4px 4px 25px rgba(0,0,0,.4),
+        0 0 30px rgba(0,212,170,.04);
+}
+#wordEditor {
+    min-height: 260px;
+    outline: none;
+    color: #d1d5db;
+    font-size: 15px;
+    line-height: 1.75;
+    font-family: 'Georgia', serif;
+    caret-color: #00d4aa;
+    word-break: break-word;
+}
+#wordEditor:empty::before {
+    content: "Commencez à écrire votre document ici... Sélectionnez du texte pour le formater.";
+    color: rgba(148,163,184,.35);
+    pointer-events: none;
+    display: block;
+    font-style: italic;
+}
+#wordEditor h1 { font-size: 2em; font-weight: 800; margin: .6em 0 .3em; color: #f1f5f9; }
+#wordEditor h2 { font-size: 1.5em; font-weight: 700; margin: .5em 0 .25em; color: #e2e8f0; }
+#wordEditor h3 { font-size: 1.2em; font-weight: 600; margin: .4em 0 .2em; color: #cbd5e1; }
+#wordEditor blockquote {
+    border-left: 3px solid #00d4aa; margin: .8em 0; padding: .5em 1em;
+    background: rgba(0,212,170,.05); border-radius: 0 6px 6px 0;
+    color: #94a3b8; font-style: italic;
+}
+#wordEditor ul { list-style: disc; padding-left: 1.5em; margin: .4em 0; }
+#wordEditor ol { list-style: decimal; padding-left: 1.5em; margin: .4em 0; }
+#wordEditor li { margin: .2em 0; }
+#wordEditor a { color: #00d4aa; text-decoration: underline; }
+#wordEditor table {
+    border-collapse: collapse; width: 100%; margin: .8em 0;
+    font-size: .9em;
+}
+#wordEditor table td, #wordEditor table th {
+    border: 1px solid rgba(255,255,255,.12);
+    padding: .4em .7em;
+}
+#wordEditor table th { background: rgba(0,212,170,.08); font-weight: 700; }
+#wordEditor hr { border: none; border-top: 1px solid rgba(255,255,255,.12); margin: 1em 0; }
+#wordEditor code {
+    background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px; padding: .1em .4em; font-family: 'JetBrains Mono','Courier New',monospace;
+    font-size: .88em; color: #a5f3fc;
+}
+
+/* ── Status bar ── */
+.word-statusbar {
+    display: flex; align-items: center; gap: 1.2rem;
+    padding: .45rem 1.2rem;
+    background: rgba(5,8,18,.95);
+    border-top: 1px solid rgba(255,255,255,.05);
+    font-size: .68rem; color: rgba(148,163,184,.6);
+    font-family: 'JetBrains Mono','Courier New',monospace;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.3);
+}
+.word-statusbar .sb-pill {
+    padding: .12rem .5rem; border-radius: 4px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.07);
+    color: rgba(148,163,184,.7);
+}
+.word-statusbar .sb-pill.saved { background: rgba(0,212,170,.08); border-color: rgba(0,212,170,.2); color: #00d4aa; }
+.word-statusbar .sb-pill.unsaved { background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.2); color: #f59e0b; }
+
+/* ── Find/Replace bar ── */
+.find-replace-bar {
+    display: none;
+    padding: .5rem 1rem;
+    background: rgba(5,8,18,.97);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    gap: .5rem; align-items: center; flex-wrap: wrap;
+}
+.find-replace-bar.open { display: flex; }
+
+/* 3D stat boxes */
+.stat-box {
+    background: linear-gradient(145deg, var(--accent-color) 0%, rgba(8,12,24,.95) 100%);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.06) inset,
+        0 4px 16px rgba(0,0,0,.4),
+        2px 2px 8px rgba(0,0,0,.3);
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
+}
+.stat-box:hover {
+    transform: perspective(600px) rotateX(-5deg) translateY(-4px) scale(1.03);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.1) inset,
+        0 12px 35px rgba(0,0,0,.5),
+        3px 3px 12px rgba(0,0,0,.35);
+}
+
+/* 3D BN Cards */
+.bn-card {
+    background: linear-gradient(145deg, var(--secondary-color) 0%, rgba(10,14,26,.97) 100%);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.05) inset,
+        0 8px 30px rgba(0,0,0,.4),
+        3px 3px 12px rgba(0,0,0,.3);
+    transition: box-shadow .3s ease;
+}
+.bn-card:hover {
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.07) inset,
+        0 14px 45px rgba(0,0,0,.5),
+        4px 4px 16px rgba(0,0,0,.35);
+}
+
+/* 3D buttons */
+.bn-btn {
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.15) inset,
+        0 -1px 0 rgba(0,0,0,.3) inset,
+        0 3px 10px rgba(0,0,0,.3),
+        1px 1px 4px rgba(0,0,0,.2);
+    transition: transform .15s ease, box-shadow .15s ease, opacity .15s;
+}
+.bn-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.2) inset,
+        0 6px 20px rgba(0,0,0,.35),
+        2px 2px 8px rgba(0,0,0,.25);
+    opacity: 1 !important;
+}
+.bn-btn:active { transform: translateY(1px) !important; }
+
+/* 3D Table */
+.bn-card table.bn-table thead th {
+    background: linear-gradient(180deg, rgba(12,18,34,.98) 0%, rgba(8,12,24,1) 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+table.bn-table tbody tr:hover { background: rgba(0,212,170,.04); }
+
+/* 3D Calc buttons */
+.calc-btn.num {
+    background: linear-gradient(145deg, var(--accent-color) 0%, rgba(8,12,24,.9) 100%);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.07) inset,
+        0 -1px 0 rgba(0,0,0,.4) inset,
+        0 3px 8px rgba(0,0,0,.35),
+        1px 1px 4px rgba(0,0,0,.25);
+    transition: transform .1s ease, box-shadow .1s ease;
+}
+.calc-btn.num:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,.4); }
+.calc-btn.num:active { transform: translateY(1px); box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+.calc-btn.op {
+    box-shadow:
+        0 1px 0 rgba(0,212,170,.2) inset,
+        0 -1px 0 rgba(0,0,0,.4) inset,
+        0 3px 10px rgba(0,0,0,.3),
+        0 0 8px rgba(0,212,170,.08);
+    transition: transform .1s ease, box-shadow .1s ease;
+}
+.calc-btn.op:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,212,170,.2); }
+.calc-btn.eq {
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.3) inset,
+        0 -2px 0 rgba(0,0,0,.3) inset,
+        0 6px 20px rgba(0,212,170,.3),
+        2px 2px 8px rgba(0,0,0,.3);
+    transition: transform .1s ease, box-shadow .1s ease;
+}
+.calc-btn.eq:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,212,170,.4); }
+.calc-btn.eq:active { transform: translateY(1px); }
+
+/* Sticky note 3D */
+.sticky-note {
+    box-shadow:
+        0 1px 0 rgba(255,215,0,.1) inset,
+        0 8px 30px rgba(0,0,0,.4),
+        2px 2px 10px rgba(0,0,0,.3);
+    transition: box-shadow .3s;
+}
+.sticky-note:hover { box-shadow: 0 1px 0 rgba(255,215,0,.12) inset, 0 14px 45px rgba(0,0,0,.5); }
+
+/* Calc display 3D */
+.calc-display {
+    box-shadow:
+        0 2px 6px rgba(0,0,0,.5) inset,
+        0 1px 0 rgba(255,255,255,.04),
+        1px 1px 6px rgba(0,0,0,.3);
+}
+</style>
+
+<!-- Rich Text Editor Section -->
+<div class="word-editor-card" id="wordEditorCard">
+
+  <!-- Title Bar -->
+  <div class="word-titlebar">
+    <span style="font-size:1.2rem">📄</span>
+    <input type="text" class="word-doc-title" id="wordDocTitle" placeholder="Titre du document..." value="">
+    <div style="display:flex;gap:.4rem;margin-left:auto">
+      <button class="bn-btn bn-btn-purple" style="font-size:.75rem;padding:.3rem .8rem" onclick="exportWordDoc('html')" title="Exporter en HTML">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Exporter
+      </button>
+      <button class="bn-btn" style="font-size:.75rem;padding:.3rem .8rem;background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.3);color:#00d4aa" onclick="saveWordDoc()" id="wordSaveBtn">
+        💾 Sauvegarder
+      </button>
+      <button class="bn-btn" style="font-size:.75rem;padding:.3rem .8rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444" onclick="clearWordDoc()">
+        🗑 Effacer
+      </button>
+    </div>
+  </div>
+
+  <!-- Find/Replace Bar (hidden by default) -->
+  <div class="find-replace-bar" id="findReplaceBar">
+    <span style="font-size:.72rem;color:rgba(148,163,184,.6);font-weight:700">🔍 TROUVER</span>
+    <input type="text" id="findInput" class="bn-input" placeholder="Chercher..." style="width:140px;height:24px;font-size:.78rem;padding:.2rem .6rem">
+    <span style="font-size:.72rem;color:rgba(148,163,184,.4);font-weight:700">→ REMPLACER</span>
+    <input type="text" id="replaceInput" class="bn-input" placeholder="Remplacer par..." style="width:140px;height:24px;font-size:.78rem;padding:.2rem .6rem">
+    <button class="bn-btn" style="font-size:.72rem;padding:.2rem .6rem;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);color:#00d4aa" onclick="doFindReplace()">Remplacer tout</button>
+    <button class="bn-btn bn-btn-danger" style="font-size:.72rem;padding:.2rem .5rem;margin-left:auto" onclick="toggleFindReplace()">✕</button>
+  </div>
+
+  <!-- Ribbon 1 : Texte & Police -->
+  <div class="word-ribbon">
+    <span class="rib-label">Police</span>
+    <select class="rib-select" id="rib-fontfamily" onchange="applyFont(this.value)" title="Police">
+      <option value="Georgia, serif">Georgia</option>
+      <option value="'Inter', sans-serif">Inter</option>
+      <option value="'Times New Roman', serif">Times New Roman</option>
+      <option value="'Arial', sans-serif">Arial</option>
+      <option value="'Helvetica Neue', sans-serif">Helvetica</option>
+      <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+      <option value="'Garamond', serif">Garamond</option>
+      <option value="'Palatino', serif">Palatino</option>
+      <option value="'Verdana', sans-serif">Verdana</option>
+      <option value="'Tahoma', sans-serif">Tahoma</option>
+      <option value="'Gill Sans', sans-serif">Gill Sans</option>
+      <option value="'Century Gothic', sans-serif">Century Gothic</option>
+      <option value="'JetBrains Mono','Courier New',monospace">JetBrains Mono</option>
+      <option value="'Courier New', monospace">Courier New</option>
+      <option value="'Lucida Console', monospace">Lucida Console</option>
+    </select>
+    <select class="rib-select" id="rib-fontsize" onchange="applyFontSize(this.value)" title="Taille">
+      <option>8</option><option>9</option><option>10</option>
+      <option>11</option><option>12</option><option selected>14</option>
+      <option>16</option><option>18</option><option>20</option>
+      <option>24</option><option>28</option><option>32</option>
+      <option>36</option><option>48</option><option>72</option>
+    </select>
+
+    <div class="rib-sep"></div>
+    <span class="rib-label">Style</span>
+
+    <!-- Heading selector -->
+    <select class="rib-select" id="rib-heading" style="width:90px" onchange="applyHeading(this.value)">
+      <option value="">Normal</option>
+      <option value="H1">Titre 1</option>
+      <option value="H2">Titre 2</option>
+      <option value="H3">Titre 3</option>
+      <option value="pre">Code</option>
+      <option value="blockquote">Citation</option>
+    </select>
+
+    <div class="rib-sep"></div>
+
+    <!-- B I U S -->
+    <button class="rib-btn" id="btn-bold" title="Gras (Ctrl+B)" onclick="execCmd('bold')"><b>B</b></button>
+    <button class="rib-btn" id="btn-italic" title="Italique (Ctrl+I)" onclick="execCmd('italic')"><i>I</i></button>
+    <button class="rib-btn" id="btn-underline" title="Souligné (Ctrl+U)" onclick="execCmd('underline')"><u>U</u></button>
+    <button class="rib-btn" id="btn-strikethrough" title="Barré" onclick="execCmd('strikethrough')"><s>S</s></button>
+    <button class="rib-btn" id="btn-superscript" title="Exposant" onclick="execCmd('superscript')" style="font-size:.65rem">X²</button>
+    <button class="rib-btn" id="btn-subscript"   title="Indice"   onclick="execCmd('subscript')"   style="font-size:.65rem">X₂</button>
+
+    <div class="rib-sep"></div>
+    <span class="rib-label">Couleur</span>
+
+    <!-- Text color -->
+    <div class="rib-color-wrap" title="Couleur du texte" onclick="document.getElementById('colorText').click()">
+      <button class="rib-btn" style="width:26px;height:22px;font-weight:900;pointer-events:none">A</button>
+      <div class="rib-color-indicator" id="indicatorText" style="background:#ffffff"></div>
+    </div>
+    <input type="color" id="colorText" value="#ffffff" style="width:0;height:0;opacity:0;position:absolute" oninput="applyTextColor(this.value)" onchange="applyTextColor(this.value)">
+
+    <!-- Highlight color -->
+    <div class="rib-color-wrap" title="Surligner le texte" onclick="document.getElementById('colorHL').click()">
+      <button class="rib-btn" style="width:26px;height:22px;font-size:.75rem;pointer-events:none">🖊</button>
+      <div class="rib-color-indicator" id="indicatorHL" style="background:#fef08a"></div>
+    </div>
+    <input type="color" id="colorHL" value="#fef08a" style="width:0;height:0;opacity:0;position:absolute" oninput="applyHighlight(this.value)" onchange="applyHighlight(this.value)">
+
+    <div class="rib-sep"></div>
+    <span class="rib-label">Couleurs rapides</span>
+    <!-- Quick color swatches -->
+    <div style="display:flex;gap:.25rem;flex-wrap:wrap;max-width:130px">
+      <div onclick="applyTextColor('#ffffff')" style="width:14px;height:14px;border-radius:3px;background:#ffffff;cursor:pointer;border:1px solid rgba(255,255,255,.2)" title="Blanc"></div>
+      <div onclick="applyTextColor('#f87171')" style="width:14px;height:14px;border-radius:3px;background:#f87171;cursor:pointer" title="Rouge"></div>
+      <div onclick="applyTextColor('#fb923c')" style="width:14px;height:14px;border-radius:3px;background:#fb923c;cursor:pointer" title="Orange"></div>
+      <div onclick="applyTextColor('#fbbf24')" style="width:14px;height:14px;border-radius:3px;background:#fbbf24;cursor:pointer" title="Jaune"></div>
+      <div onclick="applyTextColor('#4ade80')" style="width:14px;height:14px;border-radius:3px;background:#4ade80;cursor:pointer" title="Vert"></div>
+      <div onclick="applyTextColor('#00d4aa')" style="width:14px;height:14px;border-radius:3px;background:#00d4aa;cursor:pointer" title="Turquoise"></div>
+      <div onclick="applyTextColor('#60a5fa')" style="width:14px;height:14px;border-radius:3px;background:#60a5fa;cursor:pointer" title="Bleu"></div>
+      <div onclick="applyTextColor('#a78bfa')" style="width:14px;height:14px;border-radius:3px;background:#a78bfa;cursor:pointer" title="Violet"></div>
+      <div onclick="applyTextColor('#f472b6')" style="width:14px;height:14px;border-radius:3px;background:#f472b6;cursor:pointer" title="Rose"></div>
+      <div onclick="applyTextColor('#94a3b8')" style="width:14px;height:14px;border-radius:3px;background:#94a3b8;cursor:pointer" title="Gris"></div>
+    </div>
+
+    <div class="rib-sep"></div>
+    <!-- Clear formatting -->
+    <button class="rib-btn" title="Supprimer la mise en forme" onclick="execCmd('removeFormat')" style="font-size:.7rem">⊘</button>
+  </div>
+
+  <!-- Ribbon 2 : Paragraphe & Outils -->
+  <div class="word-ribbon" style="padding:.45rem .9rem">
+    <span class="rib-label">Alignement</span>
+    <button class="rib-btn" title="Aligner à gauche (Ctrl+L)" onclick="execCmd('justifyLeft')">
+      <svg width="13" height="11" viewBox="0 0 13 11"><line x1="0" y1="1" x2="13" y2="1" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="4.5" x2="9" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <button class="rib-btn" title="Centrer (Ctrl+E)" onclick="execCmd('justifyCenter')">
+      <svg width="13" height="11" viewBox="0 0 13 11"><line x1="0" y1="1" x2="13" y2="1" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="4.5" x2="11" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <button class="rib-btn" title="Aligner à droite (Ctrl+R)" onclick="execCmd('justifyRight')">
+      <svg width="13" height="11" viewBox="0 0 13 11"><line x1="0" y1="1" x2="13" y2="1" stroke="currentColor" stroke-width="1.5"/><line x1="4" y1="4.5" x2="13" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <button class="rib-btn" title="Justifier" onclick="execCmd('justifyFull')">
+      <svg width="13" height="11" viewBox="0 0 13 11"><line x1="0" y1="1" x2="13" y2="1" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="4.5" x2="13" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+
+    <div class="rib-sep"></div>
+    <span class="rib-label">Listes</span>
+    <button class="rib-btn" title="Liste à puces" onclick="execCmd('insertUnorderedList')">
+      <svg width="13" height="11" viewBox="0 0 13 11"><circle cx="1.5" cy="1.5" r="1.5" fill="currentColor"/><line x1="4.5" y1="1.5" x2="13" y2="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="1.5" cy="5.5" r="1.5" fill="currentColor"/><line x1="4.5" y1="5.5" x2="13" y2="5.5" stroke="currentColor" stroke-width="1.5"/><circle cx="1.5" cy="9.5" r="1.5" fill="currentColor"/><line x1="4.5" y1="9.5" x2="13" y2="9.5" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <button class="rib-btn" title="Liste numérotée" onclick="execCmd('insertOrderedList')">
+      <svg width="13" height="11" viewBox="0 0 13 11"><text x="0" y="3" font-size="4" fill="currentColor" font-family="monospace">1.</text><line x1="5" y1="1.5" x2="13" y2="1.5" stroke="currentColor" stroke-width="1.5"/><text x="0" y="7.5" font-size="4" fill="currentColor" font-family="monospace">2.</text><line x1="5" y1="6" x2="13" y2="6" stroke="currentColor" stroke-width="1.5"/><text x="0" y="12" font-size="4" fill="currentColor" font-family="monospace">3.</text><line x1="5" y1="10.5" x2="13" y2="10.5" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <button class="rib-btn" title="Indenter" onclick="execCmd('indent')">→</button>
+    <button class="rib-btn" title="Désindenter" onclick="execCmd('outdent')">←</button>
+
+    <div class="rib-sep"></div>
+    <span class="rib-label">Insérer</span>
+    <button class="rib-btn" title="Insérer une ligne horizontale" onclick="insertHR()" style="font-size:.7rem">─</button>
+    <button class="rib-btn" title="Insérer un lien" onclick="insertLink()" style="font-size:.7rem">🔗</button>
+    <button class="rib-btn" title="Insérer un tableau 2×2" onclick="insertTable()" style="font-size:.65rem">⊞</button>
+    <button class="rib-btn" title="Insérer du code inline" onclick="insertCode()" style="font-size:.6rem;font-family:monospace">&lt;/&gt;</button>
+    <button class="rib-btn" title="Insérer la date du jour" onclick="insertDate()" style="font-size:.7rem">📅</button>
+
+    <div class="rib-sep"></div>
+    <span class="rib-label">Outils</span>
+    <button class="rib-btn" title="Annuler (Ctrl+Z)" onclick="execCmd('undo')">↩</button>
+    <button class="rib-btn" title="Rétablir (Ctrl+Y)" onclick="execCmd('redo')">↪</button>
+    <button class="rib-btn" title="Trouver / Remplacer (Ctrl+H)" onclick="toggleFindReplace()">🔍</button>
+    <button class="rib-btn" title="Imprimer (Ctrl+P)" onclick="printDoc()">🖨</button>
+    <button class="rib-btn" title="Mode plein écran" onclick="toggleEditorFullscreen()" id="btn-fs">⛶</button>
+    <button class="rib-btn" title="Copier tout le texte" onclick="copyAllText()">📋</button>
+
+    <!-- Word count -->
+    <div style="margin-left:auto;font-size:.68rem;color:rgba(148,163,184,.45);font-family:monospace;white-space:nowrap" id="wordCountDisplay">0 mots · 0 car.</div>
+  </div>
+
+  <!-- Document Page -->
+  <div class="word-doc-area-wrap">
+    <div class="word-doc-page">
+      <div id="wordEditor" contenteditable="true"
+        oninput="onEditorInput()"
+        onkeyup="updateRibbonState()"
+        onmouseup="updateRibbonState()"
+        onselectionchange="updateRibbonState()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="word-statusbar">
+    <span class="sb-pill" id="sbDocStatus">✏️ Édition</span>
+    <span id="sbWordCount">0 mots</span>
+    <span id="sbCharCount">0 caractères</span>
+    <span id="sbLineCount">1 ligne</span>
+    <span style="margin-left:auto" id="sbSaveStatus" class="sb-pill">Nouveau document</span>
+  </div>
+</div><!-- /word-editor-card -->
+
+<script>
+/* ══════════════════════════════════════════════════════
+   ÉDITEUR WORD — RICH TEXT ENGINE
+══════════════════════════════════════════════════════ */
+const editor = document.getElementById('wordEditor');
+let autoSaveTimer = null;
+let wordDocDirty = false;
+
+// ── Load saved doc from localStorage ──
+function loadWordDoc() {
+  try {
+    const saved = localStorage.getItem('kf_word_doc');
+    const title  = localStorage.getItem('kf_word_title');
+    if (saved) editor.innerHTML = saved;
+    if (title) document.getElementById('wordDocTitle').value = title;
+    updateWordCount();
+    updateRibbonState();
+  } catch(e) {}
+}
+loadWordDoc();
+
+// ── Exec command wrapper ──
+function execCmd(cmd, val) {
+  editor.focus();
+  document.execCommand(cmd, false, val || null);
+  updateRibbonState();
+}
+
+// ── Apply font family ──
+function applyFont(family) {
+  editor.focus();
+  document.execCommand('fontName', false, family);
+  updateRibbonState();
+}
+
+// ── Apply font size (pt → HTML size 1-7 mapping) ──
+function applyFontSize(size) {
+  editor.focus();
+  // Use a span with inline style for precise sizes
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+  if (range.collapsed) {
+    // No selection — set default for future typing via execCommand
+    document.execCommand('fontSize', false, '3');
+    // wrap with span
+    const span = document.createElement('span');
+    span.style.fontSize = size + 'px';
+    range.insertNode(span);
+    // Move caret into span
+    const newRange = document.createRange();
+    newRange.setStart(span, 0);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  } else {
+    const span = document.createElement('span');
+    span.style.fontSize = size + 'px';
+    try {
+      range.surroundContents(span);
+    } catch(e) {
+      document.execCommand('fontSize', false, '3');
+    }
+  }
+  updateRibbonState();
+}
+
+// ── Apply heading ──
+function applyHeading(tag) {
+  editor.focus();
+  if (!tag) {
+    document.execCommand('formatBlock', false, 'p');
+  } else if (tag === 'pre') {
+    document.execCommand('formatBlock', false, 'pre');
+  } else if (tag === 'blockquote') {
+    document.execCommand('formatBlock', false, 'blockquote');
+  } else {
+    document.execCommand('formatBlock', false, tag);
+  }
+  updateRibbonState();
+  document.getElementById('rib-heading').value = '';
+}
+
+// ── Apply text color ──
+function applyTextColor(color) {
+  editor.focus();
+  document.execCommand('foreColor', false, color);
+  document.getElementById('indicatorText').style.background = color;
+  updateRibbonState();
+}
+
+// ── Apply highlight ──
+function applyHighlight(color) {
+  editor.focus();
+  document.execCommand('hiliteColor', false, color);
+  document.getElementById('indicatorHL').style.background = color;
+  updateRibbonState();
+}
+
+// ── Insert HR ──
+function insertHR() {
+  editor.focus();
+  document.execCommand('insertHTML', false, '<hr>');
+}
+
+// ── Insert link ──
+function insertLink() {
+  const url = prompt('URL du lien :', 'https://');
+  if (url) {
+    const sel = window.getSelection();
+    const text = sel && !sel.isCollapsed ? null : prompt('Texte du lien :', url);
+    if (text) document.execCommand('insertHTML', false, `<a href="${url}" target="_blank">${text}</a>`);
+    else document.execCommand('createLink', false, url);
+  }
+}
+
+// ── Insert Table ──
+function insertTable() {
+  const rows = parseInt(prompt('Nombre de lignes :', '3')) || 3;
+  const cols = parseInt(prompt('Nombre de colonnes :', '3')) || 3;
+  let html = '<table><thead><tr>';
+  for (let c = 0; c < cols; c++) html += `<th>En-tête ${c+1}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) html += '<td>&nbsp;</td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  editor.focus();
+  document.execCommand('insertHTML', false, html);
+}
+
+// ── Insert code ──
+function insertCode() {
+  const sel = window.getSelection();
+  const text = sel && !sel.isCollapsed ? sel.toString() : 'code';
+  document.execCommand('insertHTML', false, `<code>${text}</code>`);
+}
+
+// ── Insert date ──
+function insertDate() {
+  const d = new Date();
+  const formatted = d.toLocaleDateString('fr-FR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.execCommand('insertHTML', false, `<strong>${formatted}</strong>`);
+}
+
+// ── Toggle find/replace bar ──
+function toggleFindReplace() {
+  const bar = document.getElementById('findReplaceBar');
+  bar.classList.toggle('open');
+  if (bar.classList.contains('open')) document.getElementById('findInput').focus();
+}
+
+function doFindReplace() {
+  const find    = document.getElementById('findInput').value;
+  const replace = document.getElementById('replaceInput').value;
+  if (!find) return;
+  const html = editor.innerHTML;
+  const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(escaped, 'gi');
+  editor.innerHTML = html.replace(regex, `<mark style="background:rgba(250,204,21,.3);color:inherit">${replace}</mark>`);
+  onEditorInput();
+  showBNToast(`Remplacement effectué`, 'success');
+}
+
+// ── Update ribbon button states ──
+function updateRibbonState() {
+  const cmds = ['bold','italic','underline','strikethrough','superscript','subscript'];
+  const ids  = ['btn-bold','btn-italic','btn-underline','btn-strikethrough','btn-superscript','btn-subscript'];
+  cmds.forEach((cmd, i) => {
+    const el = document.getElementById(ids[i]);
+    if (el) el.classList.toggle('active', document.queryCommandState(cmd));
+  });
+  // Detect current font
+  try {
+    const font = document.queryCommandValue('fontName');
+    const sel = document.getElementById('rib-fontfamily');
+    if (font && sel) {
+      for (let opt of sel.options) {
+        if (opt.value.toLowerCase().includes(font.toLowerCase().replace(/['"]/g,''))) {
+          sel.value = opt.value; break;
+        }
+      }
+    }
+  } catch(e) {}
+}
+
+// ── Word count ──
+function updateWordCount() {
+  const text  = editor.innerText || '';
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  const lines = (text.match(/\n/g) || []).length + 1;
+  document.getElementById('wordCountDisplay').textContent = `${words} mots · ${chars} car.`;
+  document.getElementById('sbWordCount').textContent = `${words} mots`;
+  document.getElementById('sbCharCount').textContent = `${chars} caractères`;
+  document.getElementById('sbLineCount').textContent = `${lines} ligne${lines>1?'s':''}`;
+}
+
+// ── On editor input ──
+function onEditorInput() {
+  updateWordCount();
+  updateRibbonState();
+  wordDocDirty = true;
+  document.getElementById('sbSaveStatus').textContent = '● Non sauvegardé';
+  document.getElementById('sbSaveStatus').className = 'sb-pill unsaved';
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => { saveWordDoc(true); }, 3000);
+}
+
+// ── Save doc ──
+function saveWordDoc(auto) {
+  try {
+    localStorage.setItem('kf_word_doc',   editor.innerHTML);
+    localStorage.setItem('kf_word_title', document.getElementById('wordDocTitle').value);
+    wordDocDirty = false;
+    document.getElementById('sbSaveStatus').textContent = '✓ Sauvegardé';
+    document.getElementById('sbSaveStatus').className = 'sb-pill saved';
+    if (!auto) showBNToast('Document sauvegardé ✓', 'success');
+  } catch(e) {
+    showBNToast('Erreur de sauvegarde', 'error');
+  }
+}
+
+// ── Clear doc ──
+function clearWordDoc() {
+  if (!confirm('Effacer tout le contenu du document ?')) return;
+  editor.innerHTML = '';
+  document.getElementById('wordDocTitle').value = '';
+  localStorage.removeItem('kf_word_doc');
+  localStorage.removeItem('kf_word_title');
+  updateWordCount();
+  document.getElementById('sbSaveStatus').textContent = 'Nouveau document';
+  document.getElementById('sbSaveStatus').className = 'sb-pill';
+  showBNToast('Document effacé', 'info');
+}
+
+// ── Export ──
+function exportWordDoc(fmt) {
+  const title = document.getElementById('wordDocTitle').value || 'Document';
+  if (fmt === 'html') {
+    const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>${title}</title>
+<style>
+  body { font-family: Georgia, serif; max-width: 860px; margin: 2rem auto; padding: 0 2rem; color: #111; background: #fff; line-height: 1.75; }
+  h1 { font-size: 2em; } h2 { font-size: 1.5em; } h3 { font-size: 1.2em; }
+  blockquote { border-left: 3px solid #00d4aa; padding: .5em 1em; background: #f0fdf4; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #ccc; padding: .4em .7em; }
+  th { background: #f1f5f9; }
+  code { background: #f1f5f9; padding: .1em .4em; border-radius: 3px; font-family: monospace; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
+</style></head><body>
+<h1>${title}</h1>
+${editor.innerHTML}
+</body></html>`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = title.replace(/[^a-z0-9]/gi,'_') + '.html'; a.click();
+    showBNToast('Export HTML téléchargé ✓', 'success');
+  }
+}
+
+// ── Print ──
+function printDoc() {
+  const title = document.getElementById('wordDocTitle').value || 'Document';
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+<style>body{font-family:Georgia,serif;max-width:800px;margin:2rem auto;padding:0 1.5rem;line-height:1.75;color:#111}
+h1{font-size:2em}h2{font-size:1.5em}blockquote{border-left:3px solid #00d4aa;padding:.5em 1em;background:#f0fdf4}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.4em .7em}th{background:#f1f5f9}
+code{background:#f1f5f9;padding:.1em .4em;border-radius:3px;font-family:monospace}</style></head>
+<body><h1>${title}</h1>${editor.innerHTML}</body></html>`);
+  w.document.close();
+  w.print();
+}
+
+// ── Copy all ──
+function copyAllText() {
+  const text = editor.innerText;
+  navigator.clipboard.writeText(text).then(() => showBNToast('Texte copié ✓', 'success'));
+}
+
+// ── Fullscreen ──
+function toggleEditorFullscreen() {
+  const card = document.getElementById('wordEditorCard');
+  const btn  = document.getElementById('btn-fs');
+  if (!document.fullscreenElement) {
+    card.requestFullscreen && card.requestFullscreen();
+    btn.textContent = '⛶';
+    card.style.background = '#0a0e1a';
+  } else {
+    document.exitFullscreen && document.exitFullscreen();
+  }
+}
+
+// ── Toast notifications ──
+function showBNToast(msg, type) {
+  let c = document.getElementById('bnToastContainer');
+  if (!c) {
+    c = document.createElement('div');
+    c.id = 'bnToastContainer';
+    c.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:99999;display:flex;flex-direction:column;gap:.4rem;pointer-events:none';
+    document.body.appendChild(c);
+  }
+  const icons = { success:'✅', error:'❌', info:'💬', warning:'⚠️' };
+  const colors = {
+    success: 'rgba(16,185,129,.2)', error: 'rgba(239,68,68,.2)',
+    info: 'rgba(0,212,170,.15)', warning: 'rgba(245,158,11,.15)'
+  };
+  const t = document.createElement('div');
+  t.style.cssText = `background:linear-gradient(135deg,rgba(15,21,37,.97),rgba(10,14,26,.98));
+    border:1px solid ${colors[type]||colors.info};border-radius:10px;
+    padding:.6rem 1rem;font-size:.82rem;color:#f1f5f9;display:flex;align-items:center;gap:.6rem;
+    box-shadow:0 8px 30px rgba(0,0,0,.5);animation:toastIn .25s ease;pointer-events:auto;
+    max-width:280px;`;
+  t.innerHTML = `<span>${icons[type]||'💬'}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+// ── Keyboard shortcuts in editor ──
+editor.addEventListener('keydown', e => {
+  if (e.ctrlKey) {
+    if (e.key === 'b') { e.preventDefault(); execCmd('bold'); }
+    if (e.key === 'i') { e.preventDefault(); execCmd('italic'); }
+    if (e.key === 'u') { e.preventDefault(); execCmd('underline'); }
+    if (e.key === 'h') { e.preventDefault(); toggleFindReplace(); }
+    if (e.key === 's') { e.preventDefault(); saveWordDoc(); }
+    if (e.key === 'p') { e.preventDefault(); printDoc(); }
+  }
+});
+
+// ── Auto-save title ──
+document.getElementById('wordDocTitle').addEventListener('input', () => {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => saveWordDoc(true), 2000);
+});
+
+// Initial word count
+updateWordCount();
+</script>
+
 <!-- Confirmation effacement total -->
 <form method="POST" action="{{ url_for('bloc_notes_clear') }}" id="clear-form" style="display:none;">
     <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token','') }}">

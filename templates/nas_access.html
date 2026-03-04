@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}🔑 Accès NAS — Kengni Finance{% endblock %}
+{% block page_title %}🔑 Demande d'accès — Serveur de fichiers{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ds:#07090f;--ds1:#0d1117;--ds2:#131a24;
+  --db:rgba(255,255,255,.07);
+  --dg:#00e676;--dg2:#00c853;--db2:#4a9eff;
+  --dp:#a855f7;--dgold:#ffd700;--derr:#ff4757;
+  --dt:#f0f0f0;--dm:#5a6478;
+  --dfont:'Plus Jakarta Sans',sans-serif;
+  --dmono:'JetBrains Mono',monospace;
+}
+.acc-page{font-family:var(--dfont);max-width:620px;margin:0 auto;animation:accIn .4s ease;padding:16px}
+@keyframes accIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* Hero */
+.acc-hero{text-align:center;padding:36px 20px 28px;margin-bottom:24px}
+.acc-hero-ico{font-size:3.5rem;margin-bottom:14px}
+.acc-hero h1{font-size:22px;font-weight:900;color:var(--dt);margin:0 0 10px}
+.acc-hero p{color:var(--dm);font-size:14px;line-height:1.7;margin:0}
+
+/* Card */
+.acc-card{background:var(--ds1);border:1px solid var(--db);border-radius:20px;overflow:hidden;margin-bottom:20px}
+.acc-card-head{padding:18px 24px;border-bottom:1px solid var(--db);display:flex;align-items:center;gap:10px}
+.acc-card-head h2{margin:0;font-size:15px;font-weight:800;color:var(--dt)}
+.acc-card-body{padding:24px}
+
+/* Fields */
+.af{margin-bottom:16px}
+.af label{display:block;font-size:12px;font-weight:700;color:var(--dm);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:6px}
+.af input,.af textarea,.af select{
+  width:100%;background:var(--ds2);border:1px solid var(--db);border-radius:10px;
+  color:var(--dt);font-size:14px;font-family:var(--dfont);padding:11px 14px;
+  outline:none;transition:border-color .2s;box-sizing:border-box}
+.af input:focus,.af textarea:focus{border-color:rgba(0,230,118,.4)}
+.af input::placeholder,.af textarea::placeholder{color:var(--dm)}
+.af textarea{resize:vertical;min-height:90px}
+.af-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Files checklist */
+.files-check{background:var(--ds2);border:1px solid var(--db);border-radius:10px;
+  max-height:180px;overflow-y:auto;padding:8px}
+.files-check label{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-radius:7px;cursor:pointer;font-size:13px;color:var(--dt)}
+.files-check label:hover{background:rgba(255,255,255,.04)}
+.files-check input[type=checkbox]{accent-color:var(--dg);width:15px;height:15px;flex-shrink:0}
+.fc-empty{text-align:center;padding:16px;color:var(--dm);font-size:12px}
+
+/* Submit button */
+.acc-submit{
+  width:100%;padding:14px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--dg2),#009944);
+  color:#000;font-size:15px;font-weight:800;cursor:pointer;
+  font-family:var(--dfont);transition:all .2s;
+  box-shadow:0 0 24px rgba(0,200,83,.3);display:flex;align-items:center;justify-content:center;gap:8px
+}
+.acc-submit:hover{transform:scale(1.02);box-shadow:0 0 36px rgba(0,200,83,.45)}
+.acc-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* Success / Error states */
+.acc-success{text-align:center;padding:40px 24px}
+.acc-success-ico{font-size:3rem;margin-bottom:14px}
+.acc-success h2{color:var(--dg);font-size:19px;margin:0 0 10px}
+.acc-success p{color:var(--dm);font-size:14px;line-height:1.7;margin:0}
+
+.acc-error{background:rgba(255,71,87,.07);border:1px solid rgba(255,71,87,.2);border-radius:14px;
+  padding:24px;text-align:center;margin-bottom:20px}
+.acc-error-ico{font-size:2.5rem;margin-bottom:10px}
+.acc-error h2{color:var(--derr);font-size:17px;margin:0 0 8px}
+.acc-error p{color:var(--dm);font-size:13px;margin:0 0 16px}
+
+/* Info box */
+.acc-info{background:rgba(74,158,255,.07);border:1px solid rgba(74,158,255,.2);border-radius:12px;
+  padding:14px 18px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start}
+.acc-info-ico{font-size:1.2rem;flex-shrink:0}
+.acc-info p{margin:0;font-size:13px;color:var(--dm);line-height:1.6}
+.acc-info strong{color:var(--db2)}
+
+/* Token input */
+.token-form{display:flex;gap:8px;margin-top:12px}
+.token-form input{flex:1;background:var(--ds2);border:1px solid var(--db);border-radius:10px;
+  color:var(--dt);font-size:14px;font-family:var(--dmono);padding:11px 14px;
+  outline:none;transition:border-color .2s}
+.token-form input:focus{border-color:rgba(0,230,118,.4)}
+.token-form input::placeholder{color:var(--dm)}
+.token-form button{padding:11px 20px;border-radius:10px;border:none;
+  background:rgba(0,200,83,.15);border:1px solid rgba(0,230,118,.3);color:var(--dg);
+  font-size:13px;font-weight:700;cursor:pointer;font-family:var(--dfont);white-space:nowrap}
+.token-form button:hover{background:rgba(0,200,83,.28)}
+
+/* Toast */
+#accToast{position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--ds1);border:1px solid var(--db);border-radius:12px;
+  padding:12px 20px;font-size:13px;font-weight:700;color:var(--dt);
+  box-shadow:0 8px 32px rgba(0,0,0,.4);transform:translateY(80px);opacity:0;
+  transition:all .3s;pointer-events:none;max-width:320px}
+#accToast.show{transform:none;opacity:1}
+#accToast.err{border-color:rgba(255,71,87,.4);color:var(--derr)}
+
+@media(max-width:540px){.af-row{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="acc-page">
+
+  {% if token_error %}
+  <!-- Token invalide / expiré -->
+  <div class="acc-error">
+    <div class="acc-error-ico">🔒</div>
+    <h2>Lien invalide ou expiré</h2>
+    <p>Ce lien d'accès n'est plus valide. Il a peut-être expiré ou a été révoqué.</p>
+    <button onclick="document.getElementById('tokenSection').style.display='block'"
+      style="background:rgba(74,158,255,.15);border:1px solid rgba(74,158,255,.3);color:var(--db2);
+      padding:9px 20px;border-radius:9px;border-style:solid;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--dfont)">
+      Saisir un autre token
+    </button>
+  </div>
+  <div id="tokenSection" style="display:none">
+
+  {% else %}
+
+  <div class="acc-hero">
+    <div class="acc-hero-ico">🗄️</div>
+    <h1>Accès au Serveur de fichiers</h1>
+    <p>Ce serveur est <strong style="color:var(--derr)">privé</strong>. Pour y accéder, soumettez votre demande.<br>
+    L'administrateur l'examinera et vous enverra un lien d'accès par email.</p>
+  </div>
+
+  <div id="tokenSection">
+  {% endif %}
+
+    <!-- Accès avec token -->
+    <div class="acc-card" style="margin-bottom:24px">
+      <div class="acc-card-head">
+        <span style="font-size:1.2rem">🔑</span>
+        <h2>J'ai déjà un token d'accès</h2>
+      </div>
+      <div class="acc-card-body">
+        <p style="color:var(--dm);font-size:13px;margin:0 0 12px">
+          Si vous avez reçu un email avec votre lien d'accès, saisissez votre token ici :
+        </p>
+        <div class="token-form">
+          <input type="text" id="tokenInput" placeholder="Ex: a3f7b2c1d4e5f6a7b8c9d0e1f2a3b4c5" maxlength="64">
+          <button onclick="useToken()">→ Accéder</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- #tokenSection -->
+
+  <!-- Formulaire de demande -->
+  <div id="requestForm">
+    <div class="acc-card">
+      <div class="acc-card-head">
+        <span style="font-size:1.2rem">📬</span>
+        <h2>Demander un accès</h2>
+      </div>
+      <div class="acc-card-body" id="formBody">
+        <div class="acc-info">
+          <div class="acc-info-ico">ℹ️</div>
+          <p>Remplissez ce formulaire. <strong>L'administrateur</strong> recevra votre demande et vous enverra un <strong>lien d'accès sécurisé</strong> par email si elle est approuvée.</p>
+        </div>
+
+        <div class="af-row">
+          <div class="af">
+            <label>Nom complet *</label>
+            <input type="text" id="r_name" placeholder="Jean Dupont" maxlength="120">
+          </div>
+          <div class="af">
+            <label>Adresse email *</label>
+            <input type="email" id="r_email" placeholder="jean@exemple.com" maxlength="200">
+          </div>
+        </div>
+
+        <div class="af">
+          <label>Motif de la demande</label>
+          <textarea id="r_reason" placeholder="Expliquez brièvement pourquoi vous souhaitez accéder à ces fichiers…"></textarea>
+        </div>
+
+        {% if files %}
+        <div class="af">
+          <label>Fichiers souhaités <span style="font-weight:400;text-transform:none;letter-spacing:0">(optionnel — laissez vide pour tout)</span></label>
+          <div class="files-check">
+            {% for f in files %}
+            <label>
+              <input type="checkbox" name="req_file" value="{{ f.id }}">
+              {{ f.title }} <span style="color:var(--dm);font-size:11px">({{ f.category }})</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <button class="acc-submit" id="submitBtn" onclick="submitRequest()">
+          📬 Envoyer ma demande
+        </button>
+      </div>
+
+      <!-- État succès (affiché après soumission) -->
+      <div class="acc-success" id="successState" style="display:none">
+        <div class="acc-success-ico">✅</div>
+        <h2>Demande envoyée !</h2>
+        <p>Votre demande a bien été reçue.<br>
+        Vous recevrez un email dès qu'une décision sera prise.<br>
+        <span style="color:var(--dg);font-weight:700">Pensez à vérifier vos spams.</span></p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .acc-page -->
+<div id="accToast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toast(msg,type=''){
+  const t=document.getElementById('accToast');
+  t.textContent=msg;t.className='show '+(type||'');
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.className=''},3500);
+}
+
+function useToken(){
+  const v=document.getElementById('tokenInput').value.trim();
+  if(!v){toast('Saisissez votre token','err');return}
+  window.location.href='/nas/access/'+v;
+}
+document.getElementById('tokenInput')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter')useToken();
+});
+
+async function submitRequest(){
+  const name=document.getElementById('r_name').value.trim();
+  const email=document.getElementById('r_email').value.trim();
+  if(!name||!email){toast('Nom et email requis','err');return}
+  if(!/^[^@]+@[^@]+\.[^@]+$/.test(email)){toast('Email invalide','err');return}
+
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='⏳ Envoi…';
+
+  const fd=new FormData();
+  fd.append('full_name',name);
+  fd.append('email',email);
+  fd.append('reason',document.getElementById('r_reason').value.trim());
+  document.querySelectorAll('[name=req_file]:checked').forEach(c=>fd.append('requested_files',c.value));
+
+  try{
+    const r=await fetch('/nas/access',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.success){
+      document.getElementById('formBody').style.display='none';
+      document.getElementById('successState').style.display='block';
+    }else{
+      toast(d.error||'Erreur lors de l\'envoi','err');
+      btn.disabled=false;btn.textContent='📬 Envoyer ma demande';
+    }
+  }catch(e){
+    toast('Erreur réseau','err');
+    btn.disabled=false;btn.textContent='📬 Envoyer ma demande';
+  }
+}
+</script>
+{% endblock %}

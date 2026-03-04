@@ -1,0 +1,640 @@
+{% extends "base.html" %}
+{% block title %}🗄️ NAS Admin — Kengni Finance{% endblock %}
+{% block page_title %}🗄️ Serveur NAS — Gestion Admin{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ds:#07090f;--ds1:#0d1117;--ds2:#131a24;
+  --db:rgba(255,255,255,.07);
+  --dg:#00e676;--dg2:#00c853;--db2:#4a9eff;
+  --dp:#a855f7;--do:#fb923c;--dteal:#2dd4bf;
+  --dgold:#ffd700;--derr:#ff4757;
+  --dt:#f0f0f0;--dm:#5a6478;
+  --dfont:'Plus Jakarta Sans',sans-serif;
+  --dmono:'JetBrains Mono',monospace;
+}
+.nas-page{font-family:var(--dfont);animation:nasIn .4s ease}
+@keyframes nasIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* Stats */
+.nas-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.nstat{background:var(--ds1);border:1px solid var(--db);border-radius:16px;padding:16px 18px;
+  position:relative;overflow:hidden;transition:transform .2s;cursor:default}
+.nstat:hover{transform:translateY(-3px)}
+.nstat::after{content:'';position:absolute;inset:0;opacity:.04;pointer-events:none;background:var(--nsgrad,none)}
+.nstat.g{--nsgrad:linear-gradient(135deg,#00e676,#00c853);box-shadow:0 0 28px rgba(0,200,83,.07)}
+.nstat.b{--nsgrad:linear-gradient(135deg,#4a9eff,#7c6aff);box-shadow:0 0 28px rgba(74,158,255,.07)}
+.nstat.gold{--nsgrad:linear-gradient(135deg,#ffd700,#fb923c);box-shadow:0 0 28px rgba(255,215,0,.07)}
+.nstat.t{--nsgrad:linear-gradient(135deg,#2dd4bf,#00e676);box-shadow:0 0 28px rgba(45,212,191,.07)}
+.nstat.p{--nsgrad:linear-gradient(135deg,#a855f7,#7c6aff);box-shadow:0 0 28px rgba(168,85,247,.07)}
+.nstat-icon{font-size:1.5rem;margin-bottom:7px}
+.nstat-val{font-size:1.7rem;font-weight:800;color:var(--dt);margin-bottom:2px}
+.nstat-lbl{font-size:11px;color:var(--dm);font-weight:600}
+
+/* Tabs */
+.nas-tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--ds1);border:1px solid var(--db);border-radius:12px;padding:6px}
+.nas-tab{padding:8px 18px;border-radius:8px;border:none;background:transparent;
+  color:var(--dm);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--dfont);transition:all .15s}
+.nas-tab.active{background:rgba(0,230,118,.12);color:var(--dg);border:1px solid rgba(0,230,118,.25)}
+.nas-tab-content{display:none}.nas-tab-content.active{display:block}
+
+/* Section title */
+.sec-title{font-size:14px;font-weight:800;color:var(--dt);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* Table */
+.nas-table-wrap{background:var(--ds1);border:1px solid var(--db);border-radius:14px;overflow:hidden;margin-bottom:24px}
+.nas-table{width:100%;border-collapse:collapse}
+.nas-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--dm);
+  text-transform:uppercase;letter-spacing:.5px;background:var(--ds2)}
+.nas-table td{padding:11px 14px;font-size:13px;color:var(--dt);border-top:1px solid var(--db)}
+.nas-table tr:hover td{background:rgba(255,255,255,.015)}
+
+/* Status badges */
+.ns{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.ns-pending{background:rgba(255,215,0,.15);color:var(--dgold);border:1px solid rgba(255,215,0,.3)}
+.ns-approved{background:rgba(0,230,118,.15);color:var(--dg);border:1px solid rgba(0,230,118,.3)}
+.ns-rejected{background:rgba(255,71,87,.15);color:var(--derr);border:1px solid rgba(255,71,87,.3)}
+.ns-revoked{background:rgba(90,100,120,.2);color:var(--dm);border:1px solid rgba(90,100,120,.3)}
+
+/* Buttons */
+.nbtn{padding:6px 12px;border-radius:8px;border:none;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:var(--dfont);transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.nbtn-approve{background:rgba(0,200,83,.15);border:1px solid rgba(0,230,118,.3);color:var(--dg)}
+.nbtn-approve:hover{background:rgba(0,200,83,.28)}
+.nbtn-reject{background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.2);color:var(--derr)}
+.nbtn-reject:hover{background:rgba(255,71,87,.22)}
+.nbtn-revoke{background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.2);color:var(--dgold)}
+.nbtn-revoke:hover{background:rgba(255,215,0,.22)}
+.nbtn-del{background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.2);color:var(--derr);padding:5px 9px}
+.nbtn-del:hover{background:rgba(255,71,87,.22)}
+.nbtn-edit{background:var(--ds2);border:1px solid var(--db);color:var(--dm);padding:5px 9px}
+.nbtn-edit:hover{color:var(--db2);border-color:var(--db2)}
+.nbtn-primary{background:linear-gradient(135deg,var(--dg2),#009944);color:#000;box-shadow:0 0 18px rgba(0,200,83,.2)}
+.nbtn-primary:hover{transform:scale(1.04)}
+
+/* Upload zone */
+.upload-zone{border:2px dashed rgba(0,230,118,.25);border-radius:14px;padding:28px;text-align:center;
+  background:rgba(0,230,118,.03);cursor:pointer;transition:all .2s}
+.upload-zone.drag{border-color:var(--dg);background:rgba(0,230,118,.07)}
+.upload-zone:hover{border-color:rgba(0,230,118,.45)}
+.upload-zone-ico{font-size:2.5rem;margin-bottom:10px;opacity:.6}
+.upload-zone p{color:var(--dm);font-size:13px;margin:0}
+.upload-zone strong{color:var(--dg)}
+
+/* Token display */
+.token-chip{font-family:var(--dmono);font-size:11px;background:rgba(74,158,255,.1);
+  border:1px solid rgba(74,158,255,.2);color:var(--db2);padding:2px 8px;border-radius:6px;
+  letter-spacing:.5px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  display:inline-block;vertical-align:middle}
+
+/* Modals */
+.nmodal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;
+  display:none;align-items:center;justify-content:center;padding:20px}
+.nmodal-overlay.open{display:flex}
+.nmodal{background:var(--ds1);border:1px solid var(--db);border-radius:20px;
+  width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.nmodal-head{padding:20px 24px;border-bottom:1px solid var(--db);display:flex;align-items:center;
+  justify-content:space-between}
+.nmodal-head h3{margin:0;font-size:16px;font-weight:800;color:var(--dt)}
+.nmodal-close{background:none;border:none;color:var(--dm);font-size:20px;cursor:pointer;
+  width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.nmodal-close:hover{background:var(--ds2);color:var(--dt)}
+.nmodal-body{padding:24px}
+.nfield{margin-bottom:16px}
+.nfield label{display:block;font-size:12px;font-weight:700;color:var(--dm);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:6px}
+.nfield input,.nfield select,.nfield textarea{
+  width:100%;background:var(--ds2);border:1px solid var(--db);border-radius:10px;
+  color:var(--dt);font-size:13px;font-family:var(--dfont);padding:10px 14px;
+  outline:none;transition:border-color .2s;box-sizing:border-box}
+.nfield input:focus,.nfield select:focus,.nfield textarea:focus{border-color:rgba(0,230,118,.4)}
+.nfield input::placeholder,.nfield textarea::placeholder{color:var(--dm)}
+.nfield select option{background:var(--ds2)}
+.nfield textarea{resize:vertical;min-height:80px}
+.nrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.nmodal-foot{padding:16px 24px;border-top:1px solid var(--db);display:flex;justify-content:flex-end;gap:8px}
+.nmodal-foot .cancel{background:var(--ds2);border:1px solid var(--db);color:var(--dm);
+  padding:9px 18px;border-radius:9px;border-style:solid;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--dfont)}
+.nmodal-foot .cancel:hover{color:var(--dt)}
+
+/* Checklist fichiers dans modal */
+.files-checklist{background:var(--ds2);border:1px solid var(--db);border-radius:10px;
+  max-height:200px;overflow-y:auto;padding:8px}
+.files-checklist label{display:flex;align-items:center;gap:8px;padding:6px 8px;
+  border-radius:7px;cursor:pointer;font-size:13px;color:var(--dt)}
+.files-checklist label:hover{background:rgba(255,255,255,.04)}
+.files-checklist input[type=checkbox]{accent-color:var(--dg)}
+
+/* Empty state */
+.nas-empty{text-align:center;padding:48px 20px;background:var(--ds1);border:1px solid var(--db);
+  border-radius:14px}
+.nas-empty-ico{font-size:2.8rem;opacity:.3;margin-bottom:12px}
+.nas-empty p{color:var(--dm);font-size:13px;margin:6px 0 0}
+
+/* Alert pending */
+.pending-alert{background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.25);border-radius:14px;
+  padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.pending-alert-ico{font-size:1.4rem}
+.pending-alert p{margin:0;font-size:13px;color:var(--dgold);font-weight:700}
+.pending-alert span{color:var(--dm);font-weight:400}
+
+/* Toast */
+#nasToast{position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--ds1);border:1px solid var(--db);border-radius:12px;
+  padding:12px 20px;font-size:13px;font-weight:700;color:var(--dt);
+  box-shadow:0 8px 32px rgba(0,0,0,.4);transform:translateY(80px);opacity:0;
+  transition:all .3s;pointer-events:none;max-width:320px}
+#nasToast.show{transform:none;opacity:1}
+#nasToast.err{border-color:rgba(255,71,87,.4);color:var(--derr)}
+#nasToast.gold{border-color:rgba(255,215,0,.4);color:var(--dgold)}
+
+@media(max-width:900px){.nas-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.nas-stats{grid-template-columns:repeat(2,1fr)}.nrow{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nas-page">
+
+  {% if nb_pending > 0 %}
+  <div class="pending-alert">
+    <div class="pending-alert-ico">🔔</div>
+    <p>{{ nb_pending }} demande{% if nb_pending > 1 %}s{% endif %} en attente de validation
+      <span>— cliquez sur l'onglet Demandes pour traiter</span></p>
+  </div>
+  {% endif %}
+
+  <!-- Stats -->
+  <div class="nas-stats">
+    <div class="nstat g">
+      <div class="nstat-icon">📁</div>
+      <div class="nstat-val">{{ nb_files }}</div>
+      <div class="nstat-lbl">Fichiers hébergés</div>
+    </div>
+    <div class="nstat b">
+      <div class="nstat-icon">💾</div>
+      <div class="nstat-val">{{ disk_used }}</div>
+      <div class="nstat-lbl">Espace utilisé</div>
+    </div>
+    <div class="nstat gold">
+      <div class="nstat-icon">⏳</div>
+      <div class="nstat-val">{{ nb_pending }}</div>
+      <div class="nstat-lbl">Demandes en attente</div>
+    </div>
+    <div class="nstat t">
+      <div class="nstat-icon">🔑</div>
+      <div class="nstat-val">{{ nb_active }}</div>
+      <div class="nstat-lbl">Tokens actifs</div>
+    </div>
+    <div class="nstat p">
+      <div class="nstat-icon">⬇️</div>
+      <div class="nstat-val">{{ nb_dl }}</div>
+      <div class="nstat-lbl">Téléchargements</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="nas-tabs">
+    <button class="nas-tab active" onclick="showTab('files')">📁 Fichiers</button>
+    <button class="nas-tab" onclick="showTab('requests')">📬 Demandes
+      {% if nb_pending > 0 %}<span style="background:var(--dgold);color:#000;border-radius:20px;padding:1px 7px;font-size:10px;margin-left:4px">{{ nb_pending }}</span>{% endif %}
+    </button>
+    <button class="nas-tab" onclick="showTab('logs')">📋 Logs</button>
+  </div>
+
+  <!-- ══ TAB FICHIERS ═══════════════════════════════════════════ -->
+  <div id="tab-files" class="nas-tab-content active">
+    <div class="sec-title">
+      📁 Fichiers hébergés
+      <button class="nbtn nbtn-primary" onclick="openUploadModal()" style="margin-left:auto">
+        ➕ Uploader
+      </button>
+    </div>
+
+    {% if files %}
+    <div class="nas-table-wrap">
+      <table class="nas-table">
+        <thead>
+          <tr>
+            <th>Icône</th><th>Titre / Fichier</th><th>Catégorie</th>
+            <th>Taille</th><th>Téléch.</th><th>Ajouté</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in files %}
+          <tr id="nf{{ f.id }}">
+            <td style="font-size:1.4rem">{{ f.icon }}</td>
+            <td>
+              <div style="font-weight:700;color:var(--dt)">{{ f.title }}</div>
+              <div style="font-size:11px;color:var(--dm);font-family:var(--dmono)">{{ f.filename_original }}</div>
+            </td>
+            <td><span style="background:rgba(74,158,255,.1);color:var(--db2);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">{{ f.category }}</span></td>
+            <td style="color:var(--dm);font-size:12px;font-family:var(--dmono)">{{ f.filesize }}</td>
+            <td style="color:var(--dteal);font-weight:700">{{ f.download_count }}</td>
+            <td style="color:var(--dm);font-size:11px">{{ f.created_at[:10] if f.created_at else '—' }}</td>
+            <td style="white-space:nowrap">
+              <button class="nbtn nbtn-edit" onclick="openEditFile({{ f.id }},'{{ f.title|e }}','{{ f.category|e }}','{{ f.description|e }}')">✏️</button>
+              <button class="nbtn nbtn-del" onclick="deleteFile({{ f.id }},'{{ f.title|e }}')">🗑</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="nas-empty">
+      <div class="nas-empty-ico">📂</div>
+      <p>Aucun fichier hébergé</p>
+      <p><button class="nbtn nbtn-primary" onclick="openUploadModal()" style="margin-top:12px">➕ Uploader le premier fichier</button></p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══ TAB DEMANDES ═══════════════════════════════════════════ -->
+  <div id="tab-requests" class="nas-tab-content">
+
+    {% if pending %}
+    <div class="sec-title">⏳ En attente de validation ({{ pending|length }})</div>
+    <div class="nas-table-wrap" style="margin-bottom:28px">
+      <table class="nas-table">
+        <thead><tr><th>Nom</th><th>Email</th><th>Motif</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for r in pending %}
+          <tr id="nr{{ r.id }}">
+            <td style="font-weight:700">{{ r.full_name }}</td>
+            <td style="font-family:var(--dmono);font-size:12px;color:var(--db2)">{{ r.email }}</td>
+            <td style="color:var(--dm);font-size:12px;max-width:200px">{{ (r.reason or 'Non précisé')[:80] }}</td>
+            <td style="color:var(--dm);font-size:11px">{{ r.created_at[:10] if r.created_at else '—' }}</td>
+            <td style="white-space:nowrap">
+              <button class="nbtn nbtn-approve" onclick="openApproveModal({{ r.id }},'{{ r.full_name|e }}','{{ r.email|e }}')">✅ Approuver</button>
+              <button class="nbtn nbtn-reject" onclick="openRejectModal({{ r.id }},'{{ r.full_name|e }}')">❌ Rejeter</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <div class="sec-title">📋 Toutes les demandes</div>
+    {% if all_requests %}
+    <div class="nas-table-wrap">
+      <table class="nas-table">
+        <thead><tr><th>Nom</th><th>Email</th><th>Statut</th><th>Token</th><th>Expiration</th><th>Usages</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for r in all_requests %}
+          <tr id="ra{{ r.id }}">
+            <td style="font-weight:700">{{ r.full_name }}</td>
+            <td style="font-family:var(--dmono);font-size:11px;color:var(--db2)">{{ r.email }}</td>
+            <td>
+              {% if r.status == 'pending' %}<span class="ns ns-pending">⏳ Attente</span>
+              {% elif r.status == 'approved' %}<span class="ns ns-approved">✅ Approuvé</span>
+              {% elif r.status == 'rejected' %}<span class="ns ns-rejected">❌ Rejeté</span>
+              {% else %}<span class="ns ns-revoked">🚫 Révoqué</span>{% endif %}
+            </td>
+            <td>
+              {% if r.token %}<span class="token-chip" title="{{ r.token }}">{{ r.token[:16] }}…</span>
+              {% else %}<span style="color:var(--dm);font-size:11px">—</span>{% endif %}
+            </td>
+            <td style="color:var(--dm);font-size:11px">{{ r.token_expires_at[:10] if r.token_expires_at else '∞' }}</td>
+            <td style="color:var(--dteal);font-weight:700;font-size:13px">
+              {{ r.token_used_count }}{% if r.token_max_uses > 0 %}/{{ r.token_max_uses }}{% endif %}
+            </td>
+            <td>
+              {% if r.status == 'approved' %}
+              <button class="nbtn nbtn-revoke" onclick="revokeToken({{ r.id }})">🚫 Révoquer</button>
+              {% elif r.status == 'pending' %}
+              <button class="nbtn nbtn-approve" style="font-size:11px" onclick="openApproveModal({{ r.id }},'{{ r.full_name|e }}','{{ r.email|e }}')">✅</button>
+              <button class="nbtn nbtn-reject" style="font-size:11px" onclick="openRejectModal({{ r.id }},'{{ r.full_name|e }}')">❌</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="nas-empty"><div class="nas-empty-ico">📬</div><p>Aucune demande reçue</p></div>
+    {% endif %}
+  </div>
+
+  <!-- ══ TAB LOGS ═══════════════════════════════════════════════ -->
+  <div id="tab-logs" class="nas-tab-content">
+    <div class="sec-title">📋 Journal des accès (50 derniers)</div>
+    {% if logs %}
+    <div class="nas-table-wrap">
+      <table class="nas-table">
+        <thead><tr><th>Action</th><th>Fichier</th><th>Visiteur</th><th>IP</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for l in logs %}
+          <tr>
+            <td>
+              {% if l.action == 'download' %}<span class="ns ns-approved">⬇️ DL</span>
+              {% else %}<span class="ns" style="background:rgba(74,158,255,.1);color:var(--db2);border:1px solid rgba(74,158,255,.2)">👁 Vue</span>{% endif %}
+            </td>
+            <td style="font-size:12px;color:var(--dt)">{{ l.file_title or '—' }}</td>
+            <td>
+              <div style="font-weight:700;font-size:12px">{{ l.full_name or '—' }}</div>
+              <div style="font-size:11px;color:var(--dm);font-family:var(--dmono)">{{ l.email or '' }}</div>
+            </td>
+            <td style="font-family:var(--dmono);font-size:11px;color:var(--dm)">{{ l.ip_address or '—' }}</td>
+            <td style="font-size:11px;color:var(--dm)">{{ l.accessed_at[:16] if l.accessed_at else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="nas-empty"><div class="nas-empty-ico">📋</div><p>Aucun log enregistré</p></div>
+    {% endif %}
+  </div>
+
+</div><!-- .nas-page -->
+
+<!-- ══ MODAL UPLOAD ═══════════════════════════════════════════ -->
+<div class="nmodal-overlay" id="uploadModal">
+  <div class="nmodal">
+    <div class="nmodal-head">
+      <h3>📤 Uploader des fichiers</h3>
+      <button class="nmodal-close" onclick="closeNModal('uploadModal')">✕</button>
+    </div>
+    <div class="nmodal-body">
+      <div class="upload-zone" id="dropZone" onclick="document.getElementById('nasFiles').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="upload-zone-ico">☁️</div>
+        <p><strong>Cliquez</strong> ou glissez vos fichiers ici</p>
+        <p id="dzInfo" style="margin-top:6px;color:var(--dg);font-size:12px"></p>
+      </div>
+      <input type="file" id="nasFiles" multiple style="display:none" onchange="onFilesChange(this)">
+      <div class="nrow" style="margin-top:14px">
+        <div class="nfield">
+          <label>Titre (optionnel pour 1 fichier)</label>
+          <input type="text" id="up_title" placeholder="Titre du fichier">
+        </div>
+        <div class="nfield">
+          <label>Catégorie</label>
+          <input type="text" id="up_cat" placeholder="Général" value="Général">
+        </div>
+      </div>
+      <div class="nfield">
+        <label>Description</label>
+        <textarea id="up_desc" placeholder="Description visible par le visiteur…"></textarea>
+      </div>
+    </div>
+    <div class="nmodal-foot">
+      <button class="cancel" onclick="closeNModal('uploadModal')">Annuler</button>
+      <button class="nbtn nbtn-primary" id="uploadBtn" onclick="doUpload()">📤 Uploader</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ÉDITION FICHIER ══════════════════════════════════ -->
+<div class="nmodal-overlay" id="editFileModal">
+  <div class="nmodal">
+    <div class="nmodal-head">
+      <h3>✏️ Modifier le fichier</h3>
+      <button class="nmodal-close" onclick="closeNModal('editFileModal')">✕</button>
+    </div>
+    <div class="nmodal-body">
+      <input type="hidden" id="ef_id">
+      <div class="nfield"><label>Titre</label><input type="text" id="ef_title"></div>
+      <div class="nfield"><label>Catégorie</label><input type="text" id="ef_cat"></div>
+      <div class="nfield"><label>Description</label><textarea id="ef_desc"></textarea></div>
+    </div>
+    <div class="nmodal-foot">
+      <button class="cancel" onclick="closeNModal('editFileModal')">Annuler</button>
+      <button class="nbtn nbtn-primary" onclick="saveEditFile()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL APPROBATION ══════════════════════════════════════ -->
+<div class="nmodal-overlay" id="approveModal">
+  <div class="nmodal">
+    <div class="nmodal-head">
+      <h3>✅ Approuver la demande</h3>
+      <button class="nmodal-close" onclick="closeNModal('approveModal')">✕</button>
+    </div>
+    <div class="nmodal-body">
+      <input type="hidden" id="ap_id">
+      <div style="background:var(--ds2);border-radius:10px;padding:12px 16px;margin-bottom:16px">
+        <p style="margin:0;font-size:13px;color:var(--dt)">👤 <strong id="ap_name"></strong> — <span id="ap_email" style="color:var(--db2);font-family:var(--dmono);font-size:12px"></span></p>
+      </div>
+      <div class="nrow">
+        <div class="nfield">
+          <label>Durée de validité</label>
+          <select id="ap_days">
+            <option value="1">1 jour</option>
+            <option value="7" selected>7 jours</option>
+            <option value="30">30 jours</option>
+            <option value="90">90 jours</option>
+            <option value="-1">Illimitée</option>
+          </select>
+        </div>
+        <div class="nfield">
+          <label>Max téléchargements</label>
+          <select id="ap_uses">
+            <option value="-1" selected>Illimité</option>
+            <option value="1">1 fois</option>
+            <option value="3">3 fois</option>
+            <option value="5">5 fois</option>
+            <option value="10">10 fois</option>
+          </select>
+        </div>
+      </div>
+      <div class="nfield">
+        <label>Fichiers autorisés (vide = tous)</label>
+        <div class="files-checklist" id="ap_files_list">
+          {% for f in files %}
+          <label>
+            <input type="checkbox" name="ap_file" value="{{ f.id }}">
+            {{ f.icon }} {{ f.title }} <span style="color:var(--dm);font-size:11px">({{ f.category }})</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="nfield">
+        <label>Note interne (non visible)</label>
+        <textarea id="ap_note" placeholder="Optionnel…" style="min-height:60px"></textarea>
+      </div>
+    </div>
+    <div class="nmodal-foot">
+      <button class="cancel" onclick="closeNModal('approveModal')">Annuler</button>
+      <button class="nbtn nbtn-primary" id="approveBtn" onclick="doApprove()">✅ Approuver & Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL REFUS ════════════════════════════════════════════ -->
+<div class="nmodal-overlay" id="rejectModal">
+  <div class="nmodal">
+    <div class="nmodal-head">
+      <h3>❌ Rejeter la demande</h3>
+      <button class="nmodal-close" onclick="closeNModal('rejectModal')">✕</button>
+    </div>
+    <div class="nmodal-body">
+      <input type="hidden" id="rj_id">
+      <p style="color:var(--dm);font-size:13px;margin:0 0 16px">Refus de la demande de <strong id="rj_name" style="color:var(--dt)"></strong></p>
+      <div class="nfield">
+        <label>Motif du refus (optionnel)</label>
+        <textarea id="rj_reason" placeholder="Ex : Accès réservé aux membres…" style="min-height:80px"></textarea>
+      </div>
+    </div>
+    <div class="nmodal-foot">
+      <button class="cancel" onclick="closeNModal('rejectModal')">Annuler</button>
+      <button class="nbtn nbtn-reject" id="rejectBtn" onclick="doReject()">❌ Confirmer le refus</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="nasToast"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Toast ─────────────────────────────────────────────────── */
+function toast(msg,type=''){
+  const t=document.getElementById('nasToast');
+  t.textContent=msg;t.className='show '+(type||'');
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.className=''},3200);
+}
+
+/* ── Tabs ───────────────────────────────────────────────────── */
+function showTab(name){
+  document.querySelectorAll('.nas-tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nas-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+/* ── Modals ─────────────────────────────────────────────────── */
+function closeNModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.nmodal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')})
+});
+
+/* ── Upload ─────────────────────────────────────────────────── */
+function openUploadModal(){
+  document.getElementById('uploadModal').classList.add('open');
+  document.getElementById('dzInfo').textContent='';
+  document.getElementById('nasFiles').value='';
+}
+function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag')}
+function onDragLeave(){document.getElementById('dropZone').classList.remove('drag')}
+function onDrop(e){
+  e.preventDefault();document.getElementById('dropZone').classList.remove('drag');
+  document.getElementById('nasFiles').files=e.dataTransfer.files;
+  onFilesChange({files:e.dataTransfer.files});
+}
+function onFilesChange(el){
+  const n=el.files?el.files.length:0;
+  document.getElementById('dzInfo').textContent=n?`${n} fichier(s) sélectionné(s)`:'';
+}
+async function doUpload(){
+  const inp=document.getElementById('nasFiles');
+  if(!inp.files||!inp.files.length){toast('Sélectionnez au moins un fichier','err');return}
+  const btn=document.getElementById('uploadBtn');btn.disabled=true;btn.textContent='…';
+  const fd=new FormData();
+  Array.from(inp.files).forEach(f=>fd.append('files',f));
+  fd.append('title',document.getElementById('up_title').value.trim());
+  fd.append('category',document.getElementById('up_cat').value.trim()||'Général');
+  fd.append('description',document.getElementById('up_desc').value.trim());
+  try{
+    const r=await fetch('/nas/admin/upload',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.success){toast('✅ '+d.message);setTimeout(()=>location.reload(),800)}
+    else{toast(d.error||'Erreur','err');btn.disabled=false;btn.textContent='📤 Uploader'}
+  }catch(e){toast('Erreur réseau','err');btn.disabled=false;btn.textContent='📤 Uploader'}
+}
+
+/* ── Edit file ──────────────────────────────────────────────── */
+function openEditFile(id,title,cat,desc){
+  document.getElementById('ef_id').value=id;
+  document.getElementById('ef_title').value=title;
+  document.getElementById('ef_cat').value=cat;
+  document.getElementById('ef_desc').value=desc;
+  document.getElementById('editFileModal').classList.add('open');
+}
+async function saveEditFile(){
+  const id=document.getElementById('ef_id').value;
+  const body={
+    title:document.getElementById('ef_title').value.trim(),
+    category:document.getElementById('ef_cat').value.trim()||'Général',
+    description:document.getElementById('ef_desc').value.trim()
+  };
+  const r=await fetch(`/nas/admin/files/edit/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){toast('✅ Fichier mis à jour');setTimeout(()=>location.reload(),700)}
+  else toast(d.error||'Erreur','err');
+}
+
+/* ── Delete file ────────────────────────────────────────────── */
+async function deleteFile(id,title){
+  if(!confirm(`Supprimer définitivement « ${title} » ?`))return;
+  const r=await fetch(`/nas/admin/files/delete/${id}`,{method:'POST'});
+  const d=await r.json();
+  if(d.success){document.getElementById(`nf${id}`)?.remove();toast('🗑 Fichier supprimé')}
+  else toast(d.error||'Erreur','err');
+}
+
+/* ── Approve ────────────────────────────────────────────────── */
+function openApproveModal(id,name,email){
+  document.getElementById('ap_id').value=id;
+  document.getElementById('ap_name').textContent=name;
+  document.getElementById('ap_email').textContent=email;
+  document.getElementById('ap_note').value='';
+  document.querySelectorAll('[name=ap_file]').forEach(c=>c.checked=false);
+  document.getElementById('approveModal').classList.add('open');
+}
+async function doApprove(){
+  const id=document.getElementById('ap_id').value;
+  const days=parseInt(document.getElementById('ap_days').value);
+  const uses=parseInt(document.getElementById('ap_uses').value);
+  const files=Array.from(document.querySelectorAll('[name=ap_file]:checked')).map(c=>parseInt(c.value));
+  const note=document.getElementById('ap_note').value.trim();
+  const btn=document.getElementById('approveBtn');btn.disabled=true;btn.textContent='…';
+  const r=await fetch(`/nas/admin/requests/approve/${id}`,{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({expiry_days:days,max_uses:uses,allowed_files:files,admin_note:note})});
+  const d=await r.json();
+  if(d.success){
+    closeNModal('approveModal');
+    toast('✅ Approuvé ! Email envoyé.','');
+    setTimeout(()=>location.reload(),1200);
+  }else{toast(d.error||'Erreur','err');btn.disabled=false;btn.textContent='✅ Approuver & Envoyer'}
+}
+
+/* ── Reject ─────────────────────────────────────────────────── */
+function openRejectModal(id,name){
+  document.getElementById('rj_id').value=id;
+  document.getElementById('rj_name').textContent=name;
+  document.getElementById('rj_reason').value='';
+  document.getElementById('rejectModal').classList.add('open');
+}
+async function doReject(){
+  const id=document.getElementById('rj_id').value;
+  const reason=document.getElementById('rj_reason').value.trim();
+  const btn=document.getElementById('rejectBtn');btn.disabled=true;btn.textContent='…';
+  const r=await fetch(`/nas/admin/requests/reject/${id}`,{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({reason})});
+  const d=await r.json();
+  if(d.success){
+    closeNModal('rejectModal');toast('Demande rejetée','err');
+    setTimeout(()=>location.reload(),900);
+  }else{toast(d.error||'Erreur','err');btn.disabled=false;btn.textContent='❌ Confirmer le refus'}
+}
+
+/* ── Revoke ─────────────────────────────────────────────────── */
+async function revokeToken(id){
+  if(!confirm('Révoquer ce token ? Le visiteur perdra immédiatement son accès.'))return;
+  const r=await fetch(`/nas/admin/requests/revoke/${id}`,{method:'POST'});
+  const d=await r.json();
+  if(d.success){toast('🚫 Token révoqué','gold');setTimeout(()=>location.reload(),900)}
+  else toast(d.error||'Erreur','err');
+}
+</script>
+{% endblock %}
