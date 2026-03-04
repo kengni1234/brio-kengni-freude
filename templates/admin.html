@@ -16,10 +16,10 @@
         .container{max-width:1300px;margin:0 auto;padding:2rem}
         .secret-banner{background:rgba(255,185,58,.07);border:1px solid rgba(255,185,58,.25);border-radius:10px;padding:.75rem 1.25rem;font-size:.83rem;color:var(--warning);margin-bottom:1.5rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
         .secret-url{font-family:monospace;background:rgba(0,0,0,.3);padding:.2rem .5rem;border-radius:4px;cursor:pointer;user-select:all}
-        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem}
         .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center}
         .sn{font-size:2rem;font-weight:800;color:var(--accent);line-height:1}.sl{font-size:.8rem;color:var(--muted);margin-top:.35rem}
-        .roles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;margin-bottom:2rem}
+        .roles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;margin-bottom:2rem}
         .role-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;font-size:.82rem}
         .rn{font-weight:700;font-size:.88rem;margin-bottom:.5rem}
         .perm{color:var(--muted);display:flex;align-items:center;gap:.4rem;margin:.15rem 0}
@@ -31,6 +31,7 @@
         .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#e0364f}
         .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
         .btn-sm{padding:.35rem .7rem;font-size:.78rem}
+        .btn-xs{padding:.25rem .55rem;font-size:.72rem}
         .tw{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
         .tb{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
         .si{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;outline:none;width:220px;transition:.2s}
@@ -48,12 +49,14 @@
         .chip-superadmin{background:rgba(255,185,58,.15);color:var(--warning);border:1px solid var(--warning)}
         .chip-editor{background:rgba(0,212,170,.15);color:var(--accent);border:1px solid var(--accent)}
         .chip-viewer,.chip-user{background:rgba(107,114,128,.1);color:var(--muted);border:1px solid #3e4355}
+        .chip-moderator{background:rgba(0,196,255,.15);color:#00c4ff;border:1px solid #00c4ff}
+        .chip-comptable{background:rgba(255,120,60,.15);color:#ff783c;border:1px solid #ff783c}
         .chip-active{background:rgba(0,200,120,.15);color:var(--success)}
         .chip-inactive{background:rgba(255,77,106,.15);color:var(--danger)}
         .chip-suspended{background:rgba(255,185,58,.15);color:var(--warning)}
         .mb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
         .mb.open{display:flex}
-        .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:460px;animation:su .2s ease}
+        .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:460px;animation:su .2s ease;max-height:90vh;overflow-y:auto}
         @keyframes su{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
         .mt{font-size:1.1rem;font-weight:700;margin-bottom:1.25rem}
         .fg{margin-bottom:1rem}
@@ -67,29 +70,27 @@
         .toast.error{border-left-color:var(--danger)}.toast.warning{border-left-color:var(--warning)}
         @keyframes ti{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
         @media(max-width:768px){.container{padding:1rem}.header{padding:0 1rem}table{font-size:.8rem}td,th{padding:.7rem .8rem}.tda{flex-direction:column}}
-        .modal-perms{max-width:540px}
-        .perms-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.55rem;margin:.6rem 0 0}
-        .perm-item{display:flex;align-items:center;gap:.5rem;padding:.5rem .7rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:.15s;user-select:none}
+
+        /* ── Permissions modal ── */
+        .modal-perms{max-width:680px}
+        .perms-section{margin-bottom:1.25rem}
+        .perms-section-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:.35rem .6rem;background:rgba(255,255,255,.03);border-radius:6px;margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+        .perms-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+        .perms-grid-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+        .perm-item{display:flex;align-items:center;gap:.45rem;padding:.48rem .6rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:.15s;user-select:none}
         .perm-item:hover{border-color:var(--accent)}
         .perm-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
-        .perm-item.checked{border-color:var(--accent);background:rgba(0,212,170,.08)}
-        .pi{font-size:.82rem;font-weight:600}.pi-icon{font-size:.9rem}
-        .perm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem}
-        .perm-note{font-size:.75rem;color:var(--muted);margin-top:.7rem;padding:.5rem .75rem;background:rgba(255,255,255,.025);border-radius:6px;line-height:1.5}
-        .btn-xs{padding:.22rem .5rem!important;font-size:.72rem!important}
-        /* Permissions modal */
-        .perms-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin:.75rem 0}
-        .perm-item{display:flex;align-items:center;gap:.55rem;padding:.55rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:.15s;user-select:none}
-        .perm-item:hover{border-color:var(--accent)}
-        .perm-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
         .perm-item.checked{border-color:var(--accent);background:rgba(0,212,170,.07)}
         .perm-item.checked .pi{color:var(--accent)}
-        .pi{font-size:.82rem;font-weight:600}
-        .pi-icon{font-size:.95rem}
-        .perm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
-        .perm-note{font-size:.76rem;color:var(--muted);margin-top:.6rem;padding:.5rem .75rem;background:rgba(255,255,255,.03);border-radius:6px}
-        .btn-xs{padding:.25rem .55rem;font-size:.72rem}
-        .modal-perms{max-width:520px}
+        .pi{font-size:.79rem;font-weight:600;line-height:1.3}
+        .pi-icon{font-size:.88rem;flex-shrink:0}
+        .perm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+        .perm-note{font-size:.75rem;color:var(--muted);margin-top:.75rem;padding:.55rem .75rem;background:rgba(255,255,255,.03);border-radius:6px;line-height:1.55}
+        .tab-bar{display:flex;gap:.4rem;margin-bottom:1.25rem;border-bottom:1px solid var(--border);padding-bottom:.75rem}
+        .tab{padding:.4rem .9rem;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;background:transparent;border:1px solid transparent;color:var(--muted);transition:.15s}
+        .tab.active{background:rgba(0,212,170,.12);border-color:var(--accent);color:var(--accent)}
+        .tab:hover:not(.active){color:var(--text);border-color:var(--border)}
+        .tab-panel{display:none}.tab-panel.active{display:block}
     </style>
 </head>
 <body>
@@ -106,19 +107,85 @@
         <span class="secret-url" onclick="copyToken()" title="Cliquer pour copier">http://localhost:5001/{{ token }}</span>
         — Ne partagez jamais ce lien
     </div>
+
+    <!-- Stats -->
     <div class="stats-grid">
         <div class="stat-card"><div class="sn">{{ stats.total_users }}</div><div class="sl">Utilisateurs</div></div>
         <div class="stat-card"><div class="sn">{{ stats.active_users }}</div><div class="sl">Actifs</div></div>
         <div class="stat-card"><div class="sn">{{ stats.admins }}</div><div class="sl">Admins</div></div>
+        <div class="stat-card"><div class="sn">{{ stats.suspended }}</div><div class="sl">Suspendus</div></div>
         <div class="stat-card"><div class="sn">{{ stats.total_transactions }}</div><div class="sl">Transactions</div></div>
+        <div class="stat-card"><div class="sn">{{ stats.new_today }}</div><div class="sl">Nouveaux aujourd'hui</div></div>
     </div>
+
+    <!-- Roles Grid — COMPLET -->
     <div class="sh" style="margin-bottom:.75rem"><div class="st">📋 Niveaux d'accès</div></div>
     <div class="roles-grid">
-        <div class="role-card"><div class="rn" style="color:var(--muted)">👁️ viewer</div><div class="perm"><span class="ok">✓</span> Consulter</div><div class="perm"><span class="no">✗</span> Modifier</div><div class="perm"><span class="no">✗</span> Supprimer</div></div>
-        <div class="role-card"><div class="rn">👤 user</div><div class="perm"><span class="ok">✓</span> Consulter</div><div class="perm"><span class="ok">✓</span> Ajouter</div><div class="perm"><span class="no">✗</span> Supprimer</div></div>
-        <div class="role-card"><div class="rn" style="color:var(--accent)">✏️ editor</div><div class="perm"><span class="ok">✓</span> Consulter</div><div class="perm"><span class="ok">✓</span> Ajouter / modifier</div><div class="perm"><span class="no">✗</span> Supprimer</div></div>
-        <div class="role-card"><div class="rn" style="color:var(--accent2)">🛡️ admin (vous)</div><div class="perm"><span class="ok">✓</span> Accès total</div><div class="perm"><span class="ok">✓</span> Supprimer tout</div><div class="perm"><span class="ok">✓</span> Gérer les comptes</div></div>
+        <div class="role-card">
+            <div class="rn" style="color:var(--muted)">👁️ viewer</div>
+            <div class="perm"><span class="ok">✓</span> Consulter</div>
+            <div class="perm"><span class="no">✗</span> Ajouter</div>
+            <div class="perm"><span class="no">✗</span> Modifier</div>
+            <div class="perm"><span class="no">✗</span> Supprimer</div>
+            <div class="perm"><span class="no">✗</span> Exporter</div>
+            <div class="perm"><span class="no">✗</span> Accès admin</div>
+        </div>
+        <div class="role-card">
+            <div class="rn">👤 user</div>
+            <div class="perm"><span class="ok">✓</span> Consulter</div>
+            <div class="perm"><span class="ok">✓</span> Ajouter</div>
+            <div class="perm"><span class="no">✗</span> Modifier</div>
+            <div class="perm"><span class="no">✗</span> Supprimer</div>
+            <div class="perm"><span class="no">✗</span> Exporter</div>
+            <div class="perm"><span class="no">✗</span> Accès admin</div>
+        </div>
+        <div class="role-card">
+            <div class="rn" style="color:#00c4ff">🧑‍⚖️ modérateur</div>
+            <div class="perm"><span class="ok">✓</span> Consulter</div>
+            <div class="perm"><span class="ok">✓</span> Ajouter</div>
+            <div class="perm"><span class="ok">✓</span> Modifier</div>
+            <div class="perm"><span class="no">✗</span> Supprimer</div>
+            <div class="perm"><span class="no">✗</span> Exporter</div>
+            <div class="perm"><span class="no">✗</span> Accès admin</div>
+        </div>
+        <div class="role-card">
+            <div class="rn" style="color:#ff783c">🧾 comptable</div>
+            <div class="perm"><span class="ok">✓</span> Consulter</div>
+            <div class="perm"><span class="ok">✓</span> Ajouter</div>
+            <div class="perm"><span class="ok">✓</span> Modifier</div>
+            <div class="perm"><span class="ok">✓</span> Exporter / Importer</div>
+            <div class="perm"><span class="no">✗</span> Supprimer</div>
+            <div class="perm"><span class="no">✗</span> Accès admin</div>
+        </div>
+        <div class="role-card">
+            <div class="rn" style="color:var(--accent)">✏️ editor</div>
+            <div class="perm"><span class="ok">✓</span> Consulter</div>
+            <div class="perm"><span class="ok">✓</span> Ajouter / Modifier</div>
+            <div class="perm"><span class="ok">✓</span> Exporter</div>
+            <div class="perm"><span class="no">✗</span> Supprimer</div>
+            <div class="perm"><span class="no">✗</span> Accès admin</div>
+        </div>
+        <div class="role-card">
+            <div class="rn" style="color:var(--accent2)">🛡️ admin</div>
+            <div class="perm"><span class="ok">✓</span> Accès total</div>
+            <div class="perm"><span class="ok">✓</span> Supprimer</div>
+            <div class="perm"><span class="ok">✓</span> Exporter / Importer</div>
+            <div class="perm"><span class="ok">✓</span> Gérer les comptes</div>
+            <div class="perm"><span class="no">✗</span> Gérer les admins</div>
+            <div class="perm"><span class="no">✗</span> Config système</div>
+        </div>
+        <div class="role-card" style="border-color:rgba(255,185,58,.35)">
+            <div class="rn" style="color:var(--warning)">⭐ superadmin</div>
+            <div class="perm"><span class="ok">✓</span> Accès total</div>
+            <div class="perm"><span class="ok">✓</span> Gérer les admins</div>
+            <div class="perm"><span class="ok">✓</span> Config système</div>
+            <div class="perm"><span class="ok">✓</span> Logs & Audit</div>
+            <div class="perm"><span class="ok">✓</span> Réinitialiser la BDD</div>
+            <div class="perm"><span class="ok">✓</span> Toutes permissions</div>
+        </div>
     </div>
+
+    <!-- Users Table -->
     <div class="sh">
         <div class="st">👥 Comptes utilisateurs</div>
         <button class="btn btn-primary" onclick="openModal('create')">+ Nouveau compte</button>
@@ -128,7 +195,13 @@
             <input class="si" id="searchInput" type="text" placeholder="🔍 Rechercher…" oninput="filterTable()">
             <select class="fs" id="filterRole" onchange="filterTable()">
                 <option value="">Tous les rôles</option>
-                <option>admin</option><option>editor</option><option>user</option><option>viewer</option>
+                <option>superadmin</option>
+                <option>admin</option>
+                <option>editor</option>
+                <option>comptable</option>
+                <option>moderateur</option>
+                <option>user</option>
+                <option>viewer</option>
             </select>
             <select class="fs" id="filterStatus" onchange="filterTable()">
                 <option value="">Tous les statuts</option>
@@ -151,7 +224,7 @@
                 <td><div class="tda">
                     <button class="btn btn-ghost btn-sm" title="Modifier" onclick="openEditModal({{ u.id }},'{{ u.role }}','{{ u.status }}','{{ u.username }}')">✏️</button>
                     <button class="btn btn-ghost btn-sm" title="Réinitialiser MDP" onclick="openResetModal({{ u.id }},'{{ u.username }}')">🔑</button>
-                    <button class="btn btn-ghost btn-sm" title="Permissions pages" onclick="openPermsModal({{ u.id }},'{{ u.username }}')">🔓</button>
+                    <button class="btn btn-ghost btn-sm" title="Permissions pages & actions" onclick="openPermsModal({{ u.id }},'{{ u.username }}')">🔓</button>
                     <button class="btn btn-danger btn-sm" title="Supprimer" onclick="confirmDelete({{ u.id }},'{{ u.username }}')">🗑️</button>
                 </div></td>
             </tr>
@@ -164,7 +237,7 @@
     </div>
 </div>
 
-<!-- MODALS -->
+<!-- ═══════════════ MODALS ═══════════════ -->
 <div class="mb" id="modalCreate"><div class="modal">
     <div class="mt">➕ Créer un compte</div>
     <div class="fg"><label>Nom *</label><input class="fc" id="newUsername" type="text" placeholder="ex: Pierre"></div>
@@ -174,13 +247,20 @@
         <select class="fc" id="newRole">
             <option value="viewer">👁️ viewer — Lecture seule</option>
             <option value="user" selected>👤 user — Peut ajouter</option>
+            <option value="moderateur">🧑‍⚖️ modérateur — Peut modifier</option>
+            <option value="comptable">🧾 comptable — Export / Import</option>
             <option value="editor">✏️ editor — Peut ajouter et modifier</option>
-            {% if current_role == 'superadmin' %}<option value="admin">🛡️ admin — Accès complet</option>{% endif %}
+            {% if current_role in ['admin','superadmin'] %}<option value="admin">🛡️ admin — Accès complet</option>{% endif %}
+            {% if current_role == 'superadmin' %}<option value="superadmin">⭐ superadmin — Maître système</option>{% endif %}
         </select>
-        <div class="fh">💡 Seul l'admin peut supprimer des données.</div>
+        <div class="fh">💡 Seul l'admin peut supprimer des données. Le superadmin gère aussi les admins.</div>
     </div>
     <div class="fg"><label>Statut</label>
-        <select class="fc" id="newStatus"><option value="active">✅ Actif</option><option value="inactive">⛔ Inactif</option><option value="suspended">⚠️ Suspendu</option></select>
+        <select class="fc" id="newStatus">
+            <option value="active">✅ Actif</option>
+            <option value="inactive">⛔ Inactif</option>
+            <option value="suspended">⚠️ Suspendu</option>
+        </select>
     </div>
     <div class="ma"><button class="btn btn-ghost" onclick="closeModal('create')">Annuler</button><button class="btn btn-primary" onclick="createUser()">Créer</button></div>
 </div></div>
@@ -190,12 +270,22 @@
     <input type="hidden" id="editUserId">
     <div class="fg"><label>Niveau d'accès</label>
         <select class="fc" id="editRole">
-            <option value="viewer">👁️ viewer</option><option value="user">👤 user</option>
+            <option value="viewer">👁️ viewer</option>
+            <option value="user">👤 user</option>
+            <option value="moderateur">🧑‍⚖️ modérateur</option>
+            <option value="comptable">🧾 comptable</option>
             <option value="editor">✏️ editor</option>
-            {% if current_role == 'superadmin' %}<option value="admin">🛡️ admin</option>{% endif %}
-        </select></div>
+            {% if current_role in ['admin','superadmin'] %}<option value="admin">🛡️ admin</option>{% endif %}
+            {% if current_role == 'superadmin' %}<option value="superadmin">⭐ superadmin</option>{% endif %}
+        </select>
+    </div>
     <div class="fg"><label>Statut</label>
-        <select class="fc" id="editStatus"><option value="active">✅ Actif</option><option value="inactive">⛔ Inactif</option><option value="suspended">⚠️ Suspendu</option></select></div>
+        <select class="fc" id="editStatus">
+            <option value="active">✅ Actif</option>
+            <option value="inactive">⛔ Inactif</option>
+            <option value="suspended">⚠️ Suspendu</option>
+        </select>
+    </div>
     <div class="ma"><button class="btn btn-ghost" onclick="closeModal('edit')">Annuler</button><button class="btn btn-primary" onclick="updateUser()">Enregistrer</button></div>
 </div></div>
 
@@ -213,48 +303,179 @@
     <div class="ma"><button class="btn btn-ghost" onclick="closeModal('delete')">Annuler</button><button class="btn btn-danger" onclick="deleteUser()">Supprimer</button></div>
 </div></div>
 
-<!-- MODAL PERMISSIONS -->
+<!-- ══════════════════════════════════════
+     MODAL PERMISSIONS — COMPLET
+     Onglets: Pages | Actions | Avancé
+════════════════════════════════════════ -->
 <div class="mb" id="modalPerms"><div class="modal modal-perms">
     <div class="mt">🔓 Permissions — <span id="permsName" style="color:var(--accent)"></span></div>
     <input type="hidden" id="permsUserId">
-    <div class="perm-header">
-        <span style="font-size:.8rem;color:var(--muted)">Cochez les modules accessibles :</span>
-        <div style="display:flex;gap:.4rem">
-            <button class="btn btn-ghost btn-xs btn-sm" onclick="selectAllPerms(true)">Tout cocher</button>
-            <button class="btn btn-ghost btn-xs btn-sm" onclick="selectAllPerms(false)">Tout décocher</button>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+        <button class="tab active" onclick="switchTab('pages',this)">📄 Modules</button>
+        <button class="tab" onclick="switchTab('actions',this)">⚡ Actions</button>
+        <button class="tab" onclick="switchTab('advanced',this)">🔧 Avancé</button>
+    </div>
+
+    <!-- ── TAB: PAGES / MODULES ── -->
+    <div class="tab-panel active" id="tab-pages">
+        <div class="perm-header">
+            <span style="font-size:.8rem;color:var(--muted)">Modules accessibles :</span>
+            <div style="display:flex;gap:.4rem">
+                <button class="btn btn-ghost btn-xs btn-sm" onclick="selectAllGroup('pages',true)">Tout cocher</button>
+                <button class="btn btn-ghost btn-xs btn-sm" onclick="selectAllGroup('pages',false)">Tout décocher</button>
+            </div>
+        </div>
+
+        <!-- Groupe Finance -->
+        <div class="perms-section">
+            <div class="perms-section-title">💰 Finance & Comptabilité</div>
+            <div class="perms-grid" id="grid-finance"></div>
+        </div>
+        <!-- Groupe Trading -->
+        <div class="perms-section">
+            <div class="perms-section-title">📈 Trading & Marchés</div>
+            <div class="perms-grid" id="grid-trading"></div>
+        </div>
+        <!-- Groupe Gestion -->
+        <div class="perms-section">
+            <div class="perms-section-title">🗂️ Gestion & Organisation</div>
+            <div class="perms-grid" id="grid-gestion"></div>
+        </div>
+        <!-- Groupe Communication -->
+        <div class="perms-section">
+            <div class="perms-section-title">📣 Communication & IA</div>
+            <div class="perms-grid" id="grid-communication"></div>
+        </div>
+        <!-- Groupe Système -->
+        <div class="perms-section">
+            <div class="perms-section-title">⚙️ Système & Config</div>
+            <div class="perms-grid" id="grid-system"></div>
         </div>
     </div>
-    <div class="perms-grid" id="permsGrid"></div>
-    <div class="perm-note">
-        ⚠️ Les modules <strong>non cochés</strong> seront <strong>floutés et inaccessibles</strong> pour cet utilisateur.<br>
-        Si <em>tous</em> sont cochés = accès total (aucune restriction).
+
+    <!-- ── TAB: ACTIONS CRUD ── -->
+    <div class="tab-panel" id="tab-actions">
+        <div class="perm-header">
+            <span style="font-size:.8rem;color:var(--muted)">Actions autorisées globalement :</span>
+            <div style="display:flex;gap:.4rem">
+                <button class="btn btn-ghost btn-xs btn-sm" onclick="selectAllGroup('actions',true)">Tout cocher</button>
+                <button class="btn btn-ghost btn-xs btn-sm" onclick="selectAllGroup('actions',false)">Tout décocher</button>
+            </div>
+        </div>
+        <div class="perms-grid-actions" id="grid-actions"></div>
+        <div class="perm-note">
+            💡 Ces actions s'appliquent à <strong>tous les modules accessibles</strong>. Pour une granularité par module, utilisez l'onglet Avancé.
+        </div>
+    </div>
+
+    <!-- ── TAB: AVANCÉ ── -->
+    <div class="tab-panel" id="tab-advanced">
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Permissions <strong style="color:var(--text)">spécifiques par module</strong> — écrasent les réglages globaux :</div>
+        <div id="grid-advanced"></div>
+        <div class="perm-note">
+            ⚠️ Ces réglages sont <strong>prioritaires</strong> sur le rôle et les actions globales. Laissez vide = hérite des paramètres du rôle.
+        </div>
+    </div>
+
+    <div class="perm-note" style="margin-top:.75rem">
+        🔒 Les modules <strong>non cochés</strong> sont <strong>floutés et inaccessibles</strong>. Si tout est coché = accès total.
     </div>
     <div class="ma">
         <button class="btn btn-ghost" onclick="closeModal('perms')">Annuler</button>
-        <button class="btn btn-primary" onclick="savePerms()">Enregistrer</button>
+        <button class="btn btn-primary" onclick="savePerms()">💾 Enregistrer</button>
     </div>
 </div></div>
 
 <div class="tc" id="toasts"></div>
 
 <script>
-const ALL_PAGES = [
-    {key:'dashboard',       icon:'📊', label:'Dashboard'},
-    {key:'finances',        icon:'💰', label:'Finances'},
-    {key:'history',         icon:'📜', label:'Historique'},
-    {key:'portfolio',       icon:'📁', label:'Portfolio'},
-    {key:'reports',         icon:'📋', label:'Rapports'},
-    {key:'settings',        icon:'⚙️',  label:'Paramètres'},
-    {key:'trading',         icon:'📈', label:'Trading'},
-    {key:'trading_journal', icon:'📓', label:'Journal Trading'},
-    {key:'analysis',        icon:'🔍', label:'Analyse'},
-    {key:'ai_assistant',    icon:'🤖', label:'Assistant IA'},
-    {key:'agenda',          icon:'📅', label:'Agenda'},
-    {key:'bloc_notes',      icon:'📝', label:'Bloc-Notes'},
-    {key:'notifications',   icon:'🔔', label:'Notifications'},
-    {key:'inscription_trading',icon:'🎓',label:'Inscription Trading'},
+/* ─── DATA ─── */
+const PAGE_GROUPS = {
+    finance: [
+        {key:'dashboard',       icon:'📊', label:'Dashboard'},
+        {key:'finances',        icon:'💰', label:'Finances'},
+        {key:'history',         icon:'📜', label:'Historique'},
+        {key:'reports',         icon:'📋', label:'Rapports'},
+        {key:'invoices',        icon:'🧾', label:'Factures'},
+        {key:'budgets',         icon:'🎯', label:'Budgets'},
+        {key:'accounts',        icon:'🏦', label:'Comptes'},
+        {key:'categories',      icon:'🏷️', label:'Catégories'},
+        {key:'taxes',           icon:'🏛️', label:'Taxes / TVA'},
+        {key:'audit_logs',      icon:'📑', label:'Journal d\'audit'},
+        {key:'imports_exports', icon:'↕️', label:'Import / Export'},
+    ],
+    trading: [
+        {key:'portfolio',         icon:'📁', label:'Portfolio'},
+        {key:'trading',           icon:'📈', label:'Trading'},
+        {key:'trading_journal',   icon:'📓', label:'Journal Trading'},
+        {key:'analysis',          icon:'🔍', label:'Analyse'},
+        {key:'signals',           icon:'📡', label:'Signaux'},
+        {key:'watchlist',         icon:'👁️', label:'Watchlist'},
+        {key:'inscription_trading',icon:'🎓',label:'Inscription Trading'},
+        {key:'backtesting',       icon:'⏪', label:'Backtesting'},
+        {key:'risk_manager',      icon:'⚠️', label:'Risk Manager'},
+    ],
+    gestion: [
+        {key:'agenda',     icon:'📅', label:'Agenda'},
+        {key:'bloc_notes', icon:'📝', label:'Bloc-Notes'},
+        {key:'contacts',   icon:'👥', label:'Contacts / Clients'},
+        {key:'projects',   icon:'🗂️', label:'Projets'},
+        {key:'tasks',      icon:'✅', label:'Tâches'},
+        {key:'documents',  icon:'📂', label:'Documents'},
+        {key:'contracts',  icon:'📄', label:'Contrats'},
+        {key:'subscriptions',icon:'🔄',label:'Abonnements'},
+    ],
+    communication: [
+        {key:'notifications', icon:'🔔', label:'Notifications'},
+        {key:'ai_assistant',  icon:'🤖', label:'Assistant IA'},
+        {key:'messages',      icon:'💬', label:'Messagerie'},
+        {key:'email_center',  icon:'📧', label:'Centre Email'},
+        {key:'announcements', icon:'📢', label:'Annonces'},
+        {key:'support',       icon:'🆘', label:'Support / Tickets'},
+    ],
+    system: [
+        {key:'settings',     icon:'⚙️', label:'Paramètres'},
+        {key:'user_mgmt',    icon:'👤', label:'Gestion Utilisateurs'},
+        {key:'roles_mgmt',   icon:'🔑', label:'Gestion Rôles'},
+        {key:'integrations', icon:'🔗', label:'Intégrations API'},
+        {key:'backups',      icon:'💾', label:'Sauvegardes'},
+        {key:'system_logs',  icon:'🖥️', label:'Logs Système'},
+        {key:'security',     icon:'🛡️', label:'Sécurité'},
+        {key:'billing',      icon:'💳', label:'Facturation Système'},
+    ],
+};
+
+const ALL_PAGES = Object.values(PAGE_GROUPS).flat();
+
+const ACTION_DEFS = [
+    {key:'can_read',       icon:'👁️', label:'Consulter'},
+    {key:'can_create',     icon:'➕', label:'Créer'},
+    {key:'can_edit',       icon:'✏️', label:'Modifier'},
+    {key:'can_delete',     icon:'🗑️', label:'Supprimer'},
+    {key:'can_export',     icon:'⬇️', label:'Exporter'},
+    {key:'can_import',     icon:'⬆️', label:'Importer'},
+    {key:'can_print',      icon:'🖨️', label:'Imprimer'},
+    {key:'can_share',      icon:'🔗', label:'Partager'},
+    {key:'can_comment',    icon:'💬', label:'Commenter'},
+    {key:'can_approve',    icon:'✅', label:'Approuver'},
+    {key:'can_archive',    icon:'📦', label:'Archiver'},
+    {key:'can_bulk',       icon:'⚡', label:'Actions en masse'},
 ];
 
+/* ─── STATE ─── */
+let currentPerms = {pages: null, actions: null, advanced: {}};
+
+/* ─── TABS ─── */
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+    btn.classList.add('active');
+}
+
+/* ─── HELPERS ─── */
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function openModal(t){document.getElementById('modal'+cap(t)).classList.add('open')}
 function closeModal(t){document.getElementById('modal'+cap(t)).classList.remove('open')}
@@ -265,47 +486,128 @@ function confirmDelete(id,name){document.getElementById('deleteUserId').value=id
 function toast(msg,type='success'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast'+(type==='error'?' error':type==='warning'?' warning':'');t.textContent=(type==='error'?'❌ ':type==='warning'?'⚠️ ':'✅ ')+msg;c.appendChild(t);setTimeout(()=>t.remove(),4000)}
 async function api(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return r.json()}
 
-async function openPermsModal(id, name) {
-    document.getElementById('permsUserId').value = id;
-    document.getElementById('permsName').textContent = name;
-    let current = null;
-    try {
-        const res = await fetch('/admin/get-permissions/' + id);
-        const data = await res.json();
-        current = data.pages;
-    } catch(e) {}
-    const grid = document.getElementById('permsGrid');
-    grid.innerHTML = '';
-    ALL_PAGES.forEach(p => {
-        const checked = current === null || current.includes(p.key);
-        const item = document.createElement('label');
-        item.className = 'perm-item' + (checked ? ' checked' : '');
-        item.innerHTML = '<input type="checkbox" value="' + p.key + '" ' + (checked ? 'checked' : '') + '> <span class="pi-icon">' + p.icon + '</span> <span class="pi">' + p.label + '</span>';
-        item.querySelector('input').addEventListener('change', function() {
-            item.classList.toggle('checked', this.checked);
-        });
-        grid.appendChild(item);
+/* ─── PERM ITEM BUILDER ─── */
+function buildPermItem(key, icon, label, checked, gridId) {
+    const grid = document.getElementById(gridId);
+    const item = document.createElement('label');
+    item.className = 'perm-item' + (checked ? ' checked' : '');
+    item.dataset.group = gridId;
+    item.innerHTML = `<input type="checkbox" data-key="${key}" value="${key}" ${checked?'checked':''}> <span class="pi-icon">${icon}</span> <span class="pi">${label}</span>`;
+    item.querySelector('input').addEventListener('change', function(){
+        item.classList.toggle('checked', this.checked);
     });
-    openModal('perms');
+    grid.appendChild(item);
 }
 
-function selectAllPerms(state) {
-    document.querySelectorAll('#permsGrid input[type=checkbox]').forEach(cb => {
+/* ─── SELECT ALL FOR GROUP ─── */
+function selectAllGroup(group, state) {
+    let selector;
+    if (group === 'pages') selector = '#tab-pages input[type=checkbox]';
+    else if (group === 'actions') selector = '#grid-actions input[type=checkbox]';
+    else selector = '#tab-advanced input[type=checkbox]';
+    document.querySelectorAll(selector).forEach(cb => {
         cb.checked = state;
         cb.closest('.perm-item').classList.toggle('checked', state);
     });
 }
 
-async function savePerms() {
-    const id = document.getElementById('permsUserId').value;
-    const boxes = document.querySelectorAll('#permsGrid input[type=checkbox]');
-    const checked = [...boxes].filter(b => b.checked).map(b => b.value);
-    const pages = checked.length === ALL_PAGES.length ? null : checked;
-    const res = await api('/admin/update-permissions/' + id, {pages});
-    if (res.success) { toast(res.message); closeModal('perms'); }
-    else toast(res.message, 'error');
+/* ─── OPEN PERMS MODAL ─── */
+async function openPermsModal(id, name) {
+    document.getElementById('permsUserId').value = id;
+    document.getElementById('permsName').textContent = name;
+
+    // Reset to first tab
+    switchTab('pages', document.querySelector('.tab'));
+
+    // Fetch current perms
+    let data = {};
+    try {
+        const res = await fetch('/admin/get-permissions/' + id);
+        data = await res.json();
+    } catch(e) {}
+
+    const savedPages   = data.pages   || null;   // null = all
+    const savedActions = data.actions || null;   // null = all
+    const savedAdv     = data.advanced|| {};
+
+    // ── Build PAGE grids ──
+    Object.entries(PAGE_GROUPS).forEach(([grp, pages]) => {
+        const gridId = 'grid-' + grp;
+        document.getElementById(gridId).innerHTML = '';
+        pages.forEach(p => {
+            const checked = savedPages === null || savedPages.includes(p.key);
+            buildPermItem(p.key, p.icon, p.label, checked, gridId);
+        });
+    });
+
+    // ── Build ACTION grid ──
+    const actGrid = document.getElementById('grid-actions');
+    actGrid.innerHTML = '';
+    ACTION_DEFS.forEach(a => {
+        const checked = savedActions === null || savedActions.includes(a.key);
+        buildPermItem(a.key, a.icon, a.label, checked, 'grid-actions');
+    });
+
+    // ── Build ADVANCED grid ──
+    const advGrid = document.getElementById('grid-advanced');
+    advGrid.innerHTML = '';
+    ALL_PAGES.forEach(p => {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'margin-bottom:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem .85rem';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size:.8rem;font-weight:700;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem';
+        title.textContent = p.icon + ' ' + p.label;
+        wrap.appendChild(title);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;flex-wrap:wrap;gap:.4rem';
+        const pageAdv = savedAdv[p.key] || [];
+        ACTION_DEFS.slice(0,6).forEach(a => {
+            const checked = pageAdv.includes(a.key);
+            const lbl = document.createElement('label');
+            lbl.className = 'perm-item' + (checked?' checked':'');
+            lbl.style.cssText = 'flex:1;min-width:90px;padding:.35rem .5rem';
+            lbl.innerHTML = `<input type="checkbox" data-page="${p.key}" data-action="${a.key}" ${checked?'checked':''}> <span class="pi-icon" style="font-size:.78rem">${a.icon}</span> <span class="pi" style="font-size:.74rem">${a.label}</span>`;
+            lbl.querySelector('input').addEventListener('change', function(){
+                lbl.classList.toggle('checked', this.checked);
+            });
+            row.appendChild(lbl);
+        });
+        wrap.appendChild(row);
+        advGrid.appendChild(wrap);
+    });
+
+    openModal('perms');
 }
 
+/* ─── SAVE PERMS ─── */
+async function savePerms() {
+    const id = document.getElementById('permsUserId').value;
+
+    // Pages
+    const pageCbs = document.querySelectorAll('#tab-pages input[type=checkbox]');
+    const checkedPages = [...pageCbs].filter(b=>b.checked).map(b=>b.value);
+    const pages = checkedPages.length === ALL_PAGES.length ? null : checkedPages;
+
+    // Actions
+    const actCbs = document.querySelectorAll('#grid-actions input[type=checkbox]');
+    const checkedActions = [...actCbs].filter(b=>b.checked).map(b=>b.value);
+    const actions = checkedActions.length === ACTION_DEFS.length ? null : checkedActions;
+
+    // Advanced
+    const advanced = {};
+    document.querySelectorAll('#grid-advanced input[type=checkbox]:checked').forEach(cb => {
+        const pg = cb.dataset.page;
+        const ac = cb.dataset.action;
+        if (!advanced[pg]) advanced[pg] = [];
+        advanced[pg].push(ac);
+    });
+
+    const res = await api('/admin/update-permissions/' + id, {pages, actions, advanced});
+    if (res.success) { toast(res.message || 'Permissions enregistrées'); closeModal('perms'); }
+    else toast(res.message || 'Erreur', 'error');
+}
+
+/* ─── CRUD USERS ─── */
 async function createUser(){const u=document.getElementById('newUsername').value.trim(),e=document.getElementById('newEmail').value.trim(),p=document.getElementById('newPassword').value.trim(),r=document.getElementById('newRole').value,s=document.getElementById('newStatus').value;if(!u||!e||!p){toast('Remplissez tous les champs','warning');return}const res=await api('/admin/create-user',{username:u,email:e,password:p,role:r,status:s});if(res.success){toast(res.message);closeModal('create');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
 async function updateUser(){const id=document.getElementById('editUserId').value,r=document.getElementById('editRole').value,s=document.getElementById('editStatus').value;const res=await api('/admin/update-user/'+id,{role:r,status:s});if(res.success){toast(res.message);closeModal('edit');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
 async function resetPassword(){const id=document.getElementById('resetUserId').value,p=document.getElementById('resetPassword').value.trim();if(p.length<6){toast('Mot de passe trop court','warning');return}const res=await api('/admin/reset-password/'+id,{password:p});if(res.success){toast(res.message);closeModal('reset')}else toast(res.message,'error')}
@@ -313,4 +615,5 @@ async function deleteUser(){const id=document.getElementById('deleteUserId').val
 function filterTable(){const q=document.getElementById('searchInput').value.toLowerCase(),r=document.getElementById('filterRole').value,s=document.getElementById('filterStatus').value;document.querySelectorAll('#usersTable tbody tr').forEach(row=>{const m=(!q||row.textContent.toLowerCase().includes(q))&&(!r||row.dataset.role===r)&&(!s||row.dataset.status===s);row.style.display=m?'':'none'})}
 function copyToken(){navigator.clipboard.writeText('http://localhost:5001/{{ token }}');toast('URL secrète copiée !')}
 </script>
-</body></html>
+</body>
+</html>

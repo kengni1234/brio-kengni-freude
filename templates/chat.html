@@ -16,6 +16,8 @@
   --purple:    #a855f7;
   --gold:      #ffd700;
   --danger:    #ff4757;
+  --orange:    #fb923c;
+  --teal:      #2dd4bf;
   --text:      #f0f0f0;
   --muted:     #5a6478;
   --font:      'Plus Jakarta Sans', 'Segoe UI', sans-serif;
@@ -74,7 +76,6 @@
 .chat-main {
   flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
 }
-/* Fond lumineux animé */
 .chat-main::before {
   content: '';
   position: absolute; inset: 0; pointer-events: none; z-index: 0;
@@ -84,10 +85,7 @@
     radial-gradient(ellipse 350px 250px at 55% 55%, rgba(168,85,247,.03) 0%, transparent 65%);
   animation: glowShift 8s ease-in-out infinite alternate;
 }
-@keyframes glowShift {
-  from { opacity: .6; }
-  to   { opacity: 1; }
-}
+@keyframes glowShift { from{opacity:.6;} to{opacity:1;} }
 
 /* Header */
 .chat-header {
@@ -109,8 +107,7 @@
   margin-left: auto;
   display: flex; align-items: center; gap: 7px;
   font-size: 12px; font-weight: 700; color: var(--green);
-  background: rgba(0,230,118,.08);
-  border: 1px solid rgba(0,230,118,.2);
+  background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.2);
   border-radius: 20px; padding: 5px 13px;
   box-shadow: 0 0 14px rgba(0,230,118,.1);
 }
@@ -125,7 +122,7 @@
 }
 .chat-tab {
   flex: 1; padding: 12px; text-align: center;
-  font-size: 14px; font-weight: 700; color: var(--muted);
+  font-size: 13px; font-weight: 700; color: var(--muted);
   cursor: pointer; transition: all .2s;
   border-bottom: 2px solid transparent; user-select: none;
 }
@@ -144,7 +141,7 @@
 .chat-msg {
   display: flex; align-items: flex-end; gap: 10px;
   animation: msgIn .3s cubic-bezier(.34,1.56,.64,1);
-  max-width: 80%;
+  max-width: 82%;
 }
 @keyframes msgIn { from{opacity:0;transform:translateY(14px) scale(.97);} to{opacity:1;transform:none;} }
 .chat-msg.is-me    { align-self: flex-end;   flex-direction: row-reverse; }
@@ -159,67 +156,149 @@
 }
 .chat-msg.is-me .msg-av {
   background: linear-gradient(135deg, var(--green2), #009944);
-  color: #000;
-  box-shadow: 0 0 14px rgba(0,200,83,.35);
+  color: #000; box-shadow: 0 0 14px rgba(0,200,83,.35);
 }
-
 .msg-wrap { display: flex; flex-direction: column; gap: 3px; }
-.msg-name {
-  font-size: 11px; font-weight: 700; color: var(--muted); padding: 0 5px;
-}
+.msg-name { font-size: 11px; font-weight: 700; color: var(--muted); padding: 0 5px; }
 .chat-msg.is-me .msg-name { text-align: right; color: var(--green); }
 
-/* Bulle REÇUE */
+/* Bulle TEXT reçue */
 .msg-bubble {
-  padding: 13px 18px;
-  border-radius: 20px 20px 20px 5px;
-  font-size: 16px; line-height: 1.65;
-  color: var(--text); word-break: break-word;
+  padding: 13px 18px; border-radius: 20px 20px 20px 5px;
+  font-size: 15px; line-height: 1.65; color: var(--text); word-break: break-word;
   cursor: pointer; transition: all .22s; position: relative;
-  background: var(--surface2);
-  border: 1px solid rgba(255,255,255,.07);
-  box-shadow:
-    0 0 0 1px rgba(74,158,255,.04),
-    0 4px 20px rgba(0,0,0,.5),
-    inset 0 1px 0 rgba(255,255,255,.03);
+  background: var(--surface2); border: 1px solid rgba(255,255,255,.07);
+  box-shadow: 0 0 0 1px rgba(74,158,255,.04), 0 4px 20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.03);
 }
 .msg-bubble:hover {
   border-color: rgba(74,158,255,.25);
-  box-shadow:
-    0 0 22px rgba(74,158,255,.1),
-    0 4px 24px rgba(0,0,0,.5),
-    inset 0 1px 0 rgba(255,255,255,.05);
+  box-shadow: 0 0 22px rgba(74,158,255,.1), 0 4px 24px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
 }
-
-/* Bulle ENVOYÉE — lueur verte */
+/* Bulle TEXT envoyée */
 .chat-msg.is-me .msg-bubble {
   border-radius: 20px 20px 5px 20px;
   background: linear-gradient(135deg, rgba(0,200,83,.2), rgba(0,150,60,.13));
-  border: 1px solid rgba(0,230,118,.24);
-  color: #eaffea;
-  box-shadow:
-    0 0 28px rgba(0,200,83,.14),
-    0 0 70px rgba(0,200,83,.06),
-    0 4px 20px rgba(0,0,0,.45),
-    inset 0 1px 0 rgba(0,230,118,.12);
+  border: 1px solid rgba(0,230,118,.24); color: #eaffea;
+  box-shadow: 0 0 28px rgba(0,200,83,.14), 0 0 70px rgba(0,200,83,.06), 0 4px 20px rgba(0,0,0,.45), inset 0 1px 0 rgba(0,230,118,.12);
 }
 .chat-msg.is-me .msg-bubble:hover {
   border-color: rgba(0,230,118,.45);
-  box-shadow:
-    0 0 40px rgba(0,200,83,.22),
-    0 0 90px rgba(0,200,83,.09),
-    0 4px 24px rgba(0,0,0,.45),
-    inset 0 1px 0 rgba(0,230,118,.18);
+  box-shadow: 0 0 40px rgba(0,200,83,.22), 0 0 90px rgba(0,200,83,.09), 0 4px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(0,230,118,.18);
 }
-
 /* Chiffré */
 .msg-bubble.encrypted {
   background: linear-gradient(135deg, rgba(255,215,0,.07), rgba(255,100,0,.04));
-  border-color: rgba(255,215,0,.22);
-  color: var(--gold); font-style: italic;
+  border-color: rgba(255,215,0,.22); color: var(--gold); font-style: italic;
   box-shadow: 0 0 20px rgba(255,215,0,.07), 0 4px 20px rgba(0,0,0,.45);
 }
 .msg-bubble.encrypted::after { content:' · double-tap 🔓'; font-size:11px; opacity:.5; }
+
+/* ══ IMAGE MESSAGE ═════════════════════════════════════════════ */
+.msg-image-wrap {
+  border-radius: 16px; overflow: hidden; max-width: 320px;
+  background: var(--surface2); border: 1px solid rgba(255,255,255,.07);
+  cursor: pointer; transition: all .2s; position: relative;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+.msg-image-wrap:hover { border-color: rgba(74,158,255,.35); transform: scale(1.01); }
+.msg-image-wrap img {
+  width: 100%; display: block; max-height: 280px; object-fit: cover;
+  transition: transform .25s;
+}
+.msg-image-wrap:hover img { transform: scale(1.03); }
+.msg-image-caption {
+  padding: 8px 12px; font-size: 13px; color: var(--muted);
+  background: rgba(13,17,23,.8); border-top: 1px solid var(--border);
+}
+.msg-image-dl {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0,0,0,.6); border-radius: 8px; padding: 5px 10px;
+  font-size: 13px; color: #fff; font-weight: 700;
+  opacity: 0; transition: opacity .2s; text-decoration: none;
+}
+.msg-image-wrap:hover .msg-image-dl { opacity: 1; }
+
+/* ══ SIGNAL CARD ═══════════════════════════════════════════════ */
+.signal-card {
+  border-radius: 16px; overflow: hidden;
+  min-width: 280px; max-width: 340px;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,.55);
+  cursor: default; position: relative;
+}
+.signal-card.buy {
+  background: linear-gradient(145deg, rgba(0,180,80,.18) 0%, rgba(0,100,40,.1) 100%);
+  border-color: rgba(0,230,118,.3);
+  box-shadow: 0 0 28px rgba(0,200,83,.12), 0 4px 20px rgba(0,0,0,.45);
+}
+.signal-card.sell {
+  background: linear-gradient(145deg, rgba(255,71,87,.18) 0%, rgba(180,30,30,.1) 100%);
+  border-color: rgba(255,71,87,.3);
+  box-shadow: 0 0 28px rgba(255,71,87,.12), 0 4px 20px rgba(0,0,0,.45);
+}
+.signal-card.wait {
+  background: linear-gradient(145deg, rgba(255,215,0,.12) 0%, rgba(180,120,0,.08) 100%);
+  border-color: rgba(255,215,0,.25);
+  box-shadow: 0 0 22px rgba(255,215,0,.1), 0 4px 20px rgba(0,0,0,.45);
+}
+.sig-header {
+  padding: 14px 16px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.sig-dir {
+  display: flex; align-items: center; gap: 8px;
+}
+.sig-dir-badge {
+  font-size: 11px; font-weight: 900; padding: 4px 11px; border-radius: 8px;
+  letter-spacing: 1.2px; text-transform: uppercase;
+}
+.buy  .sig-dir-badge { background: rgba(0,230,118,.25); color: var(--green); border: 1px solid rgba(0,230,118,.4); }
+.sell .sig-dir-badge { background: rgba(255,71,87,.25);  color: var(--danger); border: 1px solid rgba(255,71,87,.4); }
+.wait .sig-dir-badge { background: rgba(255,215,0,.2);   color: var(--gold); border: 1px solid rgba(255,215,0,.35); }
+.sig-symbol { font-size: 19px; font-weight: 800; letter-spacing: .5px; }
+.buy  .sig-symbol { color: #b6ffd0; }
+.sell .sig-symbol { color: #ffc2c9; }
+.wait .sig-symbol { color: #fff6cc; }
+.sig-tf {
+  font-size: 11px; font-weight: 700; padding: 3px 9px;
+  background: rgba(255,255,255,.07); border-radius: 20px; color: var(--muted);
+}
+.sig-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 7px; }
+.sig-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px;
+}
+.sig-lbl { color: var(--muted); font-weight: 600; }
+.sig-val { font-weight: 800; font-size: 14px; font-family: 'DM Mono', monospace; }
+.sig-entry { color: var(--blue); }
+.sig-sl    { color: var(--danger); }
+.sig-tp    { color: var(--green); }
+.sig-rr    { color: var(--gold); }
+.sig-rr-badge {
+  font-size: 11px; font-weight: 800; padding: 2px 8px;
+  background: rgba(255,215,0,.12); color: var(--gold);
+  border-radius: 6px; border: 1px solid rgba(255,215,0,.25);
+}
+.sig-divider { height: 1px; background: rgba(255,255,255,.05); margin: 4px 0; }
+.sig-notes {
+  padding: 10px 16px; font-size: 13px; color: var(--muted); line-height: 1.55;
+  border-top: 1px solid rgba(255,255,255,.05);
+  font-style: italic;
+}
+.sig-footer {
+  padding: 9px 16px; display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,.05);
+  background: rgba(0,0,0,.15);
+}
+.sig-copy-btn {
+  font-size: 11px; font-weight: 700; padding: 4px 11px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px; color: var(--text); cursor: pointer;
+  transition: all .15s;
+}
+.sig-copy-btn:hover { background: rgba(74,158,255,.18); border-color: var(--blue); color: var(--blue); }
+.sig-stamp { font-size: 11px; color: var(--muted); }
 
 .msg-tag {
   background: rgba(74,158,255,.15); color: var(--blue);
@@ -228,7 +307,6 @@
 }
 .msg-time { font-size: 11px; color: var(--muted); padding: 0 5px; }
 .chat-msg.is-me .msg-time { text-align: right; }
-
 .msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .react-badge {
   background: var(--surface2); border: 1px solid var(--border);
@@ -252,7 +330,6 @@
 }
 .ai-panel::-webkit-scrollbar { width:4px; }
 .ai-panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,.06); border-radius:4px; }
-
 .ai-welcome { text-align:center; padding:30px 20px; }
 .ai-icon {
   width:68px; height:68px; border-radius:20px; margin:0 auto 16px;
@@ -274,13 +351,7 @@
   border-radius:20px; padding:8px 15px; font-size:13px;
   color:var(--text); cursor:pointer; transition:all .2s; font-weight:600;
 }
-.ai-sug:hover {
-  border-color:rgba(168,85,247,.4); color:var(--purple);
-  box-shadow:0 0 14px rgba(168,85,247,.14);
-  transform: translateY(-1px);
-}
-
-/* Messages IA */
+.ai-sug:hover { border-color:rgba(168,85,247,.4); color:var(--purple); box-shadow:0 0 14px rgba(168,85,247,.14); transform:translateY(-1px); }
 .ai-msg { display:flex; gap:10px; align-items:flex-start; }
 .ai-msg.user-msg { flex-direction:row-reverse; }
 .ai-av {
@@ -292,7 +363,7 @@
 }
 .ai-bubble {
   padding:13px 18px; border-radius:18px;
-  font-size:16px; line-height:1.65; max-width:82%; word-break:break-word;
+  font-size:15px; line-height:1.65; max-width:82%; word-break:break-word;
   animation: msgIn .3s cubic-bezier(.34,1.56,.64,1);
 }
 .ai-reply .ai-bubble {
@@ -308,10 +379,7 @@
   box-shadow:0 0 20px rgba(0,200,83,.1),0 4px 18px rgba(0,0,0,.35);
 }
 .ai-typing { display:flex; gap:5px; align-items:center; padding:6px 2px; }
-.ai-typing span {
-  width:8px; height:8px; border-radius:50%; background:var(--purple);
-  animation:typing 1.2s infinite;
-}
+.ai-typing span { width:8px; height:8px; border-radius:50%; background:var(--purple); animation:typing 1.2s infinite; }
 .ai-typing span:nth-child(2){animation-delay:.2s;}
 .ai-typing span:nth-child(3){animation-delay:.4s;}
 @keyframes typing{0%,100%{transform:translateY(0);opacity:.3;}50%{transform:translateY(-7px);opacity:1;}}
@@ -337,14 +405,29 @@
   font-size:13px; color:var(--muted);
   display:flex; justify-content:space-between; align-items:center;
 }
+/* Image preview strip */
+.img-preview-strip {
+  display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;
+}
+.img-preview-thumb {
+  position:relative; width:72px; height:72px; border-radius:10px;
+  overflow:hidden; border:1px solid rgba(255,255,255,.1);
+  background:var(--surface2); flex-shrink:0;
+}
+.img-preview-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.img-preview-thumb .rm-img {
+  position:absolute; top:3px; right:3px;
+  background:rgba(255,71,87,.85); color:#fff; border:none;
+  width:18px; height:18px; border-radius:50%;
+  font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-weight:900;
+}
 .input-row { display:flex; gap:8px; align-items:flex-end; position:relative; }
-
 .input-mention-dd {
   position:absolute; bottom:100%; left:0; right:0;
   background:var(--surface); border:1px solid var(--border);
   border-radius:14px; overflow:hidden; z-index:300;
-  box-shadow:0 -6px 28px rgba(0,0,0,.6);
-  animation:fadeUp .15s ease;
+  box-shadow:0 -6px 28px rgba(0,0,0,.6); animation:fadeUp .15s ease;
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 .mention-item {
@@ -352,50 +435,122 @@
   cursor:pointer; color:var(--text); font-size:14px; transition:background .1s;
 }
 .mention-item:hover { background:var(--surface2); }
-
 .chat-textarea {
-  flex:1; background:var(--surface2);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:14px; color:var(--text);
-  font-size:16px; font-family:var(--font);
-  padding:12px 16px; resize:none;
-  min-height:48px; max-height:130px; line-height:1.5;
+  flex:1; background:var(--surface2); border:1px solid rgba(255,255,255,.08);
+  border-radius:14px; color:var(--text); font-size:15px; font-family:var(--font);
+  padding:12px 16px; resize:none; min-height:48px; max-height:130px; line-height:1.5;
   transition:border-color .2s, box-shadow .2s;
 }
-.chat-textarea:focus {
-  outline:none; border-color:rgba(0,230,118,.4);
-  box-shadow:0 0 18px rgba(0,230,118,.1);
-}
+.chat-textarea:focus { outline:none; border-color:rgba(0,230,118,.4); box-shadow:0 0 18px rgba(0,230,118,.1); }
 .chat-textarea::placeholder { color:var(--muted); }
-
 .cbtn {
-  border:none; cursor:pointer;
-  width:48px; height:48px; border-radius:13px;
+  border:none; cursor:pointer; width:48px; height:48px; border-radius:13px;
   display:flex; align-items:center; justify-content:center;
-  font-size:19px; transition:all .18s; flex-shrink:0;
+  font-size:18px; transition:all .18s; flex-shrink:0;
 }
-.cbtn-send {
-  background:linear-gradient(135deg,var(--green2),#00994a);
-  color:#000; font-size:22px;
-  box-shadow:0 0 22px rgba(0,200,83,.28);
-}
+.cbtn-send { background:linear-gradient(135deg,var(--green2),#00994a); color:#000; font-size:21px; box-shadow:0 0 22px rgba(0,200,83,.28); }
 .cbtn-send:hover { transform:scale(1.09); box-shadow:0 0 34px rgba(0,200,83,.45); }
-.cbtn-emoji { background:var(--surface2); border:1px solid var(--border); color:var(--text); font-size:21px; }
-.cbtn-emoji:hover { border-color:var(--green); box-shadow:0 0 12px rgba(0,230,118,.12); }
-.cbtn-lock { background:var(--surface2); border:1px solid var(--border); color:var(--gold); }
+.cbtn-emoji { background:var(--surface2); border:1px solid var(--border); color:var(--text); }
+.cbtn-emoji:hover { border-color:var(--green); }
+.cbtn-lock  { background:var(--surface2); border:1px solid var(--border); color:var(--gold); }
 .cbtn-lock.on { background:rgba(255,215,0,.1); border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,0,.18); }
-
+.cbtn-img   { background:var(--surface2); border:1px solid var(--border); color:var(--blue); }
+.cbtn-img:hover { border-color:var(--blue); box-shadow:0 0 12px rgba(74,158,255,.2); }
+.cbtn-sig   { background:var(--surface2); border:1px solid var(--border); color:var(--orange); }
+.cbtn-sig:hover { border-color:var(--orange); box-shadow:0 0 12px rgba(251,146,60,.2); }
 /* Emoji picker */
 .emoji-picker {
-  position:absolute; bottom:58px; left:0;
+  position:absolute; bottom:62px; left:0;
   background:var(--surface); border:1px solid var(--border);
   border-radius:16px; padding:10px;
   display:flex; gap:4px; flex-wrap:wrap; width:280px;
-  z-index:200; box-shadow:0 -6px 32px rgba(0,0,0,.6);
-  animation:fadeUp .15s ease;
+  z-index:200; box-shadow:0 -6px 32px rgba(0,0,0,.6); animation:fadeUp .15s ease;
 }
 .ej { font-size:23px; cursor:pointer; padding:5px; border-radius:9px; transition:all .1s; }
 .ej:hover { background:var(--surface2); transform:scale(1.25); }
+
+/* ══ MODAL SIGNAL ═══════════════════════════════════════════════ */
+.signal-modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px);
+  z-index:1000; display:none; align-items:center; justify-content:center;
+  padding:16px;
+}
+.signal-modal-overlay.open { display:flex; }
+.signal-modal {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; width:100%; max-width:440px;
+  box-shadow:0 0 60px rgba(0,0,0,.8);
+  animation: modalPop .22s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modalPop { from{opacity:0;transform:scale(.94);} to{opacity:1;transform:none;} }
+.sm-header {
+  padding:20px 22px 14px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.sm-title { font-size:16px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px; }
+.sm-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:4px 8px; border-radius:8px; transition:all .15s; }
+.sm-close:hover { background:var(--surface2); color:var(--text); }
+.sm-body { padding:18px 22px; display:flex; flex-direction:column; gap:14px; }
+.sm-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.sm-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.sm-group { display:flex; flex-direction:column; gap:5px; }
+.sm-label { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; }
+.sm-input, .sm-select {
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); border-radius:10px; padding:10px 12px;
+  font-size:14px; font-family:var(--font); font-weight:600;
+  outline:none; transition:border-color .15s;
+}
+.sm-input:focus, .sm-select:focus { border-color:var(--green); }
+.sm-select option { background:var(--surface); }
+/* Direction buttons */
+.dir-btns { display:flex; gap:8px; }
+.dir-btn {
+  flex:1; padding:9px; border-radius:10px;
+  border:2px solid var(--border); background:var(--surface2);
+  color:var(--muted); font-size:13px; font-weight:800; cursor:pointer;
+  transition:all .15s; text-align:center; letter-spacing:.8px;
+}
+.dir-btn.buy.sel  { border-color:var(--green);  background:rgba(0,230,118,.15); color:var(--green); box-shadow:0 0 14px rgba(0,230,118,.2); }
+.dir-btn.sell.sel { border-color:var(--danger); background:rgba(255,71,87,.15);  color:var(--danger); box-shadow:0 0 14px rgba(255,71,87,.18); }
+.dir-btn.wait.sel { border-color:var(--gold);   background:rgba(255,215,0,.12);  color:var(--gold);   box-shadow:0 0 12px rgba(255,215,0,.15); }
+/* RR preview */
+.rr-preview {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.rr-label { font-size:12px; color:var(--muted); font-weight:600; }
+.rr-value { font-size:18px; font-weight:800; color:var(--gold); font-family:monospace; }
+.sm-footer {
+  padding:14px 22px; border-top:1px solid var(--border);
+  display:flex; gap:10px; justify-content:flex-end;
+}
+.sm-btn { padding:10px 20px; border-radius:10px; border:none; font-size:14px; font-weight:700; cursor:pointer; font-family:var(--font); transition:all .15s; }
+.sm-btn-cancel { background:var(--surface2); color:var(--muted); }
+.sm-btn-cancel:hover { color:var(--text); }
+.sm-btn-send { background:linear-gradient(135deg,var(--orange),#e55); color:#fff; box-shadow:0 0 18px rgba(251,146,60,.3); }
+.sm-btn-send:hover { transform:scale(1.05); box-shadow:0 0 28px rgba(251,146,60,.45); }
+
+/* Lightbox image */
+.img-lightbox {
+  position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:2000;
+  display:none; align-items:center; justify-content:center; padding:20px;
+  flex-direction:column; gap:12px;
+}
+.img-lightbox.open { display:flex; }
+.img-lightbox img { max-width:100%; max-height:85vh; border-radius:12px; box-shadow:0 0 60px rgba(0,0,0,.8); }
+.img-lightbox-close {
+  position:fixed; top:16px; right:20px;
+  background:rgba(255,255,255,.1); border:none; color:#fff;
+  font-size:1.5rem; width:44px; height:44px; border-radius:50%; cursor:pointer;
+}
+.img-lightbox-dl {
+  padding:9px 22px; background:rgba(0,230,118,.18); border:1px solid rgba(0,230,118,.35);
+  color:var(--green); border-radius:10px; font-size:14px; font-weight:700;
+  text-decoration:none; transition:all .15s;
+}
+.img-lightbox-dl:hover { background:rgba(0,230,118,.3); }
 
 /* Toast */
 .glow-toast {
@@ -407,15 +562,92 @@
   z-index:9999; animation:toastIn .3s ease; pointer-events:none;
 }
 @keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-
 @keyframes decrypt{0%{filter:blur(8px);opacity:.2;}100%{filter:blur(0);opacity:1;}}
 .decrypting { animation:decrypt .45s ease forwards; }
 
-@media(max-width:640px){ .chat-sidebar{display:none;} }
+@media(max-width:640px){
+  .chat-sidebar{display:none;}
+  .signal-modal{max-width:100%;}
+  .sm-row, .sm-row-3{grid-template-columns:1fr;}
+}
 </style>
 
-<div class="chat-root">
+<!-- ══ MODAL SIGNAL ══ -->
+<div class="signal-modal-overlay" id="signalModal">
+  <div class="signal-modal">
+    <div class="sm-header">
+      <div class="sm-title">📊 Publier un Signal de Trading</div>
+      <button class="sm-close" onclick="closeSignalModal()">✕</button>
+    </div>
+    <div class="sm-body">
+      <!-- Direction -->
+      <div class="sm-group">
+        <div class="sm-label">Direction</div>
+        <div class="dir-btns">
+          <button class="dir-btn buy"  onclick="setDir('buy')"  id="dBuy">🟢 BUY</button>
+          <button class="dir-btn sell" onclick="setDir('sell')" id="dSell">🔴 SELL</button>
+          <button class="dir-btn wait" onclick="setDir('wait')" id="dWait">🟡 ATTENDRE</button>
+        </div>
+      </div>
+      <!-- Symbole + Timeframe -->
+      <div class="sm-row">
+        <div class="sm-group">
+          <div class="sm-label">Paire / Symbole *</div>
+          <input class="sm-input" id="sigSymbol" placeholder="XAUUSD, BTCUSD…" oninput="updateRR()">
+        </div>
+        <div class="sm-group">
+          <div class="sm-label">Timeframe</div>
+          <select class="sm-select" id="sigTf">
+            <option>M1</option><option>M5</option><option>M15</option>
+            <option>M30</option><option>H1</option><option>H4</option>
+            <option>D1</option><option>W1</option><option>MN</option>
+          </select>
+        </div>
+      </div>
+      <!-- Entry / SL / TP -->
+      <div class="sm-row-3">
+        <div class="sm-group">
+          <div class="sm-label">📍 Entrée</div>
+          <input class="sm-input" id="sigEntry" type="number" step="any" placeholder="0.00000" oninput="updateRR()">
+        </div>
+        <div class="sm-group">
+          <div class="sm-label">🛑 Stop Loss</div>
+          <input class="sm-input" id="sigSL" type="number" step="any" placeholder="0.00000" oninput="updateRR()">
+        </div>
+        <div class="sm-group">
+          <div class="sm-label">🎯 Take Profit</div>
+          <input class="sm-input" id="sigTP" type="number" step="any" placeholder="0.00000" oninput="updateRR()">
+        </div>
+      </div>
+      <!-- RR calculé -->
+      <div class="rr-preview">
+        <span class="rr-label">⚖️ Risk / Reward</span>
+        <span class="rr-value" id="rrValue">—</span>
+      </div>
+      <!-- Notes -->
+      <div class="sm-group">
+        <div class="sm-label">📝 Notes / Analyse (optionnel)</div>
+        <textarea class="sm-input" id="sigNotes" rows="2" style="resize:vertical;min-height:64px;" placeholder="Contexte du signal, niveau clé, confluences…"></textarea>
+      </div>
+    </div>
+    <div class="sm-footer">
+      <button class="sm-btn sm-btn-cancel" onclick="closeSignalModal()">Annuler</button>
+      <button class="sm-btn sm-btn-send"   onclick="sendSignal()">📊 Publier le signal</button>
+    </div>
+  </div>
+</div>
 
+<!-- ══ LIGHTBOX IMAGE ══ -->
+<div class="img-lightbox" id="imgLightbox" onclick="closeLightboxImg(event)">
+  <button class="img-lightbox-close" onclick="closeLightboxImg()">✕</button>
+  <img id="lbImg" src="" alt="">
+  <a class="img-lightbox-dl" id="lbDl" href="" download target="_blank">⬇ Télécharger</a>
+</div>
+
+<!-- ══ INPUT IMAGE CACHÉ ══ -->
+<input type="file" id="imgFileInput" accept="image/*,image/gif" multiple style="display:none" onchange="handleImgSelect(event)">
+
+<div class="chat-root">
   <!-- SIDEBAR -->
   <div class="chat-sidebar">
     <div class="sidebar-top">👥 Membres · {{ members|length }}</div>
@@ -432,27 +664,22 @@
 
   <!-- MAIN -->
   <div class="chat-main">
-
-    <!-- Header -->
     <div class="chat-header">
       <div class="header-icon">💬</div>
       <div>
         <div class="header-title">Kengni Finance Chat</div>
-        <div class="header-sub">Messagerie commune · tous les membres</div>
+        <div class="header-sub">Messagerie commune · signaux · images</div>
       </div>
       <div class="online-pill" id="onlineBadge"><b></b> En ligne</div>
     </div>
 
-    <!-- Onglets -->
     <div class="chat-tabs">
       <div class="chat-tab active" id="tabChat" onclick="switchTab('chat')">💬 Chat</div>
       <div class="chat-tab"        id="tabAI"   onclick="switchTab('ai')">🤖 Assistant IA</div>
     </div>
 
-    <!-- Messages -->
     <div class="chat-messages" id="chatMessages"></div>
 
-    <!-- Panel IA -->
     <div class="ai-panel" id="aiPanel" style="display:none;">
       <div class="ai-welcome" id="aiWelcome">
         <div class="ai-icon">🤖</div>
@@ -472,13 +699,15 @@
       <div id="aiMessages"></div>
     </div>
 
-    <!-- Saisie -->
+    <!-- BARRE SAISIE -->
     <div class="chat-input-area">
       <div class="tag-chips" id="tagChips"></div>
       <div class="reply-bar" id="replyBar" style="display:none;">
         <span id="replyText"></span>
         <span style="cursor:pointer;color:var(--danger);" onclick="cancelReply()">✕</span>
       </div>
+      <!-- Preview images en attente -->
+      <div class="img-preview-strip" id="imgPreviewStrip" style="display:none;"></div>
       <div class="input-row">
         <div class="input-mention-dd" id="mentionDd" style="display:none;"></div>
         <div class="emoji-picker" id="emojiPicker" style="display:none;">
@@ -486,15 +715,16 @@
           {% for e in EMOJIS %}<span class="ej" onclick="insertEmoji('{{ e }}')">{{ e }}</span>{% endfor %}
         </div>
         <button class="cbtn cbtn-emoji" onclick="toggleEmoji()" title="Émojis">😊</button>
-        <button class="cbtn cbtn-lock" id="lockBtn" onclick="toggleEncrypt()" title="Chiffrer">🔒</button>
+        <button class="cbtn cbtn-img"   onclick="document.getElementById('imgFileInput').click()" title="Envoyer une image">🖼</button>
+        <button class="cbtn cbtn-sig"   onclick="openSignalModal()" title="Publier un signal">📊</button>
+        <button class="cbtn cbtn-lock"  id="lockBtn" onclick="toggleEncrypt()" title="Chiffrer">🔒</button>
         <textarea class="chat-textarea" id="msgInput" rows="1"
-                  placeholder="Écrivez un message… (@mention pour taguer)"
+                  placeholder="Écrivez un message… (@mention)"
                   oninput="autoResize(this); handleMention(this.value)"
                   onkeydown="handleKey(event)"></textarea>
         <button class="cbtn cbtn-send" id="sendBtn" onclick="handleSend()">➤</button>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -510,6 +740,8 @@ let taggedUsers = [];
 let tapTimers   = {};
 let currentTab  = 'chat';
 let aiHistory   = [];
+let pendingImgs = [];    // fichiers images en attente
+let sigDir      = 'buy'; // direction courante du signal
 
 /* ── ONGLETS ──────────────────────────────────── */
 function switchTab(tab) {
@@ -521,10 +753,9 @@ function switchTab(tab) {
   const inp = document.getElementById('msgInput');
   inp.placeholder = tab==='ai'
     ? 'Posez une question à l\'assistant IA…'
-    : 'Écrivez un message… (@mention pour taguer)';
+    : 'Écrivez un message… (@mention)';
 }
-
-function handleSend() { currentTab==='ai' ? sendToAI() : sendMessage(); }
+function handleSend() { currentTab==='ai' ? sendToAI() : (pendingImgs.length ? sendImages() : sendMessage()); }
 function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();} }
 
 /* ── ASSISTANT IA LLM ─────────────────────────── */
@@ -563,7 +794,6 @@ Utilise des exemples concrets et adaptés au contexte camerounais/africain quand
     addAIMessage('ai', '❌ Erreur de connexion. Vérifiez votre connexion internet et réessayez.');
   }
 }
-
 function addAIMessage(who, text) {
   const box = document.getElementById('aiMessages');
   const div = document.createElement('div');
@@ -571,16 +801,13 @@ function addAIMessage(who, text) {
   const formatted = text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-size:14px;font-family:monospace;">$1</code>')
+    .replace(/`(.*?)`/g, '<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;font-size:13px;font-family:monospace;">$1</code>')
     .replace(/\n/g, '<br>');
   div.innerHTML = `
     <div class="ai-av">${who==='user' ? (ME_NAME[0]||'U').toUpperCase() : '🤖'}</div>
-    <div class="ai-bubble">${formatted}</div>
-  `;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+    <div class="ai-bubble">${formatted}</div>`;
+  box.appendChild(div); box.scrollTop = box.scrollHeight;
 }
-
 function addAITyping(id) {
   const box = document.getElementById('aiMessages');
   const div = document.createElement('div');
@@ -589,79 +816,141 @@ function addAITyping(id) {
     <div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
   box.appendChild(div); box.scrollTop = box.scrollHeight;
 }
+function aiAsk(q) { document.getElementById('msgInput').value = q; switchTab('ai'); sendToAI(); }
 
-function aiAsk(q) {
-  document.getElementById('msgInput').value = q;
-  switchTab('ai'); sendToAI();
-}
-
-/* ── CHAT ─────────────────────────────────────── */
+/* ── RENDU MESSAGES ───────────────────────────── */
 function renderMessage(m) {
   const isMe    = m.user_id === ME_ID;
   const initial = (m.username||'?')[0].toUpperCase();
   const time    = (m.created_at||'').slice(11,16);
-  let content   = (m.content||'').replace(/@(\w+)/g,'<span class="msg-tag">@$1</span>');
+  const type    = m.msg_type || 'text';
 
-  const reactions = m.reactions||{};
+  // Réactions
+  const reactions = m.reactions || {};
   let reactHtml = '';
-  for(const[emoji,users] of Object.entries(reactions)){
+  for(const [emoji,users] of Object.entries(reactions)){
     if(users.length){
-      const mine = users.includes(ME_ID)?'border-color:var(--green);box-shadow:0 0 8px rgba(0,230,118,.2);':'';
+      const mine = users.includes(ME_ID) ? 'border-color:var(--green);box-shadow:0 0 8px rgba(0,230,118,.2);' : '';
       reactHtml += `<span class="react-badge" style="${mine}" onclick="reactMsg(${m.id},'${emoji}')">${emoji}<span class="rc">${users.length}</span></span>`;
     }
   }
   const replyHtml = m.reply_to_id
     ? `<div style="background:rgba(255,255,255,.04);border-left:3px solid var(--green);padding:5px 9px;border-radius:6px;font-size:12px;color:var(--muted);margin-bottom:5px;">↩ Réponse</div>`
     : '';
-  const encCls = m.is_encrypted?'encrypted':'';
-  const isEnc  = m.is_encrypted?'true':'false';
+
+  let contentHtml = '';
+
+  if (type === 'image' && m.image_url) {
+    const cap = (m.content && m.content !== '📸 Image') ? m.content : '';
+    contentHtml = `
+      <div class="msg-image-wrap" onclick="openLightboxImg('${m.image_url}')">
+        <img src="${m.image_url}" alt="image" loading="lazy" onerror="this.closest('.msg-image-wrap').style.display='none'">
+        ${cap ? `<div class="msg-image-caption">📝 ${escHtml(cap)}</div>` : ''}
+        <a class="msg-image-dl" href="${m.image_url}" download onclick="event.stopPropagation()">⬇</a>
+      </div>`;
+  } else if (type === 'signal' && m.signal_data) {
+    contentHtml = renderSignalCard(m.signal_data, time, m.id, isMe);
+  } else {
+    const text = (m.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/@(\w+)/g,'<span class="msg-tag">@$1</span>');
+    const encCls = m.is_encrypted ? 'encrypted' : '';
+    const isEnc  = m.is_encrypted ? 'true' : 'false';
+    contentHtml = `<div class="msg-bubble ${encCls}" id="bubble-${m.id}"
+       ontouchend="onTap(${m.id},${isEnc})"
+       ondblclick="onDbl(${m.id},${isEnc})"
+       oncontextmenu="ctxMenu(event,${m.id},${isMe})">${text}</div>`;
+  }
 
   const div = document.createElement('div');
-  div.className = `chat-msg ${isMe?'is-me':'is-other'}`;
+  div.className = `chat-msg ${isMe ? 'is-me' : 'is-other'}`;
   div.dataset.id = m.id;
   div.innerHTML = `
     <div class="msg-av">${initial}</div>
     <div class="msg-wrap">
-      <div class="msg-name">${isMe?'Vous':m.username}</div>
+      <div class="msg-name">${isMe ? 'Vous' : m.username}</div>
       ${replyHtml}
-      <div class="msg-bubble ${encCls}" id="bubble-${m.id}"
-           ontouchend="onTap(${m.id},${isEnc})"
-           ondblclick="onDbl(${m.id},${isEnc})"
-           oncontextmenu="ctxMenu(event,${m.id},${isMe})">${content}</div>
-      ${reactHtml?`<div class="msg-reactions">${reactHtml}</div>`:''}
-      <div class="msg-time">${time}${m.is_encrypted?'<span style="color:var(--gold);"> 🔒</span>':''}</div>
+      ${contentHtml}
+      ${reactHtml ? `<div class="msg-reactions">${reactHtml}</div>` : ''}
+      <div class="msg-time">${time}${m.is_encrypted ? '<span style="color:var(--gold);"> 🔒</span>' : ''}</div>
     </div>`;
   return div;
 }
 
+function renderSignalCard(s, time, msgId, isMe) {
+  const dir = (s.direction||'buy').toLowerCase();
+  const dirLabel = dir==='buy' ? '🟢 BUY' : dir==='sell' ? '🔴 SELL' : '🟡 ATTENDRE';
+  const entry = s.entry ? Number(s.entry).toFixed(5) : '—';
+  const sl    = s.sl    ? Number(s.sl).toFixed(5)    : '—';
+  const tp    = s.tp    ? Number(s.tp).toFixed(5)    : '—';
+  const rr    = s.rr    ? `1 : ${Number(s.rr).toFixed(2)}` : '—';
+  const notes = s.notes ? escHtml(s.notes) : '';
+  const tf    = s.timeframe || 'H1';
+  const sym   = (s.symbol||'???').toUpperCase();
+  const signalText = `📊 ${dirLabel} ${sym} | E: ${entry} | SL: ${sl} | TP: ${tp} | ${rr} | TF: ${tf}${notes ? ' | '+s.notes : ''}`;
+  return `
+    <div class="signal-card ${dir}" oncontextmenu="ctxMenu(event,${msgId},${isMe})">
+      <div class="sig-header">
+        <div class="sig-dir">
+          <span class="sig-dir-badge">${dirLabel}</span>
+          <span class="sig-symbol">${sym}</span>
+        </div>
+        <span class="sig-tf">${tf}</span>
+      </div>
+      <div class="sig-body">
+        <div class="sig-row"><span class="sig-lbl">📍 Entrée</span><span class="sig-val sig-entry">${entry}</span></div>
+        <div class="sig-divider"></div>
+        <div class="sig-row"><span class="sig-lbl">🛑 Stop Loss</span><span class="sig-val sig-sl">${sl}</span></div>
+        <div class="sig-divider"></div>
+        <div class="sig-row"><span class="sig-lbl">🎯 Take Profit</span><span class="sig-val sig-tp">${tp}</span></div>
+        ${s.rr ? `<div class="sig-divider"></div><div class="sig-row"><span class="sig-lbl">⚖️ Risk/Reward</span><span class="sig-val sig-rr"><span class="sig-rr-badge">${rr}</span></span></div>` : ''}
+      </div>
+      ${notes ? `<div class="sig-notes">💬 ${notes}</div>` : ''}
+      <div class="sig-footer">
+        <span class="sig-stamp">Signal · ${time}</span>
+        <button class="sig-copy-btn" onclick="copySignal(this,'${encodeURIComponent(signalText)}')">📋 Copier</button>
+      </div>
+    </div>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copySignal(btn, encoded) {
+  navigator.clipboard.writeText(decodeURIComponent(encoded)).then(()=>{
+    btn.textContent = '✅ Copié !';
+    setTimeout(()=>btn.textContent='📋 Copier', 2000);
+  });
+}
+
+/* ── POLL MESSAGES ────────────────────────────── */
 async function pollMessages() {
   try {
     const res  = await fetch(`/api/chat/messages?since=${lastId}&limit=60`);
     const data = await res.json();
     const box  = document.getElementById('chatMessages');
-    const atBot = box.scrollHeight-box.scrollTop-box.clientHeight < 80;
+    const atBot = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
     if(data.messages?.length){
-      let lastDate='';
-      data.messages.forEach(m=>{
-        const d=(m.created_at||'').slice(0,10);
-        if(d&&d!==lastDate){
-          lastDate=d;
-          const sep=document.createElement('div');
-          sep.className='date-sep';
-          sep.innerHTML=`<span>${formatDate(d)}</span>`;
+      let lastDate = '';
+      data.messages.forEach(m => {
+        const d = (m.created_at||'').slice(0,10);
+        if(d && d !== lastDate){
+          lastDate = d;
+          const sep = document.createElement('div');
+          sep.className = 'date-sep';
+          sep.innerHTML = `<span>${formatDate(d)}</span>`;
           box.appendChild(sep);
         }
         box.appendChild(renderMessage(m));
-        lastId=Math.max(lastId,m.id);
+        lastId = Math.max(lastId, m.id);
       });
-      if(atBot) box.scrollTop=box.scrollHeight;
-      if(data.messages.some(m=>m.user_id!==ME_ID)) playPing();
+      if(atBot) box.scrollTop = box.scrollHeight;
+      if(data.messages.some(m => m.user_id !== ME_ID)) playPing();
     }
-    document.getElementById('onlineBadge').innerHTML='<b></b> En ligne';
-    document.getElementById('onlineBadge').style.color='var(--green)';
-  } catch(e){
-    document.getElementById('onlineBadge').textContent='● Hors ligne';
-    document.getElementById('onlineBadge').style.color='var(--danger)';
+    document.getElementById('onlineBadge').innerHTML = '<b></b> En ligne';
+    document.getElementById('onlineBadge').style.color = 'var(--green)';
+  } catch(e) {
+    document.getElementById('onlineBadge').textContent = '● Hors ligne';
+    document.getElementById('onlineBadge').style.color = 'var(--danger)';
   }
 }
 
@@ -673,24 +962,154 @@ function formatDate(iso){
   return d.toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
 }
 
+/* ── ENVOI TEXT ───────────────────────────────── */
 async function sendMessage() {
-  const inp=document.getElementById('msgInput'), content=inp.value.trim();
+  const inp = document.getElementById('msgInput'), content = inp.value.trim();
   if(!content) return;
   try{
-    const res=await fetch('/api/chat/send',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({content,encrypt:encrypted,tags:taggedUsers.map(u=>u.id),reply_to_id:replyToId})});
-    const data=await res.json();
+    const res = await fetch('/api/chat/send',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({content, encrypt: encrypted, tags: taggedUsers.map(u=>u.id), reply_to_id: replyToId})});
+    const data = await res.json();
     if(data.success){ inp.value=''; inp.style.height='auto'; clearTags(); cancelReply(); if(encrypted)toggleEncrypt(); await pollMessages(); }
-  }catch(e){toast('❌ Erreur d\'envoi');}
+  }catch(e){ toast('❌ Erreur d\'envoi'); }
 }
 
+/* ── ENVOI IMAGES ─────────────────────────────── */
+function handleImgSelect(e) {
+  const files = [...e.target.files];
+  files.forEach(f => {
+    if(!f.type.startsWith('image/')) return;
+    pendingImgs.push(f);
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const strip = document.getElementById('imgPreviewStrip');
+      strip.style.display = 'flex';
+      const idx = pendingImgs.length - 1;
+      const wrap = document.createElement('div');
+      wrap.className = 'img-preview-thumb'; wrap.dataset.idx = idx;
+      wrap.innerHTML = `<img src="${ev.target.result}" alt=""><button class="rm-img" onclick="removePreviewImg(${idx})">✕</button>`;
+      strip.appendChild(wrap);
+    };
+    reader.readAsDataURL(f);
+  });
+  e.target.value = '';
+}
+
+function removePreviewImg(idx) {
+  pendingImgs[idx] = null;
+  const strip = document.getElementById('imgPreviewStrip');
+  strip.querySelectorAll(`[data-idx="${idx}"]`).forEach(el => el.remove());
+  if(!pendingImgs.filter(Boolean).length){
+    pendingImgs = []; strip.style.display = 'none';
+  }
+}
+
+async function sendImages() {
+  const caption = document.getElementById('msgInput').value.trim();
+  const toSend  = pendingImgs.filter(Boolean);
+  if(!toSend.length) return;
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('sendBtn').textContent = '…';
+  let ok = 0;
+  for(const file of toSend){
+    const fd = new FormData();
+    fd.append('image', file, file.name);
+    if(caption) fd.append('caption', caption);
+    if(replyToId) fd.append('reply_to_id', replyToId);
+    fd.append('tags', JSON.stringify(taggedUsers.map(u=>u.id)));
+    try {
+      const res  = await fetch('/api/chat/upload-image', { method:'POST', body: fd });
+      const data = await res.json();
+      if(data.success) ok++;
+    } catch(e) { toast('❌ Erreur upload image'); }
+  }
+  pendingImgs = [];
+  document.getElementById('imgPreviewStrip').style.display = 'none';
+  document.getElementById('imgPreviewStrip').innerHTML = '';
+  document.getElementById('msgInput').value = '';
+  document.getElementById('msgInput').style.height = 'auto';
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('sendBtn').textContent = '➤';
+  clearTags(); cancelReply();
+  if(ok) await pollMessages();
+}
+
+/* ── LIGHTBOX IMAGE ───────────────────────────── */
+function openLightboxImg(src) {
+  document.getElementById('lbImg').src = src;
+  document.getElementById('lbDl').href = src;
+  document.getElementById('imgLightbox').classList.add('open');
+}
+function closeLightboxImg(e) {
+  if(e && e.target && e.target.tagName === 'A') return;
+  if(!e || e.target === document.getElementById('imgLightbox') || e.target.classList.contains('img-lightbox-close'))
+    document.getElementById('imgLightbox').classList.remove('open');
+}
+
+/* ── SIGNAL MODAL ─────────────────────────────── */
+function openSignalModal() {
+  document.getElementById('signalModal').classList.add('open');
+  setDir('buy');
+}
+function closeSignalModal() { document.getElementById('signalModal').classList.remove('open'); }
+
+function setDir(d) {
+  sigDir = d;
+  ['buy','sell','wait'].forEach(x => {
+    document.getElementById('d'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('sel', x===d);
+  });
+}
+
+function updateRR() {
+  const entry = parseFloat(document.getElementById('sigEntry').value);
+  const sl    = parseFloat(document.getElementById('sigSL').value);
+  const tp    = parseFloat(document.getElementById('sigTP').value);
+  const el    = document.getElementById('rrValue');
+  if(!entry || !sl || !tp){ el.textContent = '—'; return; }
+  const risk   = Math.abs(entry - sl);
+  const reward = Math.abs(tp - entry);
+  if(risk === 0){ el.textContent = '∞'; return; }
+  const rr = reward / risk;
+  el.textContent = `1 : ${rr.toFixed(2)}`;
+  el.style.color = rr >= 2 ? 'var(--green)' : rr >= 1 ? 'var(--gold)' : 'var(--danger)';
+}
+
+async function sendSignal() {
+  const symbol = document.getElementById('sigSymbol').value.trim().toUpperCase();
+  if(!symbol){ toast('⚠️ Entrez un symbole (ex: XAUUSD)'); return; }
+  const entry = parseFloat(document.getElementById('sigEntry').value) || null;
+  const sl    = parseFloat(document.getElementById('sigSL').value)    || null;
+  const tp    = parseFloat(document.getElementById('sigTP').value)    || null;
+  const rr    = entry && sl && tp ? Math.abs(tp-entry) / Math.abs(entry-sl) : null;
+  const notes = document.getElementById('sigNotes').value.trim();
+  const tf    = document.getElementById('sigTf').value;
+  const signalData = { direction: sigDir, symbol, entry, sl, tp, rr, timeframe: tf, notes };
+  const dirLabel   = sigDir==='buy' ? '🟢 BUY' : sigDir==='sell' ? '🔴 SELL' : '🟡 ATTENDRE';
+  const content    = `📊 Signal ${dirLabel} — ${symbol}`;
+  try {
+    const res  = await fetch('/api/chat/send', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ content, msg_type:'signal', signal_data: signalData, tags: taggedUsers.map(u=>u.id) })
+    });
+    const data = await res.json();
+    if(data.success){
+      closeSignalModal();
+      // Reset form
+      ['sigSymbol','sigEntry','sigSL','sigTP','sigNotes'].forEach(id => document.getElementById(id).value='');
+      document.getElementById('rrValue').textContent = '—';
+      await pollMessages();
+      toast('📊 Signal publié !');
+    } else { toast('❌ Erreur: ' + (data.error||'inconnue')); }
+  } catch(e){ toast('❌ Erreur réseau'); }
+}
+
+/* ── CHIFFREMENT ──────────────────────────────── */
 function toggleEncrypt(){
-  encrypted=!encrypted;
-  document.getElementById('lockBtn').classList.toggle('on',encrypted);
-  document.getElementById('msgInput').placeholder=encrypted?'🔒 Message chiffré…':'Écrivez un message… (@mention pour taguer)';
-  toast(encrypted?'🔒 Chiffrement activé':'🔓 Chiffrement désactivé');
+  encrypted = !encrypted;
+  document.getElementById('lockBtn').classList.toggle('on', encrypted);
+  document.getElementById('msgInput').placeholder = encrypted ? '🔒 Message chiffré…' : 'Écrivez un message… (@mention)';
+  toast(encrypted ? '🔒 Chiffrement activé' : '🔓 Chiffrement désactivé');
 }
-
 function onTap(id,isEnc){if(!isEnc)return;const now=Date.now();if(tapTimers[id]&&now-tapTimers[id]<400){decrypt(id);delete tapTimers[id];}else tapTimers[id]=now;}
 function onDbl(id,isEnc){if(isEnc)decrypt(id);}
 async function decrypt(id){
@@ -700,9 +1119,9 @@ async function decrypt(id){
   if(data.success){b.classList.remove('encrypted');b.classList.add('decrypting');b.textContent=data.content;setTimeout(()=>b.classList.remove('decrypting'),500);}
 }
 
+/* ── EMOJI / MENTIONS ─────────────────────────── */
 function toggleEmoji(){const p=document.getElementById('emojiPicker');p.style.display=p.style.display==='none'?'flex':'none';}
 function insertEmoji(e){const inp=document.getElementById('msgInput'),pos=inp.selectionStart;inp.value=inp.value.slice(0,pos)+e+inp.value.slice(pos);inp.selectionStart=inp.selectionEnd=pos+e.length;inp.focus();document.getElementById('emojiPicker').style.display='none';}
-
 function handleMention(val){
   const m=val.match(/@(\w*)$/),dd=document.getElementById('mentionDd');
   if(!m){dd.style.display='none';return;}
@@ -712,48 +1131,67 @@ function handleMention(val){
   dd.style.display='block';
 }
 function selectMention(id,username){document.getElementById('msgInput').value=document.getElementById('msgInput').value.replace(/@\w*$/,'');document.getElementById('mentionDd').style.display='none';tagMember(id,username);document.getElementById('msgInput').focus();}
-
 function tagMember(id,username){if(taggedUsers.find(u=>u.id===id))return;taggedUsers.push({id,username});renderTagChips();toast(`✅ @${username} tagué(e)`);}
 function renderTagChips(){document.getElementById('tagChips').innerHTML=taggedUsers.map(u=>`<span class="tag-chip">@${u.username}<span class="tag-chip-x" onclick="rmTag(${u.id})">✕</span></span>`).join('');}
 function rmTag(id){taggedUsers=taggedUsers.filter(u=>u.id!==id);renderTagChips();}
 function clearTags(){taggedUsers=[];renderTagChips();}
-
 function replyTo(id,preview){replyToId=id;document.getElementById('replyBar').style.display='flex';document.getElementById('replyText').textContent=`↩ ${preview.slice(0,60)}…`;document.getElementById('msgInput').focus();}
 function cancelReply(){replyToId=null;document.getElementById('replyBar').style.display='none';}
 
+/* ── REACTIONS / SUPPRESSION ──────────────────── */
 async function reactMsg(id,emoji){await fetch('/api/chat/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,emoji})});lastId=Math.max(0,lastId-1);await pollMessages();}
+async function deleteMsg(id){if(!confirm('Supprimer ce message ?'))return;await fetch(`/api/chat/delete/${id}`,{method:'POST'});document.querySelector(`[data-id="${id}"]`)?.remove();toast('🗑 Message supprimé');}
 
+/* ── CONTEXT MENU ─────────────────────────────── */
 function ctxMenu(e,id,isMe){
   e.preventDefault(); document.getElementById('ctxMenu')?.remove();
   const b=document.getElementById(`bubble-${id}`), preview=(b?.textContent||'').slice(0,60);
   const menu=document.createElement('div'); menu.id='ctxMenu';
   menu.style.cssText=`position:fixed;top:${e.clientY}px;left:${e.clientX}px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px;z-index:9999;min-width:175px;box-shadow:0 0 30px rgba(0,0,0,.65),0 0 16px rgba(0,230,118,.05);animation:fadeUp .15s ease;font-size:14px;font-family:var(--font);`;
-  [['↩ Répondre',()=>replyTo(id,preview)],['😊 Réagir',()=>quickReact(id,e.clientX,e.clientY)],...(isMe?[['🗑 Supprimer',()=>deleteMsg(id)]]:[])]
-    .forEach(([label,fn])=>{const i=document.createElement('div');i.textContent=label;i.style.cssText='padding:9px 13px;border-radius:9px;cursor:pointer;color:var(--text);transition:background .1s;';i.onmouseenter=()=>i.style.background='var(--surface2)';i.onmouseleave=()=>i.style.background='';i.onclick=()=>{fn();menu.remove();};menu.appendChild(i);});
+  const items = [
+    ['↩ Répondre',  ()=>replyTo(id,preview)],
+    ['😊 Réagir',   ()=>quickReact(id,e.clientX,e.clientY)],
+    ...(isMe ? [['🗑 Supprimer', ()=>deleteMsg(id)]] : [])
+  ];
+  items.forEach(([label,fn])=>{const i=document.createElement('div');i.textContent=label;i.style.cssText='padding:9px 13px;border-radius:9px;cursor:pointer;color:var(--text);transition:background .1s;';i.onmouseenter=()=>i.style.background='var(--surface2)';i.onmouseleave=()=>i.style.background='';i.onclick=()=>{fn();menu.remove();};menu.appendChild(i);});
   document.body.appendChild(menu);
   setTimeout(()=>document.addEventListener('click',()=>menu.remove(),{once:true}),50);
 }
-
 function quickReact(id,x,y){
   document.getElementById('qrm')?.remove();
-  const emojis=['👍','❤️','😂','🔥','💯','🎉','👎','🚀'];
+  const emojis=['👍','❤️','😂','🔥','💯','🎉','👎','🚀','💎','📈'];
   const menu=document.createElement('div');menu.id='qrm';
   menu.style.cssText=`position:fixed;top:${y-58}px;left:${x}px;background:var(--surface);border:1px solid var(--border);border-radius:30px;padding:8px 12px;display:flex;gap:5px;z-index:9999;box-shadow:0 0 22px rgba(0,0,0,.55);animation:fadeUp .15s ease;`;
-  emojis.forEach(em=>{const s=document.createElement('span');s.textContent=em;s.style.cssText='font-size:25px;cursor:pointer;padding:3px;border-radius:8px;transition:transform .1s;';s.onmouseenter=()=>s.style.transform='scale(1.4)';s.onmouseleave=()=>s.style.transform='';s.onclick=()=>{reactMsg(id,em);menu.remove();};menu.appendChild(s);});
+  emojis.forEach(em=>{const s=document.createElement('span');s.textContent=em;s.style.cssText='font-size:24px;cursor:pointer;padding:3px;border-radius:8px;transition:transform .1s;';s.onmouseenter=()=>s.style.transform='scale(1.4)';s.onmouseleave=()=>s.style.transform='';s.onclick=()=>{reactMsg(id,em);menu.remove();};menu.appendChild(s);});
   document.body.appendChild(menu);
   setTimeout(()=>document.addEventListener('click',()=>menu.remove(),{once:true}),50);
 }
 
-async function deleteMsg(id){if(!confirm('Supprimer ce message ?'))return;await fetch(`/api/chat/delete/${id}`,{method:'POST'});document.querySelector(`[data-id="${id}"]`)?.remove();toast('🗑 Message supprimé');}
-
+/* ── UTILS ────────────────────────────────────── */
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
-
 function playPing(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=920;g.gain.setValueAtTime(.04,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.25);o.start();o.stop(ctx.currentTime+.25);}catch(e){}}
-
 function toast(msg,ms=2600){const t=document.createElement('div');t.className='glow-toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms);}
 
-document.addEventListener('click',e=>{if(!e.target.closest('#emojiPicker')&&!e.target.closest('.cbtn-emoji'))document.getElementById('emojiPicker').style.display='none';});
+/* Fermer modal signal sur Escape */
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape'){
+    document.getElementById('signalModal').classList.remove('open');
+    document.getElementById('imgLightbox').classList.remove('open');
+  }
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#emojiPicker')&&!e.target.closest('.cbtn-emoji'))
+    document.getElementById('emojiPicker').style.display='none';
+  if(e.target === document.getElementById('signalModal'))
+    document.getElementById('signalModal').classList.remove('open');
+});
 
-(async()=>{await pollMessages();const box=document.getElementById('chatMessages');box.scrollTop=box.scrollHeight;setInterval(pollMessages,2000);})();
+/* ── INIT ─────────────────────────────────────── */
+(async()=>{
+  await pollMessages();
+  const box = document.getElementById('chatMessages');
+  box.scrollTop = box.scrollHeight;
+  setInterval(pollMessages, 2000);
+})();
 </script>
 {% endblock %}

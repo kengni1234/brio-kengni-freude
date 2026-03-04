@@ -151,6 +151,62 @@
 /* Reminder box */
 .ag-rem-box { background:#0d1b2a; border:1px solid var(--border-color); border-radius:12px; padding:16px 18px; }
 .ag-sw-row  { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+/* ── Rich Text Editor (Notes Word-style) ── */
+.rte-wrap {
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0d1b2a;
+  transition: border-color .2s;
+}
+.rte-wrap:focus-within { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0,212,170,.12); }
+.rte-toolbar {
+  display: flex; flex-wrap: wrap; gap: 2px;
+  padding: 7px 10px; background: #0a1520;
+  border-bottom: 1px solid rgba(255,255,255,.07); align-items: center;
+}
+.rte-sep { width:1px; height:20px; background:rgba(255,255,255,.1); margin:0 4px; flex-shrink:0; }
+.rte-btn {
+  background: transparent; border: none; color: #8899aa; cursor: pointer;
+  border-radius: 6px; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .78rem; transition: all .15s; flex-shrink: 0;
+}
+.rte-btn:hover  { background: rgba(0,212,170,.12); color: #00d4aa; }
+.rte-btn.active { background: rgba(0,212,170,.2);  color: #00d4aa; }
+.rte-select {
+  background: #0d1b2a; border: 1px solid rgba(255,255,255,.1);
+  border-radius: 6px; color: #c0ccd8; font-size: .75rem;
+  padding: 3px 6px; cursor: pointer; height: 28px; outline: none; transition: border-color .15s;
+}
+.rte-select:focus { border-color: #00d4aa; }
+.rte-select option { background: #0a1520; }
+.rte-color-btn {
+  position: relative; width: 28px; height: 28px; border-radius: 6px; border: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 1px; background: transparent; transition: background .15s;
+}
+.rte-color-btn:hover { background: rgba(0,212,170,.12); }
+.rte-color-btn i { font-size: .75rem; color: #8899aa; }
+.rte-color-bar { width: 16px; height: 3px; border-radius: 2px; background: #00d4aa; }
+.rte-color-input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.rte-body {
+  min-height: 150px; max-height: 340px; overflow-y: auto;
+  padding: 12px 14px; font-size: .88rem; line-height: 1.65;
+  color: #d0dce8; outline: none; font-family: 'Inter', sans-serif;
+}
+.rte-body:empty::before { content: attr(data-placeholder); color: #344; pointer-events: none; }
+.rte-body::-webkit-scrollbar { width: 4px; }
+.rte-body::-webkit-scrollbar-thumb { background: rgba(0,212,170,.3); border-radius: 2px; }
+.rte-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 12px; background: #080f17;
+  border-top: 1px solid rgba(255,255,255,.05); font-size: .68rem; color: #3a4a5a;
+}
+.rte-save-indicator { display:flex; align-items:center; gap:5px; font-size:.68rem; transition:color .3s; }
+.rte-save-indicator.saved   { color: #00d4aa; }
+.rte-save-indicator.saving  { color: #ffd700; }
+.rte-save-indicator.unsaved { color: #ff7675; }
 /* Animations */
 @keyframes ag-up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 .ag-ani { animation:ag-up .35s ease both; }
@@ -423,10 +479,81 @@
             <textarea class="form-control ag-input" id="evDesc" rows="2" placeholder="Objectifs, ordre du jour…"></textarea>
           </div>
 
-          <!-- Notes -->
+          <!-- Notes Richtext -->
           <div class="col-12">
-            <label class="ag-label">Notes privées</label>
-            <textarea class="form-control ag-input" id="evNotes" rows="2" placeholder="Check-list, stratégie, mémo…"></textarea>
+            <label class="ag-label"><i class="fas fa-pen-nib me-1" style="color:#00d4aa;"></i>Notes privées <span style="color:#3a5a4a;font-size:.65rem;font-weight:400;text-transform:none;letter-spacing:0;">— mise en forme Word · sauvegarde auto</span></label>
+            <div class="rte-wrap" id="rteWrap">
+              <!-- Toolbar -->
+              <div class="rte-toolbar">
+                <!-- Police -->
+                <select class="rte-select" id="rteFont" onchange="rteFont(this.value)" title="Police" style="width:110px;">
+                  <option value="Inter">Inter</option>
+                  <option value="'Georgia',serif">Georgia</option>
+                  <option value="'Times New Roman',serif">Times New Roman</option>
+                  <option value="'Courier New',monospace">Courier New</option>
+                  <option value="'Space Mono',monospace">Space Mono</option>
+                  <option value="'Arial',sans-serif">Arial</option>
+                  <option value="'Trebuchet MS',sans-serif">Trebuchet</option>
+                  <option value="'Verdana',sans-serif">Verdana</option>
+                </select>
+                <!-- Taille -->
+                <select class="rte-select" id="rteSz" onchange="rteSize(this.value)" title="Taille" style="width:54px;">
+                  <option>10</option><option>11</option><option>12</option><option selected>14</option>
+                  <option>16</option><option>18</option><option>20</option><option>24</option>
+                  <option>28</option><option>32</option><option>36</option><option>48</option>
+                </select>
+                <div class="rte-sep"></div>
+                <!-- Gras Italique Souligné Barré -->
+                <button class="rte-btn" id="rte-b" onclick="rteExec('bold')"           title="Gras (Ctrl+B)"><b>B</b></button>
+                <button class="rte-btn" id="rte-i" onclick="rteExec('italic')"         title="Italique (Ctrl+I)"><i>I</i></button>
+                <button class="rte-btn" id="rte-u" onclick="rteExec('underline')"      title="Souligné (Ctrl+U)"><u>U</u></button>
+                <button class="rte-btn" id="rte-s" onclick="rteExec('strikeThrough')"  title="Barré"><s>S</s></button>
+                <div class="rte-sep"></div>
+                <!-- Couleur texte -->
+                <button class="rte-color-btn" title="Couleur du texte">
+                  <i class="fas fa-font"></i>
+                  <div class="rte-color-bar" id="rteColorBar"></div>
+                  <input class="rte-color-input" type="color" id="rteColor" value="#00d4aa"
+                         onchange="rteExec('foreColor',this.value);document.getElementById('rteColorBar').style.background=this.value;">
+                </button>
+                <!-- Surligneur -->
+                <button class="rte-color-btn" title="Surligneur">
+                  <i class="fas fa-highlighter"></i>
+                  <div class="rte-color-bar" id="rteHlBar" style="background:#ffd70066;"></div>
+                  <input class="rte-color-input" type="color" id="rteHl" value="#ffd700"
+                         onchange="rteExec('hiliteColor',this.value);document.getElementById('rteHlBar').style.background=this.value+'88';">
+                </button>
+                <div class="rte-sep"></div>
+                <!-- Alignements -->
+                <button class="rte-btn" onclick="rteExec('justifyLeft')"   title="Aligner à gauche"><i class="fas fa-align-left"></i></button>
+                <button class="rte-btn" onclick="rteExec('justifyCenter')" title="Centrer"><i class="fas fa-align-center"></i></button>
+                <button class="rte-btn" onclick="rteExec('justifyRight')"  title="Aligner à droite"><i class="fas fa-align-right"></i></button>
+                <button class="rte-btn" onclick="rteExec('justifyFull')"   title="Justifier"><i class="fas fa-align-justify"></i></button>
+                <div class="rte-sep"></div>
+                <!-- Listes -->
+                <button class="rte-btn" onclick="rteExec('insertUnorderedList')" title="Liste à puces"><i class="fas fa-list-ul"></i></button>
+                <button class="rte-btn" onclick="rteExec('insertOrderedList')"   title="Liste numérotée"><i class="fas fa-list-ol"></i></button>
+                <div class="rte-sep"></div>
+                <!-- Indent -->
+                <button class="rte-btn" onclick="rteExec('outdent')" title="Diminuer le retrait"><i class="fas fa-outdent"></i></button>
+                <button class="rte-btn" onclick="rteExec('indent')"  title="Augmenter le retrait"><i class="fas fa-indent"></i></button>
+                <div class="rte-sep"></div>
+                <!-- Lien & Effacer -->
+                <button class="rte-btn" onclick="rteLink()"           title="Insérer un lien"><i class="fas fa-link"></i></button>
+                <button class="rte-btn" onclick="rteExec('removeFormat')" title="Effacer la mise en forme"><i class="fas fa-eraser"></i></button>
+              </div>
+              <!-- Zone d'édition -->
+              <div class="rte-body" id="evNotes" contenteditable="true"
+                   data-placeholder="Check-list, stratégie, mémo…"
+                   onkeyup="rteChange()" onmouseup="rteUpdateToolbar()" oninput="rteMarkDirty()"></div>
+              <!-- Footer status -->
+              <div class="rte-footer">
+                <span id="rteWordCount">0 mots</span>
+                <span class="rte-save-indicator saved" id="rteSaveStatus">
+                  <i class="fas fa-check-circle"></i> Sauvegardé
+                </span>
+              </div>
+            </div>
           </div>
 
           <!-- Rappels -->
@@ -575,7 +702,10 @@ function filterEvs(type, btn) {
 function openModal(prefill={}) {
   document.getElementById('modalTitle').textContent = '📅 Nouvel événement';
   document.getElementById('eventId').value = '';
-  ['evTitle','evDesc','evNotes','evLocation'].forEach(id => { document.getElementById(id).value=''; });
+  ['evTitle','evDesc','evLocation'].forEach(id => { document.getElementById(id).value=''; });
+  const notesEl = document.getElementById('evNotes');
+  if(notesEl) notesEl.innerHTML = '';
+  rteMarkSaved();
   document.getElementById('evRecurrence').value = 'none';
   document.getElementById('evReminder').value   = '30';
   document.getElementById('evEmailRem').checked = true;
@@ -596,7 +726,9 @@ function openEditModal(id) {
   document.getElementById('eventId').value  = id;
   document.getElementById('evTitle').value  = ev.title;
   document.getElementById('evDesc').value   = ev.extendedProps.description||'';
-  document.getElementById('evNotes').value  = ev.extendedProps.notes||'';
+  const notesEl2 = document.getElementById('evNotes');
+  if(notesEl2) notesEl2.innerHTML = ev.extendedProps.notes||'';
+  rteMarkSaved();
   document.getElementById('evLocation').value = ev.extendedProps.location||'';
   document.getElementById('evStart').value  = (ev.start||'').slice(0,16);
   document.getElementById('evEnd').value    = (ev.end||'').slice(0,16);
@@ -640,7 +772,7 @@ function saveEvent() {
       end_datetime:     end   + (end.length===16?':00':''),
       description:      document.getElementById('evDesc').value,
       location:         document.getElementById('evLocation').value,
-      notes:            document.getElementById('evNotes').value,
+      notes:            document.getElementById('evNotes').innerHTML,
       recurrence:       document.getElementById('evRecurrence').value,
       reminder_minutes: parseInt(document.getElementById('evReminder').value),
       email_reminder:   document.getElementById('evEmailRem').checked?1:0,
@@ -724,6 +856,169 @@ function showDetail(fcEv) {
 
   new bootstrap.Modal(document.getElementById('detailModal')).show();
 }
+
+
+// ════════════════════════════════════════════════════════
+// RICH TEXT EDITOR — Notes Word-style
+// ════════════════════════════════════════════════════════
+let _rteDirty     = false;
+let _rteAutoTimer = null;
+let _rteSaveEvent = null;  // id of current event being edited
+
+/* ── Core exec ── */
+function rteExec(cmd, val=null) {
+  document.getElementById('evNotes').focus();
+  document.execCommand(cmd, false, val);
+  rteUpdateToolbar();
+  rteMarkDirty();
+}
+
+/* ── Font family ── */
+function rteFont(f) {
+  document.getElementById('evNotes').focus();
+  document.execCommand('fontName', false, f);
+  rteMarkDirty();
+}
+
+/* ── Font size (uses px via inline span) ── */
+function rteSize(px) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return;
+  document.execCommand('fontSize', false, '7');
+  document.querySelectorAll('#evNotes font[size="7"]').forEach(el => {
+    el.removeAttribute('size');
+    el.style.fontSize = px + 'px';
+  });
+  rteMarkDirty();
+}
+
+/* ── Insert link ── */
+function rteLink() {
+  const url = prompt('URL du lien :', 'https://');
+  if (url) rteExec('createLink', url);
+}
+
+/* ── Update toolbar active states ── */
+function rteUpdateToolbar() {
+  ['bold','italic','underline','strikeThrough'].forEach(cmd => {
+    const map = {bold:'rte-b', italic:'rte-i', underline:'rte-u', strikeThrough:'rte-s'};
+    const btn = document.getElementById(map[cmd]);
+    if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
+  });
+  // Word count
+  const txt = document.getElementById('evNotes').innerText || '';
+  const wc  = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+  const el  = document.getElementById('rteWordCount');
+  if (el) el.textContent = wc + ' mot' + (wc>1?'s':'');
+}
+
+/* ── Keyboard shortcuts ── */
+document.addEventListener('keydown', function(e) {
+  const notes = document.getElementById('evNotes');
+  if (!notes || document.activeElement !== notes) return;
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'b') { e.preventDefault(); rteExec('bold'); }
+    if (e.key === 'i') { e.preventDefault(); rteExec('italic'); }
+    if (e.key === 'u') { e.preventDefault(); rteExec('underline'); }
+    if (e.key === 's') { e.preventDefault(); rteSaveNow(); }
+  }
+});
+
+/* ── Dirty / save status ── */
+function rteMarkDirty() {
+  _rteDirty = true;
+  const el = document.getElementById('rteSaveStatus');
+  if (el) {
+    el.className = 'rte-save-indicator unsaved';
+    el.innerHTML = '<i class="fas fa-circle"></i> Non sauvegardé';
+  }
+  // Auto-save debounce 2s
+  clearTimeout(_rteAutoTimer);
+  _rteAutoTimer = setTimeout(rteSaveNow, 2000);
+}
+
+function rteMarkSaved() {
+  _rteDirty = false;
+  clearTimeout(_rteAutoTimer);
+  const el = document.getElementById('rteSaveStatus');
+  if (el) {
+    el.className = 'rte-save-indicator saved';
+    el.innerHTML = '<i class="fas fa-check-circle"></i> Sauvegardé';
+  }
+}
+
+function rteMarkSaving() {
+  const el = document.getElementById('rteSaveStatus');
+  if (el) {
+    el.className = 'rte-save-indicator saving';
+    el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde…';
+  }
+}
+
+/* ── Auto-save to server ── */
+function rteSaveNow() {
+  if (!_rteDirty) return;
+  const id = document.getElementById('eventId').value;
+  if (!id) {
+    // New event not saved yet — save to localStorage as draft
+    try {
+      const draft = {
+        title:   document.getElementById('evTitle')?.value || '',
+        notes:   document.getElementById('evNotes')?.innerHTML || '',
+        ts:      Date.now()
+      };
+      localStorage.setItem('ag_draft_notes', JSON.stringify(draft));
+    } catch(e) {}
+    rteMarkSaved();
+    return;
+  }
+  rteMarkSaving();
+  fetch('/api/agenda/events/' + id, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ notes: document.getElementById('evNotes').innerHTML })
+  })
+  .then(r => r.ok ? r.json() : null)
+  .then(d => {
+    if (d && d.success) rteMarkSaved();
+    else rteMarkDirty();
+  })
+  .catch(() => {
+    // Offline fallback : save to localStorage
+    try {
+      localStorage.setItem('ag_notes_' + id, document.getElementById('evNotes').innerHTML);
+    } catch(e) {}
+    rteMarkSaved(); // silently save locally
+  });
+}
+
+function rteChange() { rteUpdateToolbar(); }
+
+/* ── Restore draft on modal open if new event ── */
+function rteCheckDraft() {
+  const id = document.getElementById('eventId').value;
+  if (id) return; // editing existing, skip
+  try {
+    const raw = localStorage.getItem('ag_draft_notes');
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    if (draft && draft.notes && (Date.now() - draft.ts < 86400000)) {
+      if (confirm('📝 Un brouillon de notes existe. Restaurer ?')) {
+        document.getElementById('evNotes').innerHTML = draft.notes;
+        rteUpdateToolbar();
+      }
+    }
+  } catch(e) {}
+}
+
+/* ── Init toolbar when modal opens ── */
+document.addEventListener('shown.bs.modal', function(e) {
+  if (e.target.id === 'agendaModal') {
+    rteUpdateToolbar();
+    rteCheckDraft();
+    document.getElementById('evNotes').focus();
+  }
+});
 
 // ════════════════════════════════════════════════════════
 // UTILS

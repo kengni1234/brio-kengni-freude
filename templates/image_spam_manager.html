@@ -269,11 +269,12 @@ input[type="range"] { flex: 2; margin-right: 15px; }
             <div class="upload-zone" id="dropZone">
                 <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
                 <p>Glissez vos images ici ou cliquez pour sélectionner</p>
-                <input type="file" id="imageUpload" multiple accept="image/*" style="display:none;">
-                <button class="btn-upload" onclick="document.getElementById('imageUpload').click()">
+                <button class="btn-upload" onclick="event.stopPropagation(); document.getElementById('imageUpload').click()">
                     <i class="fas fa-plus"></i> Ajouter Images
                 </button>
             </div>
+            <!-- Input FILE hors de la drop zone pour éviter les conflits -->
+            <input type="file" id="imageUpload" multiple accept="image/*" style="display:none;">
 
             <div class="spam-gallery" id="imageGallery"></div>
 
@@ -349,6 +350,12 @@ let isAnimating = false;
 function openSpamPopup()  { document.getElementById('imageSpamPopup').style.display = 'block'; }
 function closeSpamPopup() { document.getElementById('imageSpamPopup').style.display = 'none'; }
 
+// Clic sur la drop zone (hors bouton) → ouvre le sélecteur
+document.getElementById('dropZone').addEventListener('click', function(e) {
+    if (e.target.classList.contains('btn-upload') || e.target.closest('.btn-upload')) return;
+    document.getElementById('imageUpload').click();
+});
+
 document.getElementById('imageUpload').addEventListener('change', function(e) {
     Array.from(e.target.files).forEach(file => {
         if (file.type.startsWith('image/')) {
@@ -357,6 +364,8 @@ document.getElementById('imageUpload').addEventListener('change', function(e) {
             reader.readAsDataURL(file);
         }
     });
+    // Reset input pour permettre de re-sélectionner le même fichier
+    this.value = '';
 });
 
 const dropZone = document.getElementById('dropZone');
@@ -374,11 +383,20 @@ dropZone.addEventListener('drop', e => {
 });
 
 function addImageToGallery(src) {
-    uploadedImages.push(src);
+    const idx = uploadedImages.push(src) - 1;
     const gallery = document.getElementById('imageGallery');
+
+    // Afficher la galerie si elle était vide
+    gallery.style.display = 'grid';
+
     const item = document.createElement('div');
     item.className = 'gallery-item';
-    item.innerHTML = `<img src="${src}" alt="Image"><button class="delete-btn" onclick="deleteImage(${uploadedImages.length-1})"><i class="fas fa-times"></i></button>`;
+    item.dataset.index = idx;
+    item.innerHTML = `
+        <img src="${src}" alt="Image" onerror="this.parentElement.remove()">
+        <button class="delete-btn" onclick="deleteImage(${idx})">
+            <i class="fas fa-times"></i>
+        </button>`;
     gallery.appendChild(item);
 }
 

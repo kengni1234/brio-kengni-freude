@@ -4,22 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Kengni Finance{% endblock %}</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/logo.jpeg') }}">
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
+
     <style>
         :root {
             --primary-color: #00d4aa;
@@ -33,6 +33,20 @@
             --text-primary: #ffffff;
             --text-secondary: #a8b2d1;
             --border-color: #2d3748;
+
+            /* ── Aliases dashboard / templates ── */
+            --bg:        var(--dark-bg);
+            --bg-card:   var(--secondary-color);
+            --bg-card2:  var(--accent-color);
+            --border:    var(--border-color);
+            --accent:    var(--primary-color);
+            --accent2:   #f59e0b;
+            --accent3:   #7c6aff;
+            --danger:    var(--danger-color);
+            --success:   var(--success-color);
+            --text-muted: var(--text-secondary);
+            --text-dim:  rgba(168,178,209,.55);
+            --font-mono: 'Space Mono', 'DM Mono', 'JetBrains Mono', monospace;
         }
 
         * {
@@ -55,6 +69,13 @@
             --text-primary: #212529;
             --text-secondary: #6c757d;
             --border-color: #dee2e6;
+            /* aliases light */
+            --bg: #ffffff;
+            --bg-card: #f8f9fa;
+            --bg-card2: #e9ecef;
+            --border: #dee2e6;
+            --text-muted: #6c757d;
+            --text-dim: rgba(100,116,139,.7);
         }
 
         /* Sidebar */
@@ -142,6 +163,18 @@
             font-size: 1.2rem;
             width: 25px;
             text-align: center;
+        }
+
+        /* Séparateur de section dans le menu */
+        .sidebar-section-label {
+            padding: 0.6rem 1.5rem 0.3rem;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            opacity: 0.5;
+            margin-top: 0.5rem;
         }
 
         /* Main Content */
@@ -431,7 +464,6 @@
            RESPONSIVE MOBILE — SYSTÈME COMPLET
         ═══════════════════════════════════════════════ */
 
-        /* Overlay sombre derrière le sidebar */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -443,7 +475,6 @@
         }
         .sidebar-overlay.active { display: block; }
 
-        /* Bouton fermer dans le sidebar */
         .sidebar-close-btn {
             display: none;
             position: absolute;
@@ -464,7 +495,6 @@
         }
         .sidebar-close-btn:hover { background: rgba(255,71,87,.3); }
 
-        /* Bouton hamburger dans la topbar */
         .hamburger-btn {
             display: none;
             align-items: center;
@@ -482,12 +512,9 @@
         }
         .hamburger-btn:hover { background: rgba(0,212,170,.25); }
 
-        /* Cacher l'ancien bouton flottant */
         .mobile-menu-toggle { display: none !important; }
 
         @media (max-width: 768px) {
-
-            /* ── Sidebar drawer ── */
             .sidebar {
                 transform: translateX(-100%);
                 z-index: 1000;
@@ -499,17 +526,14 @@
             }
             .sidebar-close-btn { display: flex; }
 
-            /* ── Main content pleine largeur ── */
             .main-content {
                 margin-left: 0 !important;
                 padding: .875rem !important;
                 width: 100% !important;
             }
 
-            /* ── Hamburger visible ── */
             .hamburger-btn { display: flex; }
 
-            /* ── Top bar mobile ── */
             .top-bar {
                 padding: .75rem 1rem !important;
                 border-radius: 12px !important;
@@ -526,7 +550,6 @@
             }
             .top-bar-actions { gap: .4rem !important; }
 
-            /* Masquer le nom d'utilisateur, garder l'avatar */
             .user-profile span { display: none; }
             .user-profile {
                 padding: .4rem !important;
@@ -538,15 +561,12 @@
                 padding: .45rem .7rem !important;
             }
 
-            /* ── Tables — scroll horizontal ── */
             .custom-table {
                 overflow-x: auto !important;
                 -webkit-overflow-scrolling: touch !important;
                 border-radius: 12px !important;
             }
-            .custom-table table {
-                min-width: 520px;
-            }
+            .custom-table table { min-width: 520px; }
             .custom-table th,
             .custom-table td {
                 padding: .6rem .75rem !important;
@@ -554,7 +574,6 @@
                 white-space: nowrap;
             }
 
-            /* ── Stat cards — 2 colonnes ── */
             .row.g-4 > .col-md-3,
             .row.g-4 > .col-lg-3 {
                 flex: 0 0 50% !important;
@@ -568,14 +587,12 @@
                 font-size: 1.3rem !important;
             }
 
-            /* ── Colonnes Bootstrap → pleine largeur ── */
             .col-lg-8, .col-lg-7, .col-lg-6,
             .col-md-8, .col-md-7, .col-md-6 {
                 flex: 0 0 100% !important;
                 max-width: 100% !important;
             }
 
-            /* ── Modals Bootstrap ── */
             .modal-dialog {
                 margin: .5rem !important;
                 max-width: calc(100vw - 1rem) !important;
@@ -588,28 +605,25 @@
                 gap: .5rem !important;
             }
 
-            /* ── Formulaires ── */
-            .form-control,
-            .form-select,
-            input, select, textarea {
-                font-size: 16px !important; /* évite le zoom iOS */
+            .form-control, .form-select, input, select, textarea {
+                font-size: 16px !important;
             }
             .row.g-2 > [class*="col-"] {
                 flex: 0 0 100% !important;
                 max-width: 100% !important;
             }
 
-            /* ── Barres d'actions ── */
             .d-flex.justify-content-between,
             .action-bar {
                 flex-wrap: wrap !important;
                 gap: .5rem !important;
             }
 
-            /* ── Espacements ── */
             .mb-4 { margin-bottom: 1rem !important; }
             .p-4  { padding: 1rem !important; }
             .container-fluid { padding: 0 !important; }
+
+            .sidebar-section-label { display: none; }
         }
 
         @media (max-width: 480px) {
@@ -623,46 +637,54 @@
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--secondary-color);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary-color);
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--success-color);
-        }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--secondary-color); }
+        ::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--success-color); }
 
         /* Animations */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
-    
+
     {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+
+    <style>
+        /* ── Boutons globaux utilisés par les templates ── */
+        .btn-accent {
+            display: inline-flex; align-items: center; gap: .4rem;
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            color: #07120d; border: none; border-radius: 9px;
+            padding: .55rem 1.1rem; font-size: .82rem; font-weight: 700;
+            cursor: pointer; text-decoration: none; transition: all .2s;
+            font-family: inherit;
+        }
+        .btn-accent:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0,212,170,.35); color: #07120d; }
+        .btn-ghost {
+            display: inline-flex; align-items: center; gap: .4rem;
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text-muted); border-radius: 8px;
+            padding: .4rem .9rem; font-size: .78rem; font-weight: 600;
+            cursor: pointer; text-decoration: none; transition: all .2s;
+            font-family: inherit;
+        }
+        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    </style>
 </head>
 <body class="{{ session.get('theme', 'dark') }}-theme">
-    
+
     <!-- Overlay mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-        <!-- Bouton fermer (mobile) -->
         <button class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Fermer le menu">
             <i class="fas fa-times"></i>
         </button>
@@ -671,8 +693,11 @@
             <h4>Kengni Finance</h4>
             <p>v2.0 - IA Enhanced</p>
         </div>
-        
+
         <ul class="sidebar-menu">
+
+            <!-- ── PRINCIPAL ── -->
+            <li><div class="sidebar-section-label">Principal</div></li>
             <li>
                 <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
                     <i class="fas fa-home"></i>
@@ -703,6 +728,16 @@
                     <span>Journal Trading</span>
                 </a>
             </li>
+
+            <!-- ── MARCHÉ & IA ── -->
+            <li><div class="sidebar-section-label">Marché & IA</div></li>
+            <li>
+                <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-newspaper"></i>
+                    <span>Actualités</span>
+                    <span style="background:rgba(34,197,94,.2);color:#4ade80;border:1px solid rgba(34,197,94,.3);font-size:.55rem;padding:.1rem .35rem;border-radius:10px;margin-left:auto;font-weight:700;">LIVE</span>
+                </a>
+            </li>
             <li>
                 <a href="{{ url_for('analysis') }}" class="{% if request.endpoint == 'analysis' %}active{% endif %}">
                     <i class="fas fa-brain"></i>
@@ -715,18 +750,18 @@
                     <span>Assistant IA</span>
                 </a>
             </li>
+
+            <!-- ── BOUTIQUE ── -->
+            <li><div class="sidebar-section-label">Boutique</div></li>
             <li>
-                <a href="{{ url_for('reports') }}" class="{% if request.endpoint == 'reports' %}active{% endif %}">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Rapports</span>
+                <a href="{{ url_for('chat_page') }}" class="{% if request.endpoint == 'chat_page' %}active{% endif %}">
+                    <i class="fas fa-store"></i>
+                    <span>Documents</span>
                 </a>
             </li>
-            <li>
-                <a href="{{ url_for('history') }}" class="{% if request.endpoint == 'history' %}active{% endif %}">
-                    <i class="fas fa-history"></i>
-                    <span>Historique</span>
-                </a>
-            </li>
+
+            <!-- ── FORMATION ── -->
+            <li><div class="sidebar-section-label">Formation</div></li>
             <li>
                 <a href="{{ url_for('training') }}" class="{% if request.endpoint == 'training' %}active{% endif %}" style="position:relative;">
                     <i class="fas fa-graduation-cap"></i>
@@ -763,6 +798,45 @@
                 </a>
             </li>
             {% endif %}
+
+            <!-- ── SONDAGE ── -->
+            <li><div class="sidebar-section-label">Communauté</div></li>
+            <li>
+                <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}" style="position:relative;">
+                    <i class="fas fa-poll"></i>
+                    <span>Sondage</span>
+                    <span style="
+                        position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                        background:linear-gradient(135deg,#f5c542,#fb923c);
+                        color:#000; border-radius:20px;
+                        padding:.05rem .45rem; font-size:.58rem; font-weight:800;
+                        line-height:1.6;
+                    ">NEW</span>
+                </a>
+            </li>
+            {% if session.get('role') in ('admin', 'superadmin') %}
+            <li>
+                <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Stats Sondage</span>
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- ── OUTILS ── -->
+            <li><div class="sidebar-section-label">Outils</div></li>
+            <li>
+                <a href="{{ url_for('reports') }}" class="{% if request.endpoint == 'reports' %}active{% endif %}">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Rapports</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('history') }}" class="{% if request.endpoint == 'history' %}active{% endif %}">
+                    <i class="fas fa-history"></i>
+                    <span>Historique</span>
+                </a>
+            </li>
             <li>
                 <a href="{{ url_for('bloc_notes') }}" class="{% if request.endpoint == 'bloc_notes' %}active{% endif %}">
                     <i class="fas fa-sticky-note"></i>
@@ -775,6 +849,9 @@
                     <span>Images Animées</span>
                 </a>
             </li>
+
+            <!-- ── SYSTÈME ── -->
+            <li><div class="sidebar-section-label">Système</div></li>
             <li>
                 <a href="{{ url_for('notifications') }}" class="{% if request.endpoint == 'notifications' %}active{% endif %}">
                     <i class="fas fa-bell"></i>
@@ -806,6 +883,7 @@
                     <span>Déconnexion</span>
                 </a>
             </li>
+
         </ul>
     </aside>
 
@@ -813,288 +891,219 @@
     <main class="main-content">
         <!-- Top Bar -->
         <div class="top-bar">
-            <!-- Hamburger mobile -->
             <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menu">
                 <i class="fas fa-bars" id="hamburger-icon"></i>
             </button>
             <h1>{% block page_title %}Dashboard{% endblock %}</h1>
-            
+
             <div class="top-bar-actions">
+                {% block topbar_actions %}{% endblock %}
                 <button class="theme-toggle" onclick="toggleTheme()">
                     <i class="fas fa-moon" id="theme-icon"></i>
                 </button>
-                
+
+                <a href="{{ url_for('chat_page') }}" class="notification-badge" title="Chat" id="topbarChatBtn" style="text-decoration:none; color:var(--text-primary);">
+                    <i class="fas fa-comments"></i>
+                    <span class="badge" id="topbarChatBadge" style="display:none;"></span>
+                </a>
+
                 <div class="notification-badge" onclick="window.location.href='{{ url_for('notifications') }}'">
                     <i class="fas fa-bell"></i>
                     {% if unread_notifications and unread_notifications > 0 %}
                     <span class="badge">{{ unread_notifications }}</span>
                     {% endif %}
                 </div>
-                
+
                 <div class="user-profile" onclick="window.location.href='{{ url_for('settings') }}'">
                     <img src="{{ url_for('static', filename='img/logo.jpeg') }}" alt="User">
                     <span>{{ session.get('username', 'User') }}</span>
                 </div>
             </div>
         </div>
-        
+
         <!-- Page Content -->
         {% block content %}{% endblock %}
     </main>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    
+
     <script>
-        // Theme Toggle
         function toggleTheme() {
             const body = document.body;
             const themeIcon = document.getElementById('theme-icon');
-            
             if (body.classList.contains('light-theme')) {
                 body.classList.remove('light-theme');
                 body.classList.add('dark-theme');
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
                 localStorage.setItem('theme', 'dark');
-                
-                // Update server
-                fetch('/api/update-settings', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({theme: 'dark'})
-                });
+                fetch('/api/update-settings', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({theme: 'dark'}) });
             } else {
                 body.classList.remove('dark-theme');
                 body.classList.add('light-theme');
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
                 localStorage.setItem('theme', 'light');
-                
-                // Update server
-                fetch('/api/update-settings', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({theme: 'light'})
-                });
+                fetch('/api/update-settings', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({theme: 'light'}) });
             }
         }
 
-        // Sidebar Toggle — Système complet mobile
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            if (sidebar.classList.contains('active')) {
-                closeSidebar();
-            } else {
-                openSidebar();
-            }
+            document.getElementById('sidebar').classList.contains('active') ? closeSidebar() : openSidebar();
         }
-
         function openSidebar() {
             document.getElementById('sidebar').classList.add('active');
             document.getElementById('sidebarOverlay').classList.add('active');
             const icon = document.getElementById('hamburger-icon');
-            if (icon) { icon.classList.replace('fa-bars', 'fa-times'); }
-            document.body.style.overflow = 'hidden'; // empêche scroll body
+            if (icon) icon.classList.replace('fa-bars', 'fa-times');
+            document.body.style.overflow = 'hidden';
         }
-
         function closeSidebar() {
             document.getElementById('sidebar').classList.remove('active');
             document.getElementById('sidebarOverlay').classList.remove('active');
             const icon = document.getElementById('hamburger-icon');
-            if (icon) { icon.classList.replace('fa-times', 'fa-bars'); }
+            if (icon) icon.classList.replace('fa-times', 'fa-bars');
             document.body.style.overflow = '';
         }
 
-        // Fermer sidebar en cliquant un lien (mobile)
         document.querySelectorAll('.sidebar-menu a').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 768) closeSidebar();
-            });
+            link.addEventListener('click', () => { if (window.innerWidth <= 768) closeSidebar(); });
         });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+        window.addEventListener('resize', () => { if (window.innerWidth > 768) closeSidebar(); });
 
-        // Fermer avec Echap
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeSidebar();
-        });
-
-        // Fermer si resize vers desktop
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) closeSidebar();
-        });
-
-        // Wrapper scroll horizontal auto sur les tableaux
         function wrapTablesForMobile() {
             if (window.innerWidth > 768) return;
             document.querySelectorAll('.custom-table').forEach(ct => {
-                // S'assurer que overflow-x est bien appliqué
                 ct.style.overflowX = 'auto';
                 ct.style.webkitOverflowScrolling = 'touch';
             });
         }
-
         document.addEventListener('DOMContentLoaded', wrapTablesForMobile);
 
-        // Initialize theme on page load
         document.addEventListener('DOMContentLoaded', function() {
             const theme = localStorage.getItem('theme') || 'dark';
-            const body = document.body;
             const themeIcon = document.getElementById('theme-icon');
-            
             if (theme === 'light') {
-                body.classList.add('light-theme');
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
+                document.body.classList.add('light-theme');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
             } else {
-                body.classList.add('dark-theme');
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
+                document.body.classList.add('dark-theme');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
             }
         });
 
-        // Format currency
         function formatCurrency(amount, currency = '€') {
-            return new Intl.NumberFormat('fr-FR', {
-                style: 'currency',
-                currency: currency === '€' ? 'EUR' : currency
-            }).format(amount);
+            return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency === '€' ? 'EUR' : currency }).format(amount);
         }
-
-        // Format date
         function formatDate(dateString) {
-            const date = new Date(dateString);
-            return new Intl.DateTimeFormat('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).format(date);
+            return new Intl.DateTimeFormat('fr-FR', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(dateString));
         }
-
-        // Show toast notification
         function showToast(message, type = 'info') {
-            const toastContainer = document.getElementById('toast-container') || createToastContainer();
-            
+            const container = document.getElementById('toast-container') || (() => {
+                const c = document.createElement('div');
+                c.id = 'toast-container';
+                Object.assign(c.style, { position:'fixed', top:'20px', right:'20px', zIndex:'9999' });
+                document.body.appendChild(c); return c;
+            })();
             const toast = document.createElement('div');
             toast.className = `alert alert-${type} alert-dismissible fade show`;
             toast.style.marginBottom = '10px';
-            toast.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
-        }
-
-        function createToastContainer() {
-            const container = document.createElement('div');
-            container.id = 'toast-container';
-            container.style.position = 'fixed';
-            container.style.top = '20px';
-            container.style.right = '20px';
-            container.style.zIndex = '9999';
-            document.body.appendChild(container);
-            return container;
+            toast.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
         }
     </script>
-    
+
     {% block extra_js %}{% endblock %}
+    {% block extra_scripts %}{% endblock %}
 
     <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
 
-    <!-- ═══════════════════════════════════════════════
-         BOUTON CHAT FLOTTANT — toujours visible
-    ═══════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════
+         BOUTONS FLOTTANTS (Chat + Dashboard)
+    ═══════════════════════════════════════ -->
     <style>
         .chat-fab {
             position: fixed;
-            bottom: 28px;
-            right: 28px;
+            bottom: 90px; left: 28px;
             z-index: 9990;
-            width: 58px;
-            height: 58px;
+            width: 58px; height: 58px;
             border-radius: 50%;
             background: linear-gradient(135deg, #00d4aa, #00ff88);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            color: #07120d;
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; color: #07120d;
             box-shadow: 0 6px 24px rgba(0,212,170,0.5), 0 2px 8px rgba(0,0,0,0.4);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform .2s, box-shadow .2s;
             text-decoration: none;
             animation: chatPulse 3s ease-in-out infinite;
         }
         .chat-fab:hover {
             transform: scale(1.12) translateY(-3px);
             box-shadow: 0 12px 35px rgba(0,212,170,0.65), 0 4px 12px rgba(0,0,0,0.4);
-            color: #07120d;
-            text-decoration: none;
+            color: #07120d; text-decoration: none;
         }
         .chat-fab:active { transform: scale(0.96); }
-
-        /* Badge notifications non lues */
         .chat-fab .chat-badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: #ff4757;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 0.68rem;
-            font-weight: 900;
-            display: none;
-            align-items: center;
-            justify-content: center;
+            position: absolute; top: -4px; right: -4px;
+            background: #ff4757; color: white;
+            border-radius: 50%; width: 20px; height: 20px;
+            font-size: .68rem; font-weight: 900;
+            display: none; align-items: center; justify-content: center;
             border: 2px solid var(--secondary-color, #1a1a2e);
         }
         .chat-fab .chat-badge.visible { display: flex; }
-
-        /* Tooltip */
         .chat-fab::after {
-            content: 'Chat';
-            position: absolute;
-            right: 68px;
-            background: rgba(0,0,0,0.85);
-            color: #00d4aa;
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            font-weight: 800;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            border: 1px solid rgba(0,212,170,0.3);
+            content: 'Chat'; position: absolute; left: 68px;
+            background: rgba(0,0,0,.85); color: #00d4aa;
+            padding: 5px 12px; border-radius: 8px;
+            font-size: .78rem; font-weight: 800; white-space: nowrap;
+            opacity: 0; pointer-events: none; transition: opacity .2s;
+            border: 1px solid rgba(0,212,170,.3);
         }
         .chat-fab:hover::after { opacity: 1; }
-
         @keyframes chatPulse {
-            0%, 100% { box-shadow: 0 6px 24px rgba(0,212,170,0.5), 0 2px 8px rgba(0,0,0,0.4); }
-            50%       { box-shadow: 0 6px 32px rgba(0,212,170,0.75), 0 0 0 8px rgba(0,212,170,0.1); }
+            0%,100% { box-shadow: 0 6px 24px rgba(0,212,170,0.5), 0 2px 8px rgba(0,0,0,0.4); }
+            50%      { box-shadow: 0 6px 32px rgba(0,212,170,0.75), 0 0 0 8px rgba(0,212,170,0.1); }
         }
 
-        /* Mobile — plus petit et plus bas */
+        .dashboard-fab {
+            position: fixed;
+            bottom: 28px; left: 28px;
+            z-index: 9989;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c6aff, #4a9eff);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #ffffff;
+            box-shadow: 0 6px 24px rgba(124,106,255,0.5), 0 2px 8px rgba(0,0,0,0.4);
+            transition: transform .2s, box-shadow .2s;
+            text-decoration: none;
+        }
+        .dashboard-fab:hover {
+            transform: scale(1.12) translateY(-3px);
+            box-shadow: 0 12px 35px rgba(124,106,255,0.65), 0 4px 12px rgba(0,0,0,0.4);
+            color: #ffffff; text-decoration: none;
+        }
+        .dashboard-fab:active { transform: scale(0.96); }
+        .dashboard-fab::after {
+            content: 'Dashboard'; position: absolute; left: 60px;
+            background: rgba(0,0,0,.85); color: #7c6aff;
+            padding: 5px 12px; border-radius: 8px;
+            font-size: .78rem; font-weight: 800; white-space: nowrap;
+            opacity: 0; pointer-events: none; transition: opacity .2s;
+            border: 1px solid rgba(124,106,255,.3);
+        }
+        .dashboard-fab:hover::after { opacity: 1; }
+
         @media (max-width: 768px) {
-            .chat-fab {
-                bottom: 18px;
-                right: 18px;
-                width: 50px;
-                height: 50px;
-                font-size: 1.2rem;
-            }
+            .chat-fab { bottom: 82px !important; left: 16px !important; width: 48px !important; height: 48px !important; font-size: 1.15rem !important; }
+            .dashboard-fab { bottom: 24px; left: 16px; width: 44px; height: 44px; font-size: 1.1rem; }
+            .dashboard-fab::after, .chat-fab::after { display: none !important; }
         }
     </style>
 
@@ -1103,21 +1112,28 @@
         <span class="chat-badge" id="chatBadge"></span>
     </a>
 
+    {% if request.endpoint != 'dashboard' %}
+    <a href="{{ url_for('dashboard') }}" class="dashboard-fab" title="Dashboard">
+        <i class="fas fa-home"></i>
+    </a>
+    {% endif %}
+
     <script>
-    // Vérifier les messages non lus toutes les 30s
     (function checkUnreadChat() {
         fetch('/api/chat/messages?limit=1')
             .then(r => r.json())
             .then(data => {
                 const badge = document.getElementById('chatBadge');
+                const topBadge = document.getElementById('topbarChatBadge');
                 if (data && data.unread_count > 0) {
-                    badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
-                    badge.classList.add('visible');
+                    const count = data.unread_count > 9 ? '9+' : data.unread_count;
+                    badge.textContent = count; badge.classList.add('visible');
+                    if (topBadge) { topBadge.textContent = count; topBadge.style.display = ''; }
                 } else {
                     badge.classList.remove('visible');
+                    if (topBadge) topBadge.style.display = 'none';
                 }
-            })
-            .catch(() => {});
+            }).catch(() => {});
         setTimeout(checkUnreadChat, 30000);
     })();
     </script>

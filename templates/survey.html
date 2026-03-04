@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sondage — Liberté Financière & Trading · K-Ni Htech</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #07090f;
+  --card: #0e1320;
+  --border: #1a2540;
+  --text: #f0f4ff;
+  --text2: #7a8db5;
+  --text3: #3d5080;
+  --gold: #f5c542;
+  --teal: #00d4aa;
+  --rose: #ff5f7e;
+  --blue: #4f9eff;
+  --purple: #a78bfa;
+  --green: #34d399;
+  --orange: #fb923c;
+  --glow-gold: rgba(245,197,66,.15);
+  --glow-teal: rgba(0,212,170,.12);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── ANIMATED BG ── */
+.bg-orbs {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: .35;
+  animation: drift 18s ease-in-out infinite;
+}
+.orb-1 { width: 500px; height: 500px; background: #1a3a6e; top: -150px; left: -100px; animation-delay: 0s; }
+.orb-2 { width: 400px; height: 400px; background: #0a4a3a; top: 30%; right: -100px; animation-delay: -6s; }
+.orb-3 { width: 350px; height: 350px; background: #3d1a5e; bottom: -100px; left: 30%; animation-delay: -12s; }
+
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(40px, -30px) scale(1.05); }
+  66%       { transform: translate(-20px, 40px) scale(.97); }
+}
+
+/* ── WRAPPER ── */
+#app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── LANDING HERO ── */
+#landing {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+.brand {
+  font-family: 'Syne', sans-serif;
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand::before, .brand::after {
+  content: '';
+  display: block;
+  height: 1px;
+  width: 40px;
+  background: var(--teal);
+  opacity: .4;
+}
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  margin-bottom: 20px;
+}
+.hero-title span {
+  background: linear-gradient(90deg, #f5c542, #00d4aa, #4f9eff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--text2);
+  max-width: 520px;
+  line-height: 1.7;
+  margin-bottom: 36px;
+}
+.hero-tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+.hero-tag {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 30px;
+  padding: 6px 16px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-meta {
+  display: flex;
+  gap: 28px;
+  color: var(--text3);
+  font-size: .8rem;
+  margin-bottom: 44px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.hero-meta span { display: flex; align-items: center; gap: 5px; }
+.hero-meta strong { color: var(--text2); }
+
+.btn-start {
+  background: linear-gradient(135deg, #f5c542, #e8b800);
+  color: #0a0e1a;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: .5px;
+  border: none;
+  border-radius: 14px;
+  padding: 18px 44px;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  box-shadow: 0 0 40px rgba(245,197,66,.3);
+  position: relative;
+  overflow: hidden;
+}
+.btn-start::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.2), transparent);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.btn-start:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 0 60px rgba(245,197,66,.45); }
+.btn-start:hover::after { opacity: 1; }
+
+.landing-scroll-hint {
+  margin-top: 40px;
+  font-size: .76rem;
+  color: var(--text3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  animation: bounce 2.5s ease-in-out infinite;
+}
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+
+/* ── SURVEY SCREEN ── */
+#survey-screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+}
+#survey-screen.active { display: flex; }
+
+.survey-header {
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.survey-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: .95rem;
+  background: linear-gradient(90deg, #f5c542, #00d4aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.survey-step-info {
+  font-size: .8rem;
+  color: var(--text3);
+  font-weight: 600;
+  font-family: 'Syne', sans-serif;
+}
+
+/* Progress bar */
+.progress-wrap {
+  height: 4px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f5c542, #00d4aa, #4f9eff);
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Questions area */
+.questions-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.question-card {
+  width: 100%;
+  max-width: 680px;
+  animation: slideIn .4s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-40px); }
+}
+.question-card.leaving {
+  animation: slideOut .25s cubic-bezier(.4,0,.2,1) forwards;
+}
+
+.q-category {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.q-num {
+  font-family: 'Syne', sans-serif;
+  font-size: .72rem;
+  font-weight: 800;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.q-text {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.3rem, 3.5vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.q-hint {
+  font-size: .82rem;
+  color: var(--text3);
+  margin-bottom: 28px;
+  font-style: italic;
+}
+
+/* ── OPTION TYPES ── */
+
+/* Radio cards */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.opt-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, transform .15s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+.opt-card:hover { border-color: rgba(245,197,66,.4); background: rgba(245,197,66,.05); transform: translateY(-2px); }
+.opt-card.selected { border-color: var(--gold); background: rgba(245,197,66,.1); }
+.opt-card.selected .opt-dot { background: var(--gold); border-color: var(--gold); }
+.opt-card.selected .opt-label { color: var(--gold); }
+.opt-emoji { font-size: 1.6rem; flex-shrink: 0; }
+.opt-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: background .2s, border-color .2s;
+}
+.opt-label { font-weight: 600; font-size: .92rem; flex: 1; }
+.opt-sub { font-size: .75rem; color: var(--text3); margin-top: 2px; }
+
+/* Likert scale */
+.likert-wrap {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.likert-btn {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, transform .15s, color .2s;
+}
+.likert-btn:hover { transform: translateY(-3px); border-color: rgba(245,197,66,.5); }
+.likert-btn.selected { background: var(--gold); border-color: var(--gold); color: #0a0e1a; transform: translateY(-3px) scale(1.1); }
+.likert-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: .72rem;
+  color: var(--text3);
+  padding: 0 4px;
+  margin-bottom: 28px;
+}
+
+/* Age selector special */
+.age-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.age-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, transform .15s;
+}
+.age-card:hover { border-color: var(--teal); background: rgba(0,212,170,.06); transform: translateY(-3px); }
+.age-card.selected { border-color: var(--teal); background: rgba(0,212,170,.1); }
+.age-card.selected .age-num { color: var(--teal); }
+.age-emoji { font-size: 1.8rem; margin-bottom: 8px; }
+.age-num {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--text);
+  transition: color .2s;
+}
+.age-label { font-size: .72rem; color: var(--text3); margin-top: 3px; }
+
+/* Navigation */
+.q-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.btn-prev {
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-prev:hover { background: rgba(255,255,255,.1); }
+.btn-next {
+  background: var(--gold);
+  border: none;
+  color: #0a0e1a;
+  border-radius: 10px;
+  padding: 13px 30px;
+  font-family: 'Syne', sans-serif;
+  font-size: .92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+  box-shadow: 0 4px 20px rgba(245,197,66,.25);
+}
+.btn-next:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(245,197,66,.4); }
+.btn-next:disabled { opacity: .3; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-submit {
+  background: linear-gradient(135deg, #00d4aa, #34d399);
+  border: none;
+  color: #042820;
+  border-radius: 10px;
+  padding: 14px 32px;
+  font-family: 'Syne', sans-serif;
+  font-size: .95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 4px 20px rgba(0,212,170,.3);
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,212,170,.45); }
+
+/* ── THANK YOU SCREEN ── */
+#thankyou-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 40px 20px;
+  animation: fadeIn .5s ease;
+}
+#thankyou-screen.active { display: flex; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+.ty-icon {
+  font-size: 4rem;
+  margin-bottom: 24px;
+  animation: pop .5s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes pop { from{transform:scale(0)} to{transform:scale(1)} }
+.ty-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+  background: linear-gradient(90deg, #f5c542, #00d4aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.ty-sub {
+  font-size: .98rem;
+  color: var(--text2);
+  max-width: 420px;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+.ty-share {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.btn-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: .88rem;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: transform .15s, opacity .15s;
+}
+.btn-share:hover { transform: translateY(-2px); opacity: .9; }
+.btn-whatsapp { background: #25d366; color: #fff; }
+.btn-results { background: rgba(79,158,255,.15); border: 1px solid rgba(79,158,255,.3); color: var(--blue); }
+
+/* ── FLASH TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--rose);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: .88rem;
+  z-index: 999;
+  transition: transform .3s;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 540px) {
+  .age-grid { grid-template-columns: repeat(2,1fr); }
+  .options-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div id="app">
+
+  <!-- ══ LANDING ══ -->
+  <div id="landing">
+    <div class="brand">K-Ni Htech · Sondage 2025</div>
+    <h1 class="hero-title">
+      Et toi, tu penses quoi<br>de la <span>liberté financière</span> ?
+    </h1>
+    <p class="hero-sub">
+      Trading, indépendance financière, paris sportifs… Dis-nous ce que tu en penses vraiment.
+      C'est anonyme, ça prend 3 minutes, et tes réponses comptent.
+    </p>
+    <div class="hero-tags">
+      <span class="hero-tag">📈 Trading</span>
+      <span class="hero-tag">💸 Liberté financière</span>
+      <span class="hero-tag">⚽ Paris sportifs</span>
+      <span class="hero-tag">🔒 100% anonyme</span>
+    </div>
+    <div class="hero-meta">
+      <span>⏱ <strong>~3 minutes</strong></span>
+      <span>❓ <strong>12 questions</strong></span>
+      <span>👁 <strong>Résultats publics</strong></span>
+    </div>
+    <button class="btn-start" onclick="startSurvey()">🚀 Commencer le sondage</button>
+    <div class="landing-scroll-hint">↓ Fais défiler</div>
+  </div>
+
+  <!-- ══ SURVEY ══ -->
+  <div id="survey-screen">
+    <div class="survey-header">
+      <div class="survey-logo">K-Ni · Sondage</div>
+      <div class="survey-step-info" id="step-label">Question 1 / 12</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="questions-area">
+      <div class="question-card" id="question-card">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ THANK YOU ══ -->
+  <div id="thankyou-screen">
+    <div class="ty-icon">🎉</div>
+    <div class="ty-title">Merci pour ta réponse !</div>
+    <p class="ty-sub">
+      Tu viens de contribuer à une vraie étude sur la perception financière.
+      Partage ce sondage avec tes proches pour avoir encore plus de résultats !
+    </p>
+    <div class="ty-share">
+      <a href="#" class="btn-share btn-whatsapp" id="wa-share">
+        💬 Partager sur WhatsApp
+      </a>
+      <a href="/survey/stats" class="btn-share btn-results">
+        📊 Voir les résultats
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Sélectionne une réponse pour continuer</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  QUESTIONS DATA
+// ─────────────────────────────────────────────
+const QUESTIONS = [
+  {
+    id: 'age',
+    category: '👤 Profil',
+    categoryColor: '#00d4aa',
+    text: 'Quelle est ta tranche d\'âge ?',
+    hint: 'Pour analyser les résultats par génération',
+    type: 'age',
+    required: true,
+    options: [
+      { value: '15-17', emoji: '🎒', label: '15 – 17', sub: 'Lycéen' },
+      { value: '18-24', emoji: '🎓', label: '18 – 24', sub: 'Jeune adulte' },
+      { value: '25-34', emoji: '💼', label: '25 – 34', sub: 'Actif junior' },
+      { value: '35-44', emoji: '📊', label: '35 – 44', sub: 'Actif senior' },
+      { value: '45-54', emoji: '🏡', label: '45 – 54', sub: 'Confirmé' },
+      { value: '55+',   emoji: '🌟', label: '55 ans +', sub: 'Expérimenté' },
+    ]
+  },
+  {
+    id: 'financial_status',
+    category: '💰 Finances perso',
+    categoryColor: '#f5c542',
+    text: 'Comment tu te sens par rapport à ta situation financière actuelle ?',
+    hint: 'Sois honnête — personne ne te juge !',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'tres_difficile', emoji: '😰', label: 'Très difficile', sub: 'Je galère sérieusement' },
+      { value: 'difficile',      emoji: '😟', label: 'Difficile', sub: 'Les fins de mois sont serrées' },
+      { value: 'moyen',          emoji: '😐', label: 'Correct', sub: 'Je m\'en sors, sans plus' },
+      { value: 'bien',           emoji: '😊', label: 'Bien', sub: 'Je suis à l\'aise' },
+      { value: 'tres_bien',      emoji: '🤑', label: 'Très bien', sub: 'Financièrement libre' },
+    ]
+  },
+  {
+    id: 'trading_knowledge',
+    category: '📈 Trading',
+    categoryColor: '#4f9eff',
+    text: 'Tu connais le trading ?',
+    hint: 'Pas de bonne ou mauvaise réponse',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'jamais_entendu', emoji: '🤔', label: 'Jamais entendu parler', sub: '' },
+      { value: 'vaguement',      emoji: '👂', label: 'J\'en ai entendu parler', sub: 'Mais je ne sais pas trop ce que c\'est' },
+      { value: 'connais',        emoji: '📖', label: 'Je connais le principe', sub: 'Achat/vente sur les marchés' },
+      { value: 'pratique',       emoji: '💻', label: 'Je pratique / j\'ai pratiqué', sub: 'J\'ai déjà tradé' },
+    ]
+  },
+  {
+    id: 'trading_opinion',
+    category: '📈 Trading',
+    categoryColor: '#4f9eff',
+    text: 'Quelle est ta première réaction quand tu entends "trading" ?',
+    hint: 'Choisis la réponse la plus proche de ta pensée',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'arnaque',  emoji: '🚨', label: 'Arnaque / danger', sub: 'Perte d\'argent assurée' },
+      { value: 'risque',   emoji: '⚠️', label: 'Risqué mais possible', sub: 'Ça peut marcher avec de la méthode' },
+      { value: 'neutre',   emoji: '🤷', label: 'Neutre', sub: 'Je n\'ai pas d\'avis' },
+      { value: 'opportunite', emoji: '🌟', label: 'Vraie opportunité', sub: 'Un métier sérieux et rentable' },
+      { value: 'riche_rapide', emoji: '🎰', label: 'Riche rapidement', sub: 'Pour devenir millionnaire vite' },
+    ]
+  },
+  {
+    id: 'trading_interest',
+    category: '📈 Trading',
+    categoryColor: '#4f9eff',
+    text: 'Si tu avais une formation gratuite sur le trading, tu ferais quoi ?',
+    hint: 'Honnêteté 100%',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'inscris_direct', emoji: '🔥', label: 'Je m\'inscris direct', sub: 'Ça m\'intéresse vraiment' },
+      { value: 'reflechis',      emoji: '🤔', label: 'J\'y réfléchis', sub: 'Dépend du contenu' },
+      { value: 'regarde_dabord', emoji: '👀', label: 'Je regarde d\'abord', sub: 'Avant de m\'engager' },
+      { value: 'non_interesse',  emoji: '😴', label: 'Pas intéressé(e)', sub: 'Ce n\'est pas pour moi' },
+    ]
+  },
+  {
+    id: 'liberte_financiere',
+    category: '💸 Liberté financière',
+    categoryColor: '#a78bfa',
+    text: 'Est-ce que tu crois que la liberté financière est accessible à tout le monde ?',
+    hint: 'Pas seulement aux riches',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'oui_travail',  emoji: '💪', label: 'Oui, avec du travail', sub: 'C\'est possible pour chacun' },
+      { value: 'oui_chance',   emoji: '🍀', label: 'Oui, mais avec de la chance', sub: 'Il faut aussi de la chance' },
+      { value: 'pour_certains',emoji: '👆', label: 'Seulement pour certains', sub: 'Pas accessible à tous' },
+      { value: 'non_mythe',    emoji: '❌', label: 'Non, c\'est un mythe', sub: 'Ça n\'existe pas vraiment' },
+    ]
+  },
+  {
+    id: 'liberte_obstacle',
+    category: '💸 Liberté financière',
+    categoryColor: '#a78bfa',
+    text: 'Quel est ton plus grand obstacle à la liberté financière ?',
+    hint: 'Choisis l\'obstacle principal',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'revenus',      emoji: '💵', label: 'Manque de revenus', sub: 'Je ne gagne pas assez' },
+      { value: 'connaissances',emoji: '📚', label: 'Manque de connaissances', sub: 'Je ne sais pas comment faire' },
+      { value: 'discipline',   emoji: '🧠', label: 'La discipline', sub: 'Difficile d\'épargner / investir' },
+      { value: 'peur',         emoji: '😨', label: 'La peur de perdre', sub: 'J\'évite le risque' },
+      { value: 'temps',        emoji: '⏰', label: 'Manque de temps', sub: 'Trop occupé(e)' },
+    ]
+  },
+  {
+    id: 'liberte_score',
+    category: '💸 Liberté financière',
+    categoryColor: '#a78bfa',
+    text: 'Sur 10, à quel point la liberté financière est importante pour toi ?',
+    hint: '1 = pas important du tout · 10 = c\'est ma priorité absolue',
+    type: 'likert',
+    required: true,
+    min: 1, max: 10,
+    labelMin: 'Pas important', labelMax: 'Priorité absolue'
+  },
+  {
+    id: 'paris_connaissance',
+    category: '⚽ Paris sportifs',
+    categoryColor: '#fb923c',
+    text: 'As-tu déjà parié sur du sport ?',
+    hint: '1xBet, Betway, PMU, MelBet…',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'jamais',     emoji: '🙅', label: 'Jamais', sub: 'Je n\'ai jamais parié' },
+      { value: 'une_fois',   emoji: '1️⃣', label: 'Une ou deux fois', sub: 'J\'ai essayé par curiosité' },
+      { value: 'parfois',    emoji: '🎲', label: 'Parfois', sub: 'De temps en temps' },
+      { value: 'regulier',   emoji: '⚽', label: 'Régulièrement', sub: 'C\'est une habitude' },
+      { value: 'arrete',     emoji: '🚫', label: 'J\'ai arrêté', sub: 'Je pratiquais avant' },
+    ]
+  },
+  {
+    id: 'paris_opinion',
+    category: '⚽ Paris sportifs',
+    categoryColor: '#fb923c',
+    text: 'Selon toi, les paris sportifs peuvent-ils être une source de revenus ?',
+    hint: 'Donne ton avis sincère',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'oui_expert',   emoji: '🏆', label: 'Oui, pour les experts', sub: 'Avec une vraie méthode' },
+      { value: 'oui_chanceux', emoji: '🍀', label: 'Oui, les chanceux', sub: 'Mais c\'est une question de chance' },
+      { value: 'non_addiction',emoji: '⚠️', label: 'Non, c\'est addictif', sub: 'On perd plus qu\'on ne gagne' },
+      { value: 'non_arnaque',  emoji: '🚫', label: 'Non, les bookmakers gagnent toujours', sub: 'Le système est fait pour perdre' },
+    ]
+  },
+  {
+    id: 'paris_trading_compare',
+    category: '⚽ Paris sportifs',
+    categoryColor: '#fb923c',
+    text: 'Tu penses que le trading et les paris sportifs, c\'est pareil ?',
+    hint: 'Basé sur ta perception',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'pareil',       emoji: '🟰', label: 'Oui, c\'est la même chose', sub: 'Les deux sont des jeux d\'argent' },
+      { value: 'similaire',    emoji: '≈',  label: 'Similaire mais pas pareil', sub: 'Il y a des différences' },
+      { value: 'tres_different',emoji:'📊', label: 'Très différent', sub: 'Le trading est sérieux, les paris non' },
+      { value: 'sais_pas',     emoji: '🤷', label: 'Je ne sais pas', sub: 'Pas assez d\'infos' },
+    ]
+  },
+  {
+    id: 'recommandation',
+    category: '🎯 Pour finir',
+    categoryColor: '#34d399',
+    text: 'Est-ce que tu recommanderais une formation en trading à quelqu\'un de ton entourage ?',
+    hint: 'Dernière question !',
+    type: 'radio',
+    required: true,
+    options: [
+      { value: 'oui_absolument', emoji: '🔥', label: 'Absolument !', sub: 'Je déconseille à personne' },
+      { value: 'oui_peut_etre',  emoji: '👍', label: 'Pourquoi pas', sub: 'Si la personne est motivée' },
+      { value: 'non_trop_risque',emoji: '⚠️', label: 'Non, trop risqué', sub: 'J\'aurais peur pour eux' },
+      { value: 'non_pas_utile',  emoji: '🤷', label: 'Ça dépend de la personne', sub: 'Pas pour tout le monde' },
+    ]
+  },
+];
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let current = 0;
+let answers = {};
+
+function startSurvey() {
+  document.getElementById('landing').style.display = 'none';
+  const ss = document.getElementById('survey-screen');
+  ss.classList.add('active');
+  renderQuestion(0);
+}
+
+function renderQuestion(idx) {
+  const q = QUESTIONS[idx];
+  const total = QUESTIONS.length;
+
+  document.getElementById('step-label').textContent = `Question ${idx + 1} / ${total}`;
+  document.getElementById('progress-bar').style.width = `${((idx) / total) * 100}%`;
+
+  let html = `
+    <div class="q-category" style="color:${q.categoryColor}">${q.category}</div>
+    <div class="q-num">Question ${idx + 1} sur ${total}</div>
+    <div class="q-text">${q.text}</div>
+    ${q.hint ? `<div class="q-hint">${q.hint}</div>` : ''}
+  `;
+
+  if (q.type === 'age') {
+    html += `<div class="age-grid">`;
+    q.options.forEach(o => {
+      const sel = answers[q.id] === o.value ? 'selected' : '';
+      html += `<div class="age-card ${sel}" data-q="${q.id}" data-v="${o.value}" onclick="select(this,'${q.id}','${o.value}')">
+        <div class="age-emoji">${o.emoji}</div>
+        <div class="age-num">${o.label}</div>
+        <div class="age-label">${o.sub}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else if (q.type === 'radio') {
+    html += `<div class="options-grid">`;
+    q.options.forEach(o => {
+      const sel = answers[q.id] === o.value ? 'selected' : '';
+      html += `<div class="opt-card ${sel}" data-q="${q.id}" data-v="${o.value}" onclick="select(this,'${q.id}','${o.value}')">
+        <span class="opt-emoji">${o.emoji}</span>
+        <div>
+          <div class="opt-label">${o.label}</div>
+          ${o.sub ? `<div class="opt-sub">${o.sub}</div>` : ''}
+        </div>
+        <div class="opt-dot"></div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else if (q.type === 'likert') {
+    html += `<div class="likert-wrap">`;
+    for (let i = q.min; i <= q.max; i++) {
+      const sel = answers[q.id] == i ? 'selected' : '';
+      html += `<button class="likert-btn ${sel}" onclick="selectLikert('${q.id}',${i},this)">${i}</button>`;
+    }
+    html += `</div><div class="likert-labels"><span>${q.labelMin}</span><span>${q.labelMax}</span></div>`;
+  }
+
+  // Navigation
+  const isLast = idx === total - 1;
+  const hasAnswer = answers[q.id] !== undefined;
+  html += `<div class="q-nav">`;
+  if (idx > 0) html += `<button class="btn-prev" onclick="prev()">← Précédent</button>`;
+  else html += `<span></span>`;
+  if (!isLast) {
+    html += `<button class="btn-next" id="btn-next" ${hasAnswer?'':'disabled'} onclick="next()">Suivant →</button>`;
+  } else {
+    html += `<button class="btn-submit" id="btn-next" ${hasAnswer?'':'disabled'} onclick="submit()">✅ Envoyer mes réponses</button>`;
+  }
+  html += `</div>`;
+
+  document.getElementById('question-card').innerHTML = html;
+}
+
+function select(el, qId, value) {
+  answers[qId] = value;
+  // Update all cards in this group
+  document.querySelectorAll(`[data-q="${qId}"]`).forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  // Enable next
+  const btn = document.getElementById('btn-next');
+  if (btn) btn.disabled = false;
+}
+
+function selectLikert(qId, value, btn) {
+  answers[qId] = value;
+  document.querySelectorAll('.likert-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const next = document.getElementById('btn-next');
+  if (next) next.disabled = false;
+}
+
+function next() {
+  const q = QUESTIONS[current];
+  if (q.required && answers[q.id] === undefined) {
+    showToast('Sélectionne une réponse pour continuer');
+    return;
+  }
+  const card = document.getElementById('question-card');
+  card.classList.add('leaving');
+  setTimeout(() => {
+    card.classList.remove('leaving');
+    current++;
+    renderQuestion(current);
+  }, 250);
+}
+
+function prev() {
+  if (current === 0) return;
+  const card = document.getElementById('question-card');
+  card.classList.add('leaving');
+  setTimeout(() => {
+    card.classList.remove('leaving');
+    current--;
+    renderQuestion(current);
+  }, 250);
+}
+
+async function submit() {
+  const q = QUESTIONS[current];
+  if (q.required && answers[q.id] === undefined) {
+    showToast('Sélectionne une réponse pour continuer');
+    return;
+  }
+
+  // Progress bar to 100%
+  document.getElementById('progress-bar').style.width = '100%';
+
+  try {
+    const res = await fetch('/survey/submit', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(answers)
+    });
+    const data = await res.json();
+    if (data.success) showThankyou();
+    else showToast('Erreur lors de l\'envoi, réessaie');
+  } catch(e) {
+    // Even if network fails, show thank you
+    showThankyou();
+  }
+}
+
+function showThankyou() {
+  document.getElementById('survey-screen').classList.remove('active');
+  document.getElementById('survey-screen').style.display = 'none';
+  const ty = document.getElementById('thankyou-screen');
+  ty.classList.add('active');
+
+  const msg = encodeURIComponent('🔥 Donne ton avis sur le trading et la liberté financière ! Sondage rapide et anonyme : ' + window.location.href);
+  document.getElementById('wa-share').href = `https://wa.me/?text=${msg}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

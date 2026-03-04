@@ -1397,7 +1397,16 @@ def dashboard():
         'savings_rate': 0,
         'total_revenue': 0,
         'total_expenses': 0,
-        'trader_score': 0
+        'trader_score': 0,
+        'total_pnl': 0,
+        'total_pnl_percent': 0,
+        'total': 0,
+        'total_closed': 0,
+        'wins': 0,
+        'win_rate': 0,
+        'profit_factor': 0,
+        'best': 0,
+        'worst': 0
     }
     
     if conn:
@@ -1432,8 +1441,49 @@ def dashboard():
         result = cursor.fetchone()
         portfolio_value = result['portfolio_value'] or 0
         
+        # Calculate total PnL from positions
+        cursor.execute('''
+            SELECT SUM((current_price - avg_price) * quantity) as total_pnl,
+                   SUM(avg_price * quantity) as total_cost
+            FROM positions
+            WHERE user_id = ? AND status = 'open'
+        ''', (user_id,))
+        pnl_result = cursor.fetchone()
+        if pnl_result and pnl_result['total_pnl'] is not None:
+            stats['total_pnl'] = round(pnl_result['total_pnl'], 2)
+            total_cost = pnl_result['total_cost'] or 0
+            if total_cost > 0:
+                stats['total_pnl_percent'] = round((stats['total_pnl'] / total_cost) * 100, 2)
+        
         stats['net_worth'] = stats['monthly_cashflow'] + portfolio_value
         
+        # Trading stats from journal
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN exit_price IS NOT NULL THEN 1 ELSE 0 END) as total_closed,
+                SUM(CASE WHEN profit_loss > 0 THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN profit_loss > 0 THEN profit_loss ELSE 0 END) as gross_profit,
+                SUM(CASE WHEN profit_loss < 0 THEN ABS(profit_loss) ELSE 0 END) as gross_loss,
+                MAX(profit_loss) as best,
+                MIN(profit_loss) as worst
+            FROM trading_journal
+            WHERE user_id = ?
+        """, (user_id,))
+        tj = cursor.fetchone()
+        if tj and tj['total']:
+            stats['total'] = tj['total'] or 0
+            stats['total_closed'] = tj['total_closed'] or 0
+            stats['wins'] = tj['wins'] or 0
+            stats['best'] = round(tj['best'] or 0, 2)
+            stats['worst'] = round(tj['worst'] or 0, 2)
+            if stats['total_closed'] > 0:
+                stats['win_rate'] = round((stats['wins'] / stats['total_closed']) * 100, 1)
+            gross_profit = tj['gross_profit'] or 0
+            gross_loss = tj['gross_loss'] or 0
+            if gross_loss > 0:
+                stats['profit_factor'] = round(gross_profit / gross_loss, 2)
+
         # Get latest trader score
         cursor.execute("""
             SELECT overall_score FROM trader_scores

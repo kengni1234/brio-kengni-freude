@@ -1,54 +1,72 @@
-<!DOCTYPE html>
-<html lang="fr" data-theme="dark">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Training — K-Ni Htech</title>
+{% extends "base.html" %}
+{% block title %}Training — K-Ni Htech{% endblock %}
+{% block page_title %}🎓 Formations Trading{% endblock %}
+
+{% block topbar_actions %}
+{% if session.get('user_id') %}
+<button class="btn-accent" onclick="openAddModal()">
+  <i class="fas fa-plus"></i> Nouveau cours
+</button>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+
 /* ══════════════════════════════════════════════════════
    BASE VARIABLES & RESET
 ══════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0d1117;
-  --bg2: #161b22;
-  --bg3: #21262d;
-  --bg4: #2d333b;
-  --border: #30363d;
-  --text: #e6edf3;
-  --text2: #8b949e;
-  --text3: #6e7681;
-  --accent: #58a6ff;
-  --accent2: #1f6feb;
-  --green: #3fb950;
-  --red: #f85149;
-  --gold: #d29922;
-  --orange: #e3b341;
-  --purple: #bc8cff;
-  --teal: #39d353;
-  --card-radius: 14px;
-  --shadow: 0 8px 32px rgba(0,0,0,.6);
-  --shadow-sm: 0 2px 8px rgba(0,0,0,.3);
+  --bg: #090d14;
+  --bg2: #111827;
+  --bg3: #1a2234;
+  --bg4: #243047;
+  --border: #1e2d45;
+  --text: #e8eef8;
+  --text2: #7e95b5;
+  --text3: #4d6480;
+  --accent: #4f9eff;
+  --accent2: #2563eb;
+  --accent-glow: rgba(79,158,255,.18);
+  --gradient: linear-gradient(135deg, #4f9eff 0%, #a78bfa 50%, #34d399 100%);
+  --gradient-soft: linear-gradient(135deg, rgba(79,158,255,.12) 0%, rgba(167,139,250,.08) 100%);
+  --green: #34d399;
+  --red: #fb7185;
+  --gold: #fbbf24;
+  --orange: #fb923c;
+  --purple: #a78bfa;
+  --teal: #2dd4bf;
+  --card-radius: 16px;
+  --shadow: 0 12px 40px rgba(0,0,0,.7);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,.4);
+  --shadow-glow: 0 0 0 1px rgba(79,158,255,.2), 0 8px 32px rgba(79,158,255,.08);
 }
 [data-theme="light"] {
-  --bg: #f0f4f8;
+  --bg: #f0f6ff;
   --bg2: #ffffff;
-  --bg3: #eaeef2;
-  --bg4: #dde3ea;
-  --border: #d0d7de;
-  --text: #1f2328;
-  --text2: #57606a;
-  --text3: #6e7781;
-  --shadow: 0 4px 16px rgba(0,0,0,.1);
-  --shadow-sm: 0 2px 6px rgba(0,0,0,.08);
+  --bg3: #eaf0fb;
+  --bg4: #dce7f7;
+  --border: #c8d8ef;
+  --text: #0f1a2e;
+  --text2: #4a6080;
+  --text3: #7090b0;
+  --accent-glow: rgba(79,158,255,.1);
+  --shadow: 0 4px 20px rgba(0,0,0,.1);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+  --shadow-glow: 0 0 0 1px rgba(79,158,255,.15), 0 4px 16px rgba(79,158,255,.06);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
   min-height: 100vh;
+  background-image: radial-gradient(ellipse at 20% 0%, rgba(79,158,255,.06) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 100%, rgba(167,139,250,.04) 0%, transparent 50%);
 }
 
 /* ══════════════════════════════════════════════════════
@@ -70,7 +88,10 @@ body {
 .navbar-brand {
   font-size: 1.1rem;
   font-weight: 800;
-  color: var(--accent);
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-decoration: none;
   margin-right: auto;
   letter-spacing: -.5px;
@@ -87,24 +108,29 @@ body {
 .navbar a:hover { background: var(--bg3); color: var(--text); }
 .navbar a.active { background: var(--bg3); color: var(--text); font-weight: 600; }
 .btn-add-nav {
-  background: var(--accent) !important;
+  background: var(--gradient) !important;
   color: #fff !important;
   font-weight: 700 !important;
   margin-left: 8px;
+  box-shadow: 0 2px 12px rgba(79,158,255,.3);
 }
-.btn-add-nav:hover { background: var(--accent2) !important; }
+.btn-add-nav:hover { opacity: .9 !important; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(79,158,255,.4); }
 
 /* ══════════════════════════════════════════════════════
    PAGE HEADER
 ══════════════════════════════════════════════════════ */
 .page-header { padding: 32px 28px 0; }
 .page-title {
-  font-size: 1.75rem;
+  font-size: 1.9rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   gap: 12px;
-  letter-spacing: -.5px;
+  letter-spacing: -.8px;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .page-subtitle { color: var(--text2); font-size: .9rem; margin-top: 6px; }
 
@@ -121,13 +147,22 @@ body {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
-  padding: 14px 22px;
-  min-width: 130px;
-  transition: transform .15s;
+  padding: 16px 24px;
+  min-width: 140px;
+  transition: transform .2s, box-shadow .2s;
+  position: relative;
+  overflow: hidden;
 }
-.stat-card:hover { transform: translateY(-2px); }
-.stat-label { font-size: .75rem; color: var(--text2); text-transform: uppercase; letter-spacing: .8px; font-weight: 600; }
-.stat-value { font-size: 2rem; font-weight: 800; color: var(--accent); line-height: 1.2; margin-top: 2px; }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gradient);
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow); }
+.stat-label { font-size: .72rem; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+.stat-value { font-size: 2.2rem; font-weight: 800; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2; margin-top: 2px; font-family: 'DM Mono', monospace; }
 
 /* ══════════════════════════════════════════════════════
    FILTER BAR
@@ -204,9 +239,9 @@ body {
   cursor: default;
 }
 .course-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow);
-  border-color: var(--accent);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(79,158,255,.25);
+  border-color: rgba(79,158,255,.4);
 }
 
 /* Thumbnail */
@@ -511,6 +546,8 @@ body {
 .modal-tab.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+  background: var(--accent-glow);
+  border-radius: 8px 8px 0 0;
 }
 .modal-tab:hover { color: var(--text); }
 
@@ -745,7 +782,7 @@ body {
   position: sticky;
   bottom: 0;
 }
-.btn-primary   { background: var(--accent);  color: #fff; padding: 10px 24px; font-size: .9rem; }
+.btn-primary   { background: var(--gradient); color: #fff; padding: 10px 24px; font-size: .9rem; box-shadow: 0 2px 12px rgba(79,158,255,.25); }
 .btn-secondary { background: var(--bg3);     color: var(--text2); padding: 10px 18px; }
 
 /* ══════════════════════════════════════════════════════
@@ -845,6 +882,63 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════
+   DOCUMENT UPLOAD & VIEWER
+══════════════════════════════════════════════════════ */
+.doc-upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+}
+.doc-upload-zone:hover, .doc-upload-zone.dragover {
+  border-color: var(--purple);
+  background: rgba(188,140,255,.05);
+}
+.doc-upload-zone input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.doc-upload-icon { font-size: 2rem; margin-bottom: 8px; }
+.doc-upload-text { font-size: .88rem; color: var(--text2); }
+.doc-upload-sub  { font-size: .74rem; color: var(--text3); margin-top: 4px; }
+.doc-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: border-color .15s;
+}
+.doc-item:hover { border-color: var(--purple); }
+.doc-icon { font-size: 1.4rem; flex-shrink: 0; }
+.doc-info { flex: 1; min-width: 0; }
+.doc-name { font-size: .85rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-size { font-size: .72rem; color: var(--text3); margin-top: 2px; }
+.doc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.doc-btn { background: var(--bg4); border: none; color: var(--text2); border-radius: 7px; padding: 5px 10px; font-size: .75rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s, color .15s; }
+.doc-btn:hover { background: var(--purple); color: #fff; }
+.doc-btn.del { color: var(--red); }
+.doc-btn.del:hover { background: rgba(248,81,73,.2); color: var(--red); }
+.doc-viewer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.88); backdrop-filter: blur(8px); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding: 16px; }
+.doc-viewer-overlay.open { display: flex; }
+.doc-viewer-header { width: 100%; max-width: 960px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+.doc-viewer-title { font-size: .95rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-viewer-close { background: rgba(255,255,255,.12); border: none; color: #fff; font-size: 1.2rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.doc-viewer-close:hover { background: rgba(255,255,255,.25); }
+.doc-viewer-frame { width: 100%; max-width: 960px; flex: 1; border-radius: 12px; border: none; background: #fff; height: calc(100vh - 100px); }
+.doc-viewer-img { max-width: 960px; max-height: calc(100vh - 100px); border-radius: 12px; object-fit: contain; box-shadow: 0 0 60px rgba(0,0,0,.8); }
+
+/* ══════════════════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
@@ -857,23 +951,13 @@ body {
   .modal-body { padding: 18px 16px; }
   .modal-footer { padding: 14px 16px; }
 }
+
+/* ── Intégration layout base.html ── */
+.page-header { padding: 24px 28px 0; }
 </style>
-</head>
-<body>
+{% endblock %}
 
-<!-- ══ NAVBAR ══ -->
-<nav class="navbar">
-  <a href="/dashboard" class="navbar-brand">📊 K-Ni Htech</a>
-  <a href="/dashboard">Dashboard</a>
-  <a href="/trading">Trading</a>
-  <a href="/journal">Journal</a>
-  <a href="/finance">Finance</a>
-  <a href="/training" class="active">🎓 Training</a>
-  {% if session.get('user_id') %}
-  <button class="btn btn-add-nav" onclick="openAddModal()">➕ Nouveau cours</button>
-  {% endif %}
-</nav>
-
+{% block content %}
 <!-- ══ PAGE HEADER ══ -->
 <div class="page-header">
   <div class="page-title">🎓 Formations Trading</div>
@@ -1057,8 +1141,10 @@ body {
     <div class="modal-tabs">
       <button class="modal-tab active" onclick="switchTab('add',0,this)">📋 Infos</button>
       <button class="modal-tab" onclick="switchTab('add',1,this)">👥 Participants</button>
-      <button class="modal-tab" onclick="switchTab('add',2,this)">💡 Analyses &amp; Stratégies</button>
-      <button class="modal-tab" onclick="switchTab('add',3,this)">📸 Positions</button>
+      <button class="modal-tab" onclick="switchTab('add',2,this)">📚 Programme</button>
+      <button class="modal-tab" onclick="switchTab('add',3,this)">💡 Analyses &amp; Stratégies</button>
+      <button class="modal-tab" onclick="switchTab('add',4,this)">📸 Positions</button>
+      <button class="modal-tab" onclick="switchTab('add',5,this)">📎 Documents</button>
     </div>
 
     <div class="modal-body">
@@ -1179,8 +1265,39 @@ body {
         </div>
       </div>
 
-      <!-- TAB 2 : ANALYSES & STRATEGIES -->
+      <!-- TAB 2 : PROGRAMME -->
       <div class="tab-content" id="add-tab-2">
+        <div class="form-group">
+          <label class="form-label">🎯 Objectifs pédagogiques</label>
+          <textarea class="form-textarea" id="add_objectives" style="min-height:100px;"
+                    placeholder="Ex : Comprendre les niveaux de support/résistance&#10;Maîtriser la lecture des chandeliers japonais&#10;Savoir identifier les configurations de prix clés"></textarea>
+          <div class="form-hint">Liste ce que les participants doivent savoir faire à la fin de la session</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📋 Prérequis</label>
+          <textarea class="form-textarea" id="add_prerequisites" style="min-height:80px;"
+                    placeholder="Ex : Notions de base en trading&#10;Avoir un compte sur une plateforme de trading&#10;Connaître les types d'ordres (market, limit, stop)"></textarea>
+          <div class="form-hint">Connaissances ou compétences nécessaires avant cette formation</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📝 Plan de la session</label>
+          <textarea class="form-textarea" id="add_outline" style="min-height:120px;"
+                    placeholder="Ex :&#10;1. Introduction — 15 min&#10;2. Théorie : Les figures chartistes — 30 min&#10;3. Analyse en direct sur BTC/USD — 30 min&#10;4. Questions / Réponses — 15 min"></textarea>
+          <div class="form-hint">Le déroulement chronologique de la formation</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🔗 Ressources complémentaires</label>
+          <textarea class="form-textarea" id="add_resources" style="min-height:80px;"
+                    placeholder="Ex : https://tradingview.com — Plateforme d'analyse&#10;https://... — Livre recommandé&#10;Livre : Analyse technique des marchés financiers — J. Murphy"></textarea>
+          <div class="form-hint">Liens, livres, outils ou supports à consulter en dehors de la session</div>
+        </div>
+      </div>
+
+      <!-- TAB 3 : ANALYSES & STRATEGIES -->
+      <div class="tab-content" id="add-tab-3">
         <div class="analysis-blocks">
 
           <div class="form-group">
@@ -1203,8 +1320,8 @@ Entrée sur pullback avec confirmation en M15"></textarea>
         </div>
       </div>
 
-      <!-- TAB 3 : IMAGES POSITIONS -->
-      <div class="tab-content" id="add-tab-3">
+      <!-- TAB 4 : IMAGES POSITIONS -->
+      <div class="tab-content" id="add-tab-4">
         <div class="form-group">
           <label class="form-label">📸 Images des positions prises</label>
           <div class="img-upload-zone" id="add_drop_zone"
@@ -1225,6 +1342,33 @@ Entrée sur pullback avec confirmation en M15"></textarea>
             Ajoute les captures d'écran de tes graphiques, tes entrées/sorties de position,
             et les analyses visuelles réalisées pendant la formation.
             Tu pourras cliquer dessus pour les agrandir.
+          </div>
+        </div>
+      </div>
+
+      </div><!-- end TAB 3 add positions -->
+
+      <!-- TAB 5 : DOCUMENTS -->
+      <div class="tab-content" id="add-tab-5">
+        <div class="form-group">
+          <label class="form-label">📎 Documents de la session</label>
+          <div class="doc-upload-zone" id="add_doc_zone"
+               ondragover="event.preventDefault();this.classList.add('dragover')"
+               ondragleave="this.classList.remove('dragover')"
+               ondrop="handleDocDrop(event,'add_doc_list','addDocFiles')">
+            <input type="file" id="add_doc_input" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp" multiple
+                   onchange="handleDocSelect(this,'add_doc_list','addDocFiles')">
+            <div class="doc-upload-icon">📎</div>
+            <div class="doc-upload-text">Clique ou glisse tes fichiers ici</div>
+            <div class="doc-upload-sub">PDF, Word, Excel, PowerPoint, Images, Texte…</div>
+          </div>
+          <div class="doc-list" id="add_doc_list"></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">💡 Astuce</div>
+          <div class="detail-text" style="font-size:.82rem;">
+            Importe n'importe quel document lié à la session : supports de cours, PDF, tableaux, présentations…
+            Clique sur <strong>👁 Voir</strong> pour lire le document directement dans l'application.
           </div>
         </div>
       </div>
@@ -1251,8 +1395,10 @@ Entrée sur pullback avec confirmation en M15"></textarea>
     <div class="modal-tabs">
       <button class="modal-tab active" onclick="switchTab('edit',0,this)">📋 Infos</button>
       <button class="modal-tab" onclick="switchTab('edit',1,this)">👥 Participants</button>
-      <button class="modal-tab" onclick="switchTab('edit',2,this)">💡 Analyses &amp; Stratégies</button>
-      <button class="modal-tab" onclick="switchTab('edit',3,this)">📸 Positions</button>
+      <button class="modal-tab" onclick="switchTab('edit',2,this)">📚 Programme</button>
+      <button class="modal-tab" onclick="switchTab('edit',3,this)">💡 Analyses &amp; Stratégies</button>
+      <button class="modal-tab" onclick="switchTab('edit',4,this)">📸 Positions</button>
+      <button class="modal-tab" onclick="switchTab('edit',5,this)">📎 Documents</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="edit_id">
@@ -1348,8 +1494,28 @@ Entrée sur pullback avec confirmation en M15"></textarea>
         </div>
       </div>
 
-      <!-- TAB 2 EDIT ANALYSES -->
+      <!-- TAB 2 EDIT PROGRAMME -->
       <div class="tab-content" id="edit-tab-2">
+        <div class="form-group">
+          <label class="form-label">🎯 Objectifs pédagogiques</label>
+          <textarea class="form-textarea" id="edit_objectives" style="min-height:100px;" placeholder="Objectifs de la formation..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📋 Prérequis</label>
+          <textarea class="form-textarea" id="edit_prerequisites" style="min-height:80px;" placeholder="Connaissances requises..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📝 Plan de la session</label>
+          <textarea class="form-textarea" id="edit_outline" style="min-height:120px;" placeholder="Déroulement de la formation..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔗 Ressources complémentaires</label>
+          <textarea class="form-textarea" id="edit_resources" style="min-height:80px;" placeholder="Liens, livres, outils..."></textarea>
+        </div>
+      </div>
+
+      <!-- TAB 3 EDIT ANALYSES -->
+      <div class="tab-content" id="edit-tab-3">
         <div class="form-group">
           <label class="form-label">💡 Analyses</label>
           <textarea class="form-textarea" id="edit_analyses" style="min-height:130px;" placeholder="Analyses réalisées..."></textarea>
@@ -1360,8 +1526,8 @@ Entrée sur pullback avec confirmation en M15"></textarea>
         </div>
       </div>
 
-      <!-- TAB 3 EDIT POSITIONS -->
-      <div class="tab-content" id="edit-tab-3">
+      <!-- TAB 4 EDIT POSITIONS -->
+      <div class="tab-content" id="edit-tab-4">
         <!-- Existing images -->
         <div id="edit_existing_imgs"></div>
 
@@ -1381,7 +1547,28 @@ Entrée sur pullback avec confirmation en M15"></textarea>
         </div>
       </div>
 
-    </div>
+      <!-- TAB 5 EDIT DOCUMENTS -->
+      <div class="tab-content" id="edit-tab-5">
+        <!-- Existing server documents -->
+        <div id="edit_existing_docs"></div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label class="form-label">📎 Ajouter de nouveaux documents</label>
+          <div class="doc-upload-zone"
+               ondragover="event.preventDefault();this.classList.add('dragover')"
+               ondragleave="this.classList.remove('dragover')"
+               ondrop="handleDocDrop(event,'edit_doc_list','editDocFiles')">
+            <input type="file" id="edit_doc_input" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp" multiple
+                   onchange="handleDocSelect(this,'edit_doc_list','editDocFiles')">
+            <div class="doc-upload-icon">📎</div>
+            <div class="doc-upload-text">Clique ou glisse tes fichiers ici</div>
+            <div class="doc-upload-sub">PDF, Word, Excel, PowerPoint, Images, Texte…</div>
+          </div>
+          <div class="doc-list" id="edit_doc_list"></div>
+        </div>
+      </div>
+
+    </div><!-- end edit modal-body -->
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('editModal')">Annuler</button>
       <button class="btn btn-primary" onclick="submitEdit()">💾 Enregistrer</button>
@@ -1409,6 +1596,16 @@ Entrée sur pullback avec confirmation en M15"></textarea>
 </div>
 
 
+<!-- ══ DOCUMENT VIEWER ══ -->
+<div class="doc-viewer-overlay" id="docViewer" onclick="closeDocViewer(event)">
+  <div class="doc-viewer-header">
+    <span class="doc-viewer-title" id="docViewerTitle"></span>
+    <button class="doc-viewer-close" onclick="closeDocViewer()">✕</button>
+  </div>
+  <iframe class="doc-viewer-frame" id="docViewerFrame" style="display:none;"></iframe>
+  <img class="doc-viewer-img" id="docViewerImg" style="display:none;" alt="Document">
+</div>
+
 <!-- ══ LIGHTBOX ══ -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
@@ -1418,9 +1615,11 @@ Entrée sur pullback avec confirmation en M15"></textarea>
 
 <!-- ══ TOASTS ══ -->
 <div class="toast-container" id="toastContainer"></div>
+{% endblock %}
 
-
+{% block extra_scripts %}
 <script>
+
 // ═══════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════
@@ -1609,7 +1808,123 @@ function removePreviewImg(gridId, idx, which) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  SUBMIT ADD
+//  DOCUMENTS
+// ═══════════════════════════════════════════════════════
+const addDocFiles  = [];
+const editDocFiles = [];
+
+function docIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') return '📄';
+  if (['doc','docx'].includes(ext)) return '📝';
+  if (['xls','xlsx','csv'].includes(ext)) return '📊';
+  if (['ppt','pptx'].includes(ext)) return '📊';
+  if (['png','jpg','jpeg','gif','webp'].includes(ext)) return '🖼';
+  if (ext === 'txt') return '📃';
+  return '📎';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' o';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' Ko';
+  return (bytes/1048576).toFixed(1) + ' Mo';
+}
+
+function isImage(name) {
+  return /\.(png|jpe?g|gif|webp)$/i.test(name);
+}
+
+function handleDocSelect(input, listId, filesArray) {
+  [...input.files].forEach(f => {
+    filesArray.push(f);
+    appendDocItem(f.name, formatBytes(f.size), listId, filesArray, filesArray.length - 1, f);
+  });
+  input.value = '';
+}
+
+function handleDocDrop(event, listId, filesArrayName) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('dragover');
+  const arr = window[filesArrayName];
+  [...event.dataTransfer.files].forEach(f => {
+    arr.push(f);
+    appendDocItem(f.name, formatBytes(f.size), listId, arr, arr.length - 1, f);
+  });
+}
+
+function appendDocItem(name, sizeStr, listId, filesArray, idx, fileObj) {
+  const list = document.getElementById(listId);
+  const item = document.createElement('div');
+  item.className = 'doc-item';
+  item.dataset.idx = idx;
+  item.innerHTML = `
+    <span class="doc-icon">${docIcon(name)}</span>
+    <div class="doc-info">
+      <div class="doc-name" title="${name}">${name}</div>
+      <div class="doc-size">${sizeStr}</div>
+    </div>
+    <div class="doc-actions">
+      <button class="doc-btn" onclick="previewDocFile(${idx},${JSON.stringify(filesArray === addDocFiles ? 'add' : 'edit')})">👁 Voir</button>
+      <button class="doc-btn del" onclick="removeDocItem(this,${idx},${JSON.stringify(filesArray === addDocFiles ? 'add' : 'edit')})">✕</button>
+    </div>`;
+  list.appendChild(item);
+}
+
+function removeDocItem(btn, idx, pool) {
+  const arr = pool === 'add' ? addDocFiles : editDocFiles;
+  arr[idx] = null;
+  btn.closest('.doc-item').remove();
+}
+
+function previewDocFile(idx, pool) {
+  const arr = pool === 'add' ? addDocFiles : editDocFiles;
+  const file = arr[idx];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  openDocViewer(url, file.name);
+}
+
+function openDocViewer(url, name) {
+  document.getElementById('docViewerTitle').textContent = name;
+  const frame = document.getElementById('docViewerFrame');
+  const img   = document.getElementById('docViewerImg');
+
+  if (isImage(name)) {
+    frame.style.display = 'none';
+    img.src = url;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+    frame.src = url;
+    frame.style.display = 'block';
+  }
+  document.getElementById('docViewer').classList.add('open');
+}
+
+function closeDocViewer(event) {
+  if (event && event.target !== document.getElementById('docViewer') && !event.target.classList.contains('doc-viewer-close')) return;
+  if (event && event.currentTarget && event.currentTarget.id !== 'docViewer') return;
+  document.getElementById('docViewer').classList.remove('open');
+  document.getElementById('docViewerFrame').src = '';
+  document.getElementById('docViewerImg').src = '';
+}
+
+// Viewer depuis server (path existant)
+function openDocViewerUrl(url, name) {
+  openDocViewer(url, name);
+}
+
+// Reset documents lors de l'ouverture du modal Ajouter
+const _origOpenAddModal = openAddModal;
+function openAddModal() {
+  _origOpenAddModal();
+  addDocFiles.length = 0;
+  const list = document.getElementById('add_doc_list');
+  if (list) list.innerHTML = '';
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBMIT ADD — append docs
 // ═══════════════════════════════════════════════════════
 async function submitAdd() {
   const title = document.getElementById('add_title').value.trim();
@@ -1635,6 +1950,10 @@ async function submitAdd() {
   fd.append('participants',     document.getElementById('add_participants_hidden').value);
   fd.append('analyses',         document.getElementById('add_analyses').value.trim());
   fd.append('strategies',       document.getElementById('add_strategies').value.trim());
+  fd.append('objectives',       document.getElementById('add_objectives').value.trim());
+  fd.append('prerequisites',    document.getElementById('add_prerequisites').value.trim());
+  fd.append('outline',          document.getElementById('add_outline').value.trim());
+  fd.append('resources',        document.getElementById('add_resources').value.trim());
   fd.append('is_published',     '1');
 
   // Attach images
@@ -1645,6 +1964,14 @@ async function submitAdd() {
     fd.append(`position_img_${imgIdx}`, f, f.name);
     fd.append(`position_img_${imgIdx}_caption`, capEl ? capEl.value : '');
     imgIdx++;
+  });
+
+  // Attach documents
+  let docIdx = 0;
+  addDocFiles.forEach(f => {
+    if (!f) return;
+    fd.append(`document_${docIdx}`, f, f.name);
+    docIdx++;
   });
 
   try {
@@ -1681,6 +2008,10 @@ function editCourse(c) {
   document.getElementById('edit_thumb_custom').value = c.thumbnail_url || '';
   document.getElementById('edit_analyses').value    = c.analyses || '';
   document.getElementById('edit_strategies').value  = c.strategies || '';
+  document.getElementById('edit_objectives').value  = c.objectives || '';
+  document.getElementById('edit_prerequisites').value = c.prerequisites || '';
+  document.getElementById('edit_outline').value     = c.outline || '';
+  document.getElementById('edit_resources').value   = c.resources || '';
 
   // Thumbnail preview
   const prev = document.getElementById('edit_thumb_preview');
@@ -1712,6 +2043,30 @@ function editCourse(c) {
   // Reset new images
   document.getElementById('edit_img_preview_grid').innerHTML = '';
   editImgFiles.length = 0;
+
+  // Existing documents
+  const existDocsDiv = document.getElementById('edit_existing_docs');
+  const docs = c.documents || [];
+  if (docs.length) {
+    let dhtml = '<div style="font-size:.78rem;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">📎 Documents existants</div><div class="doc-list">';
+    docs.forEach(doc => {
+      dhtml += `<div class="doc-item">
+        <span class="doc-icon">${docIcon(doc.filename || doc)}</span>
+        <div class="doc-info"><div class="doc-name">${doc.filename || doc}</div></div>
+        <div class="doc-actions">
+          <button class="doc-btn" onclick="openDocViewerUrl('${doc.url || doc}','${doc.filename || doc}')">👁 Voir</button>
+        </div>
+      </div>`;
+    });
+    dhtml += '</div>';
+    existDocsDiv.innerHTML = dhtml;
+  } else {
+    existDocsDiv.innerHTML = '';
+  }
+
+  // Reset new docs
+  document.getElementById('edit_doc_list').innerHTML = '';
+  editDocFiles.length = 0;
 
   // Reset tabs
   switchTabByIndex('edit', 0);
@@ -1757,6 +2112,10 @@ async function submitEdit() {
   fd.append('participants',     document.getElementById('edit_participants_hidden').value);
   fd.append('analyses',         document.getElementById('edit_analyses').value.trim());
   fd.append('strategies',       document.getElementById('edit_strategies').value.trim());
+  fd.append('objectives',       document.getElementById('edit_objectives').value.trim());
+  fd.append('prerequisites',    document.getElementById('edit_prerequisites').value.trim());
+  fd.append('outline',          document.getElementById('edit_outline').value.trim());
+  fd.append('resources',        document.getElementById('edit_resources').value.trim());
   fd.append('is_published',     '1');
 
   let imgIdx = 0;
@@ -1766,6 +2125,14 @@ async function submitEdit() {
     fd.append(`position_img_${imgIdx}`, f, f.name);
     fd.append(`position_img_${imgIdx}_caption`, capEl ? capEl.value : '');
     imgIdx++;
+  });
+
+  // Attach documents
+  let docIdx = 0;
+  editDocFiles.forEach(f => {
+    if (!f) return;
+    fd.append(`document_${docIdx}`, f, f.name);
+    docIdx++;
   });
 
   try {
@@ -1846,6 +2213,17 @@ function showDetail(c) {
     </div>`;
   }
 
+  // Programme
+  if (c.objectives || c.prerequisites || c.outline || c.resources) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">📚 Programme de la formation</div>`;
+    if (c.objectives) html += `<div style="margin-bottom:10px;"><strong style="font-size:.78rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">🎯 Objectifs</strong><div class="detail-text" style="margin-top:4px;">${esc(c.objectives)}</div></div>`;
+    if (c.prerequisites) html += `<div style="margin-bottom:10px;"><strong style="font-size:.78rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">📋 Prérequis</strong><div class="detail-text" style="margin-top:4px;">${esc(c.prerequisites)}</div></div>`;
+    if (c.outline) html += `<div style="margin-bottom:10px;"><strong style="font-size:.78rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">📝 Plan</strong><div class="detail-text" style="margin-top:4px;">${esc(c.outline)}</div></div>`;
+    if (c.resources) html += `<div><strong style="font-size:.78rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">🔗 Ressources</strong><div class="detail-text" style="margin-top:4px;">${esc(c.resources)}</div></div>`;
+    html += `</div>`;
+  }
+
   // Position images
   const imgs = c.position_images || [];
   if (imgs.length) {
@@ -1913,6 +2291,6 @@ function toast(msg, type='success') {
   document.getElementById('toastContainer').appendChild(el);
   setTimeout(() => el.remove(), 3800);
 }
+
 </script>
-</body>
-</html>
+{% endblock %}
