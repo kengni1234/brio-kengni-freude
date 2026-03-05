@@ -808,7 +808,7 @@
             <!-- ── SONDAGE ── -->
             <li><div class="sidebar-section-label">Communauté</div></li>
             <li>
-                <a href="{{ url_for('dashboard') }}#sondage" class="{% if request.endpoint == 'sondage' %}active{% endif %}" style="position:relative;">
+                <a href="/survey" class="{% if request.endpoint == 'survey' %}active{% endif %}" style="position:relative;">
                     <i class="fas fa-poll"></i>
                     <span>Sondage</span>
                     <span style="
@@ -822,7 +822,7 @@
             </li>
             {% if session.get('role') in ('admin', 'superadmin') %}
             <li>
-                <a href="{{ url_for('dashboard') }}#sondage-stats" class="{% if request.endpoint == 'sondage_stats' %}active{% endif %}">
+                <a href="/survey/stats" class="{% if request.endpoint == 'survey_stats' %}active{% endif %}">
                     <i class="fas fa-chart-bar"></i>
                     <span>Stats Sondage</span>
                 </a>
@@ -1106,10 +1106,41 @@
         }
         .dashboard-fab:hover::after { opacity: 1; }
 
+        .admin-fab {
+            position: fixed;
+            bottom: 28px; left: 90px;
+            z-index: 9988;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff4d6a, #ff8c42);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #ffffff;
+            box-shadow: 0 6px 24px rgba(255,77,106,0.5), 0 2px 8px rgba(0,0,0,0.4);
+            transition: transform .2s, box-shadow .2s;
+            text-decoration: none;
+        }
+        .admin-fab:hover {
+            transform: scale(1.12) translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255,77,106,0.65), 0 4px 12px rgba(0,0,0,0.4);
+            color: #ffffff; text-decoration: none;
+        }
+        .admin-fab:active { transform: scale(0.96); }
+        .admin-fab::after {
+            content: 'Admin'; position: absolute; left: 60px;
+            background: rgba(0,0,0,.85); color: #ff4d6a;
+            padding: 5px 12px; border-radius: 8px;
+            font-size: .78rem; font-weight: 800; white-space: nowrap;
+            opacity: 0; pointer-events: none; transition: opacity .2s;
+            border: 1px solid rgba(255,77,106,.3);
+        }
+        .admin-fab:hover::after { opacity: 1; }
+
         @media (max-width: 768px) {
             .chat-fab { bottom: 82px !important; left: 16px !important; width: 48px !important; height: 48px !important; font-size: 1.15rem !important; }
             .dashboard-fab { bottom: 24px; left: 16px; width: 44px; height: 44px; font-size: 1.1rem; }
-            .dashboard-fab::after, .chat-fab::after { display: none !important; }
+            .admin-fab { bottom: 24px; left: 76px; width: 44px; height: 44px; font-size: 1.1rem; }
+            .dashboard-fab::after, .chat-fab::after, .admin-fab::after { display: none !important; }
         }
     </style>
 
@@ -1121,6 +1152,12 @@
     {% if request.endpoint != 'dashboard' %}
     <a href="{{ url_for('dashboard') }}" class="dashboard-fab" title="Dashboard">
         <i class="fas fa-home"></i>
+    </a>
+    {% endif %}
+
+    {% if session.get('role') in ('admin', 'superadmin') %}
+    <a href="{{ url_for('admin_panel') }}" class="admin-fab" title="Admin">
+        <i class="fas fa-shield-alt"></i>
     </a>
     {% endif %}
 

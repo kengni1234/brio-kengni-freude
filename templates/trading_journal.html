@@ -1650,16 +1650,18 @@ window.showTab = function(name, btn) {
 
     <div class="smc-info-banner">
       <span>⚡</span>
-      <span>Les indicateurs <strong>SMC/ICT</strong> sont dessinés sur le graphique via Canvas. Les indicateurs <strong>TV</strong> sont natifs. 
-      <strong>Raccourcis dessin :</strong>
-      <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">H</kbd> Horiz ·
-      <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">V</kbd> Vert ·
-      <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">T</kbd> Tendance ·
-      <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">R</kbd> Rect ·
-      <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">F</kbd> Fib ·
-      <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">N</kbd> Note ·
-      <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">Échap</kbd> Curseur ·
-      <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">Ctrl+Z</kbd> Annuler
+      <span>
+        <strong>Outils TradingView natifs activés</strong> : Indicateurs IA (<kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">📈</kbd> dans le header TV), dessins natifs (barre gauche TV), templates, compare, undo/redo, screenshot. &nbsp;·&nbsp;
+        Les indicateurs <strong>SMC/ICT</strong> sont dessinés en Canvas au-dessus. &nbsp;·&nbsp;
+        <strong>Raccourcis dessin custom :</strong>
+        <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">H</kbd> Horiz ·
+        <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">V</kbd> Vert ·
+        <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">T</kbd> Tendance ·
+        <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">R</kbd> Rect ·
+        <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">F</kbd> Fib ·
+        <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">N</kbd> Note ·
+        <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">Échap</kbd> Curseur ·
+        <kbd style="background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">Ctrl+Z</kbd> Annuler
       </span>
     </div>
 
@@ -1671,6 +1673,12 @@ window.showTab = function(name, btn) {
 
         <div class="chart-toolbar">
           <input class="symbol-input-chart" type="text" id="chartSymbol" value="EURUSD" placeholder="Symbole...">
+
+          <!-- Badge outils AT natifs TradingView actifs -->
+          <div style="display:flex;align-items:center;gap:.4rem;padding:.2rem .65rem;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:7px;font-size:.65rem;font-weight:800;color:#a5b4fc;white-space:nowrap;flex-shrink:0" title="Indicateurs, Dessins, Templates, Zoom, Compare — outils TradingView natifs activés">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            Outils AT TV
+          </div>
           <!-- Chart Type Switcher -->
           <div style="display:flex;gap:.2rem;align-items:center;border-right:1px solid rgba(255,255,255,.08);padding-right:.5rem;margin-right:.2rem">
             <button class="chart-type-btn active" id="ctype-1" onclick="setChartType(1,this)" title="Bougies japonaises">🕯</button>
@@ -2546,6 +2554,7 @@ function loadChart() {
         withdateranges: true,
         save_image: true,
         studies: studies,
+        studies_overrides: {},
         drawings_access: { type: 'all' },
         overrides: {
           'mainSeriesProperties.candleStyle.upColor':   '#00c853',
@@ -2567,17 +2576,29 @@ function loadChart() {
         },
         loading_screen: { backgroundColor: '#070d14', foregroundColor: '#00d4aa' },
         disabled_features: [
-          'header_symbol_search','header_saveload','header_screenshot',
-          'use_localstorage_for_settings','show_logo_on_all_charts'
+          'header_saveload',
+          'use_localstorage_for_settings',
+          'show_logo_on_all_charts',
         ],
         enabled_features: [
-          'study_templates','hide_left_toolbar_by_default',
+          'study_templates',
           'show_interval_dialog_on_key_press',
           'side_toolbar_in_fullscreen_mode',
           'header_chart_type',
+          'header_indicators',
+          'header_symbol_search',
+          'header_screenshot',
+          'header_compare',
+          'header_undo_redo',
           'create_volume_indicator_by_default',
           'volume_force_overlay',
           'pre_post_market_sessions',
+          'drawing_templates',
+          'show_chart_property_page',
+          'chart_crosshair_menu',
+          'context_menus',
+          'adaptive_logo',
+          'cl_feed_return_all_data',
         ],
       });
       tvWidgetLoaded = true;

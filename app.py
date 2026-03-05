@@ -1405,8 +1405,8 @@ def dashboard():
         'wins': 0,
         'win_rate': 0,
         'profit_factor': 0,
-        'best': 0,
-        'worst': 0
+        'best': {'profit_loss': 0},
+        'worst': {'profit_loss': 0}
     }
     
     if conn:
@@ -1475,8 +1475,8 @@ def dashboard():
             stats['total'] = tj['total'] or 0
             stats['total_closed'] = tj['total_closed'] or 0
             stats['wins'] = tj['wins'] or 0
-            stats['best'] = round(tj['best'] or 0, 2)
-            stats['worst'] = round(tj['worst'] or 0, 2)
+            stats['best'] = {'profit_loss': round(tj['best'] or 0, 2)}
+            stats['worst'] = {'profit_loss': round(tj['worst'] or 0, 2)}
             if stats['total_closed'] > 0:
                 stats['win_rate'] = round((stats['wins'] / stats['total_closed']) * 100, 1)
             gross_profit = tj['gross_profit'] or 0
@@ -1785,6 +1785,7 @@ def add_financial_transaction():
     return jsonify({'success': False, 'message': 'Erreur de connexion'}), 500
 
 @app.route('/journal')
+@app.route('/journal-alias')
 @page_access_required('trading_journal')
 def trading_journal():
     """Trading journal with images"""
@@ -5064,7 +5065,722 @@ def api_candles():
         except: continue
     return jsonify({'error':f'{sym} introuvable'}), 404
 
+# ── Aliases de routes pour compatibilité templates ────────────────────────────
+
+@app.route('/journal-view')
+@login_required
+def journal():
+    """Alias vers trading_journal pour compatibilité url_for('journal')"""
+    return trading_journal()
+
+@app.route('/actualites')
+@login_required
+def actualites():
+    """Page actualités - redirige vers l'analyse"""
+    return analysis()
+
 # ── Fin module Chat ────────────────────────────────────────────────────────────
+
+
+
+# ═══════════════════════════════════════════════════════════════════
+# MODULE DOCUMENTS & SURVEY — Ajout sans modification de l'existant
+# ═══════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────
+# INITIALISATION DES TABLES DOCUMENTS & SURVEY
+# ─────────────────────────────────────────────────────────────────
+
+def init_documents_db():
+    """Crée les tables documents, document_purchases et survey_responses."""
+    conn = get_db_connection()
+    if not conn:
+        return
+    cursor = conn.cursor()
+
+    # ── Table documents ──────────────────────────────────────────
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS documents (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        title          TEXT    NOT NULL,
+        description    TEXT,
+        category       TEXT    DEFAULT "Général",
+        tags           TEXT    DEFAULT "[]",
+        thumbnail_url  TEXT,
+        doc_type       TEXT    DEFAULT "file"
+                               CHECK(doc_type IN ("file","link","both")),
+        file_path      TEXT,
+        file_url       TEXT,
+        link_url       TEXT,
+        link_label     TEXT    DEFAULT "Ouvrir le lien",
+        price          REAL    DEFAULT 0,
+        currency       TEXT    DEFAULT "XAF",
+        is_free        INTEGER DEFAULT 1,
+        is_published   INTEGER DEFAULT 1,
+        view_count     INTEGER DEFAULT 0,
+        download_count INTEGER DEFAULT 0,
+        created_by     INTEGER,
+        created_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
+        updated_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id)
+    )
+    ''')
+
+    # ── Table achats / demandes d'accès ─────────────────────────
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS document_purchases (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        document_id    INTEGER NOT NULL,
+        user_id        INTEGER,
+        buyer_email    TEXT,
+        buyer_name     TEXT,
+        payment_method TEXT,
+        payment_ref    TEXT,
+        amount         REAL    DEFAULT 0,
+        currency       TEXT    DEFAULT "XAF",
+        status         TEXT    DEFAULT "pending"
+                               CHECK(status IN ("pending","confirmed","rejected")),
+        notes          TEXT,
+        created_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
+        updated_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (document_id) REFERENCES documents(id),
+        FOREIGN KEY (user_id)     REFERENCES users(id)
+    )
+    ''')
+
+    # ── Table sondage ────────────────────────────────────────────
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS survey_responses (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id  TEXT,
+        answers     TEXT    NOT NULL,
+        ip_address  TEXT,
+        created_at  TEXT    DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
+    # ── Migrations optionnelles ──────────────────────────────────
+    for col, defn in [
+        ('buyer_name',  'TEXT'),
+        ('buyer_email', 'TEXT'),
+        ('notes',       'TEXT'),
+    ]:
+        try:
+            cursor.execute(f'ALTER TABLE document_purchases ADD COLUMN {col} {defn}')
+        except Exception:
+            pass
+
+    conn.commit()
+    conn.close()
+    print("✅ Tables documents & survey initialisées")
+
+
+# Appel immédiat à la définition du module
+init_documents_db()
+
+# ─────────────────────────────────────────────────────────────────
+# HELPERS DOCUMENTS
+# ─────────────────────────────────────────────────────────────────
+
+DOCS_UPLOAD_FOLDER = os.path.join('static', 'uploads', 'documents')
+os.makedirs(DOCS_UPLOAD_FOLDER, exist_ok=True)
+
+ALLOWED_DOC_EXTENSIONS = {
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    'txt', 'csv', 'zip', 'rar', 'png', 'jpg', 'jpeg', 'mp4', 'mp3'
+}
+
+
+def _allowed_doc(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_DOC_EXTENSIONS
+
+
+def _doc_is_admin():
+    return 'user_id' in session and session.get('role') in ('admin', 'superadmin')
+
+
+def _get_purchased_ids(user_id=None):
+    if not user_id:
+        return []
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT document_id FROM document_purchases WHERE user_id=? AND status='confirmed'",
+        (user_id,)
+    )
+    ids = [r[0] for r in cursor.fetchall()]
+    conn.close()
+    return ids
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ROUTES DOCUMENTS — Boutique de ressources trading
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/documents/access', methods=['GET', 'POST'])
+def documents_access():
+    """Page d'accès public à la boutique (identification par email)."""
+    if request.method == 'POST':
+        data  = request.get_json(force=True, silent=True) or request.form
+        email = (data.get('email') or '').strip().lower()
+        if email and '@' in email:
+            session['doc_viewer_email'] = email
+            if request.is_json:
+                return jsonify({'success': True, 'redirect': url_for('documents_shop')})
+            return redirect(url_for('documents_shop'))
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'Email invalide'}), 400
+        return render_template('document_access.html', error='Email invalide')
+
+    # Si déjà identifié → boutique directement
+    if session.get('doc_viewer_email') or _doc_is_admin() or 'user_id' in session:
+        return redirect(url_for('documents_shop'))
+
+    return render_template('document_access.html', error=None)
+
+
+@app.route('/documents/access/logout', methods=['POST'])
+def documents_access_logout():
+    session.pop('doc_viewer_email', None)
+    return jsonify({'success': True})
+
+
+@app.route('/documents')
+def documents_shop():
+    """Page principale de la boutique de documents."""
+    viewer_mail      = session.get('doc_viewer_email', '')
+    is_admin         = _doc_is_admin()
+    user_id          = session.get('user_id')
+    search_q         = request.args.get('q', '').strip()
+    current_category = request.args.get('category', '')
+
+    if not is_admin and not user_id and not viewer_mail:
+        return redirect(url_for('documents_access'))
+
+    conn = get_db_connection()
+    if not conn:
+        return render_template('documents.html',
+                               docs=[], categories=[],
+                               is_admin=is_admin, purchases=[],
+                               purchased_ids=[], stats={},
+                               search_q=search_q,
+                               current_category=current_category,
+                               viewer_mail=viewer_mail,
+                               payment_info=PAYMENT_INFO)
+
+    cursor = conn.cursor()
+
+    # ── Requête avec filtres ────────────────────────────────────
+    query  = "SELECT * FROM documents WHERE 1=1"
+    params = []
+    if not is_admin:
+        query += " AND is_published=1"
+    if search_q:
+        query += " AND (title LIKE ? OR description LIKE ? OR tags LIKE ?)"
+        like   = f'%{search_q}%'
+        params += [like, like, like]
+    if current_category:
+        query  += " AND category=?"
+        params.append(current_category)
+    query += " ORDER BY created_at DESC"
+
+    cursor.execute(query, params)
+    raw_docs = cursor.fetchall()
+
+    docs = []
+    for d in raw_docs:
+        d = dict(d)
+        try:
+            d['tags'] = json.loads(d['tags'] or '[]')
+        except Exception:
+            d['tags'] = []
+        docs.append(d)
+
+    # ── Catégories ──────────────────────────────────────────────
+    if is_admin:
+        cursor.execute("SELECT DISTINCT category FROM documents ORDER BY category")
+    else:
+        cursor.execute("SELECT DISTINCT category FROM documents WHERE is_published=1 ORDER BY category")
+    categories = [r[0] for r in cursor.fetchall()]
+
+    # ── IDs achetés ─────────────────────────────────────────────
+    purchased_ids = _get_purchased_ids(user_id)
+
+    # ── Achats en attente (admin) ───────────────────────────────
+    purchases = []
+    if is_admin:
+        cursor.execute('''
+            SELECT dp.*, d.title as doc_title
+            FROM document_purchases dp
+            JOIN documents d ON d.id = dp.document_id
+            ORDER BY dp.created_at DESC
+        ''')
+        purchases = [dict(r) for r in cursor.fetchall()]
+
+    # ── Stats admin ─────────────────────────────────────────────
+    stats = {}
+    if is_admin:
+        cursor.execute("SELECT COUNT(*) FROM documents")
+        stats['total_docs'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM documents WHERE is_published=1")
+        stats['published'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM document_purchases WHERE status='pending'")
+        stats['pending_purchases'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM document_purchases WHERE status='confirmed'")
+        stats['confirmed_purchases'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COALESCE(SUM(amount),0) FROM document_purchases WHERE status='confirmed'")
+        stats['total_revenue'] = cursor.fetchone()[0]
+        stats['active_sessions'] = 1
+
+    conn.close()
+
+    return render_template('documents.html',
+                           docs=docs,
+                           categories=categories,
+                           is_admin=is_admin,
+                           purchases=purchases,
+                           purchased_ids=purchased_ids,
+                           stats=stats,
+                           search_q=search_q,
+                           current_category=current_category,
+                           viewer_mail=viewer_mail,
+                           payment_info=PAYMENT_INFO)
+
+
+@app.route('/documents/add', methods=['POST'])
+@admin_required
+def documents_add():
+    """Ajouter un document (admin)."""
+    title       = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    category    = request.form.get('category', 'Général').strip()
+    tags_raw    = request.form.get('tags', '').strip()
+    thumb       = request.form.get('thumbnail_url', '').strip()
+    link_url    = request.form.get('link_url', '').strip()
+    link_label  = request.form.get('link_label', 'Ouvrir le lien').strip()
+    file_url    = request.form.get('file_url', '').strip()
+    price       = float(request.form.get('price', 0) or 0)
+    currency    = request.form.get('currency', 'XAF')
+    is_pub      = 1 if request.form.get('is_published') else 0
+    is_free     = 1 if price == 0 else 0
+    tags        = json.dumps([t.strip() for t in tags_raw.split(',') if t.strip()])
+
+    file_path = None
+    if 'file' in request.files:
+        f = request.files['file']
+        if f and f.filename and _allowed_doc(f.filename):
+            fname     = secure_filename(f"doc_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{f.filename}")
+            file_path = os.path.join(DOCS_UPLOAD_FOLDER, fname)
+            f.save(file_path)
+
+    has_file = bool(file_path or file_url)
+    has_link = bool(link_url)
+    if has_file and has_link:
+        doc_type = 'both'
+    elif has_link:
+        doc_type = 'link'
+    else:
+        doc_type = 'file'
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO documents
+        (title, description, category, tags, thumbnail_url, doc_type,
+         file_path, file_url, link_url, link_label,
+         price, currency, is_free, is_published, created_by, created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ''', (
+        title, description, category, tags, thumb or None, doc_type,
+        file_path, file_url or None, link_url or None, link_label,
+        price, currency, is_free, is_pub,
+        session['user_id'], datetime.now().isoformat()
+    ))
+    new_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'id': new_id})
+
+
+@app.route('/documents/update/<int:doc_id>', methods=['POST'])
+@admin_required
+def documents_update(doc_id):
+    """Modifier un document (admin)."""
+    data        = request.get_json(force=True, silent=True) or {}
+    title       = data.get('title', '').strip()
+    description = data.get('description', '').strip()
+    category    = data.get('category', 'Général').strip()
+    tags_raw    = data.get('tags', [])
+    tags        = json.dumps(tags_raw) if isinstance(tags_raw, list) else json.dumps(
+        [t.strip() for t in str(tags_raw).split(',') if t.strip()])
+    price       = float(data.get('price', 0) or 0)
+    currency    = data.get('currency', 'XAF')
+    is_free     = 1 if price == 0 else 0
+    is_pub      = 1 if data.get('is_published') else 0
+    thumb       = data.get('thumbnail_url', '') or None
+    link_url    = data.get('link_url', '') or None
+    link_label  = data.get('link_label', 'Ouvrir le lien')
+    file_url    = data.get('file_url', '') or None
+
+    has_file = bool(file_url)
+    has_link = bool(link_url)
+    if has_file and has_link:
+        doc_type = 'both'
+    elif has_link:
+        doc_type = 'link'
+    else:
+        doc_type = 'file'
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE documents SET
+            title=?, description=?, category=?, tags=?, thumbnail_url=?,
+            doc_type=?, file_url=?, link_url=?, link_label=?,
+            price=?, currency=?, is_free=?, is_published=?, updated_at=?
+        WHERE id=?
+    ''', (
+        title, description, category, tags, thumb,
+        doc_type, file_url, link_url, link_label,
+        price, currency, is_free, is_pub,
+        datetime.now().isoformat(), doc_id
+    ))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
+@app.route('/documents/delete/<int:doc_id>', methods=['POST'])
+@admin_required
+def documents_delete(doc_id):
+    """Supprimer un document (admin)."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    cursor = conn.cursor()
+    cursor.execute("SELECT file_path FROM documents WHERE id=?", (doc_id,))
+    row = cursor.fetchone()
+    if row and row['file_path'] and os.path.exists(row['file_path']):
+        try:
+            os.remove(row['file_path'])
+        except Exception:
+            pass
+    cursor.execute("DELETE FROM documents WHERE id=?", (doc_id,))
+    cursor.execute("DELETE FROM document_purchases WHERE document_id=?", (doc_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
+@app.route('/documents/view/<int:doc_id>')
+def documents_view(doc_id):
+    """Incrémenter le compteur de vues."""
+    conn = get_db_connection()
+    if conn:
+        conn.execute("UPDATE documents SET view_count=view_count+1 WHERE id=?", (doc_id,))
+        conn.commit()
+        conn.close()
+    return jsonify({'success': True})
+
+
+@app.route('/documents/download/<int:doc_id>')
+def documents_download(doc_id):
+    """Télécharger un document (vérifie les droits d'accès)."""
+    conn = get_db_connection()
+    if not conn:
+        return "Erreur DB", 500
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM documents WHERE id=? AND is_published=1", (doc_id,))
+    doc = cursor.fetchone()
+    if not doc:
+        conn.close()
+        return "Document introuvable", 404
+
+    doc       = dict(doc)
+    is_admin  = _doc_is_admin()
+    user_id   = session.get('user_id')
+    purchased = _get_purchased_ids(user_id)
+
+    if not doc['is_free'] and not is_admin and doc_id not in purchased:
+        conn.close()
+        return "Accès refusé — achetez ce document d'abord", 403
+
+    conn.execute("UPDATE documents SET download_count=download_count+1 WHERE id=?", (doc_id,))
+    conn.commit()
+    conn.close()
+
+    if doc.get('file_path') and os.path.exists(doc['file_path']):
+        return send_file(doc['file_path'], as_attachment=True)
+    if doc.get('file_url'):
+        return redirect(doc['file_url'])
+    return "Aucun fichier disponible", 404
+
+
+@app.route('/documents/purchase/<int:doc_id>', methods=['POST'])
+def documents_purchase(doc_id):
+    """Créer une demande d'achat."""
+    data           = request.get_json(force=True, silent=True) or {}
+    payment_method = data.get('payment_method', '')
+    payment_ref    = data.get('payment_ref', '')
+    user_id        = session.get('user_id')
+    buyer_email    = session.get('doc_viewer_email') or session.get('email', '')
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM documents WHERE id=?", (doc_id,))
+    doc = cursor.fetchone()
+    if not doc:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Document introuvable'}), 404
+
+    cursor.execute('''
+        INSERT INTO document_purchases
+        (document_id, user_id, buyer_email, payment_method, payment_ref,
+         amount, currency, status, created_at)
+        VALUES (?,?,?,?,?,?,?,"pending",?)
+    ''', (
+        doc_id, user_id, buyer_email,
+        payment_method, payment_ref,
+        doc['price'], doc['currency'],
+        datetime.now().isoformat()
+    ))
+    purchase_id = cursor.lastrowid
+
+    # Notification in-app à l'admin
+    try:
+        cursor.execute(
+            "SELECT id FROM users WHERE role IN ('admin','superadmin') LIMIT 1"
+        )
+        admin_row = cursor.fetchone()
+        if admin_row:
+            cursor.execute('''
+                INSERT INTO notifications (user_id, type, title, message, created_at)
+                VALUES (?, "info", "💰 Nouvelle demande d''achat", ?, ?)
+            ''', (
+                admin_row[0],
+                f"Demande pour \"{doc['title']}\" — {payment_method} #{payment_ref}",
+                datetime.now().isoformat()
+            ))
+    except Exception:
+        pass
+
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'purchase_id': purchase_id})
+
+
+@app.route('/documents/purchase/confirm/<int:purchase_id>', methods=['POST'])
+@admin_required
+def documents_purchase_confirm(purchase_id):
+    """Confirmer un achat (admin)."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    conn.execute(
+        "UPDATE document_purchases SET status='confirmed', updated_at=? WHERE id=?",
+        (datetime.now().isoformat(), purchase_id)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
+@app.route('/documents/purchase/reject/<int:purchase_id>', methods=['POST'])
+@admin_required
+def documents_purchase_reject(purchase_id):
+    """Rejeter un achat (admin)."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    conn.execute(
+        "UPDATE document_purchases SET status='rejected', updated_at=? WHERE id=?",
+        (datetime.now().isoformat(), purchase_id)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
+# ─── NAS Admin ────────────────────────────────────────────────
+@app.route('/nas/admin')
+@admin_required
+def nas_admin():
+    """Accès au serveur NAS — redirige vers l'URL NAS ou l'admin."""
+    nas_url = os.environ.get('NAS_URL', '')
+    if nas_url:
+        return redirect(nas_url)
+    return redirect(url_for('admin_panel'))
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ROUTES SURVEY — Sondage Liberté Financière & Trading
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/survey')
+def survey():
+    """Page principale du sondage."""
+    return render_template('survey.html')
+
+
+@app.route('/survey/submit', methods=['POST'])
+def survey_submit():
+    """Enregistre les réponses du sondage (anonyme, anti-doublon 24h)."""
+    data       = request.get_json(force=True, silent=True) or {}
+    answers    = json.dumps(data)
+    session_id = session.get('survey_sid')
+    if not session_id:
+        session_id            = secrets.token_hex(16)
+        session['survey_sid'] = session_id
+
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr or '')
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id FROM survey_responses
+        WHERE session_id=? AND created_at >= datetime("now","-1 day")
+    ''', (session_id,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({
+            'success': True,
+            'already': True,
+            'message': 'Vous avez déjà répondu récemment.',
+            'redirect': '/survey/stats'
+        })
+
+    cursor.execute(
+        'INSERT INTO survey_responses (session_id, answers, ip_address) VALUES (?,?,?)',
+        (session_id, answers, ip_address[:64] if ip_address else '')
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({
+        'success':  True,
+        'message':  'Merci pour votre participation !',
+        'redirect': '/survey/stats'
+    })
+
+
+@app.route('/survey/stats')
+def survey_stats():
+    """Page des résultats du sondage."""
+    return render_template('survey_stats.html')
+
+
+@app.route('/survey/api/stats')
+def survey_api_stats():
+    """Retourne les statistiques agrégées du sondage en JSON."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+
+    cursor = conn.cursor()
+    cursor.execute("SELECT answers, created_at FROM survey_responses ORDER BY created_at DESC")
+    rows  = cursor.fetchall()
+    conn.close()
+
+    total = len(rows)
+    if total == 0:
+        return jsonify({'success': True, 'total': 0, 'stats': {}, 'timeline': []})
+
+    aggregated = {}
+    dates      = {}
+
+    for row in rows:
+        try:
+            answers = json.loads(row['answers'])
+        except Exception:
+            continue
+
+        day = (row['created_at'] or '')[:10]
+        if day:
+            dates[day] = dates.get(day, 0) + 1
+
+        for q_id, value in answers.items():
+            if q_id not in aggregated:
+                aggregated[q_id] = {}
+            val_str = str(value)
+            aggregated[q_id][val_str] = aggregated[q_id].get(val_str, 0) + 1
+
+    timeline  = [{'date': d, 'count': c} for d, c in sorted(dates.items())]
+    stats_out = {}
+    for q_id, counts in aggregated.items():
+        total_q = sum(counts.values())
+        stats_out[q_id] = {
+            'counts':      counts,
+            'total':       total_q,
+            'percentages': {k: round(v / total_q * 100, 1) for k, v in counts.items()},
+            'top_answer':  max(counts, key=counts.get) if counts else None,
+        }
+
+    return jsonify({
+        'success':       True,
+        'total':         total,
+        'stats':         stats_out,
+        'timeline':      timeline,
+        'last_response': rows[0]['created_at'][:16] if rows else None,
+    })
+
+
+@app.route('/survey/admin/responses')
+@admin_required
+def survey_admin_responses():
+    """Liste des réponses brutes (admin)."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, session_id, answers, created_at FROM survey_responses ORDER BY created_at DESC LIMIT 500"
+    )
+    rows = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return jsonify({'success': True, 'responses': rows, 'total': len(rows)})
+
+
+@app.route('/survey/admin/export')
+@admin_required
+def survey_admin_export():
+    """Export CSV des réponses au sondage (admin)."""
+    conn = get_db_connection()
+    if not conn:
+        return "Erreur DB", 500
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM survey_responses ORDER BY created_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+
+    from io import StringIO
+    si = StringIO()
+    si.write('\ufeff')
+    writer = csv.writer(si)
+    writer.writerow(['ID', 'Session', 'Réponses', 'IP', 'Date'])
+    for r in rows:
+        writer.writerow([r['id'], r['session_id'], r['answers'], r['ip_address'], r['created_at']])
+
+    from flask import Response
+    return Response(
+        si.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=survey-{datetime.now().strftime("%Y%m%d")}.csv'}
+    )
+
+# ═══════════════════════════════════════════════════════════════════
+# FIN DU MODULE DOCUMENTS & SURVEY
+# ═══════════════════════════════════════════════════════════════════
 
 if __name__ == '__main__':
 
