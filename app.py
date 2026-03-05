@@ -5037,6 +5037,33 @@ def api_chat_whatsapp_tag():
         return jsonify({'link': '#'})
     return jsonify({'link': _chat_whatsapp_link(dict(row), sender, preview, msg_id)})
 
+# ── API Candles SMC Engine ────────────────────────────────────────────────────
+import requests as _req_binance
+
+@app.route('/api/candles')
+@login_required
+def api_candles():
+    sym   = request.args.get('symbol', 'BTCUSDT').upper().strip()
+    tf    = request.args.get('tf', '1h').lower()
+    limit = min(int(request.args.get('limit', 300)), 500)
+    if not any(sym.endswith(x) for x in ['USDT','BUSD','BTC','ETH','BNB','USD']):
+        sym = sym + 'USDT'
+    tf_map = {'1m':'1m','3m':'3m','5m':'5m','15m':'15m','30m':'30m','30':'30m','1h':'1h','60':'1h','2h':'2h','4h':'4h','240':'4h','1d':'1d','D':'1d','1w':'1w','W':'1w'}
+    interval = tf_map.get(tf, '1h')
+    for url in [
+        f'https://fapi.binance.com/fapi/v1/klines?symbol={sym}&interval={interval}&limit={limit}',
+        f'https://api.binance.com/api/v3/klines?symbol={sym}&interval={interval}&limit={limit}',
+    ]:
+        try:
+            r = _req_binance.get(url, timeout=8)
+            if r.status_code != 200: continue
+            data = r.json()
+            if not isinstance(data, list) or len(data) < 5: continue
+            candles = [{'time':int(k[0])//1000,'open':float(k[1]),'high':float(k[2]),'low':float(k[3]),'close':float(k[4]),'vol':float(k[5])} for k in data]
+            return jsonify({'symbol':sym,'tf':tf,'candles':candles})
+        except: continue
+    return jsonify({'error':f'{sym} introuvable'}), 404
+
 # ── Fin module Chat ────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':

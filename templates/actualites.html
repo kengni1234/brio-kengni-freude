@@ -1,1134 +1,818 @@
 {% extends "base.html" %}
-{% block title %}Actualités Économiques — Kengni Finance{% endblock %}
-{% block page_title %}Actualités & Calendrier{% endblock %}
+{% block title %}Actualités — Kengni Finance{% endblock %}
+{% block page_title %}Actualités Économiques{% endblock %}
 
 {% block content %}
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+/* ============================================================
+   ACTUALITES — Kengni Finance
+   Thème : Dark Navy + Teal accent — cohérent avec base.html
+============================================================ */
+:root {
+  --news-card-bg:    rgba(15, 21, 37, 0.96);
+  --news-border:     rgba(255,255,255,0.07);
+  --news-hover:      rgba(0,212,170,0.05);
+  --bull-color:      #10b981;
+  --bear-color:      #ef4444;
+  --neut-color:      #f59e0b;
+  --bull-bg:         rgba(16,185,129,0.12);
+  --bear-bg:         rgba(239,68,68,0.12);
+  --neut-bg:         rgba(245,158,11,0.12);
+}
 
-  :root {
-    --n-bg: #060b12;
-    --n-panel: #0c1622;
-    --n-border: rgba(0,212,170,0.12);
-    --n-text: #e2e8f0;
-    --n-muted: #64748b;
-    --n-accent: #00d4aa;
-    --n-red:    #ef4444;
-    --n-orange: #f97316;
-    --n-yellow: #eab308;
-    --n-blue:   #3b82f6;
-    --n-purple: #a855f7;
-    --n-green:  #22c55e;
-    --n-cyan:   #06b6d4;
-    --n-pink:   #ec4899;
-    --n-brown:  #92400e;
-  }
+/* ── Header barre de statut ─────────────────────────────── */
+.news-status-bar {
+  display: flex; align-items: center; gap: 1rem;
+  padding: .75rem 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 0 0 1.2rem;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+}
+.news-btc-price {
+  display: flex; align-items: center; gap: .6rem;
+  font-family: var(--font-mono); font-size: 1.05rem; font-weight: 800;
+  color: var(--text-primary);
+}
+.news-btc-price .btc-icon { font-size: 1.3rem; }
+.btc-change { font-size: .78rem; font-weight: 700; padding: .2rem .55rem; border-radius: 6px; }
+.btc-change.pos { background: var(--bull-bg); color: var(--bull-color); }
+.btc-change.neg { background: var(--bear-bg); color: var(--bear-color); }
 
-  .news-wrap * { font-family: 'DM Sans', sans-serif; }
-  .mono { font-family: 'Space Mono', monospace !important; }
+.news-fg-badge {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .35rem .9rem; border-radius: 8px; font-size: .78rem; font-weight: 700;
+  border: 1px solid;
+}
+.news-fg-badge.fear   { background: var(--bear-bg);  border-color: rgba(239,68,68,.3);   color: var(--bear-color); }
+.news-fg-badge.greed  { background: var(--bull-bg);  border-color: rgba(16,185,129,.3);  color: var(--bull-color); }
+.news-fg-badge.neutral{ background: var(--neut-bg);  border-color: rgba(245,158,11,.3);  color: var(--neut-color); }
 
-  .news-wrap {
-    background: var(--n-bg);
-    min-height: 100vh;
-    padding: 0 0 3rem;
-  }
+.news-update-info { font-size: .7rem; color: var(--text-muted); margin-left: auto; }
+.news-refresh-btn {
+  background: rgba(0,212,170,.1); border: 1px solid rgba(0,212,170,.3);
+  color: var(--accent); border-radius: 7px; padding: .3rem .8rem;
+  font-size: .75rem; font-weight: 700; cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; gap: .35rem;
+}
+.news-refresh-btn:hover { background: rgba(0,212,170,.2); }
+.news-refresh-btn.spinning i { animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── TOP NAV ── */
-  .news-topnav {
-    background: var(--n-panel);
-    border-bottom: 1px solid var(--n-border);
-    padding: .6rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .news-title-badge {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    margin-right: .5rem;
-  }
-  .news-title-badge h4 {
-    margin: 0;
-    font-size: .95rem;
-    font-weight: 700;
-    color: var(--n-text);
-    letter-spacing: -.3px;
-  }
-  .live-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--n-green);
-    animation: blink 1.2s infinite;
-  }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+/* ── Tabs catégories ────────────────────────────────────── */
+.news-tabs {
+  display: flex; gap: .4rem; flex-wrap: wrap;
+  padding: 0 0 1rem; margin-bottom: .5rem;
+}
+.news-tab {
+  padding: .4rem 1rem; border-radius: 999px; font-size: .78rem; font-weight: 700;
+  border: 1px solid var(--border); color: var(--text-muted);
+  background: var(--bg-card2); cursor: pointer; transition: all .2s;
+  font-family: var(--font-mono); white-space: nowrap;
+}
+.news-tab:hover { border-color: rgba(0,212,170,.4); color: var(--accent); }
+.news-tab.active { background: rgba(0,212,170,.15); border-color: var(--accent); color: var(--accent); }
 
-  .view-toggle {
-    display: flex;
-    gap: 4px;
-    background: rgba(0,0,0,.4);
-    border-radius: 8px;
-    padding: 3px;
-    border: 1px solid var(--n-border);
-    margin-left: auto;
-  }
-  .vt-btn {
-    padding: .3rem .7rem;
-    border-radius: 6px;
-    font-size: .72rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    color: var(--n-muted);
-    transition: all .15s;
-    letter-spacing: .3px;
-  }
-  .vt-btn.active { background: var(--n-accent); color: #000; }
+/* ── Layout principal ───────────────────────────────────── */
+.news-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.4rem;
+  align-items: start;
+}
+@media (max-width: 900px) { .news-layout { grid-template-columns: 1fr; } }
 
-  /* ── MAIN LAYOUT ── */
-  .news-layout {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 1px;
-    background: var(--n-border);
-    min-height: calc(100vh - 120px);
-  }
-  .news-main { background: var(--n-bg); overflow-y: auto; }
-  .news-sidebar { background: var(--n-bg); overflow-y: auto; }
+/* ── Feed cartes ────────────────────────────────────────── */
+.news-feed { display: flex; flex-direction: column; gap: .85rem; }
 
-  /* ── CATEGORY FILTER BAR ── */
-  .cat-filter-bar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: var(--n-panel);
-    border-bottom: 1px solid var(--n-border);
-    padding: .5rem 1rem;
-    display: flex;
-    gap: .4rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-    flex-wrap: nowrap;
-    align-items: center;
-  }
-  .cat-filter-bar::-webkit-scrollbar { display: none; }
-  .cat-btn {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: .3rem;
-    padding: .3rem .7rem;
-    border-radius: 20px;
-    font-size: .7rem;
-    font-weight: 700;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all .15s;
-    color: var(--n-muted);
-    background: rgba(0,0,0,.3);
-    white-space: nowrap;
-    letter-spacing: .3px;
-  }
-  .cat-btn:hover { opacity: .8; }
-  .cat-btn.active { color: #000; }
-  .cat-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .impact-filter {
-    display: flex;
-    gap: .3rem;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-  .impact-dot-btn {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: .7rem;
-    transition: all .15s;
-    font-weight: 700;
-  }
-  .impact-dot-btn.active { border-color: #fff; transform: scale(1.15); }
-  .impact-dot-btn.red-i { background: rgba(239,68,68,.25); color: #ef4444; }
-  .impact-dot-btn.orange-i { background: rgba(249,115,22,.25); color: #f97316; }
-  .impact-dot-btn.yellow-i { background: rgba(234,179,8,.2); color: #eab308; }
-  .impact-dot-btn.grey-i { background: rgba(100,116,139,.2); color: #64748b; }
+.news-card {
+  background: var(--news-card-bg);
+  border: 1px solid var(--news-border);
+  border-radius: 14px;
+  padding: 1.1rem 1.3rem;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s, border-color .2s, background .2s;
+  position: relative;
+  overflow: hidden;
+}
+.news-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  border-radius: 14px 0 0 14px;
+  background: var(--card-accent, var(--border));
+  transition: opacity .2s;
+}
+.news-card.bull::before { background: var(--bull-color); }
+.news-card.bear::before { background: var(--bear-color); }
+.news-card.neutral::before { background: var(--neut-color); }
+.news-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,.35);
+  border-color: rgba(0,212,170,.2);
+  background: var(--news-hover);
+}
 
-  /* ── DATE FILTER ── */
-  .date-filter {
-    padding: .5rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: .6rem;
-    border-bottom: 1px solid var(--n-border);
-    background: rgba(0,0,0,.2);
-    flex-wrap: wrap;
-  }
-  .date-btn {
-    padding: .25rem .6rem;
-    font-size: .68rem;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    border: 1px solid var(--n-border);
-    background: transparent;
-    color: var(--n-muted);
-    transition: all .15s;
-  }
-  .date-btn.active { background: rgba(0,212,170,.15); border-color: var(--n-accent); color: var(--n-accent); }
-  .date-search {
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-    margin-left: auto;
-    background: rgba(0,0,0,.3);
-    border: 1px solid var(--n-border);
-    border-radius: 8px;
-    padding: .2rem .5rem;
-  }
-  .date-search input {
-    background: transparent;
-    border: none;
-    color: var(--n-text);
-    font-size: .72rem;
-    width: 150px;
-    outline: none;
-  }
-  .date-search input::placeholder { color: var(--n-muted); }
+.news-card-top {
+  display: flex; align-items: flex-start; gap: .9rem; margin-bottom: .75rem;
+}
+.news-card-img {
+  width: 64px; height: 48px; object-fit: cover; border-radius: 7px;
+  flex-shrink: 0; background: var(--bg-card2);
+}
+.news-card-body { flex: 1; min-width: 0; }
+.news-card-title {
+  font-size: .88rem; font-weight: 700; color: var(--text-primary);
+  line-height: 1.4; margin-bottom: .35rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.news-card-meta {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+}
+.news-source { font-size: .68rem; color: var(--text-muted); font-weight: 600; }
+.news-time   { font-size: .68rem; color: var(--text-muted); }
+.news-cat-pill {
+  font-size: .62rem; font-weight: 700; padding: .12rem .45rem; border-radius: 999px;
+  border: 1px solid; white-space: nowrap;
+}
 
-  /* ── NEWS FEED ── */
-  .news-feed { padding: 0; }
+/* ── Score + probabilité ────────────────────────────────── */
+.news-card-score {
+  display: flex; align-items: center; gap: 1rem; margin-top: .65rem;
+}
+.news-badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .3rem .75rem; border-radius: 8px; font-size: .75rem; font-weight: 800;
+  letter-spacing: .3px; white-space: nowrap; font-family: var(--font-mono);
+}
+.news-badge.bull { background: var(--bull-bg); color: var(--bull-color); border: 1px solid rgba(16,185,129,.3); }
+.news-badge.bear { background: var(--bear-bg); color: var(--bear-color); border: 1px solid rgba(239,68,68,.3); }
+.news-badge.neutral { background: var(--neut-bg); color: var(--neut-color); border: 1px solid rgba(245,158,11,.3); }
 
-  /* Day header */
-  .day-header {
-    position: sticky;
-    top: 92px;
-    z-index: 8;
-    background: linear-gradient(135deg, #0f1e2e, #0c1a28);
-    border-bottom: 1px solid var(--n-border);
-    border-top: 1px solid var(--n-border);
-    padding: .5rem 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .day-header-date { font-size: .8rem; font-weight: 700; color: var(--n-text); }
-  .day-header-count { font-size: .65rem; color: var(--n-muted); font-family: 'Space Mono', monospace; }
+.prob-bar-wrap { flex: 1; min-width: 120px; }
+.prob-bar-labels {
+  display: flex; justify-content: space-between; margin-bottom: .2rem;
+  font-size: .62rem; font-family: var(--font-mono); color: var(--text-muted);
+}
+.prob-bar { height: 5px; border-radius: 3px; background: var(--bear-bg); overflow: hidden; position: relative; }
+.prob-bar-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, #ef4444, #00d4aa);
+  transition: width .6s ease;
+}
 
-  /* Calendar Event Row */
-  .cal-row {
-    display: grid;
-    grid-template-columns: 70px 28px 90px 1fr;
-    align-items: center;
-    gap: 0;
-    padding: .6rem 1rem;
-    border-bottom: 1px solid rgba(30,40,55,.8);
-    cursor: pointer;
-    transition: background .12s;
-    position: relative;
-  }
-  .cal-row:hover { background: rgba(0,212,170,.04); }
-  .cal-row.expanded { background: rgba(0,0,0,.25); }
-  .cal-row.has-actual { border-left: 3px solid transparent; }
-  .cal-row.has-actual.positive { border-left-color: var(--n-green); }
-  .cal-row.has-actual.negative { border-left-color: var(--n-red); }
+.news-summary {
+  font-size: .78rem; color: var(--text-dim); line-height: 1.55;
+  margin-top: .5rem; border-top: 1px solid var(--news-border); padding-top: .5rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 
-  .cal-time {
-    font-family: 'Space Mono', monospace;
-    font-size: .7rem;
-    color: var(--n-muted);
-    font-weight: 700;
-  }
-  .cal-time.soon { color: var(--n-yellow); }
-  .cal-time.past { opacity: .45; }
+/* ── Sidebar ────────────────────────────────────────────── */
+.news-sidebar { display: flex; flex-direction: column; gap: 1.1rem; position: sticky; top: 80px; }
 
-  .impact-circle {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    margin: auto;
-  }
-  .imp-high { background: var(--n-red); box-shadow: 0 0 6px var(--n-red); }
-  .imp-med  { background: var(--n-orange); }
-  .imp-low  { background: var(--n-yellow); }
-  .imp-none { background: var(--n-muted); }
+.sidebar-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,.2);
+}
+.sidebar-card-title {
+  font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--accent); padding: .85rem 1rem .6rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .45rem;
+}
 
-  .cal-currency {
-    display: flex;
-    align-items: center;
-    gap: .25rem;
-  }
-  .flag-icon { font-size: .9rem; }
-  .currency-code {
-    font-size: .65rem;
-    font-weight: 700;
-    color: var(--n-text);
-    font-family: 'Space Mono', monospace;
-  }
+/* Sentiment donut */
+.sentiment-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  text-align: center; padding: .9rem;
+  gap: .5rem;
+}
+.sent-stat-val { font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); }
+.sent-stat-lbl { font-size: .62rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
 
-  .cal-info { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
-  .cal-event-name { font-size: .8rem; font-weight: 600; color: var(--n-text); flex: 1; }
-  .cal-values {
-    display: flex;
-    gap: .6rem;
-    flex-shrink: 0;
-  }
-  .val-block { text-align: center; min-width: 50px; }
-  .val-label { font-size: .55rem; color: var(--n-muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
-  .val-num { font-size: .75rem; font-family: 'Space Mono', monospace; font-weight: 700; }
-  .val-num.forecast { color: var(--n-blue); }
-  .val-num.previous { color: var(--n-muted); }
-  .val-num.actual.positive { color: var(--n-green); }
-  .val-num.actual.negative { color: var(--n-red); }
-  .val-num.actual.neutral { color: var(--n-yellow); }
-  .cat-tag {
-    font-size: .58rem;
-    padding: .1rem .4rem;
-    border-radius: 4px;
-    font-weight: 700;
-    letter-spacing: .3px;
-    text-transform: uppercase;
-    flex-shrink: 0;
-  }
+/* Calendar */
+.cal-item {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .6rem 1rem; border-bottom: 1px solid var(--news-border);
+  font-size: .78rem;
+}
+.cal-item:last-child { border: none; }
+.cal-time { font-family: var(--font-mono); font-size: .72rem; color: var(--accent); font-weight: 700; min-width: 38px; }
+.cal-impact { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cal-impact.high   { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.5); }
+.cal-impact.medium { background: #f59e0b; }
+.cal-impact.low    { background: #10b981; }
+.cal-event { color: var(--text-dim); flex: 1; }
+.cal-currency { font-size: .62rem; color: var(--text-muted); font-family: var(--font-mono); }
 
-  /* Expanded row */
-  .cal-detail {
-    display: none;
-    padding: .8rem 1rem 1rem 1rem;
-    background: rgba(0,0,0,.35);
-    border-bottom: 1px solid var(--n-border);
-  }
-  .cal-detail.open { display: block; }
-  .cal-detail-text { font-size: .75rem; color: #94a3b8; line-height: 1.7; margin-bottom: .6rem; }
-  .reaction-bar {
-    display: flex;
-    gap: .5rem;
-    align-items: center;
-    font-size: .68rem;
-  }
-  .reaction-lbl { color: var(--n-muted); }
-  .reaction-val { font-family: 'Space Mono', monospace; font-weight: 700; }
+/* Top impact mini-cards */
+.top-news-item {
+  padding: .7rem 1rem; border-bottom: 1px solid var(--news-border);
+  cursor: pointer; transition: background .15s;
+  display: flex; align-items: flex-start; gap: .6rem;
+}
+.top-news-item:hover { background: var(--news-hover); }
+.top-news-item:last-child { border: none; }
+.top-news-rank {
+  font-size: .65rem; font-weight: 800; font-family: var(--font-mono);
+  color: var(--text-muted); min-width: 16px; padding-top: .1rem;
+}
+.top-news-title { font-size: .75rem; color: var(--text-dim); line-height: 1.4; }
 
-  /* News Card (non-calendar) */
-  .news-card {
-    padding: .9rem 1rem;
-    border-bottom: 1px solid rgba(30,40,55,.8);
-    cursor: pointer;
-    transition: background .12s;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: .8rem;
-    align-items: start;
-  }
-  .news-card:hover { background: rgba(0,212,170,.04); }
-  .news-card-img {
-    width: 60px; height: 45px;
-    border-radius: 6px;
-    background: var(--n-panel);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.3rem;
-    flex-shrink: 0;
-    overflow: hidden;
-    border: 1px solid var(--n-border);
-  }
-  .news-card-body { min-width: 0; }
-  .news-card-header {
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-    margin-bottom: .25rem;
-    flex-wrap: wrap;
-  }
-  .news-source { font-size: .6rem; color: var(--n-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
-  .news-time { font-size: .6rem; color: var(--n-muted); font-family: 'Space Mono', monospace; }
-  .news-time::before { content: '·'; margin-right: .3rem; }
-  .news-headline { font-size: .82rem; font-weight: 600; color: var(--n-text); line-height: 1.4; margin-bottom: .2rem; }
-  .news-preview { font-size: .72rem; color: #64748b; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .news-footer {
-    display: flex;
-    gap: .4rem;
-    margin-top: .4rem;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .market-tag {
-    font-size: .58rem;
-    font-weight: 700;
-    padding: .1rem .4rem;
-    border-radius: 4px;
-    background: rgba(59,130,246,.15);
-    color: #60a5fa;
-    border: 1px solid rgba(59,130,246,.25);
-  }
-  .read-more { font-size: .65rem; color: var(--n-accent); margin-left: auto; font-weight: 600; }
+/* ── Modal détail ───────────────────────────────────────── */
+.news-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  z-index: 9000; display: none; align-items: center; justify-content: center;
+  padding: 1.5rem; backdrop-filter: blur(6px);
+}
+.news-modal-overlay.open { display: flex; }
+.news-modal {
+  background: var(--bg-card); border: 1px solid rgba(0,212,170,.2);
+  border-radius: 18px; max-width: 700px; width: 100%;
+  max-height: 88vh; overflow-y: auto;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6);
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn { from { transform: scale(.96) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+.news-modal-header {
+  padding: 1.3rem 1.5rem .9rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: .8rem;
+}
+.news-modal-close {
+  margin-left: auto; background: none; border: none;
+  font-size: 1.4rem; cursor: pointer; color: var(--text-muted);
+  line-height: 1; padding: .2rem .4rem; border-radius: 5px; flex-shrink: 0;
+}
+.news-modal-close:hover { background: rgba(239,68,68,.15); color: #ef4444; }
+.news-modal-body { padding: 1.2rem 1.5rem 1.5rem; }
+.news-modal-title { font-size: 1rem; font-weight: 800; color: var(--text-primary); line-height: 1.45; }
 
-  /* Impact badge */
-  .impact-badge {
-    font-size: .6rem;
-    font-weight: 700;
-    padding: .1rem .4rem;
-    border-radius: 4px;
-    letter-spacing: .3px;
-    text-transform: uppercase;
-  }
-  .impact-badge.high { background: rgba(239,68,68,.2); color: var(--n-red); border: 1px solid rgba(239,68,68,.3); }
-  .impact-badge.med  { background: rgba(249,115,22,.15); color: var(--n-orange); border: 1px solid rgba(249,115,22,.25); }
-  .impact-badge.low  { background: rgba(234,179,8,.1); color: var(--n-yellow); border: 1px solid rgba(234,179,8,.2); }
+.ai-analysis-block {
+  background: rgba(99,102,241,.07); border: 1px solid rgba(99,102,241,.2);
+  border-radius: 11px; padding: 1rem 1.1rem; margin: .9rem 0;
+}
+.ai-analysis-title { font-size: .68rem; text-transform: uppercase; letter-spacing: 1px; color: #a5b4fc; font-weight: 800; margin-bottom: .5rem; }
+.ai-analysis-text  { font-size: .82rem; color: var(--text-dim); line-height: 1.6; }
 
-  /* ── SIDEBAR ── */
-  .sidebar-section {
-    padding: .8rem 1rem;
-    border-bottom: 1px solid var(--n-border);
-  }
-  .sidebar-title {
-    font-size: .7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--n-accent);
-    margin-bottom: .6rem;
-  }
+.ai-loading {
+  display: flex; align-items: center; gap: .5rem; justify-content: center;
+  padding: 1.5rem; color: var(--text-muted); font-size: .82rem;
+}
+.ai-loading span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: bounce .9s infinite; }
+.ai-loading span:nth-child(2) { animation-delay: .15s; }
+.ai-loading span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
-  /* Sentiment gauge */
-  .sentiment-gauge {
-    position: relative;
-    height: 8px;
-    background: var(--n-border);
-    border-radius: 4px;
-    overflow: hidden;
-    margin: .4rem 0;
-  }
-  .sentiment-fill {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    border-radius: 4px;
-    transition: width .5s;
-  }
-  .sentiment-fill.bullish { background: linear-gradient(90deg, #22c55e, #00ff88); }
-  .sentiment-fill.bearish { background: linear-gradient(90deg, #ef4444, #ff6b6b); }
-  .sentiment-fill.neutral { background: linear-gradient(90deg, #eab308, #fbbf24); }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin-top: .9rem; }
+.detail-block {
+  background: var(--bg-card2); border: 1px solid var(--border);
+  border-radius: 9px; padding: .75rem .9rem;
+}
+.detail-block-title { font-size: .65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin-bottom: .35rem; }
+.detail-block-text  { font-size: .78rem; color: var(--text-dim); line-height: 1.5; }
 
-  .sentiment-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: .68rem;
-    margin-bottom: .3rem;
-  }
-  .sentiment-sym { color: var(--n-text); font-weight: 600; }
-  .sentiment-val { font-family: 'Space Mono', monospace; }
+.news-source-link {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .72rem; color: var(--accent); text-decoration: none; font-weight: 700; margin-top: .7rem;
+}
+.news-source-link:hover { text-decoration: underline; }
 
-  /* Upcoming events list */
-  .upcoming-item {
-    display: flex;
-    align-items: center;
-    gap: .6rem;
-    padding: .4rem 0;
-    border-bottom: 1px solid rgba(30,40,55,.8);
-  }
-  .upcoming-time { font-family: 'Space Mono', monospace; font-size: .65rem; color: var(--n-muted); min-width: 45px; }
-  .upcoming-name { font-size: .72rem; color: var(--n-text); flex: 1; }
-  .countdown-badge {
-    font-size: .58rem;
-    font-weight: 700;
-    padding: .1rem .35rem;
-    border-radius: 4px;
-    background: rgba(234,179,8,.15);
-    color: var(--n-yellow);
-    font-family: 'Space Mono', monospace;
-  }
+/* ── Empty state ────────────────────────────────────────── */
+.news-empty {
+  text-align: center; padding: 3rem 1rem; color: var(--text-muted);
+}
+.news-empty-icon { font-size: 3rem; opacity: .4; margin-bottom: .8rem; }
 
-  /* FX Market hours */
-  .fx-session {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    padding: .35rem 0;
-    border-bottom: 1px solid rgba(30,40,55,.5);
-  }
-  .fx-session-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .fx-session-dot.open { animation: blink 1.5s infinite; }
-  .fx-session-name { font-size: .72rem; font-weight: 600; color: var(--n-text); }
-  .fx-session-hours { font-size: .62rem; color: var(--n-muted); font-family: 'Space Mono', monospace; margin-left: auto; }
+/* ── Score gauge ────────────────────────────────────────── */
+.score-gauge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-family: var(--font-mono); font-size: .75rem; font-weight: 700;
+  padding: .25rem .6rem; border-radius: 6px;
+}
+.score-gauge.pos { color: var(--bull-color); background: var(--bull-bg); }
+.score-gauge.neg { color: var(--bear-color); background: var(--bear-bg); }
+.score-gauge.zero{ color: var(--neut-color); background: var(--neut-bg); }
 
-  /* Surprise score */
-  .surprise-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: .2rem;
-    font-size: .62rem;
-    font-weight: 700;
-    padding: .1rem .4rem;
-    border-radius: 4px;
-  }
-  .surprise-chip.pos { background: rgba(34,197,94,.15); color: var(--n-green); }
-  .surprise-chip.neg { background: rgba(239,68,68,.15); color: var(--n-red); }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 900px) {
-    .news-layout { grid-template-columns: 1fr; }
-    .news-sidebar { display: none; }
-  }
-  @media (max-width: 600px) {
-    .cal-values { display: none; }
-    .cat-tag { display: none; }
-  }
+/* ── Animations entrée cartes ───────────────────────────── */
+.news-card { animation: fadeUp .35s ease both; }
+.news-card:nth-child(1)  { animation-delay: .02s; }
+.news-card:nth-child(2)  { animation-delay: .05s; }
+.news-card:nth-child(3)  { animation-delay: .08s; }
+.news-card:nth-child(4)  { animation-delay: .11s; }
+.news-card:nth-child(5)  { animation-delay: .14s; }
+.news-card:nth-child(n+6){ animation-delay: .17s; }
+@keyframes fadeUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 </style>
 
-<div class="news-wrap">
-
-  <!-- ── TOP NAV ── -->
-  <div class="news-topnav">
-    <div class="news-title-badge">
-      <div class="live-dot"></div>
-      <h4>Calendrier Économique & Actualités</h4>
-    </div>
-
-    <!-- View toggle -->
-    <div class="view-toggle">
-      <button class="vt-btn active" onclick="setView(this,'calendar')"><i class="fas fa-calendar-alt me-1"></i>Calendrier</button>
-      <button class="vt-btn" onclick="setView(this,'news')"><i class="fas fa-newspaper me-1"></i>Actualités</button>
-      <button class="vt-btn" onclick="setView(this,'both')"><i class="fas fa-th-large me-1"></i>Les Deux</button>
-    </div>
-
-    <!-- Clock -->
-    <div style="font-family:'Space Mono',monospace; font-size:.75rem; color:var(--n-accent); margin-left:1rem;" id="liveClock"></div>
+<!-- ── Barre de statut ─────────────────────────────────────── -->
+<div class="news-status-bar" id="newsStatusBar">
+  <div class="news-btc-price">
+    <span class="btc-icon">₿</span>
+    <span id="btcPriceVal">
+      {% if btc.price %} ${{ "{:,.0f}".format(btc.price) }}
+      {% else %}Chargement…{% endif %}
+    </span>
+    {% if btc.change %}
+    <span class="btc-change {% if btc.change >= 0 %}pos{% else %}neg{% endif %}" id="btcChangeVal">
+      {% if btc.change >= 0 %}+{% endif %}{{ "%.2f"|format(btc.change) }}%
+    </span>
+    {% endif %}
   </div>
 
-  <!-- ── LAYOUT ── -->
-  <div class="news-layout">
+  <!-- Fear & Greed -->
+  {% set fg = fear_greed %}
+  {% if fg.value <= 25 %}
+    {% set fg_class = 'fear' %}{% set fg_emoji = '😱' %}
+  {% elif fg.value <= 45 %}
+    {% set fg_class = 'fear' %}{% set fg_emoji = '😰' %}
+  {% elif fg.value <= 55 %}
+    {% set fg_class = 'neutral' %}{% set fg_emoji = '😐' %}
+  {% elif fg.value <= 75 %}
+    {% set fg_class = 'greed' %}{% set fg_emoji = '😀' %}
+  {% else %}
+    {% set fg_class = 'greed' %}{% set fg_emoji = '🤑' %}
+  {% endif %}
+  <div class="news-fg-badge {{ fg_class }}" id="fgBadge" title="Fear & Greed Index">
+    {{ fg_emoji }} {{ fg.value }} — {{ fg.label }}
+  </div>
 
-    <!-- ══ MAIN ══ -->
-    <div class="news-main">
+  <!-- Sentiment global -->
+  <div style="display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:var(--text-muted)">
+    <span style="color:var(--bull-color);font-weight:700">🟢 {{ bull_count }}</span>
+    <span style="color:var(--bear-color);font-weight:700">🔴 {{ bear_count }}</span>
+    <span style="color:var(--neut-color);font-weight:700">🟡 {{ neut_count }}</span>
+    <span>articles</span>
+  </div>
 
-      <!-- Category filter -->
-      <div class="cat-filter-bar">
-        <button class="cat-btn active" onclick="filterCat(this,'all')" style="background:rgba(0,212,170,.15);border-color:var(--n-accent);color:var(--n-accent);">
-          <span class="cat-dot" style="background:var(--n-accent)"></span> Toutes
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'eco')" data-bg="rgba(59,130,246,.2)" data-color="#60a5fa" data-border="#3b82f6">
-          <span class="cat-dot" style="background:#3b82f6"></span> Économique
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'bc')" data-bg="rgba(249,115,22,.2)" data-color="#fb923c" data-border="#f97316">
-          <span class="cat-dot" style="background:#f97316"></span> Banques Centrales
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'pol')" data-bg="rgba(168,85,247,.2)" data-color="#c084fc" data-border="#a855f7">
-          <span class="cat-dot" style="background:#a855f7"></span> Politique
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'social')" data-bg="rgba(34,197,94,.2)" data-color="#4ade80" data-border="#22c55e">
-          <span class="cat-dot" style="background:#22c55e"></span> Social
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'energy')" data-bg="rgba(132,204,22,.2)" data-color="#a3e635" data-border="#84cc16">
-          <span class="cat-dot" style="background:#84cc16"></span> Énergie
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'tech')" data-bg="rgba(6,182,212,.2)" data-color="#22d3ee" data-border="#06b6d4">
-          <span class="cat-dot" style="background:#06b6d4"></span> Technologie
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'market')" data-bg="rgba(100,116,139,.3)" data-color="#cbd5e1" data-border="#475569">
-          <span class="cat-dot" style="background:#94a3b8"></span> Marchés
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'crypto')" data-bg="rgba(245,158,11,.2)" data-color="#fcd34d" data-border="#f59e0b">
-          <span class="cat-dot" style="background:#f59e0b"></span> Crypto
-        </button>
-        <button class="cat-btn" onclick="filterCat(this,'health')" data-bg="rgba(236,72,153,.2)" data-color="#f472b6" data-border="#ec4899">
-          <span class="cat-dot" style="background:#ec4899"></span> Santé
-        </button>
+  <span class="news-update-info" id="lastUpdateInfo">Màj : {{ last_update }}</span>
+  <button class="news-refresh-btn" id="refreshBtn" onclick="refreshFeed(true)">
+    <i class="fas fa-sync-alt" id="refreshIcon"></i> Actualiser
+  </button>
+</div>
 
-        <!-- Impact filter -->
-        <div class="impact-filter ms-2">
-          <button class="impact-dot-btn red-i active" onclick="toggleImpact(this,'high')" title="Impact Élevé">🔴</button>
-          <button class="impact-dot-btn orange-i active" onclick="toggleImpact(this,'med')" title="Impact Moyen">🟠</button>
-          <button class="impact-dot-btn yellow-i active" onclick="toggleImpact(this,'low')" title="Impact Faible">🟡</button>
-          <button class="impact-dot-btn grey-i" onclick="toggleImpact(this,'none')" title="Informatif">⚪</button>
-        </div>
-      </div>
+<!-- ── Tabs catégories ──────────────────────────────────────── -->
+<div class="news-tabs" id="newsTabs">
+  <button class="news-tab active" data-cat="all"              onclick="filterNews('all',this)">📰 Tout</button>
+  <button class="news-tab" data-cat="monetary_policy"         onclick="filterNews('monetary_policy',this)">🏦 Monétaire</button>
+  <button class="news-tab" data-cat="macro"                   onclick="filterNews('macro',this)">📊 Macro</button>
+  <button class="news-tab" data-cat="regulatory"              onclick="filterNews('regulatory',this)">⚖️ Réglementaire</button>
+  <button class="news-tab" data-cat="geopolitical"            onclick="filterNews('geopolitical',this)">🌍 Géopolitique</button>
+  <button class="news-tab" data-cat="institutional"           onclick="filterNews('institutional',this)">🏢 Institutionnel</button>
+  <button class="news-tab" data-cat="crypto_tech"             onclick="filterNews('crypto_tech',this)">🔧 Technologie</button>
+  <button class="news-tab" data-cat="sentiment"               onclick="filterNews('sentiment',this)">📱 Sentiment</button>
+</div>
 
-      <!-- Date filter -->
-      <div class="date-filter">
-        <button class="date-btn" onclick="setDateFilter(this,'yesterday')">Hier</button>
-        <button class="date-btn active" onclick="setDateFilter(this,'today')">Aujourd'hui</button>
-        <button class="date-btn" onclick="setDateFilter(this,'tomorrow')">Demain</button>
-        <button class="date-btn" onclick="setDateFilter(this,'week')">Cette Semaine</button>
-        <button class="date-btn" onclick="setDateFilter(this,'month')">Ce Mois</button>
+<!-- ── Layout principal ────────────────────────────────────── -->
+<div class="news-layout">
 
-        <div class="date-search">
-          <i class="fas fa-search" style="color:var(--n-muted);font-size:.7rem;"></i>
-          <input type="text" placeholder="Rechercher un événement…" id="newsSearch" oninput="filterSearch(this.value)">
-        </div>
-      </div>
+  <!-- FEED ──────────────────────────────────────────────── -->
+  <div class="news-feed" id="newsFeed">
+    {% if articles %}
+      {% for a in articles %}
+      <div class="news-card {{ a.sentiment }}"
+           data-id="{{ a.id }}"
+           data-cat="{{ a.category }}"
+           onclick="openNewsDetail('{{ a.id }}')">
 
-      <!-- ── CALENDAR VIEW ── -->
-      <div id="calendarView" class="news-feed">
-        <!-- Populated by JS -->
-      </div>
-
-      <!-- ── NEWS VIEW ── -->
-      <div id="newsView" class="news-feed" style="display:none;">
-        <!-- Populated by JS -->
-      </div>
-
-    </div><!-- /news-main -->
-
-    <!-- ══ SIDEBAR ══ -->
-    <div class="news-sidebar">
-
-      <!-- FX Market Sessions -->
-      <div class="sidebar-section">
-        <div class="sidebar-title"><i class="fas fa-clock me-1"></i>Sessions Forex</div>
-        <div class="fx-session">
-          <div class="fx-session-dot open" id="dot-sydney" style="background:#00d4aa;"></div>
-          <div>
-            <div class="fx-session-name">Sydney</div>
-            <div style="font-size:.6rem;color:var(--n-muted);">AUD / NZD</div>
-          </div>
-          <div class="fx-session-hours" id="sess-sydney">22h00–07h00</div>
-        </div>
-        <div class="fx-session">
-          <div class="fx-session-dot open" id="dot-tokyo" style="background:#f97316;"></div>
-          <div>
-            <div class="fx-session-name">Tokyo</div>
-            <div style="font-size:.6rem;color:var(--n-muted);">JPY / AUD</div>
-          </div>
-          <div class="fx-session-hours" id="sess-tokyo">00h00–09h00</div>
-        </div>
-        <div class="fx-session">
-          <div class="fx-session-dot" id="dot-london" style="background:#3b82f6;"></div>
-          <div>
-            <div class="fx-session-name">Londres</div>
-            <div style="font-size:.6rem;color:var(--n-muted);">EUR / GBP / CHF</div>
-          </div>
-          <div class="fx-session-hours" id="sess-london">08h00–17h00</div>
-        </div>
-        <div class="fx-session">
-          <div class="fx-session-dot" id="dot-new-york" style="background:#a855f7;"></div>
-          <div>
-            <div class="fx-session-name">New York</div>
-            <div style="font-size:.6rem;color:var(--n-muted);">USD / CAD / MXN</div>
-          </div>
-          <div class="fx-session-hours" id="sess-newyork">13h00–22h00</div>
-        </div>
-        <div style="margin-top:.5rem; font-size:.62rem; color:var(--n-muted); font-family:'Space Mono',monospace;" id="sessionNote">
-          🕐 Heure locale : <span id="localTime">—</span>
-        </div>
-      </div>
-
-      <!-- Sentiment -->
-      <div class="sidebar-section">
-        <div class="sidebar-title"><i class="fas fa-chart-pie me-1"></i>Sentiment du Marché</div>
-        <div id="sentimentRows">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-      <!-- Next events countdown -->
-      <div class="sidebar-section">
-        <div class="sidebar-title"><i class="fas fa-bell me-1"></i>Prochains Événements</div>
-        <div id="upcomingList">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-      <!-- Quick stats -->
-      <div class="sidebar-section">
-        <div class="sidebar-title"><i class="fas fa-chart-bar me-1"></i>Statistiques du Jour</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:.4rem;">
-          <div style="background:rgba(0,0,0,.3);border:1px solid var(--n-border);border-radius:8px;padding:.5rem;text-align:center;">
-            <div style="font-size:.6rem;color:var(--n-muted);text-transform:uppercase;letter-spacing:.5px;">Événements</div>
-            <div style="font-size:1.2rem;font-weight:700;color:var(--n-text);font-family:'Space Mono',monospace;" id="statTotal">—</div>
-          </div>
-          <div style="background:rgba(0,0,0,.3);border:1px solid var(--n-border);border-radius:8px;padding:.5rem;text-align:center;">
-            <div style="font-size:.6rem;color:var(--n-muted);text-transform:uppercase;letter-spacing:.5px;">Impact Élevé</div>
-            <div style="font-size:1.2rem;font-weight:700;color:#ef4444;font-family:'Space Mono',monospace;" id="statHigh">—</div>
-          </div>
-          <div style="background:rgba(0,0,0,.3);border:1px solid var(--n-border);border-radius:8px;padding:.5rem;text-align:center;">
-            <div style="font-size:.6rem;color:var(--n-muted);text-transform:uppercase;letter-spacing:.5px;">Publiés</div>
-            <div style="font-size:1.2rem;font-weight:700;color:var(--n-green);font-family:'Space Mono',monospace;" id="statReleased">—</div>
-          </div>
-          <div style="background:rgba(0,0,0,.3);border:1px solid var(--n-border);border-radius:8px;padding:.5rem;text-align:center;">
-            <div style="font-size:.6rem;color:var(--n-muted);text-transform:uppercase;letter-spacing:.5px;">À Venir</div>
-            <div style="font-size:1.2rem;font-weight:700;color:var(--n-yellow);font-family:'Space Mono',monospace;" id="statPending">—</div>
+        <div class="news-card-top">
+          {% if a.image %}
+          <img src="{{ a.image }}" alt="" class="news-card-img"
+               onerror="this.style.display='none'">
+          {% endif %}
+          <div class="news-card-body">
+            <div class="news-card-title">{{ a.title }}</div>
+            <div class="news-card-meta">
+              <span class="news-source">{{ a.source }}</span>
+              <span class="news-time">· {{ a.published[-5:] if a.published|length > 5 else a.published }}</span>
+              <span class="news-cat-pill"
+                    style="color:{{ a.cat_color }};border-color:{{ a.cat_color }}20;background:{{ a.cat_color }}15">
+                {{ a.cat_label }}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Economic Analysis -->
-      <div class="sidebar-section">
-        <div class="sidebar-title"><i class="fas fa-brain me-1"></i>Analyse IA du Jour</div>
-        <div id="aiDailySummary" style="font-size:.72rem; color:#94a3b8; line-height:1.7;">
-          <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem;">
-            <div class="live-dot" style="background:#a855f7;"></div>
-            <span style="color:#c084fc;font-weight:600;">Analyse en cours…</span>
+        <div class="news-card-score">
+          <span class="news-badge {{ a.sentiment }}">
+            {% if a.sentiment == 'bullish' %}🟢 HAUSSIER +{{ a.score }}
+            {% elif a.sentiment == 'bearish' %}🔴 BAISSIER {{ a.score }}
+            {% else %}🟡 NEUTRE {{ a.score }}{% endif %}
+          </span>
+          <div class="prob-bar-wrap">
+            <div class="prob-bar-labels">
+              <span>Baisse {{ a.prob_bear }}%</span>
+              <span>Hausse {{ a.prob_bull }}%</span>
+            </div>
+            <div class="prob-bar">
+              <div class="prob-bar-fill" style="width:{{ a.prob_bull }}%"></div>
+            </div>
           </div>
         </div>
-        <button onclick="refreshAISummary()" style="width:100%;margin-top:.5rem;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);color:#c084fc;border-radius:8px;padding:.4rem;font-size:.7rem;cursor:pointer;font-weight:600;">
-          <i class="fas fa-sync-alt me-1"></i> Actualiser
+
+        {% if a.summary %}
+        <div class="news-summary">{{ a.summary }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="news-empty">
+        <div class="news-empty-icon">📡</div>
+        <p style="font-size:.9rem;color:var(--text-muted)">Chargement des actualités…</p>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-top:.5rem">
+          Configurez vos clés API dans <code>app.config</code> pour voir les actualités en temps réel.
+        </p>
+        <button class="news-refresh-btn" style="margin:.8rem auto;display:inline-flex" onclick="refreshFeed(true)">
+          <i class="fas fa-sync-alt"></i> Charger depuis RSS
         </button>
       </div>
+    {% endif %}
+  </div>
 
-    </div><!-- /news-sidebar -->
-  </div><!-- /news-layout -->
+  <!-- SIDEBAR ────────────────────────────────────────────── -->
+  <aside class="news-sidebar">
+
+    <!-- Sentiment global -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">📊 Sentiment Global</div>
+      <div class="sentiment-stats">
+        <div>
+          <div class="sent-stat-val" style="color:var(--bull-color)" id="sbBull">{{ bull_count }}</div>
+          <div class="sent-stat-lbl">Haussier</div>
+        </div>
+        <div>
+          <div class="sent-stat-val" style="color:var(--neut-color)" id="sbNeut">{{ neut_count }}</div>
+          <div class="sent-stat-lbl">Neutre</div>
+        </div>
+        <div>
+          <div class="sent-stat-val" style="color:var(--bear-color)" id="sbBear">{{ bear_count }}</div>
+          <div class="sent-stat-lbl">Baissier</div>
+        </div>
+      </div>
+      <!-- Barre sentiment globale -->
+      {% set total = bull_count + bear_count + neut_count %}
+      {% set bull_pct = ((bull_count / total) * 100) | round | int if total > 0 else 33 %}
+      <div style="padding:0 .9rem .9rem">
+        <div style="height:8px;border-radius:5px;overflow:hidden;display:flex;gap:1px">
+          <div style="width:{{ bull_pct }}%;background:var(--bull-color)"></div>
+          <div style="flex:1;background:var(--bear-color)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--text-muted);margin-top:.3rem;font-family:var(--font-mono)">
+          <span>Haussier {{ bull_pct }}%</span>
+          <span>Baissier {{ 100 - bull_pct }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top 5 articles impactants -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">⚡ Top Impact BTC</div>
+      {% for a in articles[:5] %}
+      <div class="top-news-item" onclick="openNewsDetail('{{ a.id }}')">
+        <span class="top-news-rank">{{ loop.index }}</span>
+        <div>
+          <div class="top-news-title">{{ a.title[:70] }}{% if a.title|length > 70 %}…{% endif %}</div>
+          <span class="news-badge {{ a.sentiment }}" style="font-size:.6rem;padding:.15rem .45rem;margin-top:.3rem;display:inline-flex">
+            {% if a.sentiment == 'bullish' %}🟢 +{{ a.score }}
+            {% elif a.sentiment == 'bearish' %}🔴 {{ a.score }}
+            {% else %}🟡 {{ a.score }}{% endif %}
+          </span>
+        </div>
+      </div>
+      {% else %}
+      <div style="padding:1rem;text-align:center;color:var(--text-muted);font-size:.78rem">Aucun article disponible</div>
+      {% endfor %}
+    </div>
+
+    <!-- Calendrier économique -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">📅 Calendrier Éco.</div>
+      {% if calendar %}
+        {% for ev in calendar %}
+        <div class="cal-item">
+          <span class="cal-time">{{ ev.time }}</span>
+          <span class="cal-impact {{ ev.impact }}" title="{{ ev.impact }} impact"></span>
+          <span class="cal-event">{{ ev.event }}</span>
+          <span class="cal-currency">{{ ev.currency }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding:1rem;text-align:center;color:var(--text-muted);font-size:.78rem">
+          Aucun événement aujourd'hui
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- BTC Stats -->
+    {% if btc.price %}
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">₿ BTC / USD — 24h</div>
+      <div style="padding:.8rem 1rem;display:flex;flex-direction:column;gap:.5rem">
+        {% for lbl, val in [('Haut', btc.high), ('Bas', btc.low)] %}
+        <div style="display:flex;justify-content:space-between;font-size:.78rem">
+          <span style="color:var(--text-muted)">{{ lbl }} 24h</span>
+          <span style="font-family:var(--font-mono);font-weight:700;color:var(--text-primary)">${{ "{:,.0f}".format(val) }}</span>
+        </div>
+        {% endfor %}
+        <div style="display:flex;justify-content:space-between;font-size:.78rem">
+          <span style="color:var(--text-muted)">Volume 24h</span>
+          <span style="font-family:var(--font-mono);font-weight:700;color:var(--text-dim)">{{ "{:,.0f}".format(btc.vol) }} BTC</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </aside>
+</div>
+
+<!-- ── Modal détail article ────────────────────────────────── -->
+<div class="news-modal-overlay" id="newsModal" onclick="if(event.target===this)closeNewsModal()">
+  <div class="news-modal" id="newsModalContent">
+    <div class="news-modal-header">
+      <div style="flex:1">
+        <div style="font-size:.65rem;color:var(--text-muted);margin-bottom:.3rem" id="modalMeta">—</div>
+        <div class="news-modal-title" id="modalTitle">—</div>
+      </div>
+      <button class="news-modal-close" onclick="closeNewsModal()">×</button>
+    </div>
+    <div class="news-modal-body" id="modalBody">
+      <div class="ai-loading">
+        <span></span><span></span><span></span>
+        <span style="margin-left:.3rem">Analyse IA en cours…</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-// ════════════════════════════════════════
-// ACTUALITÉS & CALENDRIER — SCRIPT
-// ════════════════════════════════════════
+/* ============================================================
+   ACTUALITES — JavaScript
+============================================================ */
+'use strict';
 
-// ── Category config ──
-const CATEGORIES = {
-  eco:    { label: 'Économique',       color: '#3b82f6', bg: 'rgba(59,130,246,.15)',  emoji: '📊' },
-  bc:     { label: 'Banque Centrale',  color: '#f97316', bg: 'rgba(249,115,22,.15)',  emoji: '🏦' },
-  pol:    { label: 'Politique',        color: '#a855f7', bg: 'rgba(168,85,247,.15)',  emoji: '🗳️' },
-  social: { label: 'Social',           color: '#22c55e', bg: 'rgba(34,197,94,.15)',   emoji: '👥' },
-  energy: { label: 'Énergie',          color: '#84cc16', bg: 'rgba(132,204,22,.15)',  emoji: '⚡' },
-  tech:   { label: 'Technologie',      color: '#06b6d4', bg: 'rgba(6,182,212,.15)',   emoji: '💻' },
-  market: { label: 'Marchés',          color: '#94a3b8', bg: 'rgba(100,116,139,.15)', emoji: '📈' },
-  crypto: { label: 'Crypto',           color: '#f59e0b', bg: 'rgba(245,158,11,.15)',  emoji: '₿' },
-  health: { label: 'Santé',            color: '#ec4899', bg: 'rgba(236,72,153,.15)',  emoji: '🏥' },
-};
+let _allArticles  = {{ articles | tojson | safe }};
+let _currentCat   = 'all';
+let _refreshTimer = null;
 
-// ── Generate rich calendar data ──
-function generateCalendarData() {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+/* ── Filtre par catégorie ─────────────────────────────────── */
+function filterNews(cat, btn) {
+  _currentCat = cat;
+  document.querySelectorAll('.news-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
 
-  const events = [
-    // PAST events today
-    { time: '02:30', impact: 'high', cat: 'eco', currency: 'AUD', flag: '🇦🇺', name: 'Décision RBA sur les taux', forecast: '4.35%', previous: '4.35%', actual: '4.35%', surprise: 0, desc: 'La Reserve Bank of Australia a maintenu ses taux directeurs inchangés à 4.35%, conformément aux attentes du marché. Le Gouverneur a indiqué que la politique restrictive resterait en place aussi longtemps que nécessaire pour ramener l\'inflation dans la cible.', markets: ['AUD/USD','AUD/JPY'], status: 'released' },
-    { time: '06:45', impact: 'med', cat: 'eco', currency: 'CHF', flag: '🇨🇭', name: 'Chômage Suisse', forecast: '2.5%', previous: '2.4%', actual: '2.6%', surprise: -1, desc: 'Le taux de chômage helvétique ressort légèrement au-dessus des attentes, indiquant une légère dégradation du marché du travail.', markets: ['USD/CHF','EUR/CHF'], status: 'released' },
-    { time: '07:00', impact: 'low', cat: 'eco', currency: 'EUR', flag: '🇩🇪', name: 'IPP Allemagne (m/m)', forecast: '0.2%', previous: '0.1%', actual: '0.3%', surprise: 1, desc: 'L\'indice des prix à la production ressort au-dessus des attentes, signalant des pressions inflationnistes persistantes dans la chaîne de production.', markets: ['EUR/USD','EUR/GBP'], status: 'released' },
-    { time: '08:00', impact: 'med', cat: 'eco', currency: 'EUR', flag: '🇫🇷', name: 'Balance Commerciale France', forecast: '-7.8B', previous: '-8.1B', actual: null, desc: 'Publication de la balance commerciale française pour le mois de janvier 2026.', markets: ['EUR/USD'], status: 'released' },
-    { time: '09:30', impact: 'high', cat: 'eco', currency: 'GBP', flag: '🇬🇧', name: 'PIB Royaume-Uni (m/m)', forecast: '0.1%', previous: '-0.1%', actual: '0.2%', surprise: 1, desc: 'La croissance britannique surprend positivement avec +0.2% mensuel, soutenue par la reprise du secteur des services. Un signal encourageant pour la Banque d\'Angleterre.', markets: ['GBP/USD','EUR/GBP','GBP/JPY'], status: 'released' },
-    { time: '10:00', impact: 'high', cat: 'eco', currency: 'EUR', flag: '🇪🇺', name: 'Inflation Zone Euro (CPI y/y)', forecast: '2.3%', previous: '2.4%', actual: null, desc: 'Publication de l\'indice des prix à la consommation de la zone euro sur un an. Un chiffre inférieur à 2.3% renforcerait les attentes de baisses de taux BCE.', markets: ['EUR/USD','EUR/GBP','EUR/JPY'], status: 'upcoming' },
-    { time: '10:30', impact: 'low', cat: 'eco', currency: 'GBP', flag: '🇬🇧', name: 'Permis de construire (jan)', forecast: '52K', previous: '48K', actual: null, desc: '', markets: ['GBP/USD'], status: 'upcoming' },
-    { time: '13:30', impact: 'high', cat: 'eco', currency: 'USD', flag: '🇺🇸', name: 'NFP — Créations d\'emplois', forecast: '180K', previous: '256K', actual: null, desc: 'Les Non-Farm Payrolls (NFP) sont l\'indicateur économique le plus surveillé par les marchés. Un chiffre fort repousserait les attentes de baisse Fed. Un chiffre faible renforcerait l\'hypothèse de 2 baisses en 2026.', markets: ['EUR/USD','USD/JPY','XAU/USD','US500'], status: 'upcoming' },
-    { time: '13:30', impact: 'high', cat: 'eco', currency: 'USD', flag: '🇺🇸', name: 'Taux de Chômage US', forecast: '4.1%', previous: '4.1%', actual: null, desc: 'Publication conjointe avec les NFP.', markets: ['USD','US500'], status: 'upcoming' },
-    { time: '14:00', impact: 'med', cat: 'eco', currency: 'CAD', flag: '🇨🇦', name: 'Ventes au détail Canada', forecast: '0.4%', previous: '0.7%', actual: null, desc: '', markets: ['USD/CAD'], status: 'upcoming' },
-    { time: '15:00', impact: 'med', cat: 'eco', currency: 'USD', flag: '🇺🇸', name: 'ISM Services PMI', forecast: '53.0', previous: '54.1', actual: null, desc: 'L\'indice PMI des services mesure l\'activité du secteur tertiaire américain. Un chiffre > 50 indique une expansion.', markets: ['USD','US500'], status: 'upcoming' },
-    { time: '17:00', impact: 'low', cat: 'eco', currency: 'USD', flag: '🇺🇸', name: 'Discours membre Fed', forecast: '—', previous: '—', actual: null, desc: 'Intervention d\'un membre du FOMC sur la politique monétaire.', markets: ['USD'], status: 'upcoming' },
-    // BC events
-    { time: '11:30', impact: 'high', cat: 'bc', currency: 'EUR', flag: '🇪🇺', name: 'Discours Christine Lagarde (BCE)', forecast: '—', previous: '—', actual: null, desc: 'La Présidente de la BCE prend la parole lors du Forum Bancaire Européen. Les marchés surveilleront tout indice sur le calendrier des baisses de taux.', markets: ['EUR/USD','EUR/GBP','Bund'], status: 'upcoming' },
-    // Non-economic events
-    { time: '08:30', impact: 'med', cat: 'pol', currency: 'EUR', flag: '🇫🇷', name: 'Budget Supplémentaire France — Vote AN', forecast: '—', previous: '—', actual: null, desc: 'L\'Assemblée Nationale vote le projet de loi de finances rectificatif. Le résultat pourrait impacter la perception des investisseurs sur la soutenabilité de la dette française.', markets: ['EUR/USD','OAT','CAC40'], status: 'released' },
-    { time: '12:00', impact: 'high', cat: 'energy', currency: 'USD', flag: '🇺🇸', name: 'Stocks Pétrole EIA (hebdo)', forecast: '-1.2M', previous: '+2.8M', actual: null, desc: 'Les stocks hebdomadaires de brut de l\'Energy Information Administration. Un stock en baisse est haussier pour le pétrole.', markets: ['USOIL','UKOIL','USD/CAD'], status: 'upcoming' },
-    { time: '09:00', impact: 'med', cat: 'tech', currency: 'USD', flag: '🇺🇸', name: 'Résultats NVIDIA (Q4 2025)', forecast: 'EPS: $0.89', previous: 'EPS: $0.74', actual: null, desc: 'Publication des résultats trimestriels de NVIDIA, acteur majeur de l\'IA et des semi-conducteurs.', markets: ['NVDA','NAS100'], status: 'released' },
-    { time: '14:30', impact: 'low', cat: 'social', currency: 'EUR', flag: '🇩🇪', name: 'Grève Lufthansa — Perturbations', forecast: '—', previous: '—', actual: null, desc: 'Le syndicat Ver.di a appelé à une grève de 48h affectant les vols Lufthansa.', markets: ['EUR','DAX'], status: 'released' },
-    { time: '16:00', impact: 'med', cat: 'crypto', currency: 'BTC', flag: '₿', name: 'Réunion SEC sur ETF Bitcoin spot', forecast: '—', previous: '—', actual: null, desc: 'La SEC tient une réunion consultative sur les produits dérivés crypto. Toute nouvelle déclaration pourrait impacter fortement BTC/USD.', markets: ['BTC/USD','ETH/USD'], status: 'upcoming' },
-  ];
-
-  return events;
-}
-
-// ── Generate news data ──
-function generateNewsData() {
-  return [
-    { time: '08:47', cat: 'eco', impact: 'high', source: 'Reuters', flag: '🌍', emoji: '📊',
-      headline: 'La Fed envisage deux baisses de taux en 2026, selon les minutes FOMC',
-      preview: 'Les minutes de la dernière réunion du Federal Open Market Committee révèlent que plusieurs membres ont évoqué la possibilité de réduire les taux directeurs à deux reprises cette année, sous réserve d\'une amélioration continue de l\'inflation.',
-      markets: ['EUR/USD','USD/JPY','US500'], tags: ['Fed','FOMC','Taux'] },
-    { time: '09:12', cat: 'bc', impact: 'high', source: 'Bloomberg', flag: '🇪🇺', emoji: '🏦',
-      headline: 'BCE : Lagarde confirme que la désinflation est "bien engagée" en zone euro',
-      preview: 'La présidente de la Banque Centrale Européenne a indiqué que le processus de désinflation progresse comme attendu, ouvrant la voie à de nouvelles baisses de taux au second semestre 2026.',
-      markets: ['EUR/USD','EUR/GBP','Bund'], tags: ['BCE','Inflation','Taux'] },
-    { time: '09:35', cat: 'pol', impact: 'med', source: 'Le Monde', flag: '🇫🇷', emoji: '🗳️',
-      headline: 'France : Le gouvernement survit à un nouveau vote de défiance au Parlement',
-      preview: 'Le Premier Ministre a remporté un vote de confiance avec une courte majorité, écartant temporairement une crise gouvernementale. Les marchés ont modérément réagi à cette stabilisation politique.',
-      markets: ['EUR/USD','OAT','CAC40'], tags: ['France','Politique'] },
-    { time: '10:01', cat: 'market', impact: 'med', source: 'FT', flag: '🌍', emoji: '📈',
-      headline: 'S&P 500 établit un nouveau record historique porté par les techs',
-      preview: 'Le principal indice boursier américain a clôturé à 5,278 points, soutenu par la forte hausse du secteur technologique après les résultats trimestriels supérieurs aux attentes de plusieurs géants de la Silicon Valley.',
-      markets: ['US500','NAS100','USD'], tags: ['Wall Street','Tech'] },
-    { time: '10:28', cat: 'energy', impact: 'high', source: 'Reuters', flag: '🛢️', emoji: '⚡',
-      headline: 'OPEP+ maintient ses quotas de production : le pétrole rebondit de 2%',
-      preview: 'La réunion de l\'OPEP+ s\'est conclue par le maintien des réductions de production actuelles, surprenant les analystes qui anticipaient une légère hausse. Le WTI rebondit à 79.40$/baril.',
-      markets: ['USOIL','UKOIL','USD/CAD','NOK'], tags: ['OPEP','Pétrole','Énergie'] },
-    { time: '11:05', cat: 'crypto', impact: 'med', source: 'CoinDesk', flag: '₿', emoji: '₿',
-      headline: 'Bitcoin franchit les 68 000$ : les ETF spot absorbent 800M$ en 24h',
-      preview: 'Le Bitcoin continue sa progression et repasse au-dessus des 68 000$, porté par des flux entrants massifs dans les ETF spot approuvés par la SEC. BlackRock iShares Bitcoin Trust enregistre ses meilleurs volumes depuis le lancement.',
-      markets: ['BTC/USD','ETH/USD'], tags: ['Bitcoin','ETF','Crypto'] },
-    { time: '11:42', cat: 'social', impact: 'low', source: 'AFP', flag: '🇩🇪', emoji: '👥',
-      headline: 'Allemagne : taux de chômage stable à 5.4% en janvier 2026',
-      preview: 'Le marché du travail allemand reste résilient malgré le ralentissement économique. Les secteurs automobile et chimique ont toutefois enregistré des réductions d\'effectifs significatives.',
-      markets: ['EUR/USD','DAX'], tags: ['Emploi','Allemagne'] },
-    { time: '12:15', cat: 'tech', impact: 'med', source: 'WSJ', flag: '🇺🇸', emoji: '💻',
-      headline: 'Apple annonce une collaboration avec Anthropic pour intégrer Claude dans iPhone 17',
-      preview: 'Selon des sources proches du dossier, Apple et Anthropic auraient signé un accord de partenariat stratégique pour intégrer des capacités d\'IA avancées dans la prochaine génération d\'iPhone.',
-      markets: ['AAPL','NAS100'], tags: ['Apple','IA','Tech'] },
-    { time: '13:00', cat: 'health', impact: 'low', source: 'Reuters', flag: '🇪🇺', emoji: '🏥',
-      headline: 'EMA approuve un nouveau traitement contre la résistance aux antibiotiques',
-      preview: 'L\'Agence Européenne du Médicament a accordé une autorisation de mise sur le marché à un nouveau traitement antibiotique de génération avancée, offrant de nouvelles perspectives dans la lutte contre les superbactéries.',
-      markets: ['Pharma','EUR'], tags: ['Santé','EMA','Pharma'] },
-  ];
-}
-
-// ── Current state ──
-let currentView = 'calendar';
-let activeCat = 'all';
-let activeImpacts = new Set(['high','med','low']);
-let currentDate = 'today';
-let calendarData = generateCalendarData();
-let newsData = generateNewsData();
-
-// ── Render Calendar ──
-function renderCalendar() {
-  const view = document.getElementById('calendarView');
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMin = now.getMinutes();
-
-  const filtered = calendarData.filter(ev => {
-    if (activeCat !== 'all' && ev.cat !== activeCat) return false;
-    if (!activeImpacts.has(ev.impact)) return false;
-    return true;
-  });
-
-  const released = filtered.filter(ev => ev.status === 'released' || parseFloat(ev.time.replace(':','')) < currentHour * 100 + currentMin);
-  const upcoming = filtered.filter(ev => ev.status !== 'released' && parseFloat(ev.time.replace(':','')) >= currentHour * 100 + currentMin);
-
-  const today = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-
-  let html = '';
-
-  if (released.length > 0) {
-    html += `<div class="day-header">
-      <span class="day-header-date">📅 ${cap(today)}</span>
-      <span class="day-header-count">${released.length} publiés · ${upcoming.length} à venir</span>
-    </div>`;
-    released.forEach((ev, i) => html += renderCalRow(ev, i, true));
-  }
-
-  if (upcoming.length > 0) {
-    html += `<div style="padding:.4rem 1rem; background: rgba(234,179,8,.05); border-bottom:1px solid rgba(234,179,8,.2); font-size:.68rem; font-weight:700; color:#eab308; letter-spacing:.5px;">
-      ⏳ À VENIR — ${upcoming.length} événement(s)
-    </div>`;
-    upcoming.forEach((ev, i) => html += renderCalRow(ev, i + released.length, false));
-  }
-
-  view.innerHTML = html || '<div style="text-align:center;padding:3rem;color:var(--n-muted);font-size:.85rem;">Aucun événement correspondant aux filtres.</div>';
-  updateStats(filtered);
-  renderUpcoming(upcoming.slice(0, 6));
-}
-
-function renderCalRow(ev, idx, isPast) {
-  const cat = CATEGORIES[ev.cat] || CATEGORIES.eco;
-  const impClass = ev.impact === 'high' ? 'imp-high' : ev.impact === 'med' ? 'imp-med' : ev.impact === 'low' ? 'imp-low' : 'imp-none';
-  const impBadgeClass = ev.impact === 'high' ? 'high' : ev.impact === 'med' ? 'med' : 'low';
-  const timeClass = isPast ? 'past' : 'soon';
-
-  let actualHtml = '';
-  if (ev.actual !== null && ev.actual !== undefined) {
-    const diff = ev.surprise;
-    const actualClass = diff > 0 ? 'positive' : diff < 0 ? 'negative' : 'neutral';
-    const rowClass = diff > 0 ? 'positive' : diff < 0 ? 'negative' : '';
-    actualHtml = `<div class="val-block">
-      <div class="val-label">Réel</div>
-      <div class="val-num actual ${actualClass}">${ev.actual}</div>
-    </div>`;
-    if (diff !== 0) {
-      actualHtml += `<span class="surprise-chip ${diff > 0 ? 'pos' : 'neg'}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff) > 5 ? 'Fort' : 'Modéré'}</span>`;
-    }
-  } else {
-    actualHtml = `<div class="val-block"><div class="val-label">Réel</div><div class="val-num" style="color:var(--n-muted);">—</div></div>`;
-  }
-
-  const hasActual = ev.actual !== null && ev.actual !== undefined;
-  const borderClass = hasActual ? (ev.surprise > 0 ? 'positive' : ev.surprise < 0 ? 'negative' : '') : '';
-
-  return `<div class="cal-row ${hasActual ? 'has-actual ' + borderClass : ''}" onclick="toggleCalDetail(${idx})">
-    <div class="cal-time ${timeClass}">${ev.time}</div>
-    <div><div class="impact-circle ${impClass}"></div></div>
-    <div class="cal-currency">
-      <span class="flag-icon">${ev.flag}</span>
-      <span class="currency-code">${ev.currency}</span>
-    </div>
-    <div class="cal-info">
-      <div>
-        <div class="cal-event-name">${ev.name}</div>
-        <div style="display:flex;gap:.3rem;margin-top:.15rem;flex-wrap:wrap;">
-          <span class="cat-tag" style="background:${cat.bg};color:${cat.color};border:1px solid ${cat.color}33;">${cat.emoji} ${cat.label}</span>
-          <span class="impact-badge ${impBadgeClass}" style="display:${ev.impact === 'high' ? 'inline' : 'none'}">Impact Élevé</span>
-        </div>
-      </div>
-      <div class="cal-values">
-        <div class="val-block">
-          <div class="val-label">Prévu</div>
-          <div class="val-num forecast">${ev.forecast || '—'}</div>
-        </div>
-        <div class="val-block">
-          <div class="val-label">Précédent</div>
-          <div class="val-num previous">${ev.previous || '—'}</div>
-        </div>
-        ${actualHtml}
-      </div>
-    </div>
-  </div>
-  <div class="cal-detail" id="cal-detail-${idx}">
-    ${ev.desc ? `<div class="cal-detail-text">${ev.desc}</div>` : ''}
-    <div class="reaction-bar">
-      <span class="reaction-lbl">Marchés impactés :</span>
-      ${ev.markets.map(m => `<span class="market-tag">${m}</span>`).join('')}
-    </div>
-    ${ev.actual !== null && ev.actual !== undefined && ev.markets.length > 0 ? `
-    <div class="reaction-bar mt-1">
-      <span class="reaction-lbl">Réaction observée :</span>
-      <span class="reaction-val ${ev.surprise > 0 ? 'up' : 'dn'}" style="color:${ev.surprise > 0 ? 'var(--n-green)' : 'var(--n-red)'}">
-        ${ev.surprise > 0 ? '↑ Haussier sur ' + ev.currency : ev.surprise < 0 ? '↓ Baissier sur ' + ev.currency : '→ Neutre'}
-      </span>
-    </div>` : ''}
-    <div style="margin-top:.5rem; display:flex; gap:.4rem; flex-wrap:wrap;">
-      <button onclick="event.stopPropagation(); addToAlerts('${ev.name}')" style="background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);color:var(--n-accent);border-radius:6px;padding:.25rem .6rem;font-size:.65rem;cursor:pointer;font-weight:600;">
-        🔔 Créer une Alerte
-      </button>
-      <a href="/trading" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#60a5fa;border-radius:6px;padding:.25rem .6rem;font-size:.65rem;text-decoration:none;font-weight:600;">
-        📊 Voir le Graphique
-      </a>
-    </div>
-  </div>`;
-}
-
-function toggleCalDetail(idx) {
-  const el = document.getElementById('cal-detail-' + idx);
-  if (el) el.classList.toggle('open');
-}
-
-// ── Render News ──
-function renderNews() {
-  const view = document.getElementById('newsView');
-  const filtered = newsData.filter(n => {
-    if (activeCat !== 'all' && n.cat !== activeCat) return false;
-    if (!activeImpacts.has(n.impact)) return false;
-    return true;
-  });
-
-  view.innerHTML = filtered.map(n => {
-    const cat = CATEGORIES[n.cat] || CATEGORIES.eco;
-    const impBadge = n.impact === 'high' ? 'high' : n.impact === 'med' ? 'med' : 'low';
-    return `<div class="news-card">
-      <div class="news-card-img">${n.emoji}</div>
-      <div class="news-card-body">
-        <div class="news-card-header">
-          <span class="news-source">${n.flag} ${n.source}</span>
-          <span class="news-time">${n.time}</span>
-          <span class="cat-tag" style="background:${cat.bg};color:${cat.color};border:1px solid ${cat.color}33;">${cat.emoji} ${cat.label}</span>
-          <span class="impact-badge ${impBadge}">${n.impact === 'high' ? '🔴 Élevé' : n.impact === 'med' ? '🟠 Moyen' : '🟡 Faible'}</span>
-        </div>
-        <div class="news-headline">${n.headline}</div>
-        <div class="news-preview">${n.preview}</div>
-        <div class="news-footer">
-          ${n.markets.map(m => `<span class="market-tag">${m}</span>`).join('')}
-          <span class="read-more">Lire →</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('') || '<div style="text-align:center;padding:3rem;color:var(--n-muted);">Aucune actualité pour cette sélection.</div>';
-}
-
-// ── Sentiment ──
-function renderSentiment() {
-  const pairs = [
-    { sym: 'EUR/USD', bull: 62, state: 'bullish' },
-    { sym: 'USD/JPY', bull: 38, state: 'bearish' },
-    { sym: 'GBP/USD', bull: 55, state: 'bullish' },
-    { sym: 'XAU/USD', bull: 70, state: 'bullish' },
-    { sym: 'BTC/USD', bull: 74, state: 'bullish' },
-    { sym: 'US500',   bull: 58, state: 'bullish' },
-  ];
-  document.getElementById('sentimentRows').innerHTML = pairs.map(p => `
-    <div class="sentiment-row">
-      <span class="sentiment-sym">${p.sym}</span>
-      <span class="sentiment-val ${p.state}" style="color:${p.state==='bullish'?'var(--n-green)':p.state==='bearish'?'var(--n-red)':'var(--n-yellow)'}">${p.bull}% 🐂</span>
-    </div>
-    <div class="sentiment-gauge" style="margin-bottom:.5rem;">
-      <div class="sentiment-fill ${p.state}" style="width:${p.bull}%;"></div>
-    </div>
-  `).join('');
-}
-
-// ── Upcoming events ──
-function renderUpcoming(events) {
-  const now = new Date();
-  const curMin = now.getHours() * 60 + now.getMinutes();
-  document.getElementById('upcomingList').innerHTML = events.slice(0, 6).map(ev => {
-    const [h, m] = ev.time.split(':').map(Number);
-    const evMin = h * 60 + m;
-    const diff = evMin - curMin;
-    const countdown = diff > 0 ? (diff >= 60 ? Math.floor(diff/60) + 'h' + (diff%60).toString().padStart(2,'0') + 'm' : diff + 'min') : 'Passé';
-    const cat = CATEGORIES[ev.cat] || CATEGORIES.eco;
-    const impColor = ev.impact === 'high' ? 'var(--n-red)' : ev.impact === 'med' ? 'var(--n-orange)' : 'var(--n-yellow)';
-    return `<div class="upcoming-item">
-      <div style="width:7px;height:7px;border-radius:50%;background:${impColor};flex-shrink:0;"></div>
-      <div class="upcoming-time">${ev.time}</div>
-      <div>
-        <div class="upcoming-name">${ev.flag} ${ev.name}</div>
-        <div style="font-size:.58rem;color:var(--n-muted);">${ev.currency} · ${cat.label}</div>
-      </div>
-      <span class="countdown-badge">${countdown}</span>
-    </div>`;
-  }).join('') || '<div style="font-size:.72rem;color:var(--n-muted);padding:.5rem 0;">Aucun événement à venir.</div>';
-}
-
-// ── Stats ──
-function updateStats(events) {
-  const now = new Date();
-  const curMin = now.getHours() * 60 + now.getMinutes();
-  const total = events.length;
-  const high = events.filter(e => e.impact === 'high').length;
-  const released = events.filter(e => {
-    const [h, m] = e.time.split(':').map(Number);
-    return h * 60 + m <= curMin;
-  }).length;
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statHigh').textContent = high;
-  document.getElementById('statReleased').textContent = released;
-  document.getElementById('statPending').textContent = total - released;
-}
-
-// ── AI Daily Summary ──
-function refreshAISummary() {
-  const summaries = [
-    `<b style="color:#c084fc;">🤖 Analyse IA — ${new Date().toLocaleDateString('fr-FR')}</b><br><br>
-    📊 <b style="color:var(--n-text);">Focus du jour : NFP + Inflation Zone Euro</b><br><br>
-    Les marchés sont en attente des deux publications majeures de la journée. 
-    Le consensus table sur <b style="color:#60a5fa;">180K créations d'emplois</b> aux États-Unis, 
-    en fort recul par rapport aux 256K du mois précédent.<br><br>
-    Un chiffre inférieur aux attentes pourrait accélérer les anticipations de 
-    <b style="color:var(--n-green);">2 baisses Fed en 2026</b>, favorable à l'or et à l'EUR/USD.<br><br>
-    🔑 <b style="color:#fcd34d;">Paires à surveiller</b> : EUR/USD, USD/JPY, XAU/USD, US500`,
-
-    `<b style="color:#c084fc;">🤖 Analyse IA — ${new Date().toLocaleDateString('fr-FR')}</b><br><br>
-    🏦 <b style="color:var(--n-text);">BCE en ligne de mire</b><br><br>
-    Les déclarations de Lagarde ce matin ont confirmé la tendance désinflationniste, 
-    ouvrant la voie à une <b style="color:var(--n-green);">3ème baisse BCE en juin</b>. 
-    L'EUR/USD reste soutenu par un dollar en légère faiblesse.<br><br>
-    Le pétrole rebondit après la surprise OPEP+ — surveiller USD/CAD 
-    pour une potentielle <b style="color:#60a5fa;">cassure de 1.3720</b>.`,
-
-    `<b style="color:#c084fc;">🤖 Analyse IA — ${new Date().toLocaleDateString('fr-FR')}</b><br><br>
-    ₿ <b style="color:var(--n-text);">Crypto : momentum haussier</b><br><br>
-    BTC dépasse 68K$ avec un volume important. Les flux ETF signalent 
-    un retour des institutionnels. Prochain objectif technique : <b style="color:var(--n-yellow);">71,500$</b>.<br><br>
-    Risque principal : réunion SEC sur la réglementation crypto en fin de journée — 
-    attendre avant de prendre des positions importantes.`,
-  ];
-  const pick = summaries[Math.floor(Math.random() * summaries.length)];
-  document.getElementById('aiDailySummary').innerHTML = pick;
-}
-
-// ── Filters ──
-function filterCat(btn, cat) {
-  document.querySelectorAll('.cat-btn').forEach(b => {
-    b.classList.remove('active');
-    b.style.background = 'rgba(0,0,0,.3)';
-    b.style.borderColor = 'transparent';
-    b.style.color = 'var(--n-muted)';
-  });
-  btn.classList.add('active');
-  const bg = btn.dataset.bg || 'rgba(0,212,170,.15)';
-  const color = btn.dataset.color || 'var(--n-accent)';
-  const border = btn.dataset.border || 'var(--n-accent)';
-  btn.style.background = bg;
-  btn.style.borderColor = border;
-  btn.style.color = color;
-  activeCat = cat;
-  renderCalendar();
-  renderNews();
-}
-
-function toggleImpact(btn, impact) {
-  btn.classList.toggle('active');
-  if (activeImpacts.has(impact)) activeImpacts.delete(impact);
-  else activeImpacts.add(impact);
-  renderCalendar();
-  renderNews();
-}
-
-function setDateFilter(btn, date) {
-  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentDate = date;
-  renderCalendar();
-}
-
-function filterSearch(q) {
-  const rows = document.querySelectorAll('.cal-row');
-  rows.forEach(row => {
-    const name = row.querySelector('.cal-event-name')?.textContent || '';
-    row.style.display = !q || name.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
-  });
   const cards = document.querySelectorAll('.news-card');
   cards.forEach(card => {
-    const headline = card.querySelector('.news-headline')?.textContent || '';
-    card.style.display = !q || headline.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+    const show = cat === 'all' || card.dataset.cat === cat;
+    card.style.display = show ? '' : 'none';
   });
 }
 
-function setView(btn, view) {
-  document.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentView = view;
-  const calView = document.getElementById('calendarView');
-  const newsView = document.getElementById('newsView');
-  if (view === 'calendar') { calView.style.display = ''; newsView.style.display = 'none'; }
-  else if (view === 'news') { calView.style.display = 'none'; newsView.style.display = ''; }
-  else { calView.style.display = ''; newsView.style.display = ''; }
+/* ── Rafraîchissement du feed ─────────────────────────────── */
+async function refreshFeed(manual = false) {
+  const btn  = document.getElementById('refreshBtn');
+  const icon = document.getElementById('refreshIcon');
+  if (btn) btn.classList.add('spinning');
+
+  try {
+    const url = `/api/news/feed?category=${_currentCat}&force=${manual ? 1 : 0}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    _allArticles = data.articles || [];
+    renderFeed(_allArticles);
+    updateStatusBar(data.btc, data.fear_greed, data.articles);
+
+    document.getElementById('lastUpdateInfo').textContent =
+      'Màj : ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    if (manual) showToast('Feed actualisé ✓', 'success', 2500);
+  } catch(e) {
+    console.error('[Actualités]', e);
+    if (manual) showToast('Erreur de rafraîchissement', 'error');
+  } finally {
+    if (btn) btn.classList.remove('spinning');
+  }
 }
 
-// ── FX Session status ──
-function updateSessions() {
-  const now = new Date();
-  const hour = now.getUTCHours();
-  const sessions = {
-    sydney:   [21, 6],
-    tokyo:    [23, 8],
-    london:   [7, 16],
-    'new-york': [12, 21]
-  };
-  Object.entries(sessions).forEach(([name, [open, close]]) => {
-    const isOpen = hour >= open || hour < close;
-    const dot = document.getElementById('dot-' + name);
-    if (dot) {
-      dot.style.opacity = isOpen ? '1' : '0.3';
-      if (isOpen) dot.classList.add('open'); else dot.classList.remove('open');
+/* ── Rendu du feed ────────────────────────────────────────── */
+function renderFeed(articles) {
+  const feed = document.getElementById('newsFeed');
+  if (!feed) return;
+
+  const filtered = _currentCat === 'all'
+    ? articles
+    : articles.filter(a => a.category === _currentCat);
+
+  if (!filtered.length) {
+    feed.innerHTML = `<div class="news-empty">
+      <div class="news-empty-icon">🔍</div>
+      <p style="color:var(--text-muted)">Aucun article dans cette catégorie</p>
+    </div>`;
+    return;
+  }
+
+  feed.innerHTML = filtered.map((a, i) => `
+    <div class="news-card ${a.sentiment}"
+         data-id="${a.id}" data-cat="${a.category}"
+         onclick="openNewsDetail('${a.id}')"
+         style="animation-delay:${i * 0.03}s">
+      <div class="news-card-top">
+        ${a.image ? `<img src="${a.image}" alt="" class="news-card-img" onerror="this.style.display='none'">` : ''}
+        <div class="news-card-body">
+          <div class="news-card-title">${escHtml(a.title)}</div>
+          <div class="news-card-meta">
+            <span class="news-source">${escHtml(a.source)}</span>
+            <span class="news-time">· ${a.published ? a.published.slice(-5) : ''}</span>
+            <span class="news-cat-pill"
+                  style="color:${a.cat_color};border-color:${a.cat_color}20;background:${a.cat_color}15">
+              ${escHtml(a.cat_label)}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="news-card-score">
+        <span class="news-badge ${a.sentiment}">
+          ${a.sentiment==='bullish' ? '🟢 HAUSSIER +'+a.score
+          : a.sentiment==='bearish' ? '🔴 BAISSIER '+a.score
+          : '🟡 NEUTRE '+a.score}
+        </span>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar-labels">
+            <span>Baisse ${a.prob_bear}%</span>
+            <span>Hausse ${a.prob_bull}%</span>
+          </div>
+          <div class="prob-bar">
+            <div class="prob-bar-fill" style="width:${a.prob_bull}%"></div>
+          </div>
+        </div>
+      </div>
+      ${a.summary ? `<div class="news-summary">${escHtml(a.summary)}</div>` : ''}
+    </div>
+  `).join('');
+
+  // Mise à jour stats sidebar
+  const bull = articles.filter(a => a.sentiment==='bullish').length;
+  const bear = articles.filter(a => a.sentiment==='bearish').length;
+  const neut = articles.filter(a => a.sentiment==='neutral').length;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('sbBull', bull); set('sbBear', bear); set('sbNeut', neut);
+}
+
+function updateStatusBar(btc, fg) {
+  if (btc && btc.price) {
+    const pEl = document.getElementById('btcPriceVal');
+    const cEl = document.getElementById('btcChangeVal');
+    if (pEl) pEl.textContent = '$' + Number(btc.price).toLocaleString('en-US', {maximumFractionDigits:0});
+    if (cEl) {
+      cEl.textContent = (btc.change >= 0 ? '+' : '') + Number(btc.change).toFixed(2) + '%';
+      cEl.className = 'btc-change ' + (btc.change >= 0 ? 'pos' : 'neg');
     }
-  });
-  const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('localTime').textContent = timeStr;
+  }
+  if (fg) {
+    const fEl = document.getElementById('fgBadge');
+    if (fEl) {
+      const cls = fg.value <= 45 ? 'fear' : fg.value <= 55 ? 'neutral' : 'greed';
+      const emoji = fg.value <= 25 ? '😱' : fg.value <= 45 ? '😰' : fg.value <= 55 ? '😐' : fg.value <= 75 ? '😀' : '🤑';
+      fEl.className = `news-fg-badge ${cls}`;
+      fEl.textContent = `${emoji} ${fg.value} — ${fg.label}`;
+    }
+  }
 }
 
-// ── Clock ──
-function updateClock() {
-  const now = new Date();
-  const t = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const d = now.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
-  document.getElementById('liveClock').textContent = d + ' · ' + t;
+/* ── Modal détail + analyse IA ────────────────────────────── */
+async function openNewsDetail(id) {
+  const article = _allArticles.find(a => a.id === id);
+  if (!article) return;
+
+  document.getElementById('modalTitle').textContent = article.title;
+  document.getElementById('modalMeta').innerHTML =
+    `<strong style="color:${article.cat_color}">${article.cat_label}</strong> · 
+     ${article.source} · ${article.published} · 
+     <a href="${article.source_url}" target="_blank" class="news-source-link" onclick="event.stopPropagation()">
+       Lire l'article original ↗
+     </a>`;
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="news-card-score" style="margin-bottom:.9rem">
+      <span class="news-badge ${article.sentiment}" style="font-size:.82rem;padding:.4rem 1rem">
+        ${article.sentiment==='bullish' ? '🟢 HAUSSIER +'+article.score
+        : article.sentiment==='bearish' ? '🔴 BAISSIER '+article.score
+        : '🟡 NEUTRE '+article.score}
+      </span>
+      <div class="prob-bar-wrap">
+        <div class="prob-bar-labels">
+          <span>Baisse ${article.prob_bear}%</span>
+          <span>Hausse ${article.prob_bull}%</span>
+        </div>
+        <div class="prob-bar" style="height:8px">
+          <div class="prob-bar-fill" style="width:${article.prob_bull}%"></div>
+        </div>
+      </div>
+    </div>
+    ${article.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.6;margin-bottom:.9rem">${escHtml(article.summary)}</p>` : ''}
+    <div id="aiAnalysisZone">
+      <div class="ai-loading"><span></span><span></span><span></span>
+        <span style="margin-left:.4rem">Analyse IA Claude en cours…</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('newsModal').classList.add('open');
+
+  // Appel API analyse IA
+  try {
+    const res = await fetch(`/api/news/analyze/${id}`);
+    const data = await res.json();
+    const a = data.analysis || {};
+
+    document.getElementById('aiAnalysisZone').innerHTML = `
+      <div class="ai-analysis-block">
+        <div class="ai-analysis-title">🧠 Analyse IA — Impact BTC/USD</div>
+        <div class="ai-analysis-text">${escHtml(a.analyse_fr || '—')}</div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-block">
+          <div class="detail-block-title">⚡ Court terme (1–4h)</div>
+          <div class="detail-block-text">${escHtml(a.impact_court_terme || '—')}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-block-title">📅 Moyen terme (1–7j)</div>
+          <div class="detail-block-text">${escHtml(a.impact_moyen_terme || '—')}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-block-title">📐 Niveaux clés BTC</div>
+          <div class="detail-block-text">${escHtml(a.niveaux_cles || '—')}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-block-title">🎯 Conseil Trader</div>
+          <div class="detail-block-text">${escHtml(a.conseil || '—')}</div>
+        </div>
+      </div>
+      <div style="margin-top:.9rem;display:flex;gap:.6rem;flex-wrap:wrap">
+        <a href="${article.source_url}" target="_blank" class="news-source-link">
+          <i class="fas fa-external-link-alt"></i> Article original
+        </a>
+        <button onclick="addToJournal('${escHtml(article.title)}')"
+          style="background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);color:var(--accent);
+                 padding:.35rem .9rem;border-radius:7px;font-size:.75rem;cursor:pointer;font-weight:700">
+          📓 Ajouter au Journal
+        </button>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('aiAnalysisZone').innerHTML =
+      `<div style="color:var(--text-muted);font-size:.78rem;padding:.5rem">Analyse IA non disponible — ${e.message}</div>`;
+  }
 }
 
-// ── Alerts ──
-function addToAlerts(eventName) {
-  const toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;background:#0c1622;border:1px solid rgba(0,212,170,.3);border-radius:10px;padding:.8rem 1.2rem;font-size:.78rem;z-index:9999;color:var(--n-accent);font-family:DM Sans,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5);';
-  toast.textContent = '🔔 Alerte créée : ' + eventName;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+function closeNewsModal() {
+  document.getElementById('newsModal').classList.remove('open');
 }
 
-// ── Init ──
+function addToJournal(title) {
+  closeNewsModal();
+  showToast('Ouvrez le Journal de Trading pour ajouter une entrée', 'info', 3000);
+}
+
+/* ── Utilitaires ──────────────────────────────────────────── */
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Prix BTC en temps réel (Binance WebSocket) ───────────── */
+function startBTCWebSocket() {
+  try {
+    const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker');
+    ws.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      updateStatusBar({ price: parseFloat(d.c), change: parseFloat(d.P) });
+    };
+    ws.onerror = () => setTimeout(startBTCWebSocket, 10000);
+    ws.onclose = () => setTimeout(startBTCWebSocket, 5000);
+  } catch(e) {}
+}
+
+/* ── Auto-refresh toutes les 5 minutes ────────────────────── */
+_refreshTimer = setInterval(() => refreshFeed(false), 5 * 60 * 1000);
+
+/* ── Init ─────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  renderCalendar();
-  renderNews();
-  renderSentiment();
-  refreshAISummary();
-  updateClock();
-  updateSessions();
-  setInterval(updateClock, 1000);
-  setInterval(updateSessions, 60000);
-  // Auto-refresh calendar every 30s
-  setInterval(() => { renderCalendar(); renderNews(); }, 30000);
+  startBTCWebSocket();
+  // Si pas d'articles, lancer un refresh auto
+  if (!_allArticles.length) {
+    setTimeout(() => refreshFeed(true), 800);
+  }
+});
+
+// Fermer modal avec Échap
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeNewsModal();
 });
 </script>
 {% endblock %}
