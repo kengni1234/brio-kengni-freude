@@ -1,328 +1,1107 @@
 {% extends "base.html" %}
 {% block title %}Portfolio - Kengni Finance{% endblock %}
 {% block page_title %}Mon Portfolio{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════════
+     DESIGN SYSTEM — KENGNI FINANCE PORTFOLIO
+  ══════════════════════════════════════════ */
+  :root {
+    --kf-bg:         #050d1a;
+    --kf-surface:    #0b1829;
+    --kf-surface2:   #0f2035;
+    --kf-border:     rgba(0, 212, 170, 0.12);
+    --kf-green:      #00d4aa;
+    --kf-green-dim:  rgba(0, 212, 170, 0.08);
+    --kf-blue:       #4a9eff;
+    --kf-purple:     #a855f7;
+    --kf-red:        #ff4d6d;
+    --kf-yellow:     #f59e0b;
+    --kf-text:       #e2e8f0;
+    --kf-muted:      #64748b;
+    --kf-font-head:  'Syne', sans-serif;
+    --kf-font-body:  'DM Sans', sans-serif;
+    --kf-radius:     14px;
+    --kf-radius-sm:  8px;
+    --kf-shadow:     0 8px 32px rgba(0,0,0,0.4);
+    --kf-glow:       0 0 40px rgba(0, 212, 170, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  .portfolio-wrap {
+    font-family: var(--kf-font-body);
+    color: var(--kf-text);
+    padding-bottom: 60px;
+  }
+
+  /* ── HERO BANNER ───────────────────────── */
+  .kf-hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #050d1a 0%, #0b2040 50%, #051520 100%);
+    border: 1px solid var(--kf-border);
+    border-radius: var(--kf-radius);
+    padding: 36px 40px;
+    margin-bottom: 32px;
+  }
+  .kf-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 80% at 80% 50%, rgba(0,212,170,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 20% 80%, rgba(74,158,255,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .kf-hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .kf-hero-label {
+    font-family: var(--kf-font-head);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--kf-green);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .kf-hero-label::before {
+    content: '';
+    width: 24px; height: 2px;
+    background: var(--kf-green);
+    border-radius: 2px;
+  }
+  .kf-hero h1 {
+    font-family: var(--kf-font-head);
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 6px;
+    line-height: 1.2;
+  }
+  .kf-hero p {
+    color: var(--kf-muted);
+    font-size: 14px;
+    margin: 0;
+    font-weight: 300;
+  }
+  .kf-ai-btn {
+    font-family: var(--kf-font-head);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, var(--kf-green), #00b894);
+    color: #050d1a;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(0,212,170,0.25);
+    white-space: nowrap;
+  }
+  .kf-ai-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,212,170,0.4);
+  }
+  .kf-ai-btn .pulse-dot {
+    width: 8px; height: 8px;
+    background: #050d1a;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  /* ── ACTION BAR ─────────────────────────── */
+  .kf-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .kf-btn {
+    font-family: var(--kf-font-head);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .kf-btn-primary {
+    background: linear-gradient(135deg, var(--kf-blue), #2563eb);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(74,158,255,0.25);
+  }
+  .kf-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74,158,255,0.35); }
+  .kf-btn-ghost {
+    background: var(--kf-surface2);
+    color: var(--kf-text);
+    border: 1px solid var(--kf-border);
+  }
+  .kf-btn-ghost:hover { background: rgba(255,255,255,0.05); border-color: rgba(0,212,170,0.3); }
+  .kf-btn-green  { background: linear-gradient(135deg, #00d4aa, #00b894); color: #050d1a; }
+  .kf-btn-red    { background: linear-gradient(135deg, #ff4d6d, #e11d48); color: #fff; }
+  .kf-btn-amber  { background: linear-gradient(135deg, #f59e0b, #d97706); color: #050d1a; }
+
+  /* ── STAT CARDS ─────────────────────────── */
+  .kf-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 992px) { .kf-stats-grid { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 576px) { .kf-stats-grid { grid-template-columns: 1fr; } }
+
+  .kf-stat {
+    background: var(--kf-surface);
+    border: 1px solid var(--kf-border);
+    border-radius: var(--kf-radius);
+    padding: 24px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: default;
+  }
+  .kf-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--kf-shadow);
+  }
+  .kf-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: var(--kf-radius) var(--kf-radius) 0 0;
+  }
+  .kf-stat.green::before { background: linear-gradient(90deg, var(--kf-green), transparent); }
+  .kf-stat.blue::before  { background: linear-gradient(90deg, var(--kf-blue), transparent); }
+  .kf-stat.amber::before { background: linear-gradient(90deg, var(--kf-yellow), transparent); }
+  .kf-stat.purple::before{ background: linear-gradient(90deg, var(--kf-purple), transparent); }
+
+  .kf-stat-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  .kf-stat.green .kf-stat-icon  { background: rgba(0,212,170,0.12); color: var(--kf-green); }
+  .kf-stat.blue .kf-stat-icon   { background: rgba(74,158,255,0.12); color: var(--kf-blue); }
+  .kf-stat.amber .kf-stat-icon  { background: rgba(245,158,11,0.12); color: var(--kf-yellow); }
+  .kf-stat.purple .kf-stat-icon { background: rgba(168,85,247,0.12); color: var(--kf-purple); }
+
+  .kf-stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--kf-muted);
+    margin-bottom: 6px;
+  }
+  .kf-stat-value {
+    font-family: var(--kf-font-head);
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .kf-stat-sub {
+    font-size: 12px;
+    color: var(--kf-muted);
+    font-weight: 300;
+  }
+  .kf-stat-change {
+    position: absolute;
+    top: 20px; right: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+  .kf-change-up   { background: rgba(0,212,170,0.12); color: var(--kf-green); }
+  .kf-change-down { background: rgba(255,77,109,0.12); color: var(--kf-red); }
+
+  /* ── PANELS ──────────────────────────────── */
+  .kf-panel {
+    background: var(--kf-surface);
+    border: 1px solid var(--kf-border);
+    border-radius: var(--kf-radius);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .kf-panel-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--kf-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .kf-panel-title {
+    font-family: var(--kf-font-head);
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .kf-panel-title .icon-badge {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: var(--kf-green-dim);
+    color: var(--kf-green);
+  }
+  .kf-panel-body { padding: 24px; }
+
+  /* ── AI ANALYSIS ─────────────────────────── */
+  .kf-ai-idle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+  }
+  .kf-ai-idle .ai-orb {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,212,170,0.2), transparent 70%);
+    border: 1px solid rgba(0,212,170,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin-bottom: 16px;
+    animation: orb-pulse 3s ease-in-out infinite;
+  }
+  @keyframes orb-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,212,170,0.1); }
+    50%      { box-shadow: 0 0 0 16px rgba(0,212,170,0); }
+  }
+  .kf-ai-idle p {
+    color: var(--kf-muted);
+    font-size: 14px;
+    max-width: 280px;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .kf-ai-result {
+    display: none;
+    animation: fadeSlide 0.5s ease;
+  }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .kf-ai-metric {
+    background: var(--kf-surface2);
+    border: 1px solid var(--kf-border);
+    border-radius: var(--kf-radius-sm);
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .kf-ai-metric .metric-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--kf-green-dim);
+    color: var(--kf-green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .kf-ai-metric .metric-label { font-size: 11px; color: var(--kf-muted); margin-bottom: 3px; }
+  .kf-ai-metric .metric-value { font-family: var(--kf-font-head); font-size: 15px; font-weight: 700; color: #fff; }
+
+  /* ── GALLERY ─────────────────────────────── */
+  .kf-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .kf-gallery-card {
+    background: var(--kf-surface2);
+    border: 1px solid var(--kf-border);
+    border-radius: var(--kf-radius-sm);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    group: 'gallery';
+  }
+  .kf-gallery-card:hover { border-color: rgba(0,212,170,0.3); transform: scale(1.02); }
+  .kf-gallery-card img {
+    width: 100%; height: 160px;
+    object-fit: cover;
+    display: block;
+  }
+  .kf-gallery-card-footer {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .kf-gallery-card-footer span {
+    font-size: 11px;
+    color: var(--kf-muted);
+    font-weight: 300;
+  }
+  .kf-gallery-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: var(--kf-muted);
+    border: 1px dashed rgba(100,116,139,0.3);
+    border-radius: var(--kf-radius-sm);
+    font-size: 14px;
+  }
+  .kf-gallery-empty i { font-size: 32px; margin-bottom: 12px; display: block; opacity: 0.4; }
+
+  /* ── TABLE ───────────────────────────────── */
+  .kf-table-wrap { overflow-x: auto; }
+  .kf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .kf-table thead tr {
+    background: var(--kf-surface2);
+    border-bottom: 1px solid var(--kf-border);
+  }
+  .kf-table thead th {
+    padding: 13px 16px;
+    text-align: left;
+    font-family: var(--kf-font-head);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--kf-muted);
+    white-space: nowrap;
+  }
+  .kf-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.2s ease;
+  }
+  .kf-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .kf-table tbody td {
+    padding: 14px 16px;
+    color: var(--kf-text);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .kf-ticker {
+    font-family: var(--kf-font-head);
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .kf-ticker-badge {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--kf-green-dim);
+    color: var(--kf-green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0;
+    flex-shrink: 0;
+  }
+  .kf-pnl-up   { color: var(--kf-green); font-weight: 600; }
+  .kf-pnl-down { color: var(--kf-red);   font-weight: 600; }
+  .kf-pct-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .kf-pct-badge.up   { background: rgba(0,212,170,0.1);  color: var(--kf-green); }
+  .kf-pct-badge.down { background: rgba(255,77,109,0.1); color: var(--kf-red); }
+  .kf-view-btn {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    background: var(--kf-surface2);
+    border: 1px solid var(--kf-border);
+    color: var(--kf-muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  .kf-view-btn:hover { background: var(--kf-green-dim); border-color: rgba(0,212,170,0.3); color: var(--kf-green); }
+  .kf-table-empty {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--kf-muted);
+    font-size: 14px;
+  }
+  .kf-table-empty i { font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.3; }
+
+  /* ── FOOTER BANNER ───────────────────────── */
+  .kf-cert-banner {
+    background: linear-gradient(135deg, #060f1c 0%, #0a1e35 60%, #060f1c 100%);
+    border: 1px solid var(--kf-border);
+    border-radius: var(--kf-radius);
+    padding: 32px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .kf-cert-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 100% at 50% 50%, rgba(0,212,170,0.04) 0%, transparent 70%);
+  }
+  .kf-cert-banner h6 {
+    font-family: var(--kf-font-head);
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .kf-cert-banner p {
+    color: var(--kf-muted);
+    font-size: 13px;
+    margin-bottom: 20px;
+    font-weight: 300;
+  }
+
+  /* ── MODALS ──────────────────────────────── */
+  .kf-modal .modal-content {
+    background: var(--kf-surface);
+    border: 1px solid var(--kf-border);
+    border-radius: var(--kf-radius);
+    color: var(--kf-text);
+  }
+  .kf-modal .modal-header {
+    border-bottom: 1px solid var(--kf-border);
+    padding: 20px 24px;
+  }
+  .kf-modal .modal-title {
+    font-family: var(--kf-font-head);
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .kf-modal .modal-body { padding: 24px; }
+  .kf-modal .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--kf-muted);
+    margin-bottom: 6px;
+  }
+  .kf-modal .form-control,
+  .kf-modal .form-select {
+    background: var(--kf-surface2);
+    border: 1px solid var(--kf-border);
+    border-radius: var(--kf-radius-sm);
+    color: var(--kf-text);
+    font-size: 14px;
+    padding: 10px 14px;
+    transition: border-color 0.2s ease;
+  }
+  .kf-modal .form-control:focus,
+  .kf-modal .form-select:focus {
+    border-color: rgba(0,212,170,0.4);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.08);
+    background: var(--kf-surface2);
+    color: var(--kf-text);
+    outline: none;
+  }
+  .kf-modal .form-control::placeholder { color: var(--kf-muted); }
+  .kf-modal .btn-close { filter: invert(1) opacity(0.5); }
+  .kf-submit-btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--kf-green), #00b894);
+    color: #050d1a;
+    border: none;
+    border-radius: var(--kf-radius-sm);
+    font-family: var(--kf-font-head);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .kf-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,212,170,0.3); }
+
+  /* ── LOADING ─────────────────────────────── */
+  .kf-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px;
+    color: var(--kf-muted);
+    font-size: 14px;
+  }
+  .kf-spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,212,170,0.2);
+    border-top-color: var(--kf-green);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── DEL BTN ─────────────────────────────── */
+  .kf-del-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: rgba(255,77,109,0.08);
+    border: 1px solid rgba(255,77,109,0.15);
+    color: var(--kf-red);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s ease;
+  }
+  .kf-del-btn:hover { background: rgba(255,77,109,0.18); }
+
+  /* ── EXPORT BADGE ────────────────────────── */
+  .kf-export-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .kf-export-btn {
+    font-family: var(--kf-font-head);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: var(--kf-text);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .kf-export-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <!-- Service Banner Top -->
-    <div class="alert" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; color: white;">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h5 class="mb-2"><i class="fas fa-briefcase"></i> Portfolio Professionnel - Analyse IA en Temps Réel</h5>
-                <p class="mb-0"><i class="fas fa-brain"></i> Recommandations personnalisées | <i class="fas fa-chart-pie"></i> Diversification optimale | <i class="fas fa-shield-alt"></i> Rapports sécurisés</p>
-            </div>
-            <div class="col-md-4 text-end">
-                <button class="btn btn-light btn-sm" onclick="analyzePortfolio()">
-                    <i class="fas fa-robot"></i> Analyser avec l'IA
-                </button>
-            </div>
-        </div>
+<div class="portfolio-wrap container-fluid px-0">
+
+  <!-- ── HERO ──────────────────────────────────────────── -->
+  <div class="kf-hero mb-4">
+    <div class="kf-hero-grid"></div>
+    <div class="row align-items-center g-3 position-relative">
+      <div class="col-lg-8">
+        <div class="kf-hero-label">Kengni Finance — Analyse en temps réel</div>
+        <h1>Portfolio Professionnel</h1>
+        <p>Suivi de positions, analyse IA, exports certifiés et gestion des captures de marché</p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <button class="kf-ai-btn" onclick="analyzePortfolio()">
+          <span class="pulse-dot"></span>
+          <i class="fas fa-brain"></i> Analyser avec l'IA
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTION BAR ────────────────────────────────────── -->
+  <div class="kf-action-bar">
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="kf-btn kf-btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionModal">
+        <i class="fas fa-plus"></i> Ajouter Position
+      </button>
+      <button class="kf-btn kf-btn-ghost" data-bs-toggle="modal" data-bs-target="#uploadPortfolioImageModal">
+        <i class="fas fa-camera"></i> Ajouter Capture
+      </button>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="kf-btn kf-btn-green" onclick="exportPortfolio('excel')">
+        <i class="fas fa-file-excel"></i> Excel
+      </button>
+      <button class="kf-btn kf-btn-red" onclick="exportPortfolio('pdf')">
+        <i class="fas fa-file-pdf"></i> PDF
+      </button>
+      <button class="kf-btn kf-btn-amber" onclick="exportPortfolio('json')">
+        <i class="fas fa-code"></i> JSON
+      </button>
+    </div>
+  </div>
+
+  <!-- ── STATS ─────────────────────────────────────────── -->
+  <div class="kf-stats-grid">
+    <!-- Valeur Totale -->
+    <div class="kf-stat green">
+      <div class="kf-stat-icon"><i class="fas fa-coins"></i></div>
+      <div class="kf-stat-label">Valeur Totale</div>
+      <div class="kf-stat-value">{{ "%.2f"|format(stats.total_value) }}<span style="font-size:14px;font-weight:400;color:var(--kf-muted);">€</span></div>
+      <div class="kf-stat-sub">{{ "%.0f"|format(stats.total_value * 655.96) }} XAF</div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addPositionModal">
-                <i class="fas fa-plus"></i> Ajouter Position
+    <!-- P&L Total -->
+    <div class="kf-stat blue">
+      <div class="kf-stat-icon"><i class="fas fa-chart-line"></i></div>
+      <div class="kf-stat-label">P&L Total</div>
+      <div class="kf-stat-value {% if stats.total_pnl >= 0 %}kf-pnl-up{% else %}kf-pnl-down{% endif %}">
+        {% if stats.total_pnl >= 0 %}+{% endif %}{{ "%.2f"|format(stats.total_pnl) }}<span style="font-size:14px;font-weight:400;">€</span>
+      </div>
+      <div class="kf-stat-sub">
+        <span class="kf-pct-badge {% if stats.total_pnl_percent >= 0 %}up{% else %}down{% endif %}">
+          <i class="fas fa-caret-{% if stats.total_pnl_percent >= 0 %}up{% else %}down{% endif %}"></i>
+          {{ "%.2f"|format(stats.total_pnl_percent|abs) }}%
+        </span>
+      </div>
+      {% if stats.total_pnl >= 0 %}
+        <span class="kf-stat-change kf-change-up"><i class="fas fa-arrow-up"></i> Positif</span>
+      {% else %}
+        <span class="kf-stat-change kf-change-down"><i class="fas fa-arrow-down"></i> Négatif</span>
+      {% endif %}
+    </div>
+
+    <!-- Performance -->
+    <div class="kf-stat amber">
+      <div class="kf-stat-icon"><i class="fas fa-percentage"></i></div>
+      <div class="kf-stat-label">Performance</div>
+      <div class="kf-stat-value {% if stats.total_pnl_percent >= 0 %}kf-pnl-up{% else %}kf-pnl-down{% endif %}">
+        {{ "%.2f"|format(stats.total_pnl_percent) }}<span style="font-size:14px;font-weight:400;">%</span>
+      </div>
+      <div class="kf-stat-sub">Depuis création</div>
+    </div>
+
+    <!-- Meilleur Asset -->
+    <div class="kf-stat purple">
+      <div class="kf-stat-icon"><i class="fas fa-trophy"></i></div>
+      <div class="kf-stat-label">Meilleur Asset</div>
+      <div class="kf-stat-value" style="font-size: 22px;">
+        {{ stats.best_performer.symbol if stats.best_performer else '—' }}
+      </div>
+      <div class="kf-stat-sub">Top performer</div>
+    </div>
+  </div>
+
+  <!-- ── AI ANALYSIS ───────────────────────────────────── -->
+  <div class="kf-panel">
+    <div class="kf-panel-header">
+      <div class="kf-panel-title">
+        <span class="icon-badge"><i class="fas fa-brain"></i></span>
+        Analyse IA du Portfolio
+      </div>
+      <button class="kf-btn kf-btn-ghost" onclick="refreshAIAnalysis()" id="aiRefreshBtn" style="font-size:11px;padding:7px 14px;">
+        <i class="fas fa-sync"></i> Rafraîchir
+      </button>
+    </div>
+    <div class="kf-panel-body">
+      <!-- État idle -->
+      <div id="aiIdle" class="kf-ai-idle">
+        <div class="ai-orb">🤖</div>
+        <p>Cliquez sur <strong style="color:var(--kf-green);">Analyser avec l'IA</strong> pour obtenir des recommandations personnalisées sur votre portefeuille</p>
+      </div>
+      <!-- Loading -->
+      <div id="aiLoading" style="display:none;" class="kf-loading">
+        <div class="kf-spinner"></div> Analyse en cours…
+      </div>
+      <!-- Résultat -->
+      <div id="aiResult" class="kf-ai-result">
+        <div class="row g-3 mb-4" id="aiMetrics"></div>
+        <div id="aiRecommendations"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GALERIE ───────────────────────────────────────── -->
+  <div class="kf-panel">
+    <div class="kf-panel-header">
+      <div class="kf-panel-title">
+        <span class="icon-badge"><i class="fas fa-images"></i></span>
+        Galerie de Captures
+        <span style="font-size:12px;font-weight:400;color:var(--kf-muted);font-family:var(--kf-font-body);">
+          {{ portfolio_images|length }} capture{% if portfolio_images|length != 1 %}s{% endif %}
+        </span>
+      </div>
+    </div>
+    <div class="kf-panel-body">
+      <div class="kf-gallery-grid">
+        {% for img in portfolio_images %}
+        <div class="kf-gallery-card" id="gallery-{{ img.id }}">
+          <img src="{{ img.path }}" alt="Capture portfolio {{ img.date }}">
+          <div class="kf-gallery-card-footer">
+            <span><i class="fas fa-calendar-alt" style="margin-right:4px;opacity:.5;"></i>{{ img.date }}</span>
+            <button class="kf-del-btn" onclick="deleteImage({{ img.id }})" title="Supprimer">
+              <i class="fas fa-trash"></i>
             </button>
-            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#uploadPortfolioImageModal">
-                <i class="fas fa-image"></i> Ajouter Capture
-            </button>
+          </div>
         </div>
-        <div class="col-md-6 text-end">
-            <div class="btn-group">
-                <button class="btn btn-success-custom" onclick="exportPortfolio('excel')">
-                    <i class="fas fa-file-excel"></i> Excel
-                </button>
-                <button class="btn btn-danger-custom" onclick="exportPortfolio('pdf')">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
-                <button class="btn btn-warning" onclick="exportPortfolio('json')">
-                    <i class="fas fa-code"></i> JSON
-                </button>
-            </div>
+        {% else %}
+        <div class="kf-gallery-empty">
+          <i class="fas fa-images"></i>
+          Aucune capture pour l'instant.<br>
+          <span style="font-size:12px;">Ajoutez des captures de marché pour suivre l'évolution visuelle de votre portfolio.</span>
         </div>
+        {% endfor %}
+      </div>
     </div>
+  </div>
 
-    <!-- Stats Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="stat-card success">
-                <div class="icon"><i class="fas fa-coins"></i></div>
-                <h6>Valeur Totale</h6>
-                <h2>{{ "%.2f"|format(stats.total_value) }}€</h2>
-                <small class="text-muted">{{ "%.2f"|format(stats.total_value * 655.96) }} XAF</small>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card primary">
-                <div class="icon"><i class="fas fa-chart-line"></i></div>
-                <h6>P&L Total</h6>
-                <h2 class="{% if stats.total_pnl > 0 %}text-success{% else %}text-danger{% endif %}">
-                    {{ "%.2f"|format(stats.total_pnl) }}€
-                </h2>
-                <small>{{ "%.2f"|format(stats.total_pnl_percent) }}%</small>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card warning">
-                <div class="icon"><i class="fas fa-percentage"></i></div>
-                <h6>Performance</h6>
-                <h2>{{ "%.2f"|format(stats.total_pnl_percent) }}%</h2>
-                <small>Depuis création</small>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card {% if stats.best_performer %}success{% else %}primary{% endif %}">
-                <div class="icon"><i class="fas fa-trophy"></i></div>
-                <h6>Meilleur Asset</h6>
-                <h2>{{ stats.best_performer.symbol if stats.best_performer else 'N/A' }}</h2>
-                <small>Top performer</small>
-            </div>
-        </div>
+  <!-- ── TABLE POSITIONS ───────────────────────────────── -->
+  <div class="kf-panel">
+    <div class="kf-panel-header">
+      <div class="kf-panel-title">
+        <span class="icon-badge"><i class="fas fa-list"></i></span>
+        Positions Détaillées
+        <span style="font-size:12px;font-weight:400;color:var(--kf-muted);font-family:var(--kf-font-body);">
+          {{ positions|length }} position{% if positions|length != 1 %}s{% endif %}
+        </span>
+      </div>
     </div>
+    <div class="kf-table-wrap">
+      <table class="kf-table" id="portfolioTable">
+        <thead>
+          <tr>
+            <th>Symbole</th>
+            <th>Quantité</th>
+            <th>Prix Moy.</th>
+            <th>Prix Actuel</th>
+            <th>Val. Marché</th>
+            <th>P&L (EUR)</th>
+            <th>P&L (XAF)</th>
+            <th>P&L %</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pos in positions %}
+          <tr>
+            <td>
+              <div class="kf-ticker">
+                <div class="kf-ticker-badge">{{ pos.symbol[:3] }}</div>
+                {{ pos.symbol }}
+              </div>
+            </td>
+            <td style="color:#fff;font-weight:500;">{{ pos.quantity }}</td>
+            <td>{{ "%.2f"|format(pos.avg_price) }}€</td>
+            <td style="color:#fff;">{{ "%.2f"|format(pos.current_price) }}€</td>
+            <td style="color:#fff;font-weight:500;">{{ "%.2f"|format(pos.market_value) }}€</td>
+            <td class="{% if pos.pnl >= 0 %}kf-pnl-up{% else %}kf-pnl-down{% endif %}">
+              {% if pos.pnl >= 0 %}+{% endif %}{{ "%.2f"|format(pos.pnl) }}€
+            </td>
+            <td class="{% if pos.pnl >= 0 %}kf-pnl-up{% else %}kf-pnl-down{% endif %}" style="font-size:12px;">
+              {% if pos.pnl >= 0 %}+{% endif %}{{ "%.0f"|format(pos.pnl * 655.96) }} XAF
+            </td>
+            <td>
+              <span class="kf-pct-badge {% if pos.pnl_percent >= 0 %}up{% else %}down{% endif %}">
+                <i class="fas fa-caret-{% if pos.pnl_percent >= 0 %}up{% else %}down{% endif %}"></i>
+                {{ "%.2f"|format(pos.pnl_percent|abs) }}%
+              </span>
+            </td>
+            <td>
+              <a class="kf-view-btn" onclick="viewPositionDetails({{ pos.id }})" title="Voir détails">
+                <i class="fas fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9">
+              <div class="kf-table-empty">
+                <i class="fas fa-chart-pie"></i>
+                Aucune position enregistrée.<br>
+                <span style="font-size:12px;">Ajoutez votre première position pour commencer le suivi.</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-    <!-- AI Analysis Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="custom-table p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5><i class="fas fa-brain"></i> Analyse IA du Portfolio</h5>
-                    <button class="btn btn-sm btn-primary-custom" onclick="refreshAIAnalysis()">
-                        <i class="fas fa-sync"></i> Rafraîchir
-                    </button>
-                </div>
-                <div id="aiAnalysisContent">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Cliquez sur "Analyser avec l'IA" pour obtenir des recommandations personnalisées
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- ── FOOTER BANNER ─────────────────────────────────── -->
+  <div class="kf-cert-banner">
+    <h6><i class="fas fa-certificate" style="color:var(--kf-green);margin-right:8px;"></i>Rapports Certifiés Kengni Finance</h6>
+    <p>Tous vos exports sont signés avec notre filigrane officiel pour garantir leur authenticité</p>
+    <div class="kf-export-group">
+      <button class="kf-export-btn" onclick="exportPortfolio('pdf')">
+        <i class="fas fa-file-pdf" style="color:#ff4d6d;"></i> Rapport PDF
+      </button>
+      <button class="kf-export-btn" onclick="exportPortfolio('excel')">
+        <i class="fas fa-file-excel" style="color:#00d4aa;"></i> Rapport Excel
+      </button>
     </div>
+  </div>
 
-    <!-- Portfolio Images Gallery -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="custom-table p-4">
-                <h5 class="mb-3"><i class="fas fa-images"></i> Galerie de Captures</h5>
-                <div class="row g-3" id="portfolioGallery">
-                    {% for img in portfolio_images %}
-                    <div class="col-md-3">
-                        <div class="card" style="background: var(--secondary-color);">
-                            <img src="{{ img.path }}" class="card-img-top" alt="Portfolio capture" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <p class="card-text small">{{ img.date }}</p>
-                                <button class="btn btn-sm btn-danger-custom" onclick="deleteImage({{ img.id }})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
+</div><!-- /.portfolio-wrap -->
 
-    <!-- Positions Table -->
-    <div class="custom-table">
-        <div class="p-4">
-            <h5 class="mb-4"><i class="fas fa-list"></i> Positions Détaillées</h5>
-        </div>
-        <table class="table" id="portfolioTable">
-            <thead>
-                <tr>
-                    <th>Symbole</th>
-                    <th>Quantité</th>
-                    <th>Prix Moyen</th>
-                    <th>Prix Actuel</th>
-                    <th>Valeur Marché</th>
-                    <th>P&L (EUR)</th>
-                    <th>P&L (XAF)</th>
-                    <th>P&L %</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pos in positions %}
-                <tr>
-                    <td><strong>{{ pos.symbol }}</strong></td>
-                    <td>{{ pos.quantity }}</td>
-                    <td>{{ "%.2f"|format(pos.avg_price) }}€</td>
-                    <td>{{ "%.2f"|format(pos.current_price) }}€</td>
-                    <td>{{ "%.2f"|format(pos.market_value) }}€</td>
-                    <td class="{% if pos.pnl > 0 %}text-success{% else %}text-danger{% endif %}">
-                        {{ "%.2f"|format(pos.pnl) }}€
-                    </td>
-                    <td class="{% if pos.pnl > 0 %}text-success{% else %}text-danger{% endif %}">
-                        {{ "%.2f"|format(pos.pnl * 655.96) }} XAF
-                    </td>
-                    <td class="{% if pos.pnl_percent > 0 %}text-success{% else %}text-danger{% endif %}">
-                        {{ "%.2f"|format(pos.pnl_percent) }}%
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-info" onclick="viewPositionDetails({{ pos.id }})">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
 
-    <!-- Service Banner Bottom -->
-    <div class="alert alert-dark mt-4" style="background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); border: none; color: white;">
-        <div class="text-center">
-            <h6 class="mb-3"><i class="fas fa-certificate"></i> Rapports Certifiés Kengni Finance</h6>
-            <p class="mb-3">Tous vos exports sont signés avec notre filigrane officiel pour garantir leur authenticité</p>
-            <div class="btn-group">
-                <button class="btn btn-outline-light" onclick="exportPortfolio('pdf')">
-                    <i class="fas fa-file-pdf"></i> Rapport PDF
-                </button>
-                <button class="btn btn-outline-light" onclick="exportPortfolio('excel')">
-                    <i class="fas fa-file-excel"></i> Rapport Excel
-                </button>
+<!-- ═══════════════════════════════════════════
+     MODAL — AJOUTER POSITION
+════════════════════════════════════════════ -->
+<div class="modal fade kf-modal" id="addPositionModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-plus-circle" style="color:var(--kf-green);margin-right:8px;"></i>Ajouter une Position</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addPositionForm" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">Symbole / Ticker</label>
+            <input type="text" class="form-control" name="symbol" required placeholder="Ex: AAPL, BTC, EURUSD">
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Quantité</label>
+              <input type="number" step="0.001" class="form-control" name="quantity" required placeholder="0.000">
             </div>
-        </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Prix d'Achat Moyen</label>
+              <input type="number" step="0.01" class="form-control" name="avg_price" required placeholder="0.00">
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Devise</label>
+              <select class="form-control" name="currency">
+                <option value="EUR" selected>EUR — Euro</option>
+                <option value="USD">USD — Dollar</option>
+                <option value="XAF">XAF — Franc CFA</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date d'Achat</label>
+              <input type="date" class="form-control" name="purchase_date" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Capture / Confirmation <span style="color:var(--kf-muted);font-size:10px;">(optionnel)</span></label>
+            <input type="file" class="form-control" name="position_image" accept="image/*">
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" name="notes" rows="3" placeholder="Raison de l'achat, stratégie utilisée…"></textarea>
+          </div>
+          <button type="submit" class="kf-submit-btn">
+            <i class="fas fa-plus"></i> Ajouter la Position
+          </button>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
-<!-- Add Position Modal -->
-<div class="modal fade" id="addPositionModal">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content" style="background: var(--secondary-color); color: var(--text-primary);">
-            <div class="modal-header">
-                <h5 class="modal-title">Ajouter une Position au Portfolio</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addPositionForm" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label">Symbole / Ticker</label>
-                        <input type="text" class="form-control" name="symbol" required placeholder="Ex: AAPL, BTC, EURUSD">
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Quantité</label>
-                            <input type="number" step="0.001" class="form-control" name="quantity" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Prix d'Achat Moyen</label>
-                            <input type="number" step="0.01" class="form-control" name="avg_price" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Devise</label>
-                        <select class="form-control" name="currency">
-                            <option value="EUR" selected>EUR - Euro</option>
-                            <option value="USD">USD - Dollar</option>
-                            <option value="XAF">XAF - Franc CFA</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Date d'Achat</label>
-                        <input type="date" class="form-control" name="purchase_date" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Capture / Confirmation (optionnel)</label>
-                        <input type="file" class="form-control" name="position_image" accept="image/*">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea class="form-control" name="notes" rows="3" placeholder="Raison de l'achat, stratégie..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary-custom w-100">Ajouter la Position</button>
-                </form>
-            </div>
-        </div>
+<!-- ═══════════════════════════════════════════
+     MODAL — UPLOAD CAPTURE
+════════════════════════════════════════════ -->
+<div class="modal fade kf-modal" id="uploadPortfolioImageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-camera" style="color:var(--kf-green);margin-right:8px;"></i>Ajouter une Capture</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="uploadImageForm" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">Image</label>
+            <input type="file" class="form-control" name="portfolio_image" accept="image/*" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Description <span style="color:var(--kf-muted);font-size:10px;">(optionnel)</span></label>
+            <input type="text" class="form-control" name="description" placeholder="Ex: État du portfolio — Février 2026">
+          </div>
+          <button type="submit" class="kf-submit-btn">
+            <i class="fas fa-upload"></i> Télécharger la Capture
+          </button>
+        </form>
+      </div>
     </div>
-</div>
-
-<!-- Upload Portfolio Image Modal -->
-<div class="modal fade" id="uploadPortfolioImageModal">
-    <div class="modal-dialog">
-        <div class="modal-content" style="background: var(--secondary-color); color: var(--text-primary);">
-            <div class="modal-header">
-                <h5 class="modal-title">Ajouter une Capture du Portfolio</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="uploadImageForm" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label">Image</label>
-                        <input type="file" class="form-control" name="portfolio_image" accept="image/*" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <input type="text" class="form-control" name="description" placeholder="Ex: Portfolio état Février 2026">
-                    </div>
-                    <button type="submit" class="btn btn-primary-custom w-100">Télécharger</button>
-                </form>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 
 <script>
+/* ══════════════════════════════════════════
+   PORTFOLIO JS — Kengni Finance
+══════════════════════════════════════════ */
+
+// ── Ajouter Position ─────────────────────
 document.getElementById('addPositionForm')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const response = await fetch('/api/add-position', {
-        method: 'POST',
-        body: formData
-    });
+  e.preventDefault();
+  const btn = this.querySelector('button[type="submit"]');
+  btn.innerHTML = '<span class="kf-spinner" style="display:inline-block;margin-right:6px;border-color:rgba(0,0,0,.2);border-top-color:#000;"></span> Ajout…';
+  btn.disabled = true;
+  try {
+    const response = await fetch('/api/add-position', { method: 'POST', body: new FormData(this) });
     if (response.ok) {
-        location.reload();
+      location.reload();
     } else {
-        alert('Erreur lors de l\'ajout de la position');
+      btn.innerHTML = '<i class="fas fa-plus"></i> Ajouter la Position';
+      btn.disabled = false;
+      showToast('Erreur lors de l\'ajout de la position', 'error');
     }
+  } catch (err) {
+    btn.innerHTML = '<i class="fas fa-plus"></i> Ajouter la Position';
+    btn.disabled = false;
+    showToast('Erreur réseau', 'error');
+  }
 });
 
+// ── Upload Image ─────────────────────────
 document.getElementById('uploadImageForm')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const response = await fetch('/api/upload-portfolio-image', {
-        method: 'POST',
-        body: formData
-    });
+  e.preventDefault();
+  const btn = this.querySelector('button[type="submit"]');
+  btn.innerHTML = '<span class="kf-spinner" style="display:inline-block;margin-right:6px;border-color:rgba(0,0,0,.2);border-top-color:#000;"></span> Upload…';
+  btn.disabled = true;
+  try {
+    const response = await fetch('/api/upload-portfolio-image', { method: 'POST', body: new FormData(this) });
     if (response.ok) {
-        location.reload();
+      location.reload();
     } else {
-        alert('Erreur lors du téléchargement');
+      btn.innerHTML = '<i class="fas fa-upload"></i> Télécharger la Capture';
+      btn.disabled = false;
+      showToast('Erreur lors du téléchargement', 'error');
     }
+  } catch (err) {
+    btn.innerHTML = '<i class="fas fa-upload"></i> Télécharger la Capture';
+    btn.disabled = false;
+    showToast('Erreur réseau', 'error');
+  }
 });
 
+// ── Export ────────────────────────────────
 function exportPortfolio(format) {
-    window.location.href = `/api/export-portfolio?format=${format}`;
+  window.location.href = `/api/export-portfolio?format=${format}`;
 }
 
+// ── Vue Détails Position ─────────────────
 function viewPositionDetails(id) {
-    window.location.href = `/position/${id}`;
+  window.location.href = `/position/${id}`;
 }
 
+// ── Supprimer Image ───────────────────────
 function deleteImage(id) {
-    if (confirm('Supprimer cette image ?')) {
-        fetch(`/api/delete-portfolio-image/${id}`, { method: 'DELETE' })
-            .then(() => location.reload());
-    }
+  if (!confirm('Supprimer cette capture définitivement ?')) return;
+  fetch(`/api/delete-portfolio-image/${id}`, { method: 'DELETE' })
+    .then(r => {
+      if (r.ok) {
+        const card = document.getElementById(`gallery-${id}`);
+        if (card) {
+          card.style.transition = 'all 0.3s ease';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.9)';
+          setTimeout(() => { card.remove(); }, 300);
+        }
+      }
+    });
 }
 
+// ── Analyser avec l'IA ────────────────────
 async function analyzePortfolio() {
+  document.getElementById('aiIdle').style.display = 'none';
+  document.getElementById('aiResult').style.display = 'none';
+  document.getElementById('aiLoading').style.display = 'flex';
+
+  try {
     const response = await fetch('/api/analyze-portfolio');
     const data = await response.json();
-    document.getElementById('aiAnalysisContent').innerHTML = `
-        <div class="alert alert-success">
-            <h6><i class="fas fa-check-circle"></i> Analyse Complétée</h6>
-            <p><strong>Recommandations:</strong> ${data.recommendations}</p>
-            <p><strong>Risque:</strong> ${data.risk_level}</p>
-            <p><strong>Diversification:</strong> ${data.diversification_score}/10</p>
+
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('aiResult').style.display = 'block';
+
+    // Métriques
+    const metrics = [
+      { label: 'Recommandation',    value: data.recommendations || 'N/A',  icon: 'fas fa-lightbulb' },
+      { label: 'Niveau de risque',  value: data.risk_level || 'N/A',       icon: 'fas fa-shield-alt' },
+      { label: 'Diversification',   value: (data.diversification_score || 0) + '/10', icon: 'fas fa-chart-pie' },
+    ];
+    document.getElementById('aiMetrics').innerHTML = metrics.map(m => `
+      <div class="col-md-4">
+        <div class="kf-ai-metric">
+          <div class="metric-icon"><i class="${m.icon}"></i></div>
+          <div>
+            <div class="metric-label">${m.label}</div>
+            <div class="metric-value">${m.value}</div>
+          </div>
         </div>
-    `;
+      </div>
+    `).join('');
+
+    // Recommandations textuelles
+    if (data.analysis) {
+      document.getElementById('aiRecommendations').innerHTML = `
+        <div style="background:var(--kf-surface2);border:1px solid var(--kf-border);border-radius:var(--kf-radius-sm);padding:20px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--kf-green);margin-bottom:12px;">
+            <i class="fas fa-file-alt" style="margin-right:6px;"></i>Analyse complète
+          </div>
+          <pre style="white-space:pre-wrap;font-family:var(--kf-font-body);font-size:13px;color:var(--kf-text);margin:0;line-height:1.7;">${data.analysis}</pre>
+        </div>`;
+    }
+  } catch (err) {
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('aiIdle').style.display = 'flex';
+    showToast('Erreur lors de l\'analyse IA', 'error');
+  }
 }
 
-function refreshAIAnalysis() {
-    analyzePortfolio();
+function refreshAIAnalysis() { analyzePortfolio(); }
+
+// ── Toast Notification ────────────────────
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  const colors = { error: '#ff4d6d', success: '#00d4aa', info: '#4a9eff' };
+  toast.style.cssText = `
+    position:fixed;bottom:24px;right:24px;z-index:9999;
+    background:#0b1829;border:1px solid ${colors[type] || colors.info}33;
+    color:#e2e8f0;padding:14px 20px;border-radius:10px;
+    font-family:'DM Sans',sans-serif;font-size:13px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    display:flex;align-items:center;gap:10px;
+    animation:fadeSlide .3s ease;
+    border-left:3px solid ${colors[type] || colors.info};
+  `;
+  toast.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}" style="color:${colors[type]};"></i>${message}`;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(10px)'; toast.style.transition = 'all .3s ease'; setTimeout(() => toast.remove(), 300); }, 3500);
 }
 </script>
 {% endblock %}

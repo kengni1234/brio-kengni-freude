@@ -76,6 +76,21 @@ function smcInitChart() {
   return true;
 }
 
+// ── Normalisation symbole pour Binance ──────────────────────
+// Binance utilise BTCUSDT (pas BTCUSD), ETHUSDT, etc.
+function smcNormalizeSym(raw, src) {
+  const s = raw.trim().toUpperCase();
+  if (src === 'backend') return s; // backend accepte tous les formats
+  // Table de correspondance crypto USD → USDT
+  const MAP = {
+    'BTCUSD':'BTCUSDT','ETHUSD':'ETHUSDT','BNBUSD':'BNBUSDT',
+    'SOLUSD':'SOLUSDT','XRPUSD':'XRPUSDT','ADAUSD':'ADAUSDT',
+    'DOGEUSD':'DOGEUSDT','AVAXUSD':'AVAXUSDT','DOTUSD':'DOTUSDT',
+    'MATICUSD':'MATICUSDT','LINKUSD':'LINKUSDT','LTCUSD':'LTCUSDT',
+  };
+  return MAP[s] || s;
+}
+
 // ── Chargement principal ─────────────────────────────────────
 async function smcLoad() {
   if (typeof SMCEngine === 'undefined') {
@@ -83,8 +98,14 @@ async function smcLoad() {
     showToast('smc_engine.js manquant', 'error');
     return;
   }
-  const sym = (document.getElementById('smcAutoSymbol')?.value || 'BTCUSDT').trim().toUpperCase();
   const src = document.getElementById('smcAutoSrc')?.value || 'auto';
+  const rawSym = (document.getElementById('smcAutoSymbol')?.value || 'BTCUSDT').trim().toUpperCase();
+  const sym = smcNormalizeSym(rawSym, src);
+  // Si le symbole a été corrigé, mettre à jour le champ
+  if (sym !== rawSym) {
+    const inp = document.getElementById('smcAutoSymbol');
+    if (inp) inp.value = sym;
+  }
   const btn = document.getElementById('smcLoadBtn');
 
   btn.classList.add('spinning');
@@ -542,6 +563,15 @@ window.showTab = function(name, btn) {
     width: 100%; height: 100%;
     pointer-events: none;
     z-index: 10;
+  }
+
+  /* Canvas dédié aux tracés manuels — jamais effacé par ICT */
+  #drawCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; /* activé par setDrawTool */
+    z-index: 11; /* au-dessus du canvas ICT */
   }
 
   /* ICT floating panel */
@@ -1887,13 +1917,18 @@ window.showTab = function(name, btn) {
           </div>
           <div id="tradingview-widget"></div>
           <canvas id="ictCanvas"></canvas>
+          <canvas id="drawCanvas"></canvas>
           <!-- ICT info panel -->
           <div id="ictOverlayPanel">
             <div class="ict-panel-title">⚡ Overlay ICT Actif</div>
             <div id="ictPanelRows"></div>
           </div>
+          <!-- Bouton Fullscreen flottant sur le graphique -->
+          <button class="chart-fs-fab" id="chartFABBtn" onclick="toggleFullscreen()" title="Plein écran (F)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="fabFsIcon"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            <span id="fabFsLabel">Agrandir</span>
+          </button>
           <div class="tv-copyright-cover"></div>
-          <div class="tv-logo-cover"></div>
         </div>
       </div>
     </div>
@@ -2508,9 +2543,11 @@ let currentInterval = '30';
 let tvWidgetLoaded = false;
 
 function setTF(btn, iv) {
+  saveDrawObjects();
   currentInterval = iv;
   document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  _ictBars = null;
   loadChart();
 }
 
@@ -2526,6 +2563,8 @@ function loadChart() {
   const widget = document.getElementById('tradingview-widget');
   const wrapper = document.getElementById('tvWrapper');
   if (!widget || !wrapper) return;
+
+  _ictBars = null;
 
   widget.innerHTML = '';
   const h = getChartHeight();
@@ -2577,8 +2616,9 @@ function loadChart() {
         loading_screen: { backgroundColor: '#070d14', foregroundColor: '#00d4aa' },
         disabled_features: [
           'header_saveload',
-          'use_localstorage_for_settings',
           'show_logo_on_all_charts',
+          'adaptive_logo',
+          'create_share_button',
         ],
         enabled_features: [
           'study_templates',
@@ -2597,7 +2637,6 @@ function loadChart() {
           'show_chart_property_page',
           'chart_crosshair_menu',
           'context_menus',
-          'adaptive_logo',
           'cl_feed_return_all_data',
         ],
       });
@@ -2607,17 +2646,30 @@ function loadChart() {
     }
   };
 
-  if (typeof TradingView !== 'undefined') { doLoad(); return; }
+  const _doLoadWrapped = () => {
+    doLoad();
+    // Re-render ICT canvas après que le widget TV soit chargé
+    setTimeout(() => { resizeCanvas(); renderICTOverlay(); }, 800);
+    setTimeout(() => { resizeCanvas(); renderICTOverlay(); }, 2000);
+  };
+
+  if (typeof TradingView !== 'undefined') { _doLoadWrapped(); return; }
   const existing = document.getElementById('tv-script');
-  if (existing) { existing.addEventListener('load', doLoad, { once: true }); return; }
+  if (existing) { existing.addEventListener('load', _doLoadWrapped, { once: true }); return; }
   const s = document.createElement('script');
   s.id = 'tv-script';
   s.src = 'https://s3.tradingview.com/tv.js';
-  s.onload = doLoad;
+  s.onload = _doLoadWrapped;
   document.head.appendChild(s);
 }
 
-document.getElementById('chartSymbol').addEventListener('keydown', e => { if(e.key === 'Enter') loadChart(); });
+document.getElementById('chartSymbol').addEventListener('keydown', e => {
+  if(e.key === 'Enter') {
+    _ictBars = null; // invalider cache pour nouveau symbole
+    loadDrawObjectsForTF();
+    loadChart();
+  }
+});
 
 /* ============================================================
    FULLSCREEN — TRUE FULLSCREEN (covers sidebar & nav)
@@ -2627,9 +2679,13 @@ function toggleFullscreen() {
   const btn = document.getElementById('chartExpandBtn');
   const isFS = container.classList.toggle('fs-mode');
 
+  const fabLabel = document.getElementById('fabFsLabel');
+  const fabIcon  = document.getElementById('fabFsIcon');
   if (isFS) {
     document.body.classList.add('fs-active');
     btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> Réduire`;
+    if (fabLabel) fabLabel.textContent = 'Réduire';
+    if (fabIcon) fabIcon.innerHTML = '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>';
     // ESC key to exit
     const escHandler = (e) => {
       if (e.key === 'Escape' && container.classList.contains('fs-mode')) {
@@ -2641,6 +2697,8 @@ function toggleFullscreen() {
   } else {
     document.body.classList.remove('fs-active');
     btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> Plein Écran`;
+    if (fabLabel) fabLabel.textContent = 'Agrandir';
+    if (fabIcon) fabIcon.innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
   }
 
   // Give DOM time to settle then reload
@@ -2652,17 +2710,298 @@ function toggleFullscreen() {
 }
 
 /* ============================================================
-   ICT / SMC CANVAS OVERLAY
-   Draws ICT levels (OBs, FVGs, Liquidity, Market Structure,
-   Kill Zone shading, Premium/Discount) directly on top of the
-   TradingView iframe. This always works regardless of TV plan.
+   ICT / SMC ENGINE COMPLET — Auto-détection + Canvas
+   FVG, Order Blocks, Liquidité, BOS/CHoCH, Kill Zones
+   Premium/Discount, HH/HL/LH/LL, Biais Auto
+   Les tracés manuels persistent par symbole+TF
 ============================================================ */
+
+// ── STOCKAGE TRACÉS PAR SYMBOLE+TF ────────────────────────────────────────
+// Clé = "chart_draws_EURUSD_15" pour que chaque TF garde ses tracés
+function drawStorageKey() {
+  const sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+  return 'chart_draws_' + sym; // persist sur tous TF
+}
+function saveDrawObjects() {
+  localStorage.setItem(drawStorageKey(), JSON.stringify(drawObjects));
+}
+function loadDrawObjectsForTF() {
+  try {
+    const saved = localStorage.getItem(drawStorageKey());
+    if (saved) drawObjects = JSON.parse(saved);
+  } catch(e) {}
+}
+
+// ── ALGORITHMES ICT ────────────────────────────────────────────────────────
+
+/** EMA */
+function _ema(arr, period) {
+  const k = 2 / (period + 1), out = Array(arr.length).fill(null);
+  let sum = 0, valid = 0;
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] == null) continue;
+    sum += arr[i]; valid++;
+    if (valid < period) continue;
+    if (valid === period) { out[i] = sum / period; continue; }
+    const prev = out.slice(0, i).filter(x => x !== null).slice(-1)[0];
+    if (prev != null) out[i] = arr[i] * k + prev * (1 - k);
+  }
+  return out;
+}
+
+/** ATR */
+function _atr(bars, period = 14) {
+  const trs = bars.map((b, i) => {
+    if (i === 0) return b.high - b.low;
+    const p = bars[i-1].close;
+    return Math.max(b.high-b.low, Math.abs(b.high-p), Math.abs(b.low-p));
+  });
+  return _ema(trs, period);
+}
+
+/** VWAP */
+function _vwap(bars) {
+  let cpv = 0, cv = 0;
+  return bars.map(b => {
+    const tp = (b.high + b.low + b.close) / 3;
+    cpv += tp * (b.volume || 1000); cv += (b.volume || 1000);
+    return cv > 0 ? cpv / cv : tp;
+  });
+}
+
+/** RSI */
+function _rsi(closes, period = 14) {
+  const out = Array(closes.length).fill(null);
+  if (closes.length < period + 1) return out;
+  let g = 0, l = 0;
+  for (let i = 1; i <= period; i++) {
+    const d = closes[i] - closes[i-1];
+    if (d > 0) g += d; else l -= d;
+  }
+  let ag = g/period, al = l/period;
+  out[period] = 100 - 100/(1+(al===0?Infinity:ag/al));
+  for (let i = period+1; i < closes.length; i++) {
+    const d = closes[i] - closes[i-1];
+    ag = (ag*(period-1)+Math.max(d,0))/period;
+    al = (al*(period-1)+Math.max(-d,0))/period;
+    out[i] = 100 - 100/(1+(al===0?Infinity:ag/al));
+  }
+  return out;
+}
+
+/** Swing Points (Fractale Williams N=3) */
+function _swings(bars, N=3) {
+  const highs=[], lows=[];
+  for (let i=N; i<bars.length-N; i++) {
+    let isH=true, isL=true;
+    for (let j=i-N; j<=i+N; j++) {
+      if (j===i) continue;
+      if (bars[j].high >= bars[i].high) isH=false;
+      if (bars[j].low  <= bars[i].low)  isL=false;
+    }
+    if (isH) highs.push({level:bars[i].high, idx:i, time:bars[i].time});
+    if (isL) lows.push ({level:bars[i].low,  idx:i, time:bars[i].time});
+  }
+  return {highs, lows};
+}
+
+/** FVG Detection — 3-candle formation, limité à la zone de détection */
+function _detectFVG(bars, minPct=0.0003) {
+  const fvgs=[];
+  for (let i=2; i<bars.length; i++) {
+    const b0=bars[i-2], b2=bars[i];
+    const mid=bars[i-1].close;
+    // Bullish FVG: gap entre high[i-2] et low[i]
+    if (b2.low > b0.high) {
+      const size = b2.low - b0.high;
+      if (size/mid >= minPct) {
+        // Statut: vérifier si prix actuel a comblé
+        const last = bars[bars.length-1].close;
+        const status = last < b0.high ? 'closed' : last <= b2.low ? 'partial' : 'open';
+        fvgs.push({
+          dir:'bull', top:b2.low, bot:b0.high, mid:(b2.low+b0.high)/2,
+          size, idx:i, startIdx:i, endIdx:i, // zone limitée à la bougie de détection
+          status, filledPct: status==='partial'?Math.round((b2.low-last)/size*100):0
+        });
+      }
+    }
+    // Bearish FVG: gap entre low[i-2] et high[i]
+    if (b2.high < b0.low) {
+      const size = b0.low - b2.high;
+      if (size/mid >= minPct) {
+        const last = bars[bars.length-1].close;
+        const status = last > b0.low ? 'closed' : last >= b2.high ? 'partial' : 'open';
+        fvgs.push({
+          dir:'bear', top:b0.low, bot:b2.high, mid:(b0.low+b2.high)/2,
+          size, idx:i, startIdx:i, endIdx:i,
+          status, filledPct: status==='partial'?Math.round((last-b2.high)/size*100):0
+        });
+      }
+    }
+  }
+  return fvgs.filter(f=>f.status!=='closed').slice(-12);
+}
+
+/** BOS Detection */
+function _detectBOS(bars, highs, lows) {
+  const bos=[];
+  const sh=[...highs].sort((a,b)=>a.idx-b.idx);
+  const sl=[...lows].sort((a,b)=>a.idx-b.idx);
+  for (let i=1; i<bars.length; i++) {
+    const lastH = sh.filter(h=>h.idx<i).slice(-1)[0];
+    if (lastH && bars[i].close>lastH.level && bars[i-1].close<=lastH.level)
+      bos.push({type:'bos-bull', level:lastH.level, idx:i, time:bars[i].time});
+    const lastL = sl.filter(l=>l.idx<i).slice(-1)[0];
+    if (lastL && bars[i].close<lastL.level && bars[i-1].close>=lastL.level)
+      bos.push({type:'bos-bear', level:lastL.level, idx:i, time:bars[i].time});
+  }
+  return bos;
+}
+
+/** CHoCH (inversion du dernier BOS) */
+function _detectCHoCH(bos) {
+  const out=[];
+  for (let i=1; i<bos.length; i++) {
+    const prev=bos[i-1], curr=bos[i];
+    if (prev.type==='bos-bull'&&curr.type==='bos-bear') out.push({...curr,type:'choch-bear'});
+    if (prev.type==='bos-bear'&&curr.type==='bos-bull') out.push({...curr,type:'choch-bull'});
+  }
+  return out;
+}
+
+/** Order Blocks — dernière bougie opposée avant BOS, limitée à sa zone */
+function _detectOB(bars, bos) {
+  const obs=[];
+  bos.forEach(b => {
+    const lookback = bars.slice(Math.max(0,b.idx-12), b.idx);
+    if (b.type==='bos-bull') {
+      for (let i=lookback.length-1; i>=0; i--) {
+        const bar=lookback[i];
+        if (bar.close<bar.open) { // bougie baissière
+          const last=bars[bars.length-1].close;
+          let status='fresh';
+          if (last<bar.low) status='broken';
+          else if (last>=bar.low&&last<=bar.high) status='tested';
+          else if (last>bar.high*1.001) status='mitigated';
+          const range=bar.high-bar.low;
+          const score=Math.min(100,Math.round(Math.max(0,100-Math.abs(last-bar.mid)/bar.mid*8000)));
+          obs.push({dir:'bull',high:bar.high,low:bar.low,mid:(bar.high+bar.low)/2,
+            status,score,idx:b.idx-lookback.length+i,endIdx:b.idx}); // zone du détecté jusqu'au BOS
+          break;
+        }
+      }
+    }
+    if (b.type==='bos-bear') {
+      for (let i=lookback.length-1; i>=0; i--) {
+        const bar=lookback[i];
+        if (bar.close>bar.open) {
+          const last=bars[bars.length-1].close;
+          let status='fresh';
+          if (last>bar.high) status='broken';
+          else if (last>=bar.low&&last<=bar.high) status='tested';
+          else if (last<bar.low*0.999) status='mitigated';
+          const score=Math.min(100,Math.round(Math.max(0,100-Math.abs(last-bar.mid)/bar.mid*8000)));
+          obs.push({dir:'bear',high:bar.high,low:bar.low,mid:(bar.high+bar.low)/2,
+            status,score,idx:b.idx-lookback.length+i,endIdx:b.idx});
+          break;
+        }
+      }
+    }
+  });
+  return obs.filter(o=>o.status!=='broken').sort((a,b)=>b.score-a.score).slice(0,8);
+}
+
+/** HH/HL/LH/LL automatique depuis les swings */
+function _detectHHLL(highs, lows) {
+  const pts=[];
+  const allSwings=[...highs.map(h=>({...h,isHigh:true})),...lows.map(l=>({...l,isHigh:false}))]
+    .sort((a,b)=>a.idx-b.idx).slice(-20);
+  for (let i=1; i<allSwings.length; i++) {
+    const prev=allSwings[i-1], curr=allSwings[i];
+    if (curr.isHigh && prev.isHigh) {
+      pts.push({type:curr.level>prev.level?'HH':'LH', price:curr.level, idx:curr.idx});
+    }
+    if (!curr.isHigh && !prev.isHigh) {
+      pts.push({type:curr.level>prev.level?'HL':'LL', price:curr.level, idx:curr.idx});
+    }
+  }
+  return pts.slice(-8);
+}
+
+/** Biais Auto depuis structure + EMA */
+function _calcBias(bars, ema20, ema50, bos) {
+  if (!bars.length) return {label:'—', color:'#9ca3af'};
+  const last=bars[bars.length-1].close;
+  const e20=ema20.filter(x=>x!=null).slice(-1)[0];
+  const e50=ema50.filter(x=>x!=null).slice(-1)[0];
+  const recentBOS=bos.slice(-3);
+  const bullBOS=recentBOS.filter(b=>b.type==='bos-bull').length;
+  const bearBOS=recentBOS.filter(b=>b.type==='bos-bear').length;
+  let score=0;
+  if (e20&&last>e20) score+=1; else score-=1;
+  if (e50&&last>e50) score+=1; else score-=1;
+  if (e20&&e50&&e20>e50) score+=1; else score-=1;
+  score+=bullBOS-bearBOS;
+  if (score>=2) return {label:'🟢 Haussier', color:'#10b981'};
+  if (score<=-2) return {label:'🔴 Baissier', color:'#ef4444'};
+  return {label:'🟡 Neutre', color:'#f59e0b'};
+}
+
+// Cache données générées
+let _ictBars=null, _ictLastSym='', _ictLastTF='';
+
+function _getICTBars() {
+  const sym=(document.getElementById('chartSymbol')?.value||'EURUSD').toUpperCase();
+  const tf=currentInterval||'30';
+  if (_ictBars&&_ictLastSym===sym&&_ictLastTF===tf) return _ictBars;
+  _ictLastSym=sym; _ictLastTF=tf;
+  // Génération de données de démo cohérentes par symbole
+  const seed=sym.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const rng=(n)=>{let x=Math.sin(n*seed+n*n)*10000;return x-Math.floor(x);};
+  const base=sym.includes('BTC')?95000:sym.includes('ETH')?3200:sym.includes('XAU')?2650:
+             sym.includes('JPY')?155.0:sym.includes('GBP')?1.2700:1.0850;
+  const vol=base*0.0012;
+  const N=120; const bars=[];
+  let price=base;
+  const now=Date.now();
+  const tfMs={1:60000,3:180000,5:300000,15:900000,30:1800000,60:3600000,120:7200000,240:14400000,D:86400000,W:604800000,M:2592000000};
+  const tfMs_val=tfMs[tf]||1800000;
+  for (let i=0; i<N; i++) {
+    const change=(rng(i)-0.485)*vol;
+    const open=price, close=price+change;
+    const high=Math.max(open,close)+rng(i+N)*vol*0.5;
+    const low =Math.min(open,close)-rng(i+N*2)*vol*0.5;
+    bars.push({time:Math.floor((now-(N-i)*tfMs_val)/1000),open,high,low,close,volume:Math.floor(500+rng(i+N*3)*2000)});
+    price=close;
+  }
+  _ictBars=bars;
+  return bars;
+}
+
 function resizeCanvas() {
   const canvas = document.getElementById('ictCanvas');
   const wrapper = document.getElementById('tvWrapper');
   if (!canvas || !wrapper) return;
-  canvas.width  = wrapper.clientWidth;
-  canvas.height = wrapper.clientHeight;
+  const newW = wrapper.clientWidth  || canvas.width;
+  const newH = wrapper.clientHeight || canvas.height;
+  // N'assigner QUE si la taille a vraiment changé —
+  // toute assignation à canvas.width/height efface le bitmap !
+  if (canvas.width !== newW)  canvas.width  = newW;
+  if (canvas.height !== newH) canvas.height = newH;
+
+  // Synchroniser drawCanvas (tracés manuels) — le redessiner si taille change
+  const dc = document.getElementById('drawCanvas');
+  if (dc) {
+    const changed = (dc.width !== newW || dc.height !== newH);
+    if (dc.width  !== newW) dc.width  = newW;
+    if (dc.height !== newH) dc.height = newH;
+    if (changed && typeof window.paintDrawObj === 'function' && Array.isArray(window.drawObjects) && window.drawObjects.length) {
+      const ctx2 = dc.getContext('2d');
+      window.drawObjects.forEach(function(o) {
+        ctx2.save(); try { window.paintDrawObj(ctx2, o, newW, newH); } catch(e) {} ctx2.restore();
+      });
+    }
+  }
 }
 
 function renderICTOverlay() {
@@ -2673,188 +3012,430 @@ function renderICTOverlay() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const active = getActiveSMC();
-  const W = canvas.width;
-  const H = canvas.height;
+  const W = canvas.width, H = canvas.height;
+  if (!Object.keys(active).length) {
+    // Les tracés manuels sont sur #drawCanvas (v5) — rien à faire ici
+    updateICTPanel();
+    return;
+  }
 
-  if (!Object.keys(active).length) { updateICTPanel(); return; }
+  // ── Charger et analyser les données ───────────────────────────────────
+  const bars   = _getICTBars();
+  const closes = bars.map(b=>b.close);
+  const ema20  = _ema(closes,20);
+  const ema50  = _ema(closes,50);
+  const vwap   = _vwap(bars);
+  const atr    = _atr(bars,14);
+  const rsi    = _rsi(closes,14);
+  const {highs:swHigh,lows:swLow} = _swings(bars,3);
+  const bosArr  = _detectBOS(bars,swHigh,swLow);
+  const chochArr= _detectCHoCH(bosArr);
+  const fvgAuto = _detectFVG(bars);
+  const obAuto  = _detectOB(bars,bosArr);
+  const hhllPts = _detectHHLL(swHigh,swLow);
+  const bias    = _calcBias(bars,ema20,ema50,bosArr);
 
-  // — Kill Zones shading (time-based bands) —
-  if (active.kz) {
-    const now = new Date();
-    const watMin = ((now.getUTCHours() + 1) * 60) + now.getUTCMinutes(); // WAT = UTC+1
-    const zones = [
-      { name:'Asian',  sh:0,  sm:0,  eh:3,  em:0,  color:'rgba(99,102,241,0.07)' },
-      { name:'London', sh:9,  sm:0,  eh:11, em:0,  color:'rgba(0,212,170,0.07)'  },
-      { name:'NY',     sh:14, sm:30, eh:16, em:0,  color:'rgba(245,158,11,0.07)' },
-      { name:'NY Close',sh:21,sm:0,  eh:22, em:0,  color:'rgba(239,68,68,0.07)' },
+  // Stocker le biais pour updateICTPanel
+  window._ictBiasLabel = bias.label;
+  window._ictFVGCount  = fvgAuto.length;
+  window._ictOBCount   = obAuto.length;
+  window._ictLiqCount  = swHigh.length+swLow.length;
+  window._ictHHLLCount = hhllPts.length;
+
+  // Combiner FVG auto + manuels
+  let fvgAll=[...fvgAuto];
+  try { fvgAll=[...fvgAll,...JSON.parse(localStorage.getItem('ict_fvg')||'[]').filter(f=>!f.filled)]; } catch(e){}
+  let obAll=[...obAuto];
+  try { obAll=[...obAll,...JSON.parse(localStorage.getItem('ict_ob')||'[]').filter(o=>o.status!=='mitigated')]; } catch(e){}
+  let liqManual=[];
+  try { liqManual=JSON.parse(localStorage.getItem('ict_liq')||'[]'); } catch(e){}
+  let msManual=[];
+  try { msManual=JSON.parse(localStorage.getItem('ict_ms')||'[]'); } catch(e){}
+
+  // ── Projection prix → Y ──────────────────────────────────────────────
+  const allPrices=[
+    ...closes,...bars.map(b=>b.high),...bars.map(b=>b.low),
+    ...fvgAll.map(f=>[f.top,f.bot]).flat(),
+    ...obAll.map(o=>[o.high,o.low]).flat(),
+    ...liqManual.map(l=>l.level),
+    ...hhllPts.map(p=>p.price),
+    ...swHigh.map(h=>h.level),...swLow.map(l=>l.level),
+  ].filter(p=>p&&isFinite(p));
+  if (!allPrices.length) { updateICTPanel(); return; }
+
+  const pMin=Math.min(...allPrices)*0.9996, pMax=Math.max(...allPrices)*1.0004;
+  const pToY=p=>H-((p-pMin)/(pMax-pMin))*H*0.88-H*0.06;
+  const bToX=i=>(i/(bars.length-1||1))*W*0.92+W*0.03;
+
+  // ═══════════════════════════════════════════════════════════
+  // 1. KILL ZONES
+  // ═══════════════════════════════════════════════════════════
+  if (active.kz||active.sessions) {
+    const now=new Date();
+    const watMin=((now.getUTCHours()+1)*60)+now.getUTCMinutes();
+    const zones=[
+      {name:'🌏 Asian',  sh:0, sm:0, eh:3, em:0, color:'rgba(99,102,241,0.07)',  border:'rgba(99,102,241,0.6)'},
+      {name:'🇬🇧 London',sh:9, sm:0, eh:11,em:0, color:'rgba(0,212,170,0.07)',   border:'rgba(0,212,170,0.6)'},
+      {name:'🗽 NY Open',sh:14,sm:30,eh:16,em:0, color:'rgba(245,158,11,0.07)',  border:'rgba(245,158,11,0.6)'},
+      {name:'🌙 NY Close',sh:21,sm:0,eh:22,em:0, color:'rgba(239,68,68,0.07)',   border:'rgba(239,68,68,0.6)'},
     ];
-    const totalDayMin = 1440;
-    zones.forEach(z => {
-      const start = z.sh*60+z.sm, end = z.eh*60+z.em;
-      const xS = (start/totalDayMin)*W, xE = (end/totalDayMin)*W;
-      ctx.fillStyle = z.color;
-      ctx.fillRect(xS, 0, xE-xS, H);
-      // label
-      ctx.fillStyle = 'rgba(255,255,255,0.25)';
-      ctx.font = 'bold 10px Space Mono, monospace';
-      ctx.fillText(z.name, xS+4, 14);
-      // active highlight
-      if (watMin >= start && watMin < end) {
-        ctx.strokeStyle = z.color.replace('0.07','0.6');
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4,3]);
-        ctx.strokeRect(xS+1, 1, xE-xS-2, H-2);
-        ctx.setLineDash([]);
+    zones.forEach(z=>{
+      const s=z.sh*60+z.sm, e=z.eh*60+z.em;
+      const xS=(s/1440)*W, xE=(e/1440)*W;
+      const isActive=watMin>=s&&watMin<e;
+      ctx.fillStyle=z.color; ctx.fillRect(xS,0,xE-xS,H);
+      if (isActive) {
+        ctx.strokeStyle=z.border; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+        ctx.strokeRect(xS+1,1,xE-xS-2,H-2); ctx.setLineDash([]);
+        ctx.fillStyle=z.border; ctx.font='bold 8px Space Mono,monospace';
+        ctx.fillText('● LIVE',xS+4,22);
       }
+      ctx.fillStyle=isActive?z.border:'rgba(255,255,255,0.2)';
+      ctx.font='bold 8px Space Mono,monospace'; ctx.fillText(z.name,xS+4,12);
     });
   }
 
-  // — Imbalances / FVG from stored data —
-  if (active.imbalance || active.ob) {
-    // Use stored FVG data from ict tab
-    try {
-      const fvgs = JSON.parse(localStorage.getItem('ict_fvg') || '[]');
-      if (fvgs.length && active.imbalance) {
-        // Normalize prices to canvas coordinates (simple relative display)
-        const prices = fvgs.map(f => [f.top, f.bot]).flat().filter(Boolean);
-        if (prices.length) {
-          const pMin = Math.min(...prices) * 0.9998;
-          const pMax = Math.max(...prices) * 1.0002;
-          const pToY = p => H - ((p - pMin) / (pMax - pMin)) * H * 0.8 - H*0.1;
-          fvgs.filter(f => !f.filled).forEach(f => {
-            const y1 = pToY(f.top), y2 = pToY(f.bot);
-            const color = f.dir === 'bull' ? 'rgba(16,185,129,' : 'rgba(239,68,68,';
-            ctx.fillStyle = color + '0.15)';
-            ctx.fillRect(W * 0.05, Math.min(y1,y2), W * 0.9, Math.abs(y2-y1)+1);
-            ctx.strokeStyle = color + '0.5)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([3,3]);
-            ctx.strokeRect(W * 0.05, Math.min(y1,y2), W * 0.9, Math.abs(y2-y1)+1);
-            ctx.setLineDash([]);
-            ctx.fillStyle = color + '0.8)';
-            ctx.font = 'bold 9px Space Mono, monospace';
-            ctx.fillText(`FVG ${f.dir === 'bull' ? '▲' : '▼'} ${f.sym}`, W*0.06, Math.min(y1,y2)-3);
-          });
-        }
-      }
-    } catch(e) {}
-  }
+  // ═══════════════════════════════════════════════════════════
+  // 2. FVG AUTO-DÉTECTÉS — Zone limitée à la bougie de détection
+  // ═══════════════════════════════════════════════════════════
+  if (active.imbalance&&fvgAll.length) {
+    fvgAll.forEach(fvg=>{
+      const y1=pToY(fvg.top), y2=pToY(fvg.bot);
+      const isBull=fvg.dir==='bull';
+      const cb=isBull?'16,185,129':'239,68,68';
+      const al=fvg.status==='open'?0.18:fvg.status==='partial'?0.12:0.05;
 
-  // — Order Blocks —
-  if (active.ob) {
-    try {
-      const obs = JSON.parse(localStorage.getItem('ict_ob') || '[]');
-      if (obs.length) {
-        const prices = obs.map(o => [o.high, o.low]).flat().filter(Boolean);
-        if (prices.length) {
-          const pMin = Math.min(...prices) * 0.9998;
-          const pMax = Math.max(...prices) * 1.0002;
-          const pToY = p => H - ((p - pMin) / (pMax - pMin)) * H * 0.8 - H*0.1;
-          obs.filter(o => o.status !== 'mitigated').forEach(o => {
-            const y1 = pToY(o.high), y2 = pToY(o.low);
-            const color = o.dir === 'bull' ? 'rgba(16,185,129,' : 'rgba(239,68,68,';
-            ctx.fillStyle = color + '0.12)';
-            ctx.fillRect(W*0.02, Math.min(y1,y2), W*0.96, Math.abs(y2-y1)+1);
-            ctx.strokeStyle = color + '0.6)';
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(W*0.02, Math.min(y1,y2), W*0.96, Math.abs(y2-y1)+1);
-            ctx.fillStyle = color + '0.85)';
-            ctx.font = 'bold 10px Space Mono, monospace';
-            const label = (o.dir==='bull'?'▲ Bull OB':'▼ Bear OB') + ' ' + o.sym + ' ' + o.tf;
-            ctx.fillText(label, W*0.03, Math.min(y1,y2)-4);
-          });
-        }
-      }
-    } catch(e) {}
-  }
+      // Zone limitée: de la bougie de détection (startIdx) jusqu'à la dernière bougie (ou endIdx)
+      const xStart = fvg.idx!=null ? bToX(Math.min(fvg.idx, bars.length-1)) : W*0.03;
+      const xEnd   = W*0.97;
 
-  // — Liquidity levels —
-  if (active.liq) {
-    try {
-      const liqs = JSON.parse(localStorage.getItem('ict_liq') || '[]');
-      if (liqs.length) {
-        const prices = liqs.map(l => l.level).filter(Boolean);
-        const pMin = Math.min(...prices) * 0.9998;
-        const pMax = Math.max(...prices) * 1.0002;
-        const pToY = p => H - ((p - pMin) / (pMax - pMin)) * H * 0.8 - H*0.1;
-        liqs.forEach(l => {
-          const y = pToY(l.level);
-          const isBSL = l.type === 'bsl';
-          const color = isBSL ? '#10b981' : '#ef4444';
-          const isDashed = l.status === 'swept';
-          ctx.strokeStyle = color;
-          ctx.lineWidth = isDashed ? 1 : 1.5;
-          ctx.globalAlpha = isDashed ? 0.4 : 0.85;
-          ctx.setLineDash(isDashed ? [6,4] : []);
-          ctx.beginPath(); ctx.moveTo(W*0.02, y); ctx.lineTo(W*0.98, y); ctx.stroke();
-          ctx.setLineDash([]);
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = color;
-          ctx.font = 'bold 9px Space Mono, monospace';
-          ctx.fillText(`${isBSL?'▲ BSL':'▼ SSL'} ${l.level}`, W*0.03, y - 3);
-        });
-      }
-    } catch(e) {}
-  }
+      ctx.fillStyle=`rgba(${cb},${al})`;
+      ctx.fillRect(xStart,Math.min(y1,y2),xEnd-xStart,Math.abs(y2-y1)+1);
+      ctx.strokeStyle=`rgba(${cb},${al*3})`;
+      ctx.lineWidth=1; ctx.setLineDash([]);
+      ctx.strokeRect(xStart,Math.min(y1,y2),xEnd-xStart,Math.abs(y2-y1)+1);
 
-  // — Market Structure —
-  if (active.ms) {
-    try {
-      const ms = JSON.parse(localStorage.getItem('ict_ms') || '[]');
-      if (ms.length) {
-        const prices = ms.map(m => m.level).filter(Boolean);
-        const pMin = Math.min(...prices)*0.9998, pMax = Math.max(...prices)*1.0002;
-        const pToY = p => H - ((p - pMin) / (pMax - pMin)) * H * 0.8 - H*0.1;
-        const COLORS = {
-          'bos-bull':'#6ee7b7','bos-bear':'#fca5a5',
-          'choch-bull':'#a5b4fc','choch-bear':'#fcd34d','cisd':'#00d4aa'
-        };
-        ms.forEach(m => {
-          const y = pToY(m.level);
-          const color = COLORS[m.type] || '#9ca3af';
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 2;
-          ctx.setLineDash([8,4]);
-          ctx.beginPath(); ctx.moveTo(W*0.02, y); ctx.lineTo(W*0.98, y); ctx.stroke();
-          ctx.setLineDash([]);
-          // Label badge
-          ctx.fillStyle = color;
-          ctx.font = 'bold 10px Space Mono, monospace';
-          const label = m.type.toUpperCase().replace('-',' ') + ' ' + m.level + ' (' + m.tf + ')';
-          const lw = ctx.measureText(label).width;
-          ctx.fillStyle = 'rgba(10,14,26,0.8)';
-          ctx.fillRect(W*0.03-2, y-13, lw+8, 14);
-          ctx.fillStyle = color;
-          ctx.fillText(label, W*0.03+2, y-2);
-        });
-      }
-    } catch(e) {}
-  }
-
-  // — Premium / Discount zone —
-  if (active.pd) {
-    const high = parseFloat(document.getElementById('pd_high')?.value);
-    const low  = parseFloat(document.getElementById('pd_low')?.value);
-    if (high && low && high > low) {
-      const mid = (high + low) / 2;
-      ctx.fillStyle = 'rgba(239,68,68,0.07)';
-      ctx.fillRect(0, 0, W, H*0.5);
-      ctx.fillStyle = 'rgba(16,185,129,0.07)';
-      ctx.fillRect(0, H*0.5, W, H*0.5);
-      // Mid line
-      ctx.strokeStyle = 'rgba(245,158,11,0.6)';
-      ctx.lineWidth = 1; ctx.setLineDash([5,4]);
-      ctx.beginPath(); ctx.moveTo(0, H*0.5); ctx.lineTo(W, H*0.5); ctx.stroke();
+      // Ligne médiane 50%
+      const yMid=pToY(fvg.mid||((fvg.top+fvg.bot)/2));
+      ctx.strokeStyle=`rgba(${cb},0.25)`; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.moveTo(xStart,yMid); ctx.lineTo(xEnd,yMid); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(245,158,11,0.8)';
-      ctx.font = 'bold 10px Space Mono, monospace';
-      ctx.fillText('50% EQ — ' + mid.toFixed(5), W*0.5 - 60, H*0.5 - 5);
-      ctx.fillStyle = 'rgba(239,68,68,0.6)';
-      ctx.font = 'bold 10px Syne, sans-serif';
-      ctx.fillText('PREMIUM ▼', 8, 18);
-      ctx.fillStyle = 'rgba(16,185,129,0.6)';
-      ctx.fillText('DISCOUNT ▲', 8, H - 8);
+
+      // Label avec statut
+      const statLabel=fvg.status?fvg.status.toUpperCase():'OPEN';
+      const ptsLabel=fvg.size?(fvg.size*10000).toFixed(1)+'p':'';
+      const label=`FVG ${isBull?'▲':'▼'} [${statLabel}] ${ptsLabel}`;
+      const lw=ctx.measureText(label).width;
+      ctx.fillStyle='rgba(10,14,26,0.8)';
+      ctx.fillRect(xStart+2,Math.min(y1,y2)-14,lw+8,13);
+      ctx.fillStyle=`rgba(${cb},0.95)`;
+      ctx.font='bold 9px Space Mono,monospace';
+      ctx.fillText(label,xStart+4,Math.min(y1,y2)-4);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 3. ORDER BLOCKS AUTO — Zone limitée OB→BOS
+  // ═══════════════════════════════════════════════════════════
+  if (active.ob&&obAll.length) {
+    obAll.forEach(ob=>{
+      const y1=pToY(ob.high), y2=pToY(ob.low);
+      const isBull=ob.dir==='bull';
+      const cb=isBull?'16,185,129':'239,68,68';
+      const al=ob.status==='fresh'?0.18:ob.status==='tested'?0.10:0.04;
+
+      // Zone limitée: du OB jusqu'au BOS (endIdx), puis ligne jusqu'à présent
+      const xOB   = ob.idx!=null   ? bToX(Math.min(ob.idx,   bars.length-1)) : W*0.02;
+      const xBOS  = ob.endIdx!=null? bToX(Math.min(ob.endIdx,bars.length-1)) : W*0.6;
+      const xCurr = W*0.97;
+
+      // Zone principale OB→BOS
+      ctx.fillStyle=`rgba(${cb},${al})`;
+      ctx.fillRect(xOB,Math.min(y1,y2),xBOS-xOB,Math.abs(y2-y1)+1);
+      ctx.strokeStyle=`rgba(${cb},${al*3.5})`;
+      ctx.lineWidth=ob.status==='fresh'?1.5:0.8;
+      ctx.setLineDash(ob.status==='tested'?[4,3]:[]);
+      ctx.strokeRect(xOB,Math.min(y1,y2),xBOS-xOB,Math.abs(y2-y1)+1);
+      ctx.setLineDash([]);
+
+      // Ligne horizontale étendue BOS→présent (moins visible)
+      ctx.strokeStyle=`rgba(${cb},${al*1.5})`; ctx.lineWidth=0.8; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(xBOS,pToY(ob.high)); ctx.lineTo(xCurr,pToY(ob.high)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xBOS,pToY(ob.low));  ctx.lineTo(xCurr,pToY(ob.low));  ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Ligne 50%
+      const yMid=pToY(ob.mid||(ob.high+ob.low)/2);
+      ctx.strokeStyle=`rgba(${cb},0.2)`; ctx.setLineDash([2,4]);
+      ctx.beginPath(); ctx.moveTo(xOB,yMid); ctx.lineTo(xBOS,yMid); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Score + Label
+      const sc=ob.score||0;
+      const scColor=sc>=70?'#10b981':sc>=40?'#f59e0b':'#ef4444';
+      const label=`${isBull?'▲ Bull OB':'▼ Bear OB'} [${ob.status||'fresh'}]`;
+      const lw=ctx.measureText(label).width;
+      ctx.fillStyle='rgba(10,14,26,0.85)';
+      ctx.fillRect(xOB+2,Math.min(y1,y2)-15,lw+40,14);
+      ctx.fillStyle=`rgba(${cb},0.95)`; ctx.font='bold 9px Space Mono,monospace';
+      ctx.fillText(label,xOB+4,Math.min(y1,y2)-4);
+      ctx.fillStyle=scColor;
+      ctx.fillText(` ${sc}%`,xOB+4+lw,Math.min(y1,y2)-4);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 4. LIQUIDITÉS AUTO (Swing High/Low + Manuels)
+  // ═══════════════════════════════════════════════════════════
+  if (active.liq) {
+    // Swing Highs → BSL
+    swHigh.slice(-6).forEach(sh=>{
+      const y=pToY(sh.level);
+      ctx.strokeStyle='rgba(16,185,129,0.55)'; ctx.lineWidth=1.2; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(W*0.02,y); ctx.lineTo(W*0.98,y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(16,185,129,0.8)'; ctx.font='bold 8px Space Mono,monospace';
+      ctx.fillText(`▲ BSL  ${sh.level.toFixed(5)}`,W*0.03,y-3);
+    });
+    // Swing Lows → SSL
+    swLow.slice(-6).forEach(sl=>{
+      const y=pToY(sl.level);
+      ctx.strokeStyle='rgba(239,68,68,0.55)'; ctx.lineWidth=1.2; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(W*0.02,y); ctx.lineTo(W*0.98,y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(239,68,68,0.8)'; ctx.font='bold 8px Space Mono,monospace';
+      ctx.fillText(`▼ SSL  ${sl.level.toFixed(5)}`,W*0.03,y+11);
+    });
+    // Manuels
+    liqManual.forEach(l=>{
+      const y=pToY(l.level);
+      const isBSL=l.type==='bsl';
+      const color=isBSL?'#10b981':'#ef4444';
+      const swept=l.status==='swept';
+      ctx.strokeStyle=color; ctx.lineWidth=swept?0.8:1.8; ctx.globalAlpha=swept?0.35:0.9;
+      ctx.setLineDash(swept?[6,4]:[]);
+      ctx.beginPath(); ctx.moveTo(W*0.02,y); ctx.lineTo(W*0.98,y); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      ctx.fillStyle=color; ctx.font='bold 9px Space Mono,monospace';
+      ctx.fillText(`${isBSL?'💧 BSL':'💧 SSL'}  ${l.level}`,W*0.04,y-3);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 5. BOS / CHoCH — Style TradingView (Leviathan-like)
+  // ═══════════════════════════════════════════════════════════
+  if (active.ms) {
+    const SCOL={'bos-bull':'#26a69a','bos-bear':'#ef5350','choch-bull':'#7e57c2','choch-bear':'#ff7043','cisd':'#00d4aa'};
+    const SLBL={'bos-bull':'BOS','bos-bear':'BOS','choch-bull':'CHoCH','choch-bear':'CHoCH'};
+    const allStruct=[...bosArr.slice(-5),...chochArr.slice(-3)];
+    allStruct.forEach(s=>{
+      const y=pToY(s.level);
+      const color=SCOL[s.type]||'#9ca3af';
+      const isBull=s.type.includes('bull');
+      // Ligne pointillée style TV
+      ctx.save();
+      ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+      ctx.globalAlpha=0.75;
+      ctx.beginPath(); ctx.moveTo(W*0.02,y); ctx.lineTo(W*0.97,y); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+      // Label compact style TV — positionné au bord droit
+      const label = SLBL[s.type]||s.type.toUpperCase();
+      ctx.font = 'bold 10px -apple-system,BlinkMacSystemFont,"Trebuchet MS",sans-serif';
+      const lw = ctx.measureText(label).width + 10;
+      const lx = W*0.97 - lw - 4;
+      const ly = isBull ? y - 16 : y + 3;
+      ctx.fillStyle = color; ctx.globalAlpha = 0.15;
+      ctx.fillRect(lx, ly, lw, 14);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = color; ctx.lineWidth = 0.8;
+      ctx.strokeRect(lx, ly, lw, 14);
+      ctx.fillStyle = color;
+      ctx.fillText(label, lx + 5, ly + 10);
+      ctx.restore();
+    });
+    // Manuels
+    msManual.forEach(m=>{
+      const y=pToY(m.level);
+      const color=SCOL[m.type]||'#9ca3af';
+      ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([6,3]);
+      ctx.beginPath(); ctx.moveTo(W*0.02,y); ctx.lineTo(W*0.98,y); ctx.stroke();
+      ctx.setLineDash([]);
+      const label=(m.type||'?').toUpperCase().replace('-',' ')+' '+m.level+' ('+(m.tf||'—')+')';
+      const lw=ctx.measureText(label).width;
+      ctx.fillStyle='rgba(10,14,26,0.8)'; ctx.fillRect(W*0.03-2,y-14,lw+10,13);
+      ctx.fillStyle=color; ctx.font='bold 9px Space Mono,monospace';
+      ctx.fillText(label,W*0.03+3,y-4);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 6. PREMIUM / DISCOUNT
+  // ═══════════════════════════════════════════════════════════
+  if (active.pd) {
+    const hi=parseFloat(document.getElementById('pd_high')?.value);
+    const lo=parseFloat(document.getElementById('pd_low')?.value);
+    if (hi&&lo&&hi>lo) {
+      const mid=(hi+lo)/2;
+      const yH=pToY(hi),yL=pToY(lo),yM=pToY(mid);
+      ctx.fillStyle='rgba(239,68,68,0.07)'; ctx.fillRect(0,Math.min(yH,yM),W,Math.abs(yM-yH));
+      ctx.fillStyle='rgba(16,185,129,0.07)'; ctx.fillRect(0,Math.min(yM,yL),W,Math.abs(yL-yM));
+      ctx.strokeStyle='rgba(245,158,11,0.7)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(0,yM); ctx.lineTo(W,yM); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='rgba(245,158,11,0.85)'; ctx.font='bold 9px Space Mono,monospace';
+      ctx.fillText(`50% EQ — ${mid.toFixed(5)}`,W*0.5-50,yM-5);
+      ctx.fillStyle='rgba(239,68,68,0.7)'; ctx.font='bold 10px Syne,sans-serif';
+      ctx.fillText('PREMIUM ▼',8,Math.min(yH,yM)+16);
+      ctx.fillStyle='rgba(16,185,129,0.7)';
+      ctx.fillText('DISCOUNT ▲',8,Math.max(yM,yL)-6);
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 7. HH / HL / LH / LL AUTO — Style TradingView
+  // ═══════════════════════════════════════════════════════════
+  if (active.hhll&&hhllPts.length) {
+    const COL = { HH:'#26a69a', HL:'#26a69a', LH:'#ef5350', LL:'#ef5350' };
+    const isTop = { HH:true, LH:true, HL:false, LL:false };
+
+    // ── Ligne zigzag entre tous les points (style TV : gris fin) ──
+    if (hhllPts.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(176,190,197,0.45)';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      hhllPts.forEach((pt, i) => {
+        const x = bToX(pt.idx), y = pToY(pt.price);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ── Dessiner chaque point ──
+    hhllPts.forEach((pt, i) => {
+      const x  = bToX(pt.idx);
+      const y  = pToY(pt.price);
+      const color = COL[pt.type] || '#9ca3af';
+      const above = isTop[pt.type]; // label au-dessus ou en dessous
+
+      // Petit triangle directionnel (style TV)
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.9;
+      const ts = 5; // taille triangle
+      const ty = above ? y - 10 : y + 10;
+      ctx.beginPath();
+      if (above) {
+        ctx.moveTo(x, y - 3);
+        ctx.lineTo(x - ts, ty - ts);
+        ctx.lineTo(x + ts, ty - ts);
+      } else {
+        ctx.moveTo(x, y + 3);
+        ctx.lineTo(x - ts, ty + ts);
+        ctx.lineTo(x + ts, ty + ts);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+
+      // Label style TradingView — fond semi-transparent, texte compact
+      ctx.save();
+      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,"Trebuchet MS",sans-serif';
+      const lbl = pt.type;
+      const lw  = ctx.measureText(lbl).width;
+      const pad = 4;
+      const bw  = lw + pad * 2;
+      const bh  = 16;
+      const bx  = x - bw / 2;
+      const by  = above ? y - 32 : y + 14;
+
+      // Fond du label
+      ctx.globalAlpha = 0.88;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      const r = 3;
+      ctx.moveTo(bx + r, by);
+      ctx.lineTo(bx + bw - r, by);
+      ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+      ctx.lineTo(bx + bw, by + bh - r);
+      ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+      ctx.lineTo(bx + r, by + bh);
+      ctx.arcTo(bx, by + bh, bx, by + bh - r, r);
+      ctx.lineTo(bx, by + r);
+      ctx.arcTo(bx, by, bx + r, by, r);
+      ctx.closePath();
+      ctx.fill();
+
+      // Texte
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,"Trebuchet MS",sans-serif';
+      ctx.fillText(lbl, bx + pad, by + bh - 4);
+      ctx.restore();
+    });
+
+    // ── BOS sur les cassures (entre HH→LH ou LL→HL) ──
+    if (active.ms && hhllPts.length >= 2) {
+      for (let i = 1; i < hhllPts.length; i++) {
+        const prev = hhllPts[i-1], curr = hhllPts[i];
+        // BOS haussier: LL → HL (le bas monte = structure bullish)
+        // BOS baissier: HH → LH (le haut baisse = structure bearish)
+        let bosType = null;
+        if (prev.type === 'LL' && curr.type === 'HL') bosType = 'bull';
+        if (prev.type === 'HH' && curr.type === 'LH') bosType = 'bear';
+        if (!bosType) continue;
+        const midX = (bToX(prev.idx) + bToX(curr.idx)) / 2;
+        const midY = (pToY(prev.price) + pToY(curr.price)) / 2;
+        const bosColor = bosType === 'bull' ? '#26a69a' : '#ef5350';
+        ctx.save();
+        ctx.font = 'bold 9px -apple-system,BlinkMacSystemFont,monospace';
+        const blbl = 'BOS';
+        const blw = ctx.measureText(blbl).width + 8;
+        ctx.fillStyle = 'rgba(10,14,26,0.82)';
+        ctx.fillRect(midX - blw/2, midY - 8, blw, 14);
+        ctx.strokeStyle = bosColor; ctx.lineWidth = 0.8;
+        ctx.strokeRect(midX - blw/2, midY - 8, blw, 14);
+        ctx.fillStyle = bosColor;
+        ctx.fillText(blbl, midX - blw/2 + 4, midY + 3);
+        ctx.restore();
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 8. INDICATEURS TECH (EMA, VWAP, RSI info)
+  // ═══════════════════════════════════════════════════════════
+  if (active.imbalance||active.ob||active.ms) {
+    const drawLine=(vals,color,lw,dash=[])=>{
+      ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.setLineDash(dash); ctx.beginPath();
+      let started=false;
+      vals.forEach((v,i)=>{
+        if (v==null||!isFinite(v)) return;
+        const x=bToX(i),y=pToY(v);
+        if (!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y);
+      });
+      ctx.stroke(); ctx.setLineDash([]);
+    };
+    drawLine(ema20,'rgba(0,212,170,0.5)',1.2);
+    drawLine(ema50,'rgba(245,158,11,0.45)',1.0);
+    drawLine(vwap,'rgba(167,139,250,0.45)',1.0,[4,3]);
+    // Infos en bas à gauche
+    const lastE20=ema20.filter(Boolean).slice(-1)[0];
+    const lastVWAP=vwap.slice(-1)[0];
+    const lastATR=atr.filter(Boolean).slice(-1)[0];
+    const lastRSI=rsi.filter(Boolean).slice(-1)[0];
+    ctx.font='bold 8px Space Mono,monospace';
+    if(lastE20){ctx.fillStyle='rgba(0,212,170,0.8)';ctx.fillText(`EMA20 ${lastE20.toFixed(5)}`,W*0.03,H-38);}
+    if(lastVWAP){ctx.fillStyle='rgba(167,139,250,0.8)';ctx.fillText(`VWAP  ${lastVWAP.toFixed(5)}`,W*0.03,H-28);}
+    if(lastATR){ctx.fillStyle='rgba(245,158,11,0.7)';ctx.fillText(`ATR   ${(lastATR*10000).toFixed(1)}p`,W*0.03,H-18);}
+    if(lastRSI){
+      const rc=lastRSI>70?'#ef4444':lastRSI<30?'#10b981':'#9ca3af';
+      ctx.fillStyle=rc; ctx.fillText(`RSI   ${lastRSI.toFixed(1)}`,W*0.03,H-8);
+    }
+    // Biais en haut à droite
+    ctx.font='bold 9px Space Mono,monospace';
+    ctx.fillStyle='rgba(10,14,26,0.85)'; ctx.fillRect(W-115,4,110,18);
+    ctx.fillStyle=bias.color; ctx.fillText(`Biais: ${bias.label}`,W-112,16);
   }
 
   updateICTPanel();
@@ -2874,32 +3455,56 @@ function updateICTPanel() {
     ms:'📊 Mkt Structure', pd:'📐 Prem/Disc', kz:'⏱️ Kill Zones',
     hhll:'📍 HH/HL/LH/LL', sessions:'🌍 Sessions'
   };
+
+  // Compter en priorité les données auto-détectées
+  const fvgCount  = (window._ictFVGCount||0) + (() => { try{return JSON.parse(localStorage.getItem('ict_fvg')||'[]').filter(f=>!f.filled).length}catch(e){return 0} })();
+  const obCount   = (window._ictOBCount ||0) + (() => { try{return JSON.parse(localStorage.getItem('ict_ob') ||'[]').filter(o=>o.status!=='mitigated').length}catch(e){return 0} })();
+  const liqCount  = (window._ictLiqCount||0) + (() => { try{return JSON.parse(localStorage.getItem('ict_liq')||'[]').length}catch(e){return 0} })();
+  const msCount   = (() => { try{return JSON.parse(localStorage.getItem('ict_ms')||'[]').length}catch(e){return 0} })();
+  const hhllCount = window._ictHHLLCount||0;
+  const biasLabel = window._ictBiasLabel||'—';
+
   const counts = {
-    imbalance: JSON.parse(localStorage.getItem('ict_fvg')||'[]').filter(f=>!f.filled).length,
-    ob:        JSON.parse(localStorage.getItem('ict_ob') ||'[]').filter(o=>o.status!=='mitigated').length,
-    liq:       JSON.parse(localStorage.getItem('ict_liq')||'[]').length,
-    ms:        JSON.parse(localStorage.getItem('ict_ms') ||'[]').length,
-    pd:        (parseFloat(document.getElementById('pd_high')?.value) > 0) ? 1 : 0,
+    imbalance: fvgCount,
+    ob:        obCount,
+    liq:       liqCount,
+    ms:        msCount,
+    pd:        (parseFloat(document.getElementById('pd_high')?.value)>0)?1:0,
     kz:        4,
-    hhll:      (window.structPoints||[]).length,
+    hhll:      hhllCount,
     sessions:  3
   };
 
   rows.innerHTML = keys.map(k => {
-    const count = counts[k] || 0;
-    const color = count > 0 ? 'var(--accent)' : 'var(--text-muted)';
+    const count = counts[k]||0;
+    const color = count>0?'var(--accent)':'var(--text-muted)';
+    let val;
+    if (k==='sessions') val='3 zones actives';
+    else if (k==='kz') val='4 actifs';
+    else if (k==='ms' && !count) val='Aucune (manuelle)';
+    else val=count>0?count+' actifs':'En attente…';
+    // Biais spécial
+    if (k==='hhll'&&active.hhll) {
+      return `<div class="ict-panel-row">
+        <span class="ict-panel-key">${labels[k]}</span>
+        <span class="ict-panel-val" style="color:${color}">${count>0?count+' points':'—'}</span>
+      </div>
+      <div class="ict-panel-row">
+        <span class="ict-panel-key">🧭 Biais Auto</span>
+        <span class="ict-panel-val" style="color:${(window._ictBiasLabel||'').includes('Haussier')?'#10b981':(window._ictBiasLabel||'').includes('Baissier')?'#ef4444':'#f59e0b'}">${biasLabel}</span>
+      </div>`;
+    }
     return `<div class="ict-panel-row">
       <span class="ict-panel-key">${labels[k]||k}</span>
-      <span class="ict-panel-val" style="color:${color}">${count > 0 ? count + ' actifs' : 'Aucune donnée'}</span>
+      <span class="ict-panel-val" style="color:${color}">${val}</span>
     </div>`;
   }).join('');
 }
 
-// Resize canvas on window resize
-window.addEventListener('resize', () => {
-  resizeCanvas();
-  renderICTOverlay();
-});
+// Resize + refresh
+window.addEventListener('resize', () => { resizeCanvas(); renderICTOverlay(); });
+// Refresh auto toutes les 60s
+setInterval(()=>{ if(Object.keys(getActiveSMC()).length){_ictBars=null;renderICTOverlay();} },60000);
 
 /* ============================================================
    STATS CHARTS
@@ -3671,7 +4276,7 @@ function setSBTool(tool, btn) {
 function undoLastDraw() {
   if (drawObjects.length) {
     drawObjects.pop();
-    localStorage.setItem('chart_draws', JSON.stringify(drawObjects));
+    saveDrawObjects();
     renderICTOverlay();
     showToast('Annulé ✓', 'info', 1000);
   }
@@ -3681,7 +4286,7 @@ function clearAllDraws() {
   if (!drawObjects.length) return;
   if (confirm('Effacer tous les tracés ?')) {
     drawObjects = [];
-    localStorage.removeItem('chart_draws');
+    saveDrawObjects(); // clé spécifique au TF effacée
     renderICTOverlay();
     showToast('Tracés effacés', 'info');
   }
@@ -3762,7 +4367,19 @@ let currentDrawColor = '#00d4aa';
 let currentDrawThick = 2;
 let drawStart = null;
 let drawPreview = null;
-let drawObjects = JSON.parse(localStorage.getItem('chart_draws') || '[]');
+var drawObjects = (() => {
+  // Lire depuis toutes les clés possibles (compatibilité entre versions)
+  try {
+    const sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+    const tf  = (typeof currentInterval !== 'undefined' ? currentInterval : null) || '30';
+    const saved =
+      localStorage.getItem('kf_draws_' + sym) ||          // clé KF Fix (priorité max)
+      localStorage.getItem('chart_draws_' + sym) ||        // clé sans TF
+      localStorage.getItem('chart_draws_' + sym + '_' + tf) || // clé avec TF
+      localStorage.getItem('chart_draws');                 // clé globale fallback
+    return saved ? JSON.parse(saved) : [];
+  } catch(e) { return []; }
+})();
 
 const DRAW_CURSORS = {
   none:'default', hline:'row-resize', vline:'col-resize',
@@ -3787,7 +4404,7 @@ function setDrawTool(tool, btn) {
     btn.style.borderColor = 'var(--accent)';
     btn.style.color = 'var(--accent)';
   }
-  const canvas = document.getElementById('ictCanvas');
+  const canvas = document.getElementById('drawCanvas');
   if (canvas) {
     canvas.style.pointerEvents = tool !== 'none' ? 'all' : 'none';
     canvas.style.cursor = DRAW_CURSORS[tool] || 'crosshair';
@@ -3811,7 +4428,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     if (drawObjects.length) {
       drawObjects.pop();
-      localStorage.setItem('chart_draws', JSON.stringify(drawObjects));
+      saveDrawObjects();
       renderICTOverlay();
       showToast('Annulé ✓', 'info', 1000);
     }
@@ -3820,7 +4437,7 @@ document.addEventListener('keydown', e => {
 
 // Canvas drawing interaction — full enhanced version
 document.addEventListener('DOMContentLoaded', () => {
-  const canvas = document.getElementById('ictCanvas');
+  const canvas = document.getElementById('drawCanvas'); // tracés sur leur propre canvas
   if (!canvas) return;
 
   // --- TEXT INPUT MODAL ---
@@ -3863,7 +4480,7 @@ document.addEventListener('DOMContentLoaded', () => {
       promptText(drawStart.x, drawStart.y, txt => {
         if (txt) {
           drawObjects.push({ type:'text', x1:drawStart.x, y1:drawStart.y, x2:end.x, y2:end.y, text:txt, color:currentDrawColor, thick:currentDrawThick, id:Date.now() });
-          localStorage.setItem('chart_draws', JSON.stringify(drawObjects));
+          saveDrawObjects();
           renderICTOverlay();
         }
         drawStart = null;
@@ -3874,7 +4491,7 @@ document.addEventListener('DOMContentLoaded', () => {
       promptText(drawStart.x, drawStart.y, txt => {
         if (txt) {
           drawObjects.push({ type:'price_label', x1:drawStart.x, y1:drawStart.y, x2:end.x, y2:end.y, text:txt, color:currentDrawColor, thick:currentDrawThick, id:Date.now() });
-          localStorage.setItem('chart_draws', JSON.stringify(drawObjects));
+          saveDrawObjects();
           renderICTOverlay();
         }
         drawStart = null;
@@ -3883,7 +4500,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     drawObjects.push({ type: currentDrawTool, x1: drawStart.x, y1: drawStart.y, x2: end.x, y2: end.y, color: currentDrawColor, thick: currentDrawThick, id: Date.now() });
-    localStorage.setItem('chart_draws', JSON.stringify(drawObjects));
+    saveDrawObjects();
     drawStart = null;
     renderICTOverlay();
     showToast('Tracé ajouté · Ctrl+Z pour annuler', 'success', 1500);
@@ -3902,7 +4519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (minId && minDist < 50) {
       drawObjects = drawObjects.filter(o => o.id !== minId);
-      localStorage.setItem('chart_draws', JSON.stringify(drawObjects));
+      saveDrawObjects();
       renderICTOverlay();
       showToast('Tracé supprimé · Ctrl+Z pour restaurer', 'info', 1500);
     }
@@ -3911,7 +4528,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Draw live preview shape
 function drawPreviewShape(start, end) {
-  const canvas = document.getElementById('ictCanvas');
+  const canvas = document.getElementById('drawCanvas');
   if (!canvas || !start || !end) return;
   const ctx = canvas.getContext('2d');
   ctx.save();
@@ -4149,26 +4766,11 @@ function paintDrawObj(ctx, obj, W, H) {
 }
 
 function renderDrawObjects() {
-  renderICTOverlay(); // re-render everything
+  renderICTOverlay(); // re-render ICT overlay
 }
 
-// Patch renderICTOverlay to also render draw objects after
-const _origRender2 = window.renderICTOverlay;
-window.renderICTOverlay = function() {
-  _origRender2();
-  // Re-render draw objects on top using paintDrawObj
-  if (drawObjects && drawObjects.length) {
-    const canvas = document.getElementById('ictCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    drawObjects.forEach(obj => {
-      ctx.save();
-      paintDrawObj(ctx, obj, W, H);
-      ctx.restore();
-    });
-  }
-};
+// _origRender2 removed: drawObjects now live on #drawCanvas (separate layer)
+// renderICTOverlay only touches #ictCanvas and never erases drawings
 
 // Add "Effacer tracés" button to ICT overlay panel
 document.addEventListener('DOMContentLoaded', () => {
@@ -4182,7 +4784,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearBtn.onclick = () => {
       if (confirm('Effacer tous les tracés ?')) {
         drawObjects = [];
-        localStorage.removeItem('chart_draws');
+        saveDrawObjects(); // clé spécifique au TF effacée
         renderICTOverlay();
         showToast('Tracés effacés', 'info');
       }
@@ -4206,4 +4808,168 @@ document.addEventListener('keydown', e => {
 });
 </script>
 <script src="{{ url_for('static', filename='js/smc_patch.js') }}"></script>
+
+<script>
+/* ============================================================
+   KF PERSIST v5 — Tracés sur canvas dédié (#drawCanvas)
+   
+   Architecture : #ictCanvas (ICT/SMC) + #drawCanvas (tracés)
+   
+   #drawCanvas est JAMAIS effacé par renderICTOverlay.
+   On le redessine uniquement quand :
+     1. Sa taille change (resize/fullscreen)
+     2. L'utilisateur ajoute/supprime un tracé
+     3. Page reload (chargement depuis localStorage)
+============================================================ */
+(function() {
+  'use strict';
+
+  /* ═══ CLÉS STORAGE ════════════════════════════════════════ */
+  function _key() {
+    var sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+    return 'kf_draws_' + sym;
+  }
+
+  /* ═══ SAVE ════════════════════════════════════════════════ */
+  function _save() {
+    try {
+      if (Array.isArray(window.drawObjects)) {
+        localStorage.setItem(_key(), JSON.stringify(window.drawObjects));
+      }
+    } catch(e) {}
+  }
+
+  /* ═══ LOAD ════════════════════════════════════════════════ */
+  function _load() {
+    try {
+      var sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+      var raw = localStorage.getItem('kf_draws_' + sym)
+             || localStorage.getItem('chart_draws_' + sym)
+             || localStorage.getItem('chart_draws');
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          window.drawObjects = arr;
+          localStorage.setItem('kf_draws_' + sym, JSON.stringify(arr));
+          return true;
+        }
+      }
+    } catch(e) {}
+    if (!Array.isArray(window.drawObjects)) window.drawObjects = [];
+    return false;
+  }
+
+  /* ═══ REPAINT SUR DRAWCANVAS ══════════════════════════════
+     Efface #drawCanvas et redessine tous les drawObjects.
+     Ne touche PAS #ictCanvas.
+  ═════════════════════════════════════════════════════════== */
+  function _repaint() {
+    if (!Array.isArray(window.drawObjects)) return;
+    var cv = document.getElementById('drawCanvas');
+    if (!cv || typeof window.paintDrawObj !== 'function') return;
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    if (!W || !H) return;
+    ctx.clearRect(0, 0, W, H); // effacer UNIQUEMENT drawCanvas
+    window.drawObjects.forEach(function(o) {
+      ctx.save(); try { window.paintDrawObj(ctx, o, W, H); } catch(e) {} ctx.restore();
+    });
+  }
+
+  /* ═══ SYNC TAILLE DRAWCANVAS ══════════════════════════════
+     Quand le wrapper TV change de taille, on sync drawCanvas
+     et on redessine depuis drawObjects.
+  ═════════════════════════════════════════════════════════== */
+  function _syncDrawCanvas() {
+    var cv  = document.getElementById('drawCanvas');
+    var ref = document.getElementById('ictCanvas'); // même taille que ICT
+    if (!cv || !ref) return;
+    var needW = ref.width  || ref.offsetWidth;
+    var needH = ref.height || ref.offsetHeight;
+    if (!needW || !needH) return;
+    if (cv.width !== needW || cv.height !== needH) {
+      cv.width  = needW;  // efface drawCanvas
+      cv.height = needH;
+      _repaint(); // redessiner immédiatement depuis drawObjects
+    }
+  }
+
+  /* ═══ OBSERVEUR TAILLE ════════════════════════════════════ */
+  function _watchResize() {
+    var wrapper = document.getElementById('tvWrapper');
+    if (!wrapper || typeof ResizeObserver === 'undefined') return;
+    new ResizeObserver(function() {
+      _syncDrawCanvas();
+    }).observe(wrapper);
+  }
+
+  /* ═══ SAVE SUR FERMETURE / ONGLET ════════════════════════ */
+  window.addEventListener('beforeunload', _save);
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) _save();
+    else { _syncDrawCanvas(); }
+  });
+
+  /* ═══ saveDrawObjects = _save ══════════════════════════════
+     Toutes les parties du code qui appellent saveDrawObjects()
+     sauvegarderont maintenant avec la bonne clé kf_draws_SYMBOL
+  ═════════════════════════════════════════════════════════== */
+  window.saveDrawObjects = _save;
+
+  /* ═══ PATCH SETTF ═════════════════════════════════════════ */
+  var _prevSetTF = window.setTF;
+  window.setTF = function(btn, iv) {
+    _save();
+    if (typeof _prevSetTF === 'function') _prevSetTF.apply(this, arguments);
+    // Forcer le repaint du drawCanvas après chaque changement de TF
+    [400, 900, 1800, 3000].forEach(function(ms) {
+      setTimeout(function() { _syncDrawCanvas(); _repaint(); }, ms);
+    });
+  };
+
+  /* ═══ PATCH LOADCHART ════════════════════════════════════ */
+  var _prevLoadChart = window.loadChart;
+  window.loadChart = function() {
+    _save();
+    var snap = Array.isArray(window.drawObjects) ? window.drawObjects.slice() : [];
+    if (typeof _prevLoadChart === 'function') _prevLoadChart.apply(this, arguments);
+    if (!Array.isArray(window.drawObjects) || !window.drawObjects.length) {
+      window.drawObjects = snap;
+    }
+    // Forcer repaint même si les dimensions n'ont pas changé
+    [400, 900, 1800, 3000].forEach(function(ms) {
+      setTimeout(function() { _syncDrawCanvas(); _repaint(); }, ms);
+    });
+  };
+
+  /* ═══ INIT ════════════════════════════════════════════════ */
+  function _init() {
+    _load();
+
+    // Sync taille initiale du drawCanvas
+    setTimeout(_syncDrawCanvas, 300);
+    setTimeout(_syncDrawCanvas, 1000);
+
+    // Observer les resize
+    _watchResize();
+
+    // Changement de symbole
+    var inp = document.getElementById('chartSymbol');
+    if (inp) {
+      var _onSym = function() {
+        _save();
+        setTimeout(function() { _load(); _repaint(); }, 100);
+      };
+      inp.addEventListener('change', _onSym);
+      inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') _onSym(); });
+    }
+
+    console.log('[KF Persist v5.1] ✓ drawCanvas dédié actif — clé:', _key());
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _init);
+  else _init();
+
+})();
+</script>
 {% endblock %}

@@ -305,6 +305,36 @@
   border-radius: 6px; padding: 1px 6px; font-weight: 700;
   box-shadow: 0 0 8px rgba(74,158,255,.15);
 }
+.msg-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: var(--green);
+  text-decoration: none;
+  background: rgba(0,230,118,.08);
+  border: 1px solid rgba(0,230,118,.25);
+  border-radius: 8px;
+  padding: 2px 10px 2px 8px;
+  font-size: 13px;
+  word-break: break-all;
+  transition: background .2s, border-color .2s;
+}
+.msg-link:hover {
+  background: rgba(0,230,118,.18);
+  border-color: rgba(0,230,118,.5);
+  text-decoration: none;
+  color: #fff;
+}
+.chat-msg.is-me .msg-link {
+  color: #0a2a1a;
+  background: rgba(0,0,0,.15);
+  border-color: rgba(0,0,0,.2);
+}
+.chat-msg.is-me .msg-link:hover {
+  background: rgba(0,0,0,.25);
+  color: #0a2a1a;
+}
 .msg-time { font-size: 11px; color: var(--muted); padding: 0 5px; }
 .chat-msg.is-me .msg-time { text-align: right; }
 .msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
@@ -818,6 +848,32 @@ function addAITyping(id) {
 }
 function aiAsk(q) { document.getElementById('msgInput').value = q; switchTab('ai'); sendToAI(); }
 
+/* ── FORMATAGE TEXTE AVEC LIENS CLIQUABLES ─────── */
+function formatMessageText(raw) {
+  // 1. Échapper le HTML
+  let text = raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // 2. Détecter les URLs et les transformer en liens gras cliquables
+  const urlRegex = /(https?:\/\/[^\s<>"']+)/g;
+  text = text.replace(urlRegex, function(url) {
+    // Affichage raccourci : domaine + début du chemin
+    let display = url;
+    try {
+      const u = new URL(url);
+      display = u.hostname + (u.pathname !== '/' ? u.pathname.slice(0,30) + (u.pathname.length > 30 ? '…' : '') : '');
+    } catch(e) {}
+    return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="msg-link">🔗 ' + display + '</a>';
+  });
+
+  // 3. Mentions @pseudo
+  text = text.replace(/@(\w+)/g, '<span class="msg-tag">@$1</span>');
+
+  return text;
+}
+
 /* ── RENDU MESSAGES ───────────────────────────── */
 function renderMessage(m) {
   const isMe    = m.user_id === ME_ID;
@@ -851,7 +907,7 @@ function renderMessage(m) {
   } else if (type === 'signal' && m.signal_data) {
     contentHtml = renderSignalCard(m.signal_data, time, m.id, isMe);
   } else {
-    const text = (m.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/@(\w+)/g,'<span class="msg-tag">@$1</span>');
+    const text = formatMessageText(m.content||'');
     const encCls = m.is_encrypted ? 'encrypted' : '';
     const isEnc  = m.is_encrypted ? 'true' : 'false';
     contentHtml = `<div class="msg-bubble ${encCls}" id="bubble-${m.id}"

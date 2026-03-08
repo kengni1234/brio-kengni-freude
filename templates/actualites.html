@@ -355,14 +355,13 @@
 
 <!-- ── Tabs catégories ──────────────────────────────────────── -->
 <div class="news-tabs" id="newsTabs">
-  <button class="news-tab active" data-cat="all"              onclick="filterNews('all',this)">📰 Tout</button>
-  <button class="news-tab" data-cat="monetary_policy"         onclick="filterNews('monetary_policy',this)">🏦 Monétaire</button>
-  <button class="news-tab" data-cat="macro"                   onclick="filterNews('macro',this)">📊 Macro</button>
-  <button class="news-tab" data-cat="regulatory"              onclick="filterNews('regulatory',this)">⚖️ Réglementaire</button>
-  <button class="news-tab" data-cat="geopolitical"            onclick="filterNews('geopolitical',this)">🌍 Géopolitique</button>
-  <button class="news-tab" data-cat="institutional"           onclick="filterNews('institutional',this)">🏢 Institutionnel</button>
-  <button class="news-tab" data-cat="crypto_tech"             onclick="filterNews('crypto_tech',this)">🔧 Technologie</button>
-  <button class="news-tab" data-cat="sentiment"               onclick="filterNews('sentiment',this)">📱 Sentiment</button>
+  <button class="news-tab active" data-cat="all"   onclick="filterNews('all',this)">📰 Tout</button>
+  <button class="news-tab" data-cat="crypto"        onclick="filterNews('crypto',this)">₿ Crypto</button>
+  <button class="news-tab" data-cat="macro"         onclick="filterNews('macro',this)">📊 Macro / Éco</button>
+  <button class="news-tab" data-cat="forex"         onclick="filterNews('forex',this)">💱 Forex</button>
+  <button class="news-tab" data-cat="bullish"       onclick="filterBySentiment('bullish',this)">🟢 Haussier</button>
+  <button class="news-tab" data-cat="bearish"       onclick="filterBySentiment('bearish',this)">🔴 Baissier</button>
+  <button class="news-tab" data-cat="neutral"       onclick="filterBySentiment('neutral',this)">🟡 Neutre</button>
 </div>
 
 <!-- ── Layout principal ────────────────────────────────────── -->
@@ -518,7 +517,7 @@
         {% endfor %}
         <div style="display:flex;justify-content:space-between;font-size:.78rem">
           <span style="color:var(--text-muted)">Volume 24h</span>
-          <span style="font-family:var(--font-mono);font-weight:700;color:var(--text-dim)">{{ "{:,.0f}".format(btc.vol) }} BTC</span>
+          <span style="font-family:var(--font-mono);font-weight:700;color:var(--text-dim)">{{ "{:,.0f}".format(btc.vol) if btc.vol is defined and btc.vol else "—" }}</span>
         </div>
       </div>
     </div>
@@ -554,19 +553,25 @@
 
 let _allArticles  = {{ articles | tojson | safe }};
 let _currentCat   = 'all';
+let _currentSentimentFilter = null;
 let _refreshTimer = null;
 
 /* ── Filtre par catégorie ─────────────────────────────────── */
 function filterNews(cat, btn) {
   _currentCat = cat;
+  _currentSentimentFilter = null;
   document.querySelectorAll('.news-tab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  renderFeed(_allArticles);
+}
 
-  const cards = document.querySelectorAll('.news-card');
-  cards.forEach(card => {
-    const show = cat === 'all' || card.dataset.cat === cat;
-    card.style.display = show ? '' : 'none';
-  });
+/* ── Filtre par sentiment ─────────────────────────────────── */
+function filterBySentiment(sentiment, btn) {
+  _currentSentimentFilter = sentiment;
+  _currentCat = 'all';
+  document.querySelectorAll('.news-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderFeed(_allArticles);
 }
 
 /* ── Rafraîchissement du feed ─────────────────────────────── */
@@ -602,14 +607,27 @@ function renderFeed(articles) {
   const feed = document.getElementById('newsFeed');
   if (!feed) return;
 
-  const filtered = _currentCat === 'all'
-    ? articles
-    : articles.filter(a => a.category === _currentCat);
+  let filtered = articles;
+  if (_currentSentimentFilter) {
+    filtered = articles.filter(a => a.sentiment === _currentSentimentFilter);
+  } else if (_currentCat !== 'all') {
+    filtered = articles.filter(a => a.category === _currentCat);
+  }
+
+  // Mise à jour stats sidebar
+  const bull = articles.filter(a => a.sentiment==='bullish').length;
+  const bear = articles.filter(a => a.sentiment==='bearish').length;
+  const neut = articles.filter(a => a.sentiment==='neutral').length;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('sbBull', bull); set('sbBear', bear); set('sbNeut', neut);
 
   if (!filtered.length) {
     feed.innerHTML = `<div class="news-empty">
       <div class="news-empty-icon">🔍</div>
       <p style="color:var(--text-muted)">Aucun article dans cette catégorie</p>
+      <button class="news-refresh-btn" style="margin:.8rem auto;display:inline-flex" onclick="refreshFeed(true)">
+        <i class="fas fa-sync-alt"></i> Recharger
+      </button>
     </div>`;
     return;
   }
@@ -625,9 +643,9 @@ function renderFeed(articles) {
           <div class="news-card-title">${escHtml(a.title)}</div>
           <div class="news-card-meta">
             <span class="news-source">${escHtml(a.source)}</span>
-            <span class="news-time">· ${a.published ? a.published.slice(-5) : ''}</span>
+            <span class="news-time">· ${a.published ? a.published.slice(0,16) : ''}</span>
             <span class="news-cat-pill"
-                  style="color:${a.cat_color};border-color:${a.cat_color}20;background:${a.cat_color}15">
+                  style="color:${a.cat_color||'#00d4aa'};border-color:${a.cat_color||'#00d4aa'}20;background:${a.cat_color||'#00d4aa'}15">
               ${escHtml(a.cat_label)}
             </span>
           </div>
@@ -635,7 +653,7 @@ function renderFeed(articles) {
       </div>
       <div class="news-card-score">
         <span class="news-badge ${a.sentiment}">
-          ${a.sentiment==='bullish' ? '🟢 HAUSSIER +'+a.score
+          ${a.sentiment==='bullish' ? '🟢 HAUSSIER '+a.score
           : a.sentiment==='bearish' ? '🔴 BAISSIER '+a.score
           : '🟡 NEUTRE '+a.score}
         </span>
@@ -652,13 +670,33 @@ function renderFeed(articles) {
       ${a.summary ? `<div class="news-summary">${escHtml(a.summary)}</div>` : ''}
     </div>
   `).join('');
+}
 
-  // Mise à jour stats sidebar
-  const bull = articles.filter(a => a.sentiment==='bullish').length;
-  const bear = articles.filter(a => a.sentiment==='bearish').length;
-  const neut = articles.filter(a => a.sentiment==='neutral').length;
-  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set('sbBull', bull); set('sbBear', bear); set('sbNeut', neut);
+/* ── showToast (manquait dans le fichier original) ────────── */
+function showToast(msg, type = 'info', duration = 3000) {
+  let c = document.getElementById('newsToastCont');
+  if (!c) {
+    c = document.createElement('div');
+    c.id = 'newsToastCont';
+    c.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:99999;display:flex;flex-direction:column;gap:.4rem;pointer-events:none';
+    document.body.appendChild(c);
+  }
+  const colors = { success: '#00d4aa', error: '#ef4444', info: '#60a5fa', warning: '#f59e0b' };
+  const t = document.createElement('div');
+  t.style.cssText = `background:#0f1526;border:1px solid ${colors[type]||colors.info}55;
+    color:${colors[type]||colors.info};border-radius:10px;padding:.6rem 1.1rem;
+    font-size:.8rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.4);
+    animation:newsSlideIn .3s ease;pointer-events:none;max-width:320px`;
+  t.textContent = msg;
+  const styleEl = document.getElementById('newsToastStyle');
+  if (!styleEl) {
+    const s = document.createElement('style');
+    s.id = 'newsToastStyle';
+    s.textContent = '@keyframes newsSlideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}';
+    document.head.appendChild(s);
+  }
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(()=>t.remove(),400); }, duration);
 }
 
 function updateStatusBar(btc, fg) {

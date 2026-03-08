@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ announcement.title }} — Kengni Finance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00d4aa;
+            --accent2: #f59e0b;
+            --bg: #0f1419;
+            --card: #1a1a2e;
+            --card2: #16213e;
+            --text: #e0e6f8;
+            --muted: #a8b2d1;
+            --border: rgba(255,255,255,.08);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Fond animé */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse at 15% 50%, rgba(0,212,170,.07) 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 20%, rgba(102,126,234,.07) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 80%, rgba(245,158,11,.04) 0%, transparent 55%);
+            pointer-events: none;
+        }
+
+        /* Particules flottantes */
+        .particle {
+            position: fixed;
+            width: 3px; height: 3px;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0;
+            animation: float linear infinite;
+        }
+        @keyframes float {
+            0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10%  { opacity: .4; }
+            90%  { opacity: .2; }
+            100% { transform: translateY(-10vh) translateX(20px); opacity: 0; }
+        }
+
+        /* Wrapper principal */
+        .ann-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 780px;
+            padding: 1.5rem;
+            animation: slideUp .6s cubic-bezier(.175,.885,.32,1.275);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px) scale(.97); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        /* Card principale */
+        .ann-card {
+            background: linear-gradient(145deg, var(--card), var(--card2));
+            border: 1px solid rgba(0,212,170,.15);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0,0,0,.6), 0 0 80px rgba(0,212,170,.04);
+        }
+
+        /* Header */
+        .ann-header {
+            background: linear-gradient(135deg, rgba(0,212,170,.12), rgba(102,126,234,.08));
+            border-bottom: 1px solid rgba(0,212,170,.12);
+            padding: 2rem 2.5rem 1.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .ann-header::before {
+            content: '';
+            position: absolute; top: -60px; right: -60px;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(0,212,170,.12), transparent 70%);
+            border-radius: 50%;
+        }
+        .ann-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: rgba(0,212,170,.15);
+            border: 1px solid rgba(0,212,170,.3);
+            color: var(--accent);
+            border-radius: 20px;
+            padding: .3rem .9rem;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 1rem;
+        }
+        .ann-badge-urgent {
+            background: rgba(245,158,11,.15);
+            border-color: rgba(245,158,11,.3);
+            color: #f59e0b;
+        }
+        .ann-badge-info {
+            background: rgba(102,126,234,.15);
+            border-color: rgba(102,126,234,.3);
+            color: #818cf8;
+        }
+        .ann-title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1.2;
+            margin-bottom: .6rem;
+            position: relative;
+        }
+        .ann-meta {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+        }
+        .ann-meta-item {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .78rem;
+            color: var(--muted);
+        }
+        .ann-meta-item i { color: var(--accent); font-size: .7rem; }
+
+        /* Body */
+        .ann-body {
+            padding: 2rem 2.5rem;
+        }
+
+        /* Carrousel images */
+        .ann-carousel {
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 1.75rem;
+            border: 1px solid var(--border);
+        }
+        .ann-carousel .carousel-item img {
+            width: 100%;
+            max-height: 380px;
+            object-fit: cover;
+        }
+        .ann-carousel .carousel-control-prev-icon,
+        .ann-carousel .carousel-control-next-icon {
+            background-color: rgba(0,0,0,.5);
+            border-radius: 50%;
+            padding: 1rem;
+            background-size: 50%;
+        }
+        .carousel-indicators [data-bs-target] {
+            background-color: var(--accent);
+        }
+
+        /* Contenu texte */
+        .ann-content {
+            color: var(--muted);
+            font-size: .95rem;
+            line-height: 1.8;
+            margin-bottom: 1.75rem;
+        }
+        .ann-content p { margin-bottom: .75rem; }
+        .ann-content strong { color: var(--text); }
+        .ann-content a { color: var(--accent); }
+
+        /* Période */
+        .ann-period {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+            background: rgba(255,255,255,.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: .85rem 1.1rem;
+            margin-bottom: 1.75rem;
+            font-size: .82rem;
+            color: var(--muted);
+        }
+        .ann-period i { color: var(--accent); font-size: .9rem; }
+        .ann-period strong { color: var(--text); }
+
+        /* Footer actions */
+        .ann-footer {
+            padding: 1.5rem 2.5rem 2rem;
+            background: rgba(0,0,0,.15);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-skip {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.1);
+            color: var(--muted);
+            border-radius: 12px;
+            padding: .75rem 1.4rem;
+            font-size: .88rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all .25s;
+        }
+        .btn-skip:hover {
+            background: rgba(255,255,255,.09);
+            color: var(--text);
+            border-color: rgba(255,255,255,.2);
+        }
+
+        .btn-continue {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            background: linear-gradient(135deg, var(--accent), #00ff88);
+            border: none;
+            color: #0f1419;
+            border-radius: 12px;
+            padding: .75rem 1.8rem;
+            font-size: .92rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all .3s cubic-bezier(.175,.885,.32,1.275);
+            box-shadow: 0 6px 24px rgba(0,212,170,.25);
+        }
+        .btn-continue:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,212,170,.4);
+            color: #0f1419;
+        }
+        .btn-continue:active { transform: scale(.97); }
+
+        /* Skip timer */
+        .skip-timer {
+            font-size: .75rem;
+            color: var(--muted);
+            text-align: center;
+        }
+        .skip-timer span { color: var(--accent); font-weight: 700; }
+
+        /* Barre de progression auto-skip */
+        .progress-skip {
+            height: 3px;
+            background: rgba(255,255,255,.06);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .progress-skip-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #00ff88);
+            border-radius: 10px;
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        /* Logo KF */
+        .kf-logo {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: .78rem;
+            color: var(--muted);
+        }
+        .kf-logo strong { color: var(--accent); }
+
+        /* Responsive */
+        @media (max-width: 576px) {
+            .ann-header, .ann-body { padding: 1.5rem; }
+            .ann-footer { padding: 1.25rem 1.5rem; }
+            .ann-title { font-size: 1.4rem; }
+            .ann-footer { flex-direction: column-reverse; }
+            .btn-skip, .btn-continue { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Particules décoratives -->
+<div class="particle" style="left:10%;animation-duration:12s;animation-delay:0s;"></div>
+<div class="particle" style="left:25%;animation-duration:18s;animation-delay:3s;"></div>
+<div class="particle" style="left:60%;animation-duration:14s;animation-delay:6s;"></div>
+<div class="particle" style="left:80%;animation-duration:16s;animation-delay:1s;"></div>
+<div class="particle" style="left:45%;animation-duration:20s;animation-delay:8s;"></div>
+
+<div class="ann-wrapper">
+    <div class="ann-card">
+
+        <!-- ══ HEADER ══ -->
+        <div class="ann-header">
+            <div class="ann-badge {{ 'ann-badge-urgent' if announcement.badge_type == 'urgent' else 'ann-badge-info' if announcement.badge_type == 'info' else '' }}">
+                <i class="fas {{ 'fa-bolt' if announcement.badge_type == 'urgent' else 'fa-bell' if announcement.badge_type == 'info' else 'fa-star' }}"></i>
+                {{ announcement.badge_label or 'Annonce' }}
+            </div>
+            <div class="ann-title">{{ announcement.title }}</div>
+            <div class="ann-meta">
+                <span class="ann-meta-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    Du <strong>{{ announcement.start_date }}</strong> au <strong>{{ announcement.end_date }}</strong>
+                </span>
+                {% if announcement.author %}
+                <span class="ann-meta-item">
+                    <i class="fas fa-user-shield"></i>
+                    Par <strong>{{ announcement.author }}</strong>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ══ BODY ══ -->
+        <div class="ann-body">
+
+            <!-- Carrousel images (si images présentes) -->
+            {% set images = announcement.images_list %}
+            {% if images and images|length > 0 %}
+            <div class="ann-carousel">
+                <div id="annCarousel" class="carousel slide" data-bs-ride="carousel">
+                    {% if images|length > 1 %}
+                    <div class="carousel-indicators">
+                        {% for img in images %}
+                        <button type="button" data-bs-target="#annCarousel" data-bs-slide-to="{{ loop.index0 }}"
+                            {{ 'class=active aria-current=true' if loop.first else '' }}></button>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="carousel-inner">
+                        {% for img in images %}
+                        <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                            <img src="{{ img }}" alt="Image {{ loop.index }}" loading="lazy">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if images|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#annCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#annCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Contenu texte -->
+            <div class="ann-content">
+                {{ announcement.content | safe }}
+            </div>
+
+            <!-- Période de validité -->
+            <div class="ann-period">
+                <i class="fas fa-clock"></i>
+                <span>Cette annonce est valide du <strong>{{ announcement.start_date }}</strong> au <strong>{{ announcement.end_date }}</strong></span>
+            </div>
+
+            <!-- Barre de progression auto-skip -->
+            <div class="progress-skip">
+                <div class="progress-skip-bar" id="skipBar"></div>
+            </div>
+            <div class="skip-timer" id="skipTimerText">
+                Redirection automatique vers le tableau de bord dans <span id="skipCountdown">{{ auto_skip_seconds }}</span>s
+            </div>
+
+        </div>
+
+        <!-- ══ FOOTER ══ -->
+        <div class="ann-footer">
+            <div class="kf-logo">
+                <i class="fas fa-shield-alt" style="color:var(--accent)"></i>
+                <span>Kengni Finance — <strong>v2.0</strong></span>
+            </div>
+
+            <div style="display:flex;gap:.75rem;align-items:center;">
+                <a href="{{ url_for('dashboard') }}" class="btn-skip" id="skipBtn">
+                    <i class="fas fa-forward"></i>
+                    Passer cette étape
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn-continue">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Accéder au tableau de bord
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Auto-skip countdown ──────────────────────────────────────
+const AUTO_SKIP = {{ auto_skip_seconds }};
+let remaining = AUTO_SKIP;
+const bar = document.getElementById('skipBar');
+const cd  = document.getElementById('skipCountdown');
+const txt = document.getElementById('skipTimerText');
+
+const timer = setInterval(() => {
+    remaining--;
+    const pct = (remaining / AUTO_SKIP) * 100;
+    bar.style.width = pct + '%';
+    cd.textContent = remaining;
+
+    if (remaining <= 0) {
+        clearInterval(timer);
+        txt.innerHTML = '<span>Redirection en cours…</span>';
+        window.location.href = "{{ url_for('dashboard') }}";
+    }
+}, 1000);
+
+// Arrêter le timer si l'utilisateur interagit
+document.getElementById('skipBtn').addEventListener('click', () => clearInterval(timer));
+document.querySelectorAll('.btn-continue').forEach(b => b.addEventListener('click', () => clearInterval(timer)));
+</script>
+</body>
+</html>

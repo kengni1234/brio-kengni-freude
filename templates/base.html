@@ -732,7 +732,7 @@
             <!-- ── MARCHÉ & IA ── -->
             <li><div class="sidebar-section-label">Marché & IA</div></li>
             <li>
-                <a href="{{ url_for('dashboard') }}#actualites" class="{% if request.endpoint == 'actualites' %}active{% endif %}">
+                <a href="{{ url_for('actualites') }}" class="{% if request.endpoint == 'actualites' %}active{% endif %}">
                     <i class="fas fa-newspaper"></i>
                     <span>Actualités</span>
                     <span style="background:rgba(34,197,94,.2);color:#4ade80;border:1px solid rgba(34,197,94,.3);font-size:.55rem;padding:.1rem .35rem;border-radius:10px;margin-left:auto;font-weight:700;">LIVE</span>
@@ -801,6 +801,15 @@
                 <a href="{{ url_for('admin_leads') }}" class="{% if request.endpoint == 'admin_leads' %}active{% endif %}">
                     <i class="fas fa-users"></i>
                     <span>Leads Academy</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if session.get('role') in ('admin', 'superadmin') %}
+            <li>
+                <a href="{{ url_for('admin_announcements') }}" class="{% if request.endpoint == 'admin_announcements' %}active{% endif %}" style="position:relative;">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Annonces</span>
+                    <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,#00d4aa,#00ff88);color:#0f1419;border-radius:20px;padding:.05rem .45rem;font-size:.58rem;font-weight:800;line-height:1.6;">NEW</span>
                 </a>
             </li>
             {% endif %}
@@ -1136,11 +1145,48 @@
         }
         .admin-fab:hover::after { opacity: 1; }
 
+        /* ── FAB Annonces ── */
+        .ann-fab {
+            position: fixed;
+            bottom: 28px; left: 152px;
+            z-index: 9987;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #ffffff;
+            box-shadow: 0 6px 24px rgba(245,158,11,0.5), 0 2px 8px rgba(0,0,0,0.4);
+            transition: transform .2s, box-shadow .2s;
+            text-decoration: none;
+            animation: annPulse 4s ease-in-out infinite;
+        }
+        .ann-fab:hover {
+            transform: scale(1.12) translateY(-3px);
+            box-shadow: 0 12px 35px rgba(245,158,11,0.65), 0 4px 12px rgba(0,0,0,0.4);
+            color: #ffffff; text-decoration: none;
+        }
+        .ann-fab:active { transform: scale(0.96); }
+        .ann-fab::after {
+            content: 'Annonces'; position: absolute; left: 60px;
+            background: rgba(0,0,0,.85); color: #f59e0b;
+            padding: 5px 12px; border-radius: 8px;
+            font-size: .78rem; font-weight: 800; white-space: nowrap;
+            opacity: 0; pointer-events: none; transition: opacity .2s;
+            border: 1px solid rgba(245,158,11,.3);
+        }
+        .ann-fab:hover::after { opacity: 1; }
+        @keyframes annPulse {
+            0%,100% { box-shadow: 0 6px 24px rgba(245,158,11,0.5), 0 2px 8px rgba(0,0,0,0.4); }
+            50%      { box-shadow: 0 6px 32px rgba(245,158,11,0.75), 0 0 0 8px rgba(245,158,11,0.1); }
+        }
+
         @media (max-width: 768px) {
             .chat-fab { bottom: 82px !important; left: 16px !important; width: 48px !important; height: 48px !important; font-size: 1.15rem !important; }
             .dashboard-fab { bottom: 24px; left: 16px; width: 44px; height: 44px; font-size: 1.1rem; }
             .admin-fab { bottom: 24px; left: 76px; width: 44px; height: 44px; font-size: 1.1rem; }
-            .dashboard-fab::after, .chat-fab::after, .admin-fab::after { display: none !important; }
+            .ann-fab   { bottom: 24px; left: 138px; width: 44px; height: 44px; font-size: 1.1rem; }
+            .dashboard-fab::after, .chat-fab::after, .admin-fab::after, .ann-fab::after { display: none !important; }
         }
     </style>
 
@@ -1150,18 +1196,201 @@
     </a>
 
     {% if request.endpoint != 'dashboard' %}
-    <a href="{{ url_for('dashboard') }}" class="dashboard-fab" title="Dashboard">
+    <a href="{{ url_for('dashboard') }}" class="dashboard-fab" title="Dashboard" id="dashboardFab">
         <i class="fas fa-home"></i>
     </a>
     {% endif %}
 
     {% if session.get('role') in ('admin', 'superadmin') %}
-    <a href="{{ url_for('admin_panel') }}" class="admin-fab" title="Admin">
+    <a href="{{ url_for('admin_panel') }}" class="admin-fab" title="Admin" id="adminFab">
         <i class="fas fa-shield-alt"></i>
     </a>
     {% endif %}
 
+    {% if session.get('role') in ('admin', 'superadmin') %}
+    <a href="{{ url_for('admin_announcements') }}" class="ann-fab" title="Annonces" id="annFab">
+        <i class="fas fa-bullhorn"></i>
+    </a>
+    {% endif %}
+
     <script>
+    /* ══════════════════════════════════════════════════════
+       DRAG & DROP — Boutons flottants déplaçables
+       Position sauvegardée dans localStorage par bouton
+    ══════════════════════════════════════════════════════ */
+    (function() {
+        function makeDraggable(el) {
+            if (!el) return;
+
+            const key = 'fab_pos_' + el.id;
+            let isDragging = false;
+            let hasMoved   = false;
+            let startX, startY, startLeft, startTop;
+
+            /* ── Restaurer position sauvegardée ── */
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                try {
+                    const { left, top } = JSON.parse(saved);
+                    const W = window.innerWidth, H = window.innerHeight;
+                    const S = el.offsetWidth || 56, SH = el.offsetHeight || 56;
+                    el.style.left   = Math.min(Math.max(0, left), W - S) + 'px';
+                    el.style.top    = Math.min(Math.max(0, top),  H - SH) + 'px';
+                    el.style.bottom = 'auto';
+                    el.style.right  = 'auto';
+                } catch(e) {}
+            }
+
+            /* ── Indicateur visuel : poignée de déplacement ── */
+            const handle = document.createElement('span');
+            handle.innerHTML = '⠿';
+            handle.title = 'Déplacer';
+            Object.assign(handle.style, {
+                position:   'absolute',
+                top:        '-8px',
+                right:      '-8px',
+                width:      '16px',
+                height:     '16px',
+                fontSize:   '10px',
+                lineHeight: '16px',
+                textAlign:  'center',
+                background: 'rgba(0,0,0,.55)',
+                borderRadius:'50%',
+                color:      '#fff',
+                cursor:     'grab',
+                opacity:    '0',
+                transition: 'opacity .2s',
+                zIndex:     '10',
+                userSelect: 'none',
+            });
+            el.style.position = el.style.position || 'fixed';
+            el.appendChild(handle);
+
+            el.addEventListener('mouseenter', () => handle.style.opacity = '1');
+            el.addEventListener('mouseleave', () => { if (!isDragging) handle.style.opacity = '0'; });
+
+            /* ── Drag souris ── */
+            function onMouseDown(e) {
+                /* Clic simple sur le lien → navigation normale */
+                isDragging = false;
+                hasMoved   = false;
+
+                const rect = el.getBoundingClientRect();
+                startX    = e.clientX;
+                startY    = e.clientY;
+                startLeft = rect.left;
+                startTop  = rect.top;
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup',   onMouseUp);
+                e.preventDefault();
+            }
+
+            function onMouseMove(e) {
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                if (!isDragging && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+                isDragging = true;
+                hasMoved   = true;
+                handle.style.cursor = 'grabbing';
+
+                const W  = window.innerWidth,  H  = window.innerHeight;
+                const EW = el.offsetWidth,     EH = el.offsetHeight;
+                const newLeft = Math.min(Math.max(0, startLeft + dx), W  - EW);
+                const newTop  = Math.min(Math.max(0, startTop  + dy), H  - EH);
+
+                el.style.left   = newLeft + 'px';
+                el.style.top    = newTop  + 'px';
+                el.style.bottom = 'auto';
+                el.style.right  = 'auto';
+            }
+
+            function onMouseUp(e) {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup',   onMouseUp);
+                handle.style.cursor  = 'grab';
+                handle.style.opacity = '0';
+
+                if (hasMoved) {
+                    /* Sauvegarder la position */
+                    localStorage.setItem(key, JSON.stringify({
+                        left: parseInt(el.style.left),
+                        top:  parseInt(el.style.top)
+                    }));
+                    /* Bloquer le clic qui suit le drag */
+                    e.stopPropagation();
+                    el.addEventListener('click', stopClick, { once: true, capture: true });
+                }
+                isDragging = false;
+            }
+
+            function stopClick(e) { e.preventDefault(); e.stopPropagation(); }
+
+            el.addEventListener('mousedown', onMouseDown);
+
+            /* ── Drag tactile (mobile) ── */
+            el.addEventListener('touchstart', function(e) {
+                const t     = e.touches[0];
+                const rect  = el.getBoundingClientRect();
+                startX    = t.clientX;
+                startY    = t.clientY;
+                startLeft = rect.left;
+                startTop  = rect.top;
+                isDragging = false;
+                hasMoved   = false;
+            }, { passive: true });
+
+            el.addEventListener('touchmove', function(e) {
+                const t  = e.touches[0];
+                const dx = t.clientX - startX;
+                const dy = t.clientY - startY;
+                if (!isDragging && Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+                isDragging = true;
+                hasMoved   = true;
+                e.preventDefault();
+
+                const W  = window.innerWidth,  H  = window.innerHeight;
+                const EW = el.offsetWidth,     EH = el.offsetHeight;
+                el.style.left   = Math.min(Math.max(0, startLeft + dx), W  - EW) + 'px';
+                el.style.top    = Math.min(Math.max(0, startTop  + dy), H  - EH) + 'px';
+                el.style.bottom = 'auto';
+                el.style.right  = 'auto';
+            }, { passive: false });
+
+            el.addEventListener('touchend', function(e) {
+                if (hasMoved) {
+                    localStorage.setItem(key, JSON.stringify({
+                        left: parseInt(el.style.left),
+                        top:  parseInt(el.style.top)
+                    }));
+                    e.preventDefault();
+                }
+                isDragging = false;
+            });
+        }
+
+        /* ── Appliquer à tous les FABs présents ── */
+        document.addEventListener('DOMContentLoaded', function() {
+            ['chatFab', 'dashboardFab', 'adminFab', 'annFab'].forEach(function(id) {
+                makeDraggable(document.getElementById(id));
+            });
+        });
+
+        /* ── Double-clic pour réinitialiser la position ── */
+        document.addEventListener('DOMContentLoaded', function() {
+            ['chatFab', 'dashboardFab', 'adminFab', 'annFab'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('dblclick', function(e) {
+                    localStorage.removeItem('fab_pos_' + id);
+                    location.reload();
+                });
+            });
+        });
+    })();
+
+    /* ══ Vérification messages non lus ══ */
     (function checkUnreadChat() {
         fetch('/api/chat/messages?limit=1')
             .then(r => r.json())

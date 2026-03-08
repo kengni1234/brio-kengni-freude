@@ -726,40 +726,118 @@ table.bn-table tbody tr:hover { background: rgba(0,212,170,.04); }
 <!-- Rich Text Editor Section -->
 <div class="word-editor-card" id="wordEditorCard">
 
-  <!-- Title Bar -->
+  <!-- ── Title Bar ─────────────────────────────────────────── -->
   <div class="word-titlebar">
     <span style="font-size:1.2rem">📄</span>
-    <input type="text" class="word-doc-title" id="wordDocTitle" placeholder="Titre du document..." value="">
-    <div style="display:flex;gap:.4rem;margin-left:auto">
-      <button class="bn-btn bn-btn-purple" style="font-size:.75rem;padding:.3rem .8rem" onclick="exportWordDoc('html')" title="Exporter en HTML">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-        Exporter
-      </button>
-      <button class="bn-btn" style="font-size:.75rem;padding:.3rem .8rem;background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.3);color:#00d4aa" onclick="saveWordDoc()" id="wordSaveBtn">
+    <input type="text" class="word-doc-title" id="wordDocTitle" placeholder="Titre du document..." value=""
+           onchange="setUnsaved ? setUnsaved() : null">
+    <div style="display:flex;gap:.3rem;margin-left:auto;flex-wrap:wrap;align-items:center">
+      <!-- Export menu -->
+      <div style="position:relative">
+        <button class="bn-btn bn-btn-purple" style="font-size:.75rem;padding:.3rem .8rem"
+                onclick="document.getElementById('exportMenu').style.display=document.getElementById('exportMenu').style.display==='none'?'flex':'none'"
+                title="Exporter">
+          ⬇ Exporter ▾
+        </button>
+        <div id="exportMenu" style="display:none;position:absolute;right:0;top:110%;background:#0f1526;
+             border:1px solid rgba(0,212,170,.2);border-radius:10px;padding:.4rem;
+             flex-direction:column;gap:.25rem;z-index:100;min-width:160px;box-shadow:0 8px 30px rgba(0,0,0,.5)">
+          <button onclick="exportWordDoc('html');document.getElementById('exportMenu').style.display='none'"
+            style="background:none;border:none;color:#e2e8f0;padding:.4rem .8rem;cursor:pointer;text-align:left;font-size:.78rem;border-radius:6px;width:100%"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">
+            📄 Exporter HTML
+          </button>
+          <button onclick="exportWordDoc('pdf');document.getElementById('exportMenu').style.display='none'"
+            style="background:none;border:none;color:#e2e8f0;padding:.4rem .8rem;cursor:pointer;text-align:left;font-size:.78rem;border-radius:6px;width:100%"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">
+            📕 Exporter PDF
+          </button>
+          <button onclick="exportWordDoc('txt');document.getElementById('exportMenu').style.display='none'"
+            style="background:none;border:none;color:#e2e8f0;padding:.4rem .8rem;cursor:pointer;text-align:left;font-size:.78rem;border-radius:6px;width:100%"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">
+            📝 Exporter TXT
+          </button>
+          <button onclick="exportWordDoc('copy');document.getElementById('exportMenu').style.display='none'"
+            style="background:none;border:none;color:#e2e8f0;padding:.4rem .8rem;cursor:pointer;text-align:left;font-size:.78rem;border-radius:6px;width:100%"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">
+            📋 Copier le texte
+          </button>
+          <button onclick="printDoc();document.getElementById('exportMenu').style.display='none'"
+            style="background:none;border:none;color:#e2e8f0;padding:.4rem .8rem;cursor:pointer;text-align:left;font-size:.78rem;border-radius:6px;width:100%"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">
+            🖨 Imprimer (Ctrl+P)
+          </button>
+        </div>
+      </div>
+
+      <!-- Modèles Trading -->
+      <div style="position:relative">
+        <button class="bn-btn" style="font-size:.75rem;padding:.3rem .8rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#f59e0b"
+                onclick="document.getElementById('snippetMenu').style.display=document.getElementById('snippetMenu').style.display==='none'?'flex':'none'"
+                title="Modèles trading">
+          📊 Modèles ▾
+        </button>
+        <div id="snippetMenu" style="display:none;position:absolute;right:0;top:110%;background:#0f1526;
+             border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:.4rem;
+             flex-direction:column;gap:.25rem;z-index:100;min-width:180px;box-shadow:0 8px 30px rgba(0,0,0,.5)">
+          <button onclick="insertTradingSnippet('analysis');document.getElementById('snippetMenu').style.display='none'"
+            style="background:none;border:none;color:#e2e8f0;padding:.4rem .8rem;cursor:pointer;text-align:left;font-size:.78rem;border-radius:6px"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">
+            📊 Analyse de marché
+          </button>
+          <button onclick="insertTradingSnippet('trade');document.getElementById('snippetMenu').style.display='none'"
+            style="background:none;border:none;color:#e2e8f0;padding:.4rem .8rem;cursor:pointer;text-align:left;font-size:.78rem;border-radius:6px"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">
+            📈 Journal de trade
+          </button>
+          <button onclick="insertTradingSnippet('idea');document.getElementById('snippetMenu').style.display='none'"
+            style="background:none;border:none;color:#e2e8f0;padding:.4rem .8rem;cursor:pointer;text-align:left;font-size:.78rem;border-radius:6px"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">
+            💡 Idée de trading
+          </button>
+        </div>
+      </div>
+
+      <button class="bn-btn" style="font-size:.75rem;padding:.3rem .8rem;background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.3);color:#00d4aa"
+              onclick="saveCurrentAsDoc()" id="wordSaveBtn" title="Ctrl+S">
         💾 Sauvegarder
       </button>
-      <button class="bn-btn" style="font-size:.75rem;padding:.3rem .8rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444" onclick="clearWordDoc()">
+      <button class="bn-btn" style="font-size:.75rem;padding:.3rem .8rem;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);color:#a78bfa"
+              onclick="newWordDoc()" title="Nouveau document">
+        ✨ Nouveau
+      </button>
+      <button class="bn-btn" style="font-size:.75rem;padding:.3rem .8rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444"
+              onclick="clearWordDoc()">
         🗑 Effacer
       </button>
     </div>
   </div>
 
-  <!-- Find/Replace Bar (hidden by default) -->
+  <!-- ── Barre Trouver / Remplacer ─────────────────────────── -->
   <div class="find-replace-bar" id="findReplaceBar">
-    <span style="font-size:.72rem;color:rgba(148,163,184,.6);font-weight:700">🔍 TROUVER</span>
-    <input type="text" id="findInput" class="bn-input" placeholder="Chercher..." style="width:140px;height:24px;font-size:.78rem;padding:.2rem .6rem">
+    <span style="font-size:.72rem;color:rgba(148,163,184,.6);font-weight:700">🔍 CHERCHER</span>
+    <input type="text" id="findInput" class="bn-input" placeholder="Chercher..."
+           style="width:140px;height:24px;font-size:.78rem;padding:.2rem .6rem"
+           onkeydown="if(event.key==='Enter')doFind()">
+    <button class="bn-btn" style="font-size:.72rem;padding:.2rem .6rem;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);color:#60a5fa"
+            onclick="doFind()">Trouver</button>
+    <button class="bn-btn" style="font-size:.72rem;padding:.2rem .6rem;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.2);color:#60a5fa"
+            onclick="findNext()">Suivant ↓</button>
     <span style="font-size:.72rem;color:rgba(148,163,184,.4);font-weight:700">→ REMPLACER</span>
-    <input type="text" id="replaceInput" class="bn-input" placeholder="Remplacer par..." style="width:140px;height:24px;font-size:.78rem;padding:.2rem .6rem">
-    <button class="bn-btn" style="font-size:.72rem;padding:.2rem .6rem;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);color:#00d4aa" onclick="doFindReplace()">Remplacer tout</button>
-    <button class="bn-btn bn-btn-danger" style="font-size:.72rem;padding:.2rem .5rem;margin-left:auto" onclick="toggleFindReplace()">✕</button>
+    <input type="text" id="replaceInput" class="bn-input" placeholder="Remplacer par..."
+           style="width:140px;height:24px;font-size:.78rem;padding:.2rem .6rem">
+    <button class="bn-btn" style="font-size:.72rem;padding:.2rem .6rem;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);color:#00d4aa"
+            onclick="doFindReplace()">Remplacer tout</button>
+    <button class="bn-btn bn-btn-danger" style="font-size:.72rem;padding:.2rem .5rem;margin-left:auto"
+            onclick="toggleFindReplace()">✕</button>
   </div>
 
-  <!-- Ribbon 1 : Texte & Police -->
+  <!-- ── Ribbon 1 : Police & Formatage ─────────────────────── -->
   <div class="word-ribbon">
     <span class="rib-label">Police</span>
-    <select class="rib-select" id="rib-fontfamily" onchange="applyFont(this.value)" title="Police">
+    <select class="rib-select" id="rib-fontfamily" onchange="applyFont(this.value)" title="Police" style="min-width:110px">
       <option value="Georgia, serif">Georgia</option>
-      <option value="'Inter', sans-serif">Inter</option>
+      <option value="'Inter', sans-serif" selected>Inter</option>
       <option value="'Times New Roman', serif">Times New Roman</option>
       <option value="'Arial', sans-serif">Arial</option>
       <option value="'Helvetica Neue', sans-serif">Helvetica</option>
@@ -772,9 +850,9 @@ table.bn-table tbody tr:hover { background: rgba(0,212,170,.04); }
       <option value="'Century Gothic', sans-serif">Century Gothic</option>
       <option value="'JetBrains Mono','Courier New',monospace">JetBrains Mono</option>
       <option value="'Courier New', monospace">Courier New</option>
-      <option value="'Lucida Console', monospace">Lucida Console</option>
     </select>
-    <select class="rib-select" id="rib-fontsize" onchange="applyFontSize(this.value)" title="Taille">
+
+    <select class="rib-select" id="rib-fontsize" onchange="applyFontSize(this.value)" title="Taille (pt)" style="width:58px">
       <option>8</option><option>9</option><option>10</option>
       <option>11</option><option>12</option><option selected>14</option>
       <option>16</option><option>18</option><option>20</option>
@@ -782,50 +860,52 @@ table.bn-table tbody tr:hover { background: rgba(0,212,170,.04); }
       <option>36</option><option>48</option><option>72</option>
     </select>
 
+    <button class="rib-btn" title="Réduire taille" onclick="const s=document.getElementById('rib-fontsize');const i=s.selectedIndex;if(i>0){s.selectedIndex=i-1;applyFontSize(s.value)}" style="font-size:.65rem;font-weight:900">A↓</button>
+    <button class="rib-btn" title="Augmenter taille" onclick="const s=document.getElementById('rib-fontsize');const i=s.selectedIndex;if(i<s.options.length-1){s.selectedIndex=i+1;applyFontSize(s.value)}" style="font-size:.65rem;font-weight:900">A↑</button>
+
     <div class="rib-sep"></div>
     <span class="rib-label">Style</span>
 
-    <!-- Heading selector -->
-    <select class="rib-select" id="rib-heading" style="width:90px" onchange="applyHeading(this.value)">
+    <select class="rib-select" id="rib-heading" style="width:90px" onchange="applyHeading(this.value)" title="Style de paragraphe">
       <option value="">Normal</option>
-      <option value="H1">Titre 1</option>
-      <option value="H2">Titre 2</option>
-      <option value="H3">Titre 3</option>
+      <option value="h1">Titre 1</option>
+      <option value="h2">Titre 2</option>
+      <option value="h3">Titre 3</option>
+      <option value="h4">Titre 4</option>
       <option value="pre">Code</option>
       <option value="blockquote">Citation</option>
     </select>
 
     <div class="rib-sep"></div>
 
-    <!-- B I U S -->
-    <button class="rib-btn" id="btn-bold" title="Gras (Ctrl+B)" onclick="execCmd('bold')"><b>B</b></button>
-    <button class="rib-btn" id="btn-italic" title="Italique (Ctrl+I)" onclick="execCmd('italic')"><i>I</i></button>
-    <button class="rib-btn" id="btn-underline" title="Souligné (Ctrl+U)" onclick="execCmd('underline')"><u>U</u></button>
-    <button class="rib-btn" id="btn-strikethrough" title="Barré" onclick="execCmd('strikethrough')"><s>S</s></button>
-    <button class="rib-btn" id="btn-superscript" title="Exposant" onclick="execCmd('superscript')" style="font-size:.65rem">X²</button>
-    <button class="rib-btn" id="btn-subscript"   title="Indice"   onclick="execCmd('subscript')"   style="font-size:.65rem">X₂</button>
+    <!-- B I U S X² X₂ -->
+    <button class="rib-btn" id="btn-bold"          title="Gras (Ctrl+B)"      onclick="execCmd('bold')"><b>B</b></button>
+    <button class="rib-btn" id="btn-italic"        title="Italique (Ctrl+I)"  onclick="execCmd('italic')"><i>I</i></button>
+    <button class="rib-btn" id="btn-underline"     title="Souligné (Ctrl+U)"  onclick="execCmd('underline')"><u>U</u></button>
+    <button class="rib-btn" id="btn-strikethrough" title="Barré"              onclick="execCmd('strikeThrough')"><s>S</s></button>
+    <button class="rib-btn" id="btn-superscript"   title="Exposant"           onclick="execCmd('superscript')" style="font-size:.65rem">X²</button>
+    <button class="rib-btn" id="btn-subscript"     title="Indice"             onclick="execCmd('subscript')"   style="font-size:.65rem">X₂</button>
 
     <div class="rib-sep"></div>
     <span class="rib-label">Couleur</span>
 
-    <!-- Text color -->
     <div class="rib-color-wrap" title="Couleur du texte" onclick="document.getElementById('colorText').click()">
       <button class="rib-btn" style="width:26px;height:22px;font-weight:900;pointer-events:none">A</button>
       <div class="rib-color-indicator" id="indicatorText" style="background:#ffffff"></div>
     </div>
-    <input type="color" id="colorText" value="#ffffff" style="width:0;height:0;opacity:0;position:absolute" oninput="applyTextColor(this.value)" onchange="applyTextColor(this.value)">
+    <input type="color" id="colorText" value="#ffffff" style="width:0;height:0;opacity:0;position:absolute"
+           oninput="applyTextColor(this.value)" onchange="applyTextColor(this.value)">
 
-    <!-- Highlight color -->
-    <div class="rib-color-wrap" title="Surligner le texte" onclick="document.getElementById('colorHL').click()">
+    <div class="rib-color-wrap" title="Surligner" onclick="document.getElementById('colorHL').click()">
       <button class="rib-btn" style="width:26px;height:22px;font-size:.75rem;pointer-events:none">🖊</button>
       <div class="rib-color-indicator" id="indicatorHL" style="background:#fef08a"></div>
     </div>
-    <input type="color" id="colorHL" value="#fef08a" style="width:0;height:0;opacity:0;position:absolute" oninput="applyHighlight(this.value)" onchange="applyHighlight(this.value)">
+    <input type="color" id="colorHL" value="#fef08a" style="width:0;height:0;opacity:0;position:absolute"
+           oninput="applyHighlight(this.value)" onchange="applyHighlight(this.value)">
 
     <div class="rib-sep"></div>
-    <span class="rib-label">Couleurs rapides</span>
-    <!-- Quick color swatches -->
-    <div style="display:flex;gap:.25rem;flex-wrap:wrap;max-width:130px">
+    <span class="rib-label">Couleurs</span>
+    <div style="display:flex;gap:.2rem;flex-wrap:wrap;max-width:120px">
       <div onclick="applyTextColor('#ffffff')" style="width:14px;height:14px;border-radius:3px;background:#ffffff;cursor:pointer;border:1px solid rgba(255,255,255,.2)" title="Blanc"></div>
       <div onclick="applyTextColor('#f87171')" style="width:14px;height:14px;border-radius:3px;background:#f87171;cursor:pointer" title="Rouge"></div>
       <div onclick="applyTextColor('#fb923c')" style="width:14px;height:14px;border-radius:3px;background:#fb923c;cursor:pointer" title="Orange"></div>
@@ -839,425 +919,158 @@ table.bn-table tbody tr:hover { background: rgba(0,212,170,.04); }
     </div>
 
     <div class="rib-sep"></div>
-    <!-- Clear formatting -->
-    <button class="rib-btn" title="Supprimer la mise en forme" onclick="execCmd('removeFormat')" style="font-size:.7rem">⊘</button>
+    <button class="rib-btn" title="Effacer le formatage" onclick="execCmd('removeFormat')" style="font-size:.7rem">⊘</button>
   </div>
 
-  <!-- Ribbon 2 : Paragraphe & Outils -->
+  <!-- ── Ribbon 2 : Paragraphe, Listes & Outils ────────────── -->
   <div class="word-ribbon" style="padding:.45rem .9rem">
     <span class="rib-label">Alignement</span>
-    <button class="rib-btn" title="Aligner à gauche (Ctrl+L)" onclick="execCmd('justifyLeft')">
+    <button class="rib-btn" id="btn-align-left"    title="Gauche (Ctrl+L)"  onclick="execCmd('justifyLeft')">
       <svg width="13" height="11" viewBox="0 0 13 11"><line x1="0" y1="1" x2="13" y2="1" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="4.5" x2="9" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
     </button>
-    <button class="rib-btn" title="Centrer (Ctrl+E)" onclick="execCmd('justifyCenter')">
+    <button class="rib-btn" id="btn-align-center"  title="Centre (Ctrl+E)"  onclick="execCmd('justifyCenter')">
       <svg width="13" height="11" viewBox="0 0 13 11"><line x1="0" y1="1" x2="13" y2="1" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="4.5" x2="11" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
     </button>
-    <button class="rib-btn" title="Aligner à droite (Ctrl+R)" onclick="execCmd('justifyRight')">
+    <button class="rib-btn" id="btn-align-right"   title="Droite (Ctrl+R)"  onclick="execCmd('justifyRight')">
       <svg width="13" height="11" viewBox="0 0 13 11"><line x1="0" y1="1" x2="13" y2="1" stroke="currentColor" stroke-width="1.5"/><line x1="4" y1="4.5" x2="13" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
     </button>
-    <button class="rib-btn" title="Justifier" onclick="execCmd('justifyFull')">
+    <button class="rib-btn" id="btn-align-justify" title="Justifier (Ctrl+J)" onclick="execCmd('justifyFull')">
       <svg width="13" height="11" viewBox="0 0 13 11"><line x1="0" y1="1" x2="13" y2="1" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="4.5" x2="13" y2="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
     </button>
 
     <div class="rib-sep"></div>
     <span class="rib-label">Listes</span>
-    <button class="rib-btn" title="Liste à puces" onclick="execCmd('insertUnorderedList')">
+    <button class="rib-btn" id="btn-ul" title="Liste à puces"      onclick="execCmd('insertUnorderedList')">
       <svg width="13" height="11" viewBox="0 0 13 11"><circle cx="1.5" cy="1.5" r="1.5" fill="currentColor"/><line x1="4.5" y1="1.5" x2="13" y2="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="1.5" cy="5.5" r="1.5" fill="currentColor"/><line x1="4.5" y1="5.5" x2="13" y2="5.5" stroke="currentColor" stroke-width="1.5"/><circle cx="1.5" cy="9.5" r="1.5" fill="currentColor"/><line x1="4.5" y1="9.5" x2="13" y2="9.5" stroke="currentColor" stroke-width="1.5"/></svg>
     </button>
-    <button class="rib-btn" title="Liste numérotée" onclick="execCmd('insertOrderedList')">
+    <button class="rib-btn" id="btn-ol" title="Liste numérotée"    onclick="execCmd('insertOrderedList')">
       <svg width="13" height="11" viewBox="0 0 13 11"><text x="0" y="3" font-size="4" fill="currentColor" font-family="monospace">1.</text><line x1="5" y1="1.5" x2="13" y2="1.5" stroke="currentColor" stroke-width="1.5"/><text x="0" y="7.5" font-size="4" fill="currentColor" font-family="monospace">2.</text><line x1="5" y1="6" x2="13" y2="6" stroke="currentColor" stroke-width="1.5"/><text x="0" y="12" font-size="4" fill="currentColor" font-family="monospace">3.</text><line x1="5" y1="10.5" x2="13" y2="10.5" stroke="currentColor" stroke-width="1.5"/></svg>
     </button>
-    <button class="rib-btn" title="Indenter" onclick="execCmd('indent')">→</button>
-    <button class="rib-btn" title="Désindenter" onclick="execCmd('outdent')">←</button>
+    <button class="rib-btn" title="Indenter (Tab)"    onclick="execCmd('indent')">→|</button>
+    <button class="rib-btn" title="Désindenter (⇧Tab)" onclick="execCmd('outdent')">|←</button>
+
+    <div class="rib-sep"></div>
+    <span class="rib-label">Interligne</span>
+    <select class="rib-select" style="width:52px" title="Espacement des lignes" onchange="applyLineHeight(this.value)">
+      <option value="1">×1</option>
+      <option value="1.15">×1.15</option>
+      <option value="1.5" selected>×1.5</option>
+      <option value="2">×2</option>
+      <option value="2.5">×2.5</option>
+      <option value="3">×3</option>
+    </select>
 
     <div class="rib-sep"></div>
     <span class="rib-label">Insérer</span>
-    <button class="rib-btn" title="Insérer une ligne horizontale" onclick="insertHR()" style="font-size:.7rem">─</button>
-    <button class="rib-btn" title="Insérer un lien" onclick="insertLink()" style="font-size:.7rem">🔗</button>
-    <button class="rib-btn" title="Insérer un tableau 2×2" onclick="insertTable()" style="font-size:.65rem">⊞</button>
-    <button class="rib-btn" title="Insérer du code inline" onclick="insertCode()" style="font-size:.6rem;font-family:monospace">&lt;/&gt;</button>
-    <button class="rib-btn" title="Insérer la date du jour" onclick="insertDate()" style="font-size:.7rem">📅</button>
+    <button class="rib-btn" title="Insérer une ligne horizontale" onclick="insertHR()"     style="font-size:.7rem">─</button>
+    <button class="rib-btn" title="Lien (Ctrl+K)"               onclick="insertLink()"   style="font-size:.7rem">🔗</button>
+    <button class="rib-btn" title="Image (URL)"                  onclick="insertImage()"  style="font-size:.7rem">🖼</button>
+    <button class="rib-btn" title="Tableau"                      onclick="insertTable()"  style="font-size:.65rem">⊞</button>
+    <button class="rib-btn" title="Bloc de code"                 onclick="insertCode()"   style="font-size:.6rem;font-family:monospace">&lt;/&gt;</button>
+    <button class="rib-btn" title="Date du jour"                 onclick="insertDate()"   style="font-size:.7rem">📅</button>
+
+    <!-- Emoji picker -->
+    <div style="position:relative">
+      <button class="rib-btn" title="Insérer un emoji" style="font-size:.7rem"
+              onclick="const p=document.getElementById('emojiPicker');p.style.display=p.style.display==='none'?'flex':'none'">😊</button>
+      <div id="emojiPicker" style="display:none;position:absolute;bottom:110%;left:0;background:#0f1526;
+           border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.5rem;
+           flex-wrap:wrap;gap:.2rem;width:200px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.5)">
+        {% for e in ['😊','😂','🔥','💡','📈','📉','💰','🎯','✅','❌','⚠️','📊','🚀','💎','🐂','🐻','⚡','🏆','📝','🔑','💪','🤔','😎','🙏','👍','❤️','⭐','🌟','📌','🔔','💬','🔒','🌍','📱','💻'] %}
+        <span onclick="insertEmoji('{{ e }}')" style="cursor:pointer;font-size:1.2rem;padding:.1rem .2rem;border-radius:4px"
+              onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='none'">{{ e }}</span>
+        {% endfor %}
+      </div>
+    </div>
 
     <div class="rib-sep"></div>
     <span class="rib-label">Outils</span>
-    <button class="rib-btn" title="Annuler (Ctrl+Z)" onclick="execCmd('undo')">↩</button>
-    <button class="rib-btn" title="Rétablir (Ctrl+Y)" onclick="execCmd('redo')">↪</button>
-    <button class="rib-btn" title="Trouver / Remplacer (Ctrl+H)" onclick="toggleFindReplace()">🔍</button>
-    <button class="rib-btn" title="Imprimer (Ctrl+P)" onclick="printDoc()">🖨</button>
-    <button class="rib-btn" title="Mode plein écran" onclick="toggleEditorFullscreen()" id="btn-fs">⛶</button>
-    <button class="rib-btn" title="Copier tout le texte" onclick="copyAllText()">📋</button>
+    <button class="rib-btn" title="Annuler (Ctrl+Z)"              onclick="wordUndo()">↩</button>
+    <button class="rib-btn" title="Rétablir (Ctrl+Y)"             onclick="wordRedo()">↪</button>
+    <button class="rib-btn" title="Chercher (Ctrl+F / Ctrl+H)"    onclick="toggleFindReplace()">🔍</button>
+    <button class="rib-btn" title="Imprimer (Ctrl+P)"             onclick="printDoc()">🖨</button>
+    <button class="rib-btn" title="Plein écran"                   onclick="toggleEditorFullscreen()" id="btn-fs">⛶</button>
+    <button class="rib-btn" title="Mode focus"                    onclick="toggleFocusMode()" style="font-size:.7rem">👁</button>
+    <button class="rib-btn" title="Vérification orthographique"   onclick="toggleSpellCheck()" style="font-size:.7rem">ABC✓</button>
 
-    <!-- Word count -->
+    <!-- Zoom -->
+    <div class="rib-sep"></div>
+    <button class="rib-btn" title="Zoom -" onclick="applyZoom(-10)" style="font-size:.75rem;font-weight:700">−</button>
+    <span id="zoomLevel" style="font-size:.68rem;color:#64748b;font-family:monospace;min-width:30px;text-align:center">100%</span>
+    <button class="rib-btn" title="Zoom +" onclick="applyZoom(+10)" style="font-size:.75rem;font-weight:700">+</button>
+
     <div style="margin-left:auto;font-size:.68rem;color:rgba(148,163,184,.45);font-family:monospace;white-space:nowrap" id="wordCountDisplay">0 mots · 0 car.</div>
   </div>
 
-  <!-- Document Page -->
+  <!-- ── Zone d'édition ─────────────────────────────────────── -->
   <div class="word-doc-area-wrap">
-    <div class="word-doc-page">
-      <div id="wordEditor" contenteditable="true"
-        oninput="onEditorInput()"
-        onkeyup="updateRibbonState()"
-        onmouseup="updateRibbonState()"
-        onselectionchange="updateRibbonState()">
+    <div class="word-doc-page" style="transform-origin:top center">
+      <div id="wordEditor" contenteditable="true" spellcheck="true"
+           oninput="onEditorInput()"
+           onkeyup="updateRibbonState()"
+           onmouseup="updateRibbonState()"
+           onselectionchange="updateRibbonState()">
       </div>
     </div>
   </div>
 
-  <!-- Status Bar -->
+  <!-- ── Barre de statut ────────────────────────────────────── -->
   <div class="word-statusbar">
     <span class="sb-pill" id="sbDocStatus">✏️ Édition</span>
     <span id="sbWordCount">0 mots</span>
-    <span id="sbCharCount">0 caractères</span>
+    <span id="sbCharCount">0 car.</span>
     <span id="sbLineCount">1 ligne</span>
+    <span id="sbParaCount">1 §</span>
     <span style="margin-left:auto" id="sbSaveStatus" class="sb-pill">Nouveau document</span>
+    <span id="sbIdleStatus" class="sb-pill"
+          style="display:none;background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);color:#f59e0b"></span>
+    <span id="sbSyncStatus" style="font-size:.7rem;color:#64748b;padding:0 .5rem;transition:color .3s"></span>
+    <button onclick="openDocsHistory()" class="bn-btn"
+            style="padding:.2rem .7rem;font-size:.72rem;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);
+                   color:#a78bfa;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:.3rem">
+      📂 <span id="sbDocCount">0</span> doc(s)
+    </button>
   </div>
 </div><!-- /word-editor-card -->
 
-<script>
-/* ══════════════════════════════════════════════════════
-   ÉDITEUR WORD — RICH TEXT ENGINE
-══════════════════════════════════════════════════════ */
-const editor = document.getElementById('wordEditor');
-let autoSaveTimer = null;
-let wordDocDirty = false;
+<!-- ── Modal Historique Documents ─────────────────────────────── -->
+<div id="docsHistoryModal"
+     style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);
+            align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:#0f1526;border:1px solid rgba(0,212,170,.2);border-radius:16px;
+              width:min(720px,95vw);max-height:82vh;display:flex;flex-direction:column;
+              box-shadow:0 24px 80px rgba(0,0,0,.7)">
+    <!-- Header -->
+    <div style="padding:1.1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.07);
+                display:flex;align-items:center;justify-content:space-between">
+      <div style="font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:.5rem;font-size:1rem">
+        📂 Mes documents sauvegardés
+      </div>
+      <button onclick="closeDocsHistory()"
+              style="background:none;border:none;color:#a8b2d1;font-size:1.3rem;cursor:pointer;padding:.2rem .5rem;
+                     border-radius:6px;transition:background .2s"
+              onmouseover="this.style.background='rgba(255,255,255,.05)'"
+              onmouseout="this.style.background='none'">✕</button>
+    </div>
+    <!-- Toolbar -->
+    <div style="padding:.7rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.05);display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <button onclick="saveCurrentAsDoc()"
+              style="background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.3);color:#00d4aa;
+                     border-radius:8px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer;font-weight:600">
+        💾 Sauvegarder maintenant
+      </button>
+      <button onclick="newWordDoc()"
+              style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);color:#a78bfa;
+                     border-radius:8px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer">
+        ✨ Nouveau doc
+      </button>
+      <span style="margin-left:auto;font-size:.72rem;color:#a8b2d1" id="docsModalCount"></span>
+    </div>
+    <!-- Liste -->
+    <div id="docsHistoryList" style="overflow-y:auto;flex:1;padding:.8rem 1rem"></div>
+  </div>
+</div>
 
-// ── Load saved doc from localStorage ──
-function loadWordDoc() {
-  try {
-    const saved = localStorage.getItem('kf_word_doc');
-    const title  = localStorage.getItem('kf_word_title');
-    if (saved) editor.innerHTML = saved;
-    if (title) document.getElementById('wordDocTitle').value = title;
-    updateWordCount();
-    updateRibbonState();
-  } catch(e) {}
-}
-loadWordDoc();
-
-// ── Exec command wrapper ──
-function execCmd(cmd, val) {
-  editor.focus();
-  document.execCommand(cmd, false, val || null);
-  updateRibbonState();
-}
-
-// ── Apply font family ──
-function applyFont(family) {
-  editor.focus();
-  document.execCommand('fontName', false, family);
-  updateRibbonState();
-}
-
-// ── Apply font size (pt → HTML size 1-7 mapping) ──
-function applyFontSize(size) {
-  editor.focus();
-  // Use a span with inline style for precise sizes
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-  const range = sel.getRangeAt(0);
-  if (range.collapsed) {
-    // No selection — set default for future typing via execCommand
-    document.execCommand('fontSize', false, '3');
-    // wrap with span
-    const span = document.createElement('span');
-    span.style.fontSize = size + 'px';
-    range.insertNode(span);
-    // Move caret into span
-    const newRange = document.createRange();
-    newRange.setStart(span, 0);
-    newRange.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(newRange);
-  } else {
-    const span = document.createElement('span');
-    span.style.fontSize = size + 'px';
-    try {
-      range.surroundContents(span);
-    } catch(e) {
-      document.execCommand('fontSize', false, '3');
-    }
-  }
-  updateRibbonState();
-}
-
-// ── Apply heading ──
-function applyHeading(tag) {
-  editor.focus();
-  if (!tag) {
-    document.execCommand('formatBlock', false, 'p');
-  } else if (tag === 'pre') {
-    document.execCommand('formatBlock', false, 'pre');
-  } else if (tag === 'blockquote') {
-    document.execCommand('formatBlock', false, 'blockquote');
-  } else {
-    document.execCommand('formatBlock', false, tag);
-  }
-  updateRibbonState();
-  document.getElementById('rib-heading').value = '';
-}
-
-// ── Apply text color ──
-function applyTextColor(color) {
-  editor.focus();
-  document.execCommand('foreColor', false, color);
-  document.getElementById('indicatorText').style.background = color;
-  updateRibbonState();
-}
-
-// ── Apply highlight ──
-function applyHighlight(color) {
-  editor.focus();
-  document.execCommand('hiliteColor', false, color);
-  document.getElementById('indicatorHL').style.background = color;
-  updateRibbonState();
-}
-
-// ── Insert HR ──
-function insertHR() {
-  editor.focus();
-  document.execCommand('insertHTML', false, '<hr>');
-}
-
-// ── Insert link ──
-function insertLink() {
-  const url = prompt('URL du lien :', 'https://');
-  if (url) {
-    const sel = window.getSelection();
-    const text = sel && !sel.isCollapsed ? null : prompt('Texte du lien :', url);
-    if (text) document.execCommand('insertHTML', false, `<a href="${url}" target="_blank">${text}</a>`);
-    else document.execCommand('createLink', false, url);
-  }
-}
-
-// ── Insert Table ──
-function insertTable() {
-  const rows = parseInt(prompt('Nombre de lignes :', '3')) || 3;
-  const cols = parseInt(prompt('Nombre de colonnes :', '3')) || 3;
-  let html = '<table><thead><tr>';
-  for (let c = 0; c < cols; c++) html += `<th>En-tête ${c+1}</th>`;
-  html += '</tr></thead><tbody>';
-  for (let r = 0; r < rows; r++) {
-    html += '<tr>';
-    for (let c = 0; c < cols; c++) html += '<td>&nbsp;</td>';
-    html += '</tr>';
-  }
-  html += '</tbody></table>';
-  editor.focus();
-  document.execCommand('insertHTML', false, html);
-}
-
-// ── Insert code ──
-function insertCode() {
-  const sel = window.getSelection();
-  const text = sel && !sel.isCollapsed ? sel.toString() : 'code';
-  document.execCommand('insertHTML', false, `<code>${text}</code>`);
-}
-
-// ── Insert date ──
-function insertDate() {
-  const d = new Date();
-  const formatted = d.toLocaleDateString('fr-FR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-  document.execCommand('insertHTML', false, `<strong>${formatted}</strong>`);
-}
-
-// ── Toggle find/replace bar ──
-function toggleFindReplace() {
-  const bar = document.getElementById('findReplaceBar');
-  bar.classList.toggle('open');
-  if (bar.classList.contains('open')) document.getElementById('findInput').focus();
-}
-
-function doFindReplace() {
-  const find    = document.getElementById('findInput').value;
-  const replace = document.getElementById('replaceInput').value;
-  if (!find) return;
-  const html = editor.innerHTML;
-  const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(escaped, 'gi');
-  editor.innerHTML = html.replace(regex, `<mark style="background:rgba(250,204,21,.3);color:inherit">${replace}</mark>`);
-  onEditorInput();
-  showBNToast(`Remplacement effectué`, 'success');
-}
-
-// ── Update ribbon button states ──
-function updateRibbonState() {
-  const cmds = ['bold','italic','underline','strikethrough','superscript','subscript'];
-  const ids  = ['btn-bold','btn-italic','btn-underline','btn-strikethrough','btn-superscript','btn-subscript'];
-  cmds.forEach((cmd, i) => {
-    const el = document.getElementById(ids[i]);
-    if (el) el.classList.toggle('active', document.queryCommandState(cmd));
-  });
-  // Detect current font
-  try {
-    const font = document.queryCommandValue('fontName');
-    const sel = document.getElementById('rib-fontfamily');
-    if (font && sel) {
-      for (let opt of sel.options) {
-        if (opt.value.toLowerCase().includes(font.toLowerCase().replace(/['"]/g,''))) {
-          sel.value = opt.value; break;
-        }
-      }
-    }
-  } catch(e) {}
-}
-
-// ── Word count ──
-function updateWordCount() {
-  const text  = editor.innerText || '';
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-  const chars = text.length;
-  const lines = (text.match(/\n/g) || []).length + 1;
-  document.getElementById('wordCountDisplay').textContent = `${words} mots · ${chars} car.`;
-  document.getElementById('sbWordCount').textContent = `${words} mots`;
-  document.getElementById('sbCharCount').textContent = `${chars} caractères`;
-  document.getElementById('sbLineCount').textContent = `${lines} ligne${lines>1?'s':''}`;
-}
-
-// ── On editor input ──
-function onEditorInput() {
-  updateWordCount();
-  updateRibbonState();
-  wordDocDirty = true;
-  document.getElementById('sbSaveStatus').textContent = '● Non sauvegardé';
-  document.getElementById('sbSaveStatus').className = 'sb-pill unsaved';
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(() => { saveWordDoc(true); }, 3000);
-}
-
-// ── Save doc ──
-function saveWordDoc(auto) {
-  try {
-    localStorage.setItem('kf_word_doc',   editor.innerHTML);
-    localStorage.setItem('kf_word_title', document.getElementById('wordDocTitle').value);
-    wordDocDirty = false;
-    document.getElementById('sbSaveStatus').textContent = '✓ Sauvegardé';
-    document.getElementById('sbSaveStatus').className = 'sb-pill saved';
-    if (!auto) showBNToast('Document sauvegardé ✓', 'success');
-  } catch(e) {
-    showBNToast('Erreur de sauvegarde', 'error');
-  }
-}
-
-// ── Clear doc ──
-function clearWordDoc() {
-  if (!confirm('Effacer tout le contenu du document ?')) return;
-  editor.innerHTML = '';
-  document.getElementById('wordDocTitle').value = '';
-  localStorage.removeItem('kf_word_doc');
-  localStorage.removeItem('kf_word_title');
-  updateWordCount();
-  document.getElementById('sbSaveStatus').textContent = 'Nouveau document';
-  document.getElementById('sbSaveStatus').className = 'sb-pill';
-  showBNToast('Document effacé', 'info');
-}
-
-// ── Export ──
-function exportWordDoc(fmt) {
-  const title = document.getElementById('wordDocTitle').value || 'Document';
-  if (fmt === 'html') {
-    const html = `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8">
-<title>${title}</title>
-<style>
-  body { font-family: Georgia, serif; max-width: 860px; margin: 2rem auto; padding: 0 2rem; color: #111; background: #fff; line-height: 1.75; }
-  h1 { font-size: 2em; } h2 { font-size: 1.5em; } h3 { font-size: 1.2em; }
-  blockquote { border-left: 3px solid #00d4aa; padding: .5em 1em; background: #f0fdf4; }
-  table { border-collapse: collapse; width: 100%; }
-  td, th { border: 1px solid #ccc; padding: .4em .7em; }
-  th { background: #f1f5f9; }
-  code { background: #f1f5f9; padding: .1em .4em; border-radius: 3px; font-family: monospace; }
-  hr { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
-</style></head><body>
-<h1>${title}</h1>
-${editor.innerHTML}
-</body></html>`;
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = title.replace(/[^a-z0-9]/gi,'_') + '.html'; a.click();
-    showBNToast('Export HTML téléchargé ✓', 'success');
-  }
-}
-
-// ── Print ──
-function printDoc() {
-  const title = document.getElementById('wordDocTitle').value || 'Document';
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
-<style>body{font-family:Georgia,serif;max-width:800px;margin:2rem auto;padding:0 1.5rem;line-height:1.75;color:#111}
-h1{font-size:2em}h2{font-size:1.5em}blockquote{border-left:3px solid #00d4aa;padding:.5em 1em;background:#f0fdf4}
-table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.4em .7em}th{background:#f1f5f9}
-code{background:#f1f5f9;padding:.1em .4em;border-radius:3px;font-family:monospace}</style></head>
-<body><h1>${title}</h1>${editor.innerHTML}</body></html>`);
-  w.document.close();
-  w.print();
-}
-
-// ── Copy all ──
-function copyAllText() {
-  const text = editor.innerText;
-  navigator.clipboard.writeText(text).then(() => showBNToast('Texte copié ✓', 'success'));
-}
-
-// ── Fullscreen ──
-function toggleEditorFullscreen() {
-  const card = document.getElementById('wordEditorCard');
-  const btn  = document.getElementById('btn-fs');
-  if (!document.fullscreenElement) {
-    card.requestFullscreen && card.requestFullscreen();
-    btn.textContent = '⛶';
-    card.style.background = '#0a0e1a';
-  } else {
-    document.exitFullscreen && document.exitFullscreen();
-  }
-}
-
-// ── Toast notifications ──
-function showBNToast(msg, type) {
-  let c = document.getElementById('bnToastContainer');
-  if (!c) {
-    c = document.createElement('div');
-    c.id = 'bnToastContainer';
-    c.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:99999;display:flex;flex-direction:column;gap:.4rem;pointer-events:none';
-    document.body.appendChild(c);
-  }
-  const icons = { success:'✅', error:'❌', info:'💬', warning:'⚠️' };
-  const colors = {
-    success: 'rgba(16,185,129,.2)', error: 'rgba(239,68,68,.2)',
-    info: 'rgba(0,212,170,.15)', warning: 'rgba(245,158,11,.15)'
-  };
-  const t = document.createElement('div');
-  t.style.cssText = `background:linear-gradient(135deg,rgba(15,21,37,.97),rgba(10,14,26,.98));
-    border:1px solid ${colors[type]||colors.info};border-radius:10px;
-    padding:.6rem 1rem;font-size:.82rem;color:#f1f5f9;display:flex;align-items:center;gap:.6rem;
-    box-shadow:0 8px 30px rgba(0,0,0,.5);animation:toastIn .25s ease;pointer-events:auto;
-    max-width:280px;`;
-  t.innerHTML = `<span>${icons[type]||'💬'}</span><span>${msg}</span>`;
-  c.appendChild(t);
-  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
-}
-
-// ── Keyboard shortcuts in editor ──
-editor.addEventListener('keydown', e => {
-  if (e.ctrlKey) {
-    if (e.key === 'b') { e.preventDefault(); execCmd('bold'); }
-    if (e.key === 'i') { e.preventDefault(); execCmd('italic'); }
-    if (e.key === 'u') { e.preventDefault(); execCmd('underline'); }
-    if (e.key === 'h') { e.preventDefault(); toggleFindReplace(); }
-    if (e.key === 's') { e.preventDefault(); saveWordDoc(); }
-    if (e.key === 'p') { e.preventDefault(); printDoc(); }
-  }
-});
-
-// ── Auto-save title ──
-document.getElementById('wordDocTitle').addEventListener('input', () => {
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(() => saveWordDoc(true), 2000);
-});
-
-// Initial word count
-updateWordCount();
-</script>
 
 <!-- Confirmation effacement total -->
 <form method="POST" action="{{ url_for('bloc_notes_clear') }}" id="clear-form" style="display:none;">
@@ -1447,4 +1260,1229 @@ function confirmClear() {
     }
 }
 </script>
-{% endblock %}
+{% endblock %}<script>
+/* ══════════════════════════════════════════════════════════════════
+   KENGNI FINANCE — ÉDITEUR WORD COMPLET v3.0
+   Fonctionnalités : Autosave 3s • Idle 5min • Sync serveur
+   Historique docs • Export DOCX/PDF/HTML • Pleine page
+══════════════════════════════════════════════════════════════════ */
+
+const editor = document.getElementById('wordEditor');
+
+// ── Constantes ──────────────────────────────────────────────────
+const DOCS_KEY       = 'kf_docs_v3';
+const CURRENT_KEY    = 'kf_word_current_v3';
+const IDLE_DELAY     = 5 * 60 * 1000;   // 5 min
+const AUTOSAVE_DELAY = 3 * 1000;        // 3 sec après frappe
+
+// ── État ────────────────────────────────────────────────────────
+let autoSaveTimer = null;
+let idleTimer     = null;
+let wordDocDirty  = false;
+let currentDocId  = null;
+let _undoStack    = [];
+let _redoStack    = [];
+let _lastContent  = '';
+let _spellEnabled = true;
+
+// ══════════════════════════════════════════════════════════════════
+//  STOCKAGE LOCAL
+// ══════════════════════════════════════════════════════════════════
+
+function getDocs() {
+  try { return JSON.parse(localStorage.getItem(DOCS_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function setDocs(docs) {
+  localStorage.setItem(DOCS_KEY, JSON.stringify(docs));
+  const el = document.getElementById('sbDocCount');
+  if (el) el.textContent = docs.length;
+}
+
+// ── Charger le doc en cours au démarrage ────────────────────────
+function loadWordDoc() {
+  try {
+    const cur = JSON.parse(localStorage.getItem(CURRENT_KEY) || 'null');
+    if (cur && cur.content) {
+      editor.innerHTML = cur.content;
+      const titleEl = document.getElementById('wordDocTitle');
+      if (titleEl) titleEl.value = cur.title || '';
+      currentDocId = cur.id || null;
+      _lastContent = cur.content;
+    }
+    updateWordCount();
+    updateRibbonState();
+    const el = document.getElementById('sbDocCount');
+    if (el) el.textContent = getDocs().length;
+  } catch(e) {}
+}
+loadWordDoc();
+
+// ══════════════════════════════════════════════════════════════════
+//  SYNC SERVEUR
+// ══════════════════════════════════════════════════════════════════
+
+async function syncDocToServer(id, title, content, createdAt) {
+  try {
+    const res = await fetch('/api/bloc-notes/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id, title, content,
+        createdAt: createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+    });
+    const syncEl = document.getElementById('sbSyncStatus');
+    if (res.ok && syncEl) {
+      syncEl.textContent = '☁ Synchronisé';
+      syncEl.style.color = '#00d4aa';
+      setTimeout(() => { syncEl.textContent = ''; }, 3000);
+    }
+    return res.ok;
+  } catch(e) {
+    const syncEl = document.getElementById('sbSyncStatus');
+    if (syncEl) { syncEl.textContent = '☁ Hors-ligne'; syncEl.style.color = '#f59e0b'; }
+    return false;
+  }
+}
+
+async function deleteDocFromServer(id) {
+  try {
+    await fetch('/api/bloc-notes/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+  } catch(e) {}
+}
+
+async function renameDocOnServer(id, title) {
+  try {
+    await fetch('/api/bloc-notes/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, title })
+    });
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  SAUVEGARDE
+// ══════════════════════════════════════════════════════════════════
+
+function saveWordDoc(auto = false) {
+  try {
+    const titleEl = document.getElementById('wordDocTitle');
+    const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
+    const content = editor.innerHTML;
+    if (!content || content === '<br>') return;
+
+    localStorage.setItem(CURRENT_KEY, JSON.stringify({
+      id: currentDocId, title, content, savedAt: new Date().toISOString()
+    }));
+
+    wordDocDirty = false;
+    const sbSave = document.getElementById('sbSaveStatus');
+    if (sbSave) {
+      sbSave.textContent = '✓ Sauvegardé ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+      sbSave.className   = 'sb-pill saved';
+    }
+    if (!auto) showBNToast('Document sauvegardé ✓', 'success');
+
+    if (currentDocId) {
+      const docs = getDocs();
+      const idx  = docs.findIndex(d => d.id === currentDocId);
+      if (idx >= 0) {
+        docs[idx] = { ...docs[idx], title, content, updatedAt: new Date().toISOString() };
+        setDocs(docs);
+      }
+      syncDocToServer(currentDocId, title, content, docs[idx]?.createdAt);
+    }
+  } catch(e) { showBNToast('Erreur de sauvegarde', 'error'); }
+}
+
+/* Crée un nouveau fichier dans l'historique + sync serveur */
+function saveCurrentAsDoc(fromIdle = false) {
+  const titleEl = document.getElementById('wordDocTitle');
+  const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
+  const content = editor.innerHTML;
+
+  if (!content || content === '<br>') {
+    if (!fromIdle) showBNToast('Rien à sauvegarder', 'info');
+    return;
+  }
+
+  const docs = getDocs();
+
+  if (currentDocId) {
+    const idx = docs.findIndex(d => d.id === currentDocId);
+    if (idx >= 0) {
+      docs[idx] = { ...docs[idx], title, content, updatedAt: new Date().toISOString() };
+      setDocs(docs);
+      saveWordDoc(true);
+      syncDocToServer(currentDocId, title, content, docs[idx].createdAt);
+      if (!fromIdle) showBNToast('Document mis à jour ✓', 'success');
+      refreshDocsModal();
+      return;
+    }
+  }
+
+  // Nouveau doc
+  const id  = 'doc_' + Date.now();
+  const now = new Date().toISOString();
+  docs.unshift({ id, title, content, createdAt: now, updatedAt: now });
+  setDocs(docs);
+  currentDocId = id;
+  localStorage.setItem(CURRENT_KEY, JSON.stringify({ id, title, content, savedAt: now }));
+  syncDocToServer(id, title, content, now);
+
+  wordDocDirty = false;
+  const sbSave = document.getElementById('sbSaveStatus');
+  if (sbSave) { sbSave.textContent = '✓ Sauvegardé'; sbSave.className = 'sb-pill saved'; }
+
+  if (fromIdle) {
+    const badge = document.getElementById('sbIdleStatus');
+    if (badge) {
+      badge.textContent = '💾 Sauvegarde complète — ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+      badge.style.display = '';
+      setTimeout(() => { badge.style.display = 'none'; }, 6000);
+    }
+    showBNToast('💾 Sauvegarde complète — tableau de bord mis à jour', 'success');
+  } else {
+    showBNToast('📂 Document sauvegardé dans l\'historique ✓', 'success');
+  }
+  refreshDocsModal();
+}
+
+// ── Nouveau document ─────────────────────────────────────────────
+function newWordDoc() {
+  if (wordDocDirty) {
+    if (confirm('Sauvegarder le document actuel avant d\'en créer un nouveau ?')) {
+      saveCurrentAsDoc(false);
+    }
+  }
+  editor.innerHTML = '';
+  const titleEl = document.getElementById('wordDocTitle');
+  if (titleEl) titleEl.value = '';
+  currentDocId  = null;
+  wordDocDirty  = false;
+  _undoStack    = [];
+  _redoStack    = [];
+  _lastContent  = '';
+  localStorage.removeItem(CURRENT_KEY);
+  updateWordCount();
+  const sbSave = document.getElementById('sbSaveStatus');
+  if (sbSave) { sbSave.textContent = 'Nouveau document'; sbSave.className = 'sb-pill'; }
+  closeDocsHistory();
+  showBNToast('Nouveau document créé ✓', 'info');
+  editor.focus();
+}
+
+// ── Ouvrir un doc depuis l'historique ────────────────────────────
+function openDocFromHistory(id) {
+  if (wordDocDirty && !confirm('Quitter sans sauvegarder le document actuel ?')) return;
+  const docs = getDocs();
+  const doc  = docs.find(d => d.id === id);
+  if (!doc) return;
+
+  editor.innerHTML = doc.content || '';
+  const titleEl = document.getElementById('wordDocTitle');
+  if (titleEl) titleEl.value = doc.title || '';
+  currentDocId = doc.id;
+  wordDocDirty = false;
+  _lastContent = doc.content;
+  _undoStack   = [];
+  _redoStack   = [];
+
+  localStorage.setItem(CURRENT_KEY, JSON.stringify({
+    id: doc.id, title: doc.title, content: doc.content, savedAt: new Date().toISOString()
+  }));
+  updateWordCount();
+  updateRibbonState();
+  const sbSave = document.getElementById('sbSaveStatus');
+  if (sbSave) { sbSave.textContent = '✓ Chargé'; sbSave.className = 'sb-pill saved'; }
+  closeDocsHistory();
+  showBNToast(`📄 "${doc.title}" chargé`, 'success');
+  editor.focus();
+}
+
+// ── Supprimer un doc ─────────────────────────────────────────────
+function deleteDoc(id, event) {
+  if (event) event.stopPropagation();
+  if (!confirm('Supprimer ce document définitivement ?')) return;
+  let docs = getDocs();
+  docs = docs.filter(d => d.id !== id);
+  setDocs(docs);
+  if (currentDocId === id) {
+    currentDocId = null;
+    localStorage.removeItem(CURRENT_KEY);
+  }
+  deleteDocFromServer(id);
+  refreshDocsModal();
+  showBNToast('Document supprimé', 'info');
+}
+
+// ── Dupliquer un doc ─────────────────────────────────────────────
+function duplicateDoc(id, event) {
+  if (event) event.stopPropagation();
+  const docs = getDocs();
+  const doc  = docs.find(d => d.id === id);
+  if (!doc) return;
+  const newId  = 'doc_' + Date.now();
+  const now    = new Date().toISOString();
+  const newDoc = { ...doc, id: newId, title: doc.title + ' (copie)', createdAt: now, updatedAt: now };
+  docs.unshift(newDoc);
+  setDocs(docs);
+  syncDocToServer(newId, newDoc.title, newDoc.content, now);
+  refreshDocsModal();
+  showBNToast('Document dupliqué ✓', 'success');
+}
+
+// ── Renommer ─────────────────────────────────────────────────────
+function renameDoc(id, newTitle) {
+  const docs = getDocs();
+  const idx  = docs.findIndex(d => d.id === id);
+  if (idx < 0) return;
+  docs[idx].title     = newTitle;
+  docs[idx].updatedAt = new Date().toISOString();
+  setDocs(docs);
+  if (currentDocId === id) {
+    const titleEl = document.getElementById('wordDocTitle');
+    if (titleEl) titleEl.value = newTitle;
+  }
+  renameDocOnServer(id, newTitle);
+}
+
+// ── Modal historique ─────────────────────────────────────────────
+function openDocsHistory() {
+  refreshDocsModal();
+  const modal = document.getElementById('docsHistoryModal');
+  if (modal) modal.style.display = 'flex';
+}
+function closeDocsHistory() {
+  const modal = document.getElementById('docsHistoryModal');
+  if (modal) modal.style.display = 'none';
+}
+function refreshDocsModal() {
+  const docs    = getDocs();
+  const list    = document.getElementById('docsHistoryList');
+  const counter = document.getElementById('docsModalCount');
+  if (counter) counter.textContent = docs.length + ' document(s)';
+  if (!list) return;
+
+  if (!docs.length) {
+    list.innerHTML = `<div style="text-align:center;padding:2.5rem;color:#a8b2d1;font-size:.85rem">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">📂</div>
+      Aucun document sauvegardé.<br>
+      <span style="opacity:.6">Commence à écrire puis clique sur "Sauvegarder maintenant".</span>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = docs.map(doc => {
+    const updDate  = new Date(doc.updatedAt).toLocaleString('fr-FR', {
+      day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+    });
+    const words    = (doc.content || '').replace(/<[^>]*>/g,'').split(/\s+/).filter(Boolean).length;
+    const isCur    = doc.id === currentDocId;
+    const excerpt  = (doc.content || '').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,80);
+
+    return `
+    <div style="background:${isCur?'rgba(0,212,170,.06)':'rgba(255,255,255,.02)'};
+                border:1px solid ${isCur?'rgba(0,212,170,.25)':'rgba(255,255,255,.06)'};
+                border-radius:10px;padding:.85rem 1rem;margin-bottom:.5rem;
+                cursor:pointer;transition:border-color .2s"
+         onclick="openDocFromHistory('${doc.id}')"
+         onmouseenter="this.style.borderColor='rgba(0,212,170,.3)'"
+         onmouseleave="this.style.borderColor='${isCur?'rgba(0,212,170,.25)':'rgba(255,255,255,.06)'}'">
+      <div style="display:flex;align-items:flex-start;gap:.75rem">
+        <div style="font-size:1.5rem;flex-shrink:0">📄</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:#e2e8f0;font-size:.88rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px"
+                  ondblclick="event.stopPropagation();const t=prompt('Nouveau titre:','${doc.title.replace(/'/g,"\\'")}');if(t)renameDoc('${doc.id}',t)"
+                  title="Double-cliquer pour renommer">${doc.title}</span>
+            ${isCur ? '<span style="color:#00d4aa;font-size:.7rem;font-weight:700">(en cours)</span>' : ''}
+          </div>
+          ${excerpt ? `<div style="font-size:.72rem;color:#64748b;margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${excerpt}</div>` : ''}
+          <div style="font-size:.7rem;color:#a8b2d1;margin-top:.2rem">${updDate} · ${words} mot(s)</div>
+        </div>
+        <div style="display:flex;gap:.3rem;flex-shrink:0" onclick="event.stopPropagation()">
+          <button onclick="duplicateDoc('${doc.id}',event)" title="Dupliquer"
+            style="background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);color:#60a5fa;
+                   border-radius:6px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">📋</button>
+          <button onclick="exportDocById('${doc.id}',event)" title="Exporter"
+            style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);color:#a78bfa;
+                   border-radius:6px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">⬇</button>
+          <button onclick="deleteDoc('${doc.id}',event)" title="Supprimer"
+            style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#ef4444;
+                   border-radius:6px;padding:.2rem .5rem;font-size:.75rem;cursor:pointer">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportDocById(id, event) {
+  if (event) event.stopPropagation();
+  const docs = getDocs();
+  const doc  = docs.find(d => d.id === id);
+  if (!doc) return;
+  _exportHtml(doc.title, doc.content);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  TIMER IDLE 5 MINUTES
+// ══════════════════════════════════════════════════════════════════
+
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  if (editor.innerHTML && editor.innerHTML !== '<br>') {
+    idleTimer = setTimeout(() => saveCurrentAsDoc(true), IDLE_DELAY);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  UNDO / REDO CUSTOM (empile les états HTML)
+// ══════════════════════════════════════════════════════════════════
+
+function pushUndo() {
+  const cur = editor.innerHTML;
+  if (cur === _lastContent) return;
+  _undoStack.push(_lastContent);
+  if (_undoStack.length > 100) _undoStack.shift();
+  _redoStack = [];
+  _lastContent = cur;
+}
+
+function wordUndo() {
+  if (!_undoStack.length) return;
+  _redoStack.push(editor.innerHTML);
+  const prev = _undoStack.pop();
+  editor.innerHTML = prev;
+  _lastContent = prev;
+  updateWordCount();
+  updateRibbonState();
+  setUnsaved();
+}
+
+function wordRedo() {
+  if (!_redoStack.length) return;
+  _undoStack.push(editor.innerHTML);
+  const next = _redoStack.pop();
+  editor.innerHTML = next;
+  _lastContent = next;
+  updateWordCount();
+  updateRibbonState();
+  setUnsaved();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  ON EDITOR INPUT
+// ══════════════════════════════════════════════════════════════════
+
+function onEditorInput() {
+  updateWordCount();
+  updateRibbonState();
+  setUnsaved();
+  pushUndo();
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => _silentAutoSave(), AUTOSAVE_DELAY);
+  resetIdleTimer();
+}
+
+// ── Auto-save silencieuse 3s — crée ou met à jour dans le tableau de bord ──
+function _silentAutoSave() {
+  const titleEl = document.getElementById('wordDocTitle');
+  const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
+  const content = editor.innerHTML;
+  if (!content || content === '<br>') return;
+
+  const now  = new Date().toISOString();
+  const docs = getDocs();
+
+  if (currentDocId) {
+    // Mettre à jour le doc existant dans le tableau de bord
+    const idx = docs.findIndex(d => d.id === currentDocId);
+    if (idx >= 0) {
+      docs[idx] = { ...docs[idx], title, content, updatedAt: now };
+      setDocs(docs);
+      syncDocToServer(currentDocId, title, content, docs[idx].createdAt);
+    }
+  } else {
+    // Créer automatiquement un nouveau fichier dans le tableau de bord
+    const id  = 'doc_' + Date.now();
+    docs.unshift({ id, title, content, createdAt: now, updatedAt: now });
+    setDocs(docs);
+    currentDocId = id;
+    syncDocToServer(id, title, content, now);
+    refreshDocsModal();
+    showBNToast('📂 Fichier créé automatiquement dans le tableau de bord', 'success');
+  }
+
+  // Persister le document courant dans localStorage
+  localStorage.setItem(CURRENT_KEY, JSON.stringify({
+    id: currentDocId, title, content, savedAt: now
+  }));
+
+  wordDocDirty = false;
+  const sbSave = document.getElementById('sbSaveStatus');
+  if (sbSave) {
+    sbSave.textContent = '✓ Auto-sauvegardé ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    sbSave.className   = 'sb-pill saved';
+  }
+}
+
+function setUnsaved() {
+  wordDocDirty = true;
+  const sbSave = document.getElementById('sbSaveStatus');
+  if (sbSave) { sbSave.textContent = '● Non sauvegardé'; sbSave.className = 'sb-pill unsaved'; }
+}
+
+function clearWordDoc() {
+  if (!confirm('Effacer tout le contenu du document ?')) return;
+  editor.innerHTML = '';
+  const titleEl = document.getElementById('wordDocTitle');
+  if (titleEl) titleEl.value = '';
+  currentDocId = null;
+  wordDocDirty = false;
+  _undoStack   = [];
+  _redoStack   = [];
+  _lastContent = '';
+  clearTimeout(autoSaveTimer);
+  clearTimeout(idleTimer);
+  localStorage.removeItem(CURRENT_KEY);
+  updateWordCount();
+  const sbSave = document.getElementById('sbSaveStatus');
+  if (sbSave) { sbSave.textContent = 'Nouveau document'; sbSave.className = 'sb-pill'; }
+  showBNToast('Document effacé', 'info');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  COMMANDES DE FORMATAGE (style Microsoft Word)
+// ══════════════════════════════════════════════════════════════════
+
+function execCmd(cmd, val) {
+  editor.focus();
+  document.execCommand(cmd, false, val || null);
+  updateRibbonState();
+}
+
+function applyFont(family) {
+  editor.focus();
+  document.execCommand('fontName', false, family);
+  updateRibbonState();
+}
+
+function applyFontSize(ptSize) {
+  editor.focus();
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+
+  if (!range.collapsed) {
+    // Sélection : entourer d'un span avec fontSize
+    try {
+      const frag = range.extractContents();
+      const span = document.createElement('span');
+      span.style.fontSize = ptSize + 'pt';
+      span.appendChild(frag);
+      range.insertNode(span);
+      // Resélectionner
+      const newRange = document.createRange();
+      newRange.selectNodeContents(span);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+    } catch(e) {
+      document.execCommand('fontSize', false, '3');
+    }
+  } else {
+    // Pas de sélection : affecter le prochain texte tapé
+    document.execCommand('fontSize', false, '3');
+    // Injecter un span vide de la bonne taille pour le prochain caractère
+    const span = document.createElement('span');
+    span.style.fontSize = ptSize + 'pt';
+    span.innerHTML = '\u200B'; // zero-width space
+    range.insertNode(span);
+    const newRange = document.createRange();
+    newRange.setStart(span.firstChild, 1);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  }
+  updateRibbonState();
+}
+
+function applyHeading(tag) {
+  editor.focus();
+  if (!tag) {
+    document.execCommand('formatBlock', false, 'p');
+  } else {
+    document.execCommand('formatBlock', false, tag);
+  }
+  updateRibbonState();
+  const sel = document.getElementById('rib-heading');
+  if (sel) setTimeout(() => { sel.value = ''; }, 50);
+}
+
+function applyTextColor(color) {
+  editor.focus();
+  document.execCommand('foreColor', false, color);
+  const ind = document.getElementById('indicatorText');
+  if (ind) ind.style.background = color;
+  updateRibbonState();
+}
+
+function applyHighlight(color) {
+  editor.focus();
+  document.execCommand('hiliteColor', false, color);
+  const ind = document.getElementById('indicatorHL');
+  if (ind) ind.style.background = color;
+  updateRibbonState();
+}
+
+// ── Espacement des lignes ────────────────────────────────────────
+function applyLineHeight(value) {
+  editor.focus();
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range    = sel.getRangeAt(0);
+  let   container = range.commonAncestorContainer;
+  if (container.nodeType === Node.TEXT_NODE) container = container.parentElement;
+  // Appliquer au bloc parent
+  const block = container.closest('p, div, h1, h2, h3, h4, h5, h6, li') || container;
+  if (block) block.style.lineHeight = value;
+}
+
+// ── Espacement des paragraphes ───────────────────────────────────
+function applyParaSpacing(value) {
+  editor.focus();
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range     = sel.getRangeAt(0);
+  let   container = range.commonAncestorContainer;
+  if (container.nodeType === Node.TEXT_NODE) container = container.parentElement;
+  const block = container.closest('p, div, h1, h2, h3, h4, h5, h6') || container;
+  if (block) { block.style.marginBottom = value + 'px'; block.style.marginTop = value + 'px'; }
+}
+
+// ── Insérer HR ───────────────────────────────────────────────────
+function insertHR() {
+  editor.focus();
+  document.execCommand('insertHTML', false, '<hr>');
+}
+
+// ── Insérer un lien ─────────────────────────────────────────────
+function insertLink() {
+  const sel  = window.getSelection();
+  const text = sel && !sel.isCollapsed ? sel.toString() : '';
+  const url  = prompt('URL du lien :', 'https://');
+  if (!url) return;
+  const label = text || prompt('Texte du lien :', url) || url;
+  document.execCommand('insertHTML', false,
+    `<a href="${url}" target="_blank" rel="noopener">${label}</a>`);
+}
+
+// ── Insérer une image ────────────────────────────────────────────
+function insertImage() {
+  const url = prompt('URL de l\'image :', 'https://');
+  if (!url) return;
+  const alt = prompt('Texte alternatif :', 'Image') || '';
+  document.execCommand('insertHTML', false,
+    `<img src="${url}" alt="${alt}" style="max-width:100%;height:auto;border-radius:6px;margin:.5em 0">`);
+}
+
+// ── Insérer un tableau ───────────────────────────────────────────
+function insertTable() {
+  const rows = parseInt(prompt('Nombre de lignes :', '3')) || 3;
+  const cols = parseInt(prompt('Nombre de colonnes :', '3')) || 3;
+  let html   = '<table><thead><tr>';
+  for (let c = 0; c < cols; c++) html += `<th>En-tête ${c + 1}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) html += '<td>&nbsp;</td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  editor.focus();
+  document.execCommand('insertHTML', false, html);
+}
+
+// ── Insérer un bloc de code ──────────────────────────────────────
+function insertCode() {
+  const sel  = window.getSelection();
+  const text = sel && !sel.isCollapsed ? sel.toString() : 'votre code ici';
+  document.execCommand('insertHTML', false, `<pre><code>${text}</code></pre>`);
+}
+
+// ── Insérer la date ──────────────────────────────────────────────
+function insertDate() {
+  const d = new Date();
+  const formatted = d.toLocaleDateString('fr-FR', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  document.execCommand('insertHTML', false, `<strong>${formatted}</strong>`);
+}
+
+// ── Insérer un emoji ─────────────────────────────────────────────
+function insertEmoji(emoji) {
+  editor.focus();
+  document.execCommand('insertText', false, emoji);
+  const picker = document.getElementById('emojiPicker');
+  if (picker) picker.style.display = 'none';
+}
+
+// ── Insérer une mention de trading ──────────────────────────────
+function insertTradingSnippet(type) {
+  const snippets = {
+    analysis: `<h3>📊 Analyse de marché — ${new Date().toLocaleDateString('fr-FR')}</h3>
+<p><strong>Actif :</strong> BTC/USD</p>
+<p><strong>Tendance :</strong> </p>
+<p><strong>Support clé :</strong> </p>
+<p><strong>Résistance clé :</strong> </p>
+<p><strong>Stratégie :</strong> </p>`,
+    trade: `<h3>📈 Journal de Trade — ${new Date().toLocaleDateString('fr-FR')}</h3>
+<p><strong>Symbole :</strong> </p>
+<p><strong>Direction :</strong> Long / Short</p>
+<p><strong>Entrée :</strong> </p>
+<p><strong>Stop Loss :</strong> </p>
+<p><strong>Take Profit :</strong> </p>
+<p><strong>Taille :</strong> </p>
+<p><strong>Résultat :</strong> </p>`,
+    idea: `<h3>💡 Idée de trading — ${new Date().toLocaleDateString('fr-FR')}</h3>
+<p><strong>Contexte :</strong> </p>
+<p><strong>Déclencheur :</strong> </p>
+<p><strong>Plan :</strong> </p>`,
+  };
+  const html = snippets[type];
+  if (html) {
+    editor.focus();
+    document.execCommand('insertHTML', false, html);
+  }
+}
+
+// ── Trouver / Remplacer ──────────────────────────────────────────
+function toggleFindReplace() {
+  const bar = document.getElementById('findReplaceBar');
+  if (!bar) return;
+  bar.classList.toggle('open');
+  if (bar.classList.contains('open')) {
+    const fi = document.getElementById('findInput');
+    if (fi) fi.focus();
+  }
+}
+
+let _findMatches  = [];
+let _findIndex    = -1;
+let _findOrigHTML = '';
+
+function doFind() {
+  const term = (document.getElementById('findInput')?.value || '').trim();
+  if (!term) return;
+
+  // Restaurer HTML original si une recherche était en cours
+  if (_findOrigHTML) editor.innerHTML = _findOrigHTML;
+  _findOrigHTML = editor.innerHTML;
+
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex   = new RegExp(`(${escaped})`, 'gi');
+  editor.innerHTML = editor.innerHTML.replace(/<[^>]*>|([^<]+)/g, (m, tag, text) => {
+    if (text) return text.replace(regex, '<mark class="kf-find-match" style="background:rgba(250,204,21,.4);color:inherit;border-radius:2px">$1</mark>');
+    return m;
+  });
+
+  _findMatches = Array.from(editor.querySelectorAll('.kf-find-match'));
+  _findIndex   = 0;
+  if (_findMatches.length) {
+    _findMatches[0].scrollIntoView({ block: 'center' });
+    showBNToast(`${_findMatches.length} occurrence(s) trouvée(s)`, 'info');
+  } else {
+    showBNToast('Aucune occurrence trouvée', 'info');
+  }
+}
+
+function findNext() {
+  if (!_findMatches.length) return doFind();
+  _findIndex = (_findIndex + 1) % _findMatches.length;
+  _findMatches[_findIndex].scrollIntoView({ block: 'center' });
+}
+
+function doFindReplace() {
+  const find    = document.getElementById('findInput')?.value || '';
+  const replace = document.getElementById('replaceInput')?.value || '';
+  if (!find) return;
+
+  const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex   = new RegExp(escaped, 'gi');
+  editor.innerHTML = editor.innerHTML.replace(/<[^>]*>|([^<]+)/g, (m, tag, text) => {
+    if (text) return text.replace(regex, replace);
+    return m;
+  });
+
+  _findOrigHTML = '';
+  _findMatches  = [];
+  onEditorInput();
+  showBNToast('Remplacement effectué ✓', 'success');
+}
+
+function doReplaceAll() { doFindReplace(); }
+
+// ── Mettre à jour l'état des boutons ribbon ──────────────────────
+function updateRibbonState() {
+  try {
+    [
+      ['bold','btn-bold'], ['italic','btn-italic'], ['underline','btn-underline'],
+      ['strikeThrough','btn-strikethrough'], ['superscript','btn-superscript'],
+      ['subscript','btn-subscript'], ['insertUnorderedList','btn-ul'],
+      ['insertOrderedList','btn-ol'],
+    ].forEach(([cmd, id]) => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('active', !!document.queryCommandState(cmd));
+    });
+
+    // Police courante
+    try {
+      const font = document.queryCommandValue('fontName');
+      const sel  = document.getElementById('rib-fontfamily');
+      if (font && sel) {
+        for (const opt of sel.options) {
+          if (opt.value.toLowerCase().includes(font.toLowerCase().replace(/['"]/g, ''))) {
+            sel.value = opt.value;
+            break;
+          }
+        }
+      }
+    } catch(e) {}
+
+    // Alignement courant
+    ['justifyLeft','justifyCenter','justifyRight','justifyFull'].forEach((cmd, i) => {
+      const ids = ['btn-align-left','btn-align-center','btn-align-right','btn-align-justify'];
+      const el  = document.getElementById(ids[i]);
+      if (el) el.classList.toggle('active', !!document.queryCommandState(cmd));
+    });
+  } catch(e) {}
+}
+
+// ── Comptage de mots ─────────────────────────────────────────────
+function updateWordCount() {
+  const text  = editor.innerText || '';
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  const lines = (text.match(/\n/g) || []).length + 1;
+  const paras = (text.match(/\n\n/g) || []).length + 1;
+
+  const el = document.getElementById('wordCountDisplay');
+  if (el) el.textContent = `${words} mots · ${chars} car. · ${lines} lignes`;
+
+  ['sbWordCount','sbCharCount','sbLineCount','sbParaCount'].forEach((id, i) => {
+    const values = [`${words} mots`, `${chars} car.`, `${lines} lignes`, `${paras} §`];
+    const e = document.getElementById(id);
+    if (e) e.textContent = values[i];
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════════════════════
+
+function _exportHtml(title, content) {
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>${title}</title>
+<style>
+  body { font-family: Georgia,serif; max-width:860px; margin:2.5rem auto; padding:0 2rem;
+         color:#111; background:#fff; line-height:1.8; }
+  h1   { font-size:2em; border-bottom:2px solid #00d4aa; padding-bottom:.3em; }
+  h2   { font-size:1.5em; } h3 { font-size:1.2em; }
+  blockquote { border-left:4px solid #00d4aa; padding:.5em 1em; background:#f0fdf4; margin:1em 0; }
+  table { border-collapse:collapse; width:100%; margin:1em 0; }
+  td,th { border:1px solid #ccc; padding:.5em .8em; }
+  th    { background:#f1f5f9; font-weight:700; }
+  code  { background:#f1f5f9; padding:.1em .4em; border-radius:3px; font-family:monospace; }
+  pre   { background:#f8fafc; padding:1em; border-radius:6px; overflow-x:auto; }
+  hr    { border:none; border-top:1px solid #e2e8f0; margin:1.5em 0; }
+  img   { max-width:100%; height:auto; }
+  mark  { background:#fef08a; }
+  .header-info { color:#64748b; font-size:.85em; margin-bottom:2em; border-bottom:1px solid #e2e8f0; padding-bottom:1em; }
+</style></head><body>
+<h1>${title}</h1>
+<div class="header-info">
+  Exporté le ${new Date().toLocaleString('fr-FR')} — Kengni Finance
+</div>
+${content}
+</body></html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = (title || 'document').replace(/[^a-z0-9]/gi,'_') + '.html';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showBNToast('Export HTML téléchargé ✓', 'success');
+}
+
+function exportWordDoc(fmt) {
+  const titleEl = document.getElementById('wordDocTitle');
+  const title   = (titleEl ? titleEl.value.trim() : '') || 'Document';
+  const content = editor.innerHTML;
+
+  if (fmt === 'html') {
+    _exportHtml(title, content);
+  } else if (fmt === 'pdf') {
+    _exportPdf(title, content);
+  } else if (fmt === 'txt') {
+    const text = editor.innerText;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = title.replace(/[^a-z0-9]/gi,'_') + '.txt';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showBNToast('Export TXT téléchargé ✓', 'success');
+  } else if (fmt === 'print') {
+    printDoc();
+  } else if (fmt === 'copy') {
+    navigator.clipboard.writeText(editor.innerText)
+      .then(() => showBNToast('Texte copié dans le presse-papiers ✓', 'success'));
+  }
+}
+
+// ── Export PDF (via impression navigateur) ───────────────────────
+function _exportPdf(title, content) {
+  const w = window.open('', '_blank');
+  if (!w) { showBNToast('Veuillez autoriser les pop-ups', 'error'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head>
+<meta charset="UTF-8"><title>${title}</title>
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:Georgia,serif; max-width:800px; margin:2rem auto; padding:0 2rem;
+         line-height:1.8; color:#111; background:#fff; }
+  h1 { font-size:2em; border-bottom:2px solid #00d4aa; padding-bottom:.3em; }
+  h2 { font-size:1.5em; } h3 { font-size:1.2em; }
+  blockquote { border-left:4px solid #00d4aa; padding:.5em 1em; background:#f0fdf4; }
+  table { border-collapse:collapse; width:100%; margin:1em 0; }
+  td,th { border:1px solid #ccc; padding:.5em .8em; }
+  th    { background:#f1f5f9; font-weight:700; }
+  code  { background:#f1f5f9; padding:.1em .4em; border-radius:3px; font-family:monospace; font-size:.88em; }
+  pre   { background:#f8fafc; padding:1em; border-radius:6px; overflow-x:auto; }
+  hr    { border:none; border-top:1px solid #e2e8f0; margin:1.5em 0; }
+  img   { max-width:100%; height:auto; border-radius:4px; }
+  .meta { color:#64748b; font-size:.82em; border-bottom:1px solid #e2e8f0; padding-bottom:.8em; margin-bottom:1.5em; }
+  @media print {
+    body { margin:0; }
+    @page { margin:2cm; size:A4; }
+    h1,h2,h3 { page-break-after:avoid; }
+    table,figure { page-break-inside:avoid; }
+  }
+</style></head><body>
+<h1>${title}</h1>
+<div class="meta">📄 Kengni Finance — ${new Date().toLocaleString('fr-FR')}</div>
+${content}
+</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => {
+    w.print();
+    showBNToast('💡 Choisissez "Enregistrer en PDF" dans la boîte de dialogue impression', 'info');
+  }, 600);
+}
+
+// ── Impression ───────────────────────────────────────────────────
+function printDoc() {
+  const titleEl = document.getElementById('wordDocTitle');
+  const title   = (titleEl ? titleEl.value.trim() : '') || 'Document';
+  const w       = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+<style>
+  body { font-family:Georgia,serif; max-width:800px; margin:2rem auto; padding:0 1.5rem;
+         line-height:1.8; color:#111; }
+  h1 { font-size:2em; } h2 { font-size:1.5em; }
+  blockquote { border-left:3px solid #00d4aa; padding:.5em 1em; background:#f0fdf4; }
+  table { border-collapse:collapse; width:100%; }
+  td,th { border:1px solid #ccc; padding:.4em .7em; }
+  th    { background:#f1f5f9; }
+  code  { background:#f1f5f9; padding:.1em .4em; border-radius:3px; font-family:monospace; }
+  @media print { body { margin:0; } }
+</style></head><body>
+<h1>${title}</h1>
+${editor.innerHTML}
+<hr style="margin-top:2rem">
+<p style="font-size:.75em;color:#64748b">Kengni Finance — Imprimé le ${new Date().toLocaleString('fr-FR')}</p>
+</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 500);
+}
+
+// ── Copier tout ──────────────────────────────────────────────────
+function copyAllText() {
+  navigator.clipboard.writeText(editor.innerText)
+    .then(() => showBNToast('Texte copié ✓', 'success'));
+}
+
+// ── Plein écran ──────────────────────────────────────────────────
+function toggleEditorFullscreen() {
+  const card = document.getElementById('wordEditorCard');
+  const btn  = document.getElementById('btn-fs');
+  if (!document.fullscreenElement) {
+    card.requestFullscreen && card.requestFullscreen();
+    if (btn) btn.textContent = '⛶';
+    card.style.background = '#0a0e1a';
+  } else {
+    document.exitFullscreen && document.exitFullscreen();
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  const btn = document.getElementById('btn-fs');
+  if (btn) btn.textContent = document.fullscreenElement ? '⊡' : '⛶';
+});
+
+// ── Mode focus (pleine page sans sidebar) ────────────────────────
+let _focusMode = false;
+function toggleFocusMode() {
+  _focusMode = !_focusMode;
+  const wrap = document.getElementById('wordEditorCard');
+  if (!wrap) return;
+  if (_focusMode) {
+    wrap.style.cssText += ';position:fixed;inset:0;z-index:9998;border-radius:0;overflow:auto';
+    showBNToast('Mode focus activé — Échap pour quitter', 'info');
+  } else {
+    wrap.style.position = '';
+    wrap.style.inset    = '';
+    wrap.style.zIndex   = '';
+    wrap.style.borderRadius = '';
+  }
+}
+
+// ── Zoom sur la page ─────────────────────────────────────────────
+let _zoom = 100;
+function applyZoom(delta) {
+  _zoom = Math.min(200, Math.max(50, _zoom + delta));
+  const page = document.querySelector('.word-doc-page');
+  if (page) page.style.transform = `scale(${_zoom / 100})`;
+  const el = document.getElementById('zoomLevel');
+  if (el) el.textContent = _zoom + '%';
+}
+
+// ── Vérification orthographique (toggle) ─────────────────────────
+function toggleSpellCheck() {
+  _spellEnabled = !_spellEnabled;
+  editor.setAttribute('spellcheck', _spellEnabled ? 'true' : 'false');
+  showBNToast(_spellEnabled ? '✓ Orthographe activée' : 'Orthographe désactivée', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  RACCOURCIS CLAVIER (comme Microsoft Word)
+// ═══════════════════════════════════════════════════════════════════
+
+editor.addEventListener('keydown', function(e) {
+  const ctrl = e.ctrlKey || e.metaKey;
+
+  if (ctrl && e.key === 'z' && !e.shiftKey) { e.preventDefault(); wordUndo(); return; }
+  if (ctrl && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); wordRedo(); return; }
+  if (ctrl && e.key === 's') { e.preventDefault(); saveCurrentAsDoc(false); return; }
+  if (ctrl && e.key === 'b') { e.preventDefault(); execCmd('bold'); return; }
+  if (ctrl && e.key === 'i') { e.preventDefault(); execCmd('italic'); return; }
+  if (ctrl && e.key === 'u') { e.preventDefault(); execCmd('underline'); return; }
+  if (ctrl && e.key === 'l') { e.preventDefault(); execCmd('justifyLeft'); return; }
+  if (ctrl && e.key === 'e') { e.preventDefault(); execCmd('justifyCenter'); return; }
+  if (ctrl && e.key === 'r') { e.preventDefault(); execCmd('justifyRight'); return; }
+  if (ctrl && e.key === 'j') { e.preventDefault(); execCmd('justifyFull'); return; }
+  if (ctrl && e.key === 'h') { e.preventDefault(); toggleFindReplace(); return; }
+  if (ctrl && e.key === 'f') { e.preventDefault(); toggleFindReplace(); return; }
+  if (ctrl && e.key === 'p') { e.preventDefault(); printDoc(); return; }
+  if (ctrl && e.key === 'a') { e.preventDefault(); document.execCommand('selectAll'); return; }
+  if (ctrl && e.key === 'k') { e.preventDefault(); insertLink(); return; }
+
+  // Tab → indent dans l'éditeur
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    if (e.shiftKey) { execCmd('outdent'); } else { execCmd('indent'); }
+    return;
+  }
+
+  // Échap → quitter mode focus
+  if (e.key === 'Escape' && _focusMode) { toggleFocusMode(); return; }
+});
+
+// ── Coller propre : nettoie le formatage Word / Google Docs ─────
+editor.addEventListener('paste', function(e) {
+  e.preventDefault();
+  const htmlData = (e.clipboardData || window.clipboardData).getData('text/html');
+  const textData = (e.clipboardData || window.clipboardData).getData('text/plain');
+
+  let cleaned = '';
+  if (htmlData) {
+    cleaned = _cleanPastedHTML(htmlData);
+  } else if (textData) {
+    // Texte brut : convertir sauts de ligne en paragraphes
+    cleaned = textData
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\n\n+/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+    cleaned = '<p>' + cleaned + '</p>';
+  }
+  if (cleaned) {
+    document.execCommand('insertHTML', false, cleaned);
+    pushUndo();
+  }
+});
+
+// Nettoyer le HTML collé depuis Word / Google Docs
+function _cleanPastedHTML(html) {
+  try {
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(html, 'text/html');
+
+    // Supprimer les balises Office/Google inutiles
+    doc.querySelectorAll('style,script,meta,link,xml').forEach(el => el.remove());
+    // Balises Word (o:p, w:sdt, etc.) — nettoyées via regex car pas parsées
+    let body = doc.body.innerHTML;
+    body = body.replace(/<\/?o:[^>]*>/gi, '');
+    body = body.replace(/<\/?w:[^>]*>/gi, '');
+    body = body.replace(/<\/?m:[^>]*>/gi, '');
+    doc.body.innerHTML = body;
+
+    const ALLOWED_STYLES = ['color','font-weight','font-style','font-size',
+      'text-align','text-decoration','background-color','font-family','line-height'];
+
+    doc.body.querySelectorAll('*').forEach(el => {
+      // Supprimer tous les attributs sauf les essentiels
+      const keep = { style: el.getAttribute('style'), href: el.getAttribute('href'),
+                     src: el.getAttribute('src'), alt: el.getAttribute('alt'),
+                     target: el.getAttribute('target') };
+      while (el.attributes.length > 0) el.removeAttribute(el.attributes[0].name);
+
+      // Remettre href/src/alt proprement
+      if (keep.href)   el.setAttribute('href', keep.href);
+      if (keep.src)    el.setAttribute('src',  keep.src);
+      if (keep.alt)    el.setAttribute('alt',  keep.alt || '');
+      if (keep.target) el.setAttribute('target', keep.target);
+
+      // Filtrer les styles : ne garder que les styles visuels de base
+      if (keep.style) {
+        const filteredStyle = keep.style.split(';')
+          .map(s => s.trim())
+          .filter(s => {
+            const prop = s.split(':')[0]?.trim().toLowerCase() || '';
+            return ALLOWED_STYLES.some(a => prop === a || prop.startsWith(a));
+          })
+          .join('; ');
+        if (filteredStyle.trim()) el.setAttribute('style', filteredStyle);
+      }
+    });
+
+    // Supprimer les <span> vides ou sans attributs utiles
+    doc.body.querySelectorAll('span').forEach(span => {
+      if (!span.hasAttributes() && span.innerHTML === span.textContent) {
+        span.replaceWith(...span.childNodes);
+      }
+    });
+
+    // Supprimer les éléments div racines inutiles de Google Docs
+    doc.body.querySelectorAll('div').forEach(div => {
+      if (!div.hasAttributes()) {
+        const frag = document.createDocumentFragment();
+        while (div.firstChild) frag.appendChild(div.firstChild);
+        div.replaceWith(frag);
+      }
+    });
+
+    return doc.body.innerHTML;
+  } catch(e) {
+    // Fallback : nettoyage regex basique
+    return html
+      .replace(/class="[^"]*"/gi, '')
+      .replace(/id="[^"]*"/gi, '')
+      .replace(/<o:[^>]*>[\s\S]*?<\/o:[^>]*>/gi, '')
+      .replace(/<w:[^>]*>[\s\S]*?<\/w:[^>]*>/gi, '')
+      .replace(/style="[^"]*mso-[^"]*"/gi, '');
+  }
+}
+
+// ── Drag & Drop d'images dans l'éditeur ─────────────────────────
+editor.addEventListener('dragover', e => e.preventDefault());
+editor.addEventListener('drop', function(e) {
+  e.preventDefault();
+  const files = e.dataTransfer.files;
+  if (!files.length) return;
+  const file = files[0];
+  if (!file.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.execCommand('insertHTML', false,
+      `<img src="${ev.target.result}" alt="Image" style="max-width:100%;height:auto;border-radius:6px;margin:.5em 0">`);
+    onEditorInput();
+  };
+  reader.readAsDataURL(file);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  TOAST NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════
+
+function showBNToast(msg, type = 'info') {
+  let c = document.getElementById('bnToastContainer');
+  if (!c) {
+    c = document.createElement('div');
+    c.id = 'bnToastContainer';
+    c.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:99999;display:flex;flex-direction:column;gap:.4rem;pointer-events:none';
+    document.body.appendChild(c);
+  }
+  const colors = {
+    success: '#00d4aa', error: '#ef4444', info: '#60a5fa', warning: '#f59e0b'
+  };
+  const t = document.createElement('div');
+  t.style.cssText = `background:#0f1526;border:1px solid ${colors[type]||colors.info}55;
+    color:${colors[type]||colors.info};border-radius:10px;padding:.6rem 1.1rem;
+    font-size:.8rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.4);
+    animation:slideInRight .3s ease;pointer-events:none;max-width:320px`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+// CSS animation toast
+const _style = document.createElement('style');
+_style.textContent = `
+@keyframes slideInRight {
+  from { transform:translateX(120%); opacity:0; }
+  to   { transform:translateX(0);    opacity:1; }
+}
+.kf-find-match { background:rgba(250,204,21,.35)!important; border-radius:2px; }
+`;
+document.head.appendChild(_style);
+
+// ═══════════════════════════════════════════════════════════════════
+//  INIT FINALE
+// ═══════════════════════════════════════════════════════════════════
+
+// Fermer modal avec Échap
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeDocsHistory();
+    const fr = document.getElementById('findReplaceBar');
+    if (fr && fr.classList.contains('open')) fr.classList.remove('open');
+    const ep = document.getElementById('emojiPicker');
+    if (ep) ep.style.display = 'none';
+  }
+});
+
+// Sauvegarder avant de quitter la page
+window.addEventListener('beforeunload', e => {
+  if (wordDocDirty) {
+    saveWordDoc(true);
+    e.preventDefault();
+    e.returnValue = 'Des modifications non sauvegardées sont en cours.';
+  }
+});
+
+// Initialisation timer idle
+editor.addEventListener('input', resetIdleTimer);
+resetIdleTimer();
+
+console.log('✅ Éditeur Word Kengni Finance v3.0 initialisé');
+</script>

@@ -156,6 +156,22 @@
 }
 .f-chip:hover,.f-chip.active{background:rgba(0,212,170,.15);border-color:var(--neon);color:var(--neon);}
 
+/* ── Toggle vue période ── */
+.period-toggle{
+  display:flex;gap:.4rem;align-items:center;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+  border-radius:50px;padding:.28rem .4rem;
+}
+.p-btn{
+  padding:.32rem .9rem;border-radius:50px;border:none;
+  background:transparent;color:#a8b2d1;font-size:.78rem;font-weight:600;
+  cursor:pointer;transition:all .3s ease;letter-spacing:.3px;
+}
+.p-btn:hover{color:#e0e6f8;}
+.p-btn.active{background:linear-gradient(135deg,var(--neon),var(--neon2));color:#0f1419;box-shadow:0 2px 12px rgba(0,212,170,.35);}
+.p-btn.p-month.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 12px rgba(102,126,234,.4);}
+.p-btn.p-quarter.active{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0f1419;box-shadow:0 2px 12px rgba(255,215,0,.35);}
+
 /* ── Tableau ── */
 .table-wrap{
   background:var(--card-bg);border-radius:24px;overflow:hidden;
@@ -416,6 +432,18 @@
       <span class="ms-2" style="font-size:.8rem;color:#a8b2d1;font-weight:400;">({{ transactions|length }})</span>
     </h5>
     <input class="tbl-search" placeholder="🔍  Rechercher..." oninput="searchRows(this.value)">
+    <!-- Toggle vue période -->
+    <div class="period-toggle" title="Vue par période">
+      <button class="p-btn p-week active" onclick="setPeriodView('week',this)">
+        <i class="fas fa-calendar-week me-1"></i>Semaines
+      </button>
+      <button class="p-btn p-month" onclick="setPeriodView('month',this)">
+        <i class="fas fa-calendar-alt me-1"></i>Mois
+      </button>
+      <button class="p-btn p-quarter" onclick="setPeriodView('quarter',this)">
+        <i class="fas fa-layer-group me-1"></i>Trimestres
+      </button>
+    </div>
   </div>
 
   <table class="tbl3d" id="mainTable">
@@ -787,110 +815,133 @@ new Chart(document.getElementById('chartEvo'),{
   }
 });
 
-/* ══ Groupement par semaines calendaires réelles (Lundi → Dimanche) ══ */
-document.addEventListener('DOMContentLoaded', function() {
+/* ══════════════════════════════════════════════════════════
+   GROUPEMENT PAR PÉRIODE — Semaines / Mois / Trimestres
+══════════════════════════════════════════════════════════ */
+
+/* ── Utilitaires partagés ── */
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = (day === 0) ? -6 : 1 - day;
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+function fmt(d) {
+  return (d.getDate()+'').padStart(2,'0')+'/'+((''+( d.getMonth()+1)).padStart(2,'0'))+'/'+String(d.getFullYear()).slice(2);
+}
+function getISOWeek(d) {
+  const dt = new Date(d);
+  dt.setHours(0,0,0,0);
+  dt.setDate(dt.getDate() + 3 - (dt.getDay()+6)%7);
+  const w1 = new Date(dt.getFullYear(),0,4);
+  return 1 + Math.round(((dt-w1)/86400000 - 3 + (w1.getDay()+6)%7)/7);
+}
+function weekKey(d) {
+  const mon = getMonday(d);
+  return `${mon.getFullYear()}-W${(''+getISOWeek(mon)).padStart(2,'0')}`;
+}
+const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const QUARTERS_LABEL = ['T1 · Jan–Mar','T2 · Avr–Jun','T3 · Jul–Sep','T4 · Oct–Déc'];
+
+function calcPeriod(items) {
+  let rev = 0, exp = 0;
+  items.forEach(item => {
+    const amtVal = parseFloat((item.el.cells[5]?.textContent || '0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
+    if (['revenue','receivable','credit','epargne'].includes(item.el.dataset.type)) rev += amtVal;
+    else exp += amtVal;
+  });
+  return { rev, exp, net: rev - exp };
+}
+
+function makeBilanRow(label, stats, groupId, groupAttr) {
+  const { rev, exp, net } = stats;
+  const row = document.createElement('tr');
+  row.className = 'week-total-row';
+  row.setAttribute(groupAttr, groupId);
+  row.innerHTML = `
+    <td colspan="9" style="padding:.75rem 1.4rem;background:rgba(0,0,0,.18);border-top:1px dashed rgba(255,255,255,.09);border-bottom:2px solid rgba(0,212,170,.08);">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.75rem;">
+        <div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:.73rem;color:#a8b2d1;font-weight:700;text-transform:uppercase;letter-spacing:.8px;">Bilan ${label}</span>
+          <span style="font-size:.82rem;">
+            <i class="fas fa-arrow-up me-1" style="color:#2ed573;"></i>
+            Revenus&nbsp;:&nbsp;<strong style="color:#2ed573;">${rev.toFixed(2)}€</strong>
+            <span style="color:#444;margin:0 .3rem;">|</span>
+            <span style="font-size:.72rem;color:#4aaa72;">${(rev*655.96).toFixed(0)} XAF</span>
+          </span>
+          <span style="font-size:.82rem;">
+            <i class="fas fa-arrow-down me-1" style="color:#ff4757;"></i>
+            Dépenses&nbsp;:&nbsp;<strong style="color:#ff4757;">${exp.toFixed(2)}€</strong>
+            <span style="color:#444;margin:0 .3rem;">|</span>
+            <span style="font-size:.72rem;color:#aa4a53;">${(exp*655.96).toFixed(0)} XAF</span>
+          </span>
+        </div>
+        <div style="background:${net>=0?'rgba(46,213,115,.1)':'rgba(255,71,87,.1)'};border:1px solid ${net>=0?'rgba(46,213,115,.25)':'rgba(255,71,87,.25)'};border-radius:10px;padding:.4rem 1rem;display:flex;flex-direction:column;align-items:center;min-width:120px;">
+          <span style="font-size:.65rem;color:#a8b2d1;text-transform:uppercase;letter-spacing:.8px;">Solde Net</span>
+          <strong style="font-size:1rem;color:${net>=0?'#2ed573':'#ff4757'};">
+            <i class="fas fa-${net>=0?'arrow-up':'arrow-down'} me-1" style="font-size:.75rem;"></i>
+            ${net>=0?'+':''}${net.toFixed(2)}€
+          </strong>
+          <span style="font-size:.68rem;color:#a8b2d1;">${(net*655.96).toFixed(0)} XAF</span>
+        </div>
+      </div>
+    </td>`;
+  return row;
+}
+
+/* ══ Données brutes (cache pour changement de vue rapide) ══ */
+let _rawRows = null;
+function getRawRows() {
   const tbody = document.getElementById('tableBody');
-  if (!tbody) return;
   const rows = Array.from(tbody.querySelectorAll('.tbl-row'));
-  if (rows.length === 0) return;
-
-  // ── Utilitaires ──────────────────────────────────────────────
-  function getMonday(d) {
-    const dt = new Date(d);
-    const day = dt.getDay(); // 0=dim, 1=lun...
-    const diff = (day === 0) ? -6 : 1 - day;
-    dt.setDate(dt.getDate() + diff);
-    dt.setHours(0,0,0,0);
-    return dt;
-  }
-  function fmt(d) {
-    return (d.getDate()+'').padStart(2,'0')+'/'+((''+( d.getMonth()+1)).padStart(2,'0'))+'/'+String(d.getFullYear()).slice(2);
-  }
-  function getISOWeek(d) {
-    const dt = new Date(d);
-    dt.setHours(0,0,0,0);
-    dt.setDate(dt.getDate() + 3 - (dt.getDay()+6)%7);
-    const w1 = new Date(dt.getFullYear(),0,4);
-    return 1 + Math.round(((dt-w1)/86400000 - 3 + (w1.getDay()+6)%7)/7);
-  }
-  function weekKey(d) {
-    const mon = getMonday(d);
-    return `${mon.getFullYear()}-W${(''+getISOWeek(mon)).padStart(2,'0')}`;
-  }
-
-  // ── Trier les lignes par date décroissante ───────────────────
-  const rowsWithDate = rows.map(r => {
+  if (_rawRows && _rawRows.length === rows.length) return _rawRows;
+  _rawRows = rows.map(r => {
     const rawDate = r.cells[0]?.textContent.trim() || '2000-01-01';
     return { el: r, date: new Date(rawDate) };
   }).filter(r => !isNaN(r.date)).sort((a,b) => b.date - a.date);
+  return _rawRows;
+}
 
+/* ══ VUE SEMAINES ══ */
+function buildWeekView() {
+  const tbody = document.getElementById('tableBody');
+  const rowsWithDate = getRawRows();
   if (rowsWithDate.length === 0) return;
 
-  // ── Grouper par semaine calendaire ──────────────────────────
   const weekMap = new Map();
   rowsWithDate.forEach(item => {
     const key = weekKey(item.date);
     if (!weekMap.has(key)) weekMap.set(key, { key, items: [], monday: getMonday(item.date) });
     weekMap.get(key).items.push(item);
   });
-
-  // ── Trier les semaines par ordre décroissant ─────────────────
   const sortedWeeks = Array.from(weekMap.values()).sort((a,b) => b.monday - a.monday);
-
-  // ── Numéroter S01, S02... ────────────────────────────────────
-  // On numérote par ordre décroissant (S01 = semaine la plus récente)
-  // ou on peut utiliser le numéro de semaine ISO de l'année
-  // Choix : numérotation continue S01 = plus récente
   sortedWeeks.forEach((wk, idx) => { wk.soNum = idx + 1; });
 
-  // ── Regrouper par mois pour les séparateurs ──────────────────
   let lastMonth = null;
-  const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-
-  // ── Vider le tbody puis reconstruire ────────────────────────
   tbody.innerHTML = '';
 
   sortedWeeks.forEach(wk => {
-    const monday   = wk.monday;
-    const sunday   = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+    const monday = wk.monday;
+    const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
     const monthKey = `${monday.getFullYear()}-${monday.getMonth()}`;
 
-    // Séparateur de mois si on change de mois
     if (monthKey !== lastMonth) {
       lastMonth = monthKey;
       const monthRow = document.createElement('tr');
-      monthRow.innerHTML = `<td colspan="9" style="
-        background:linear-gradient(135deg,rgba(102,126,234,.18),rgba(118,75,162,.12));
-        padding:1rem 1.5rem; font-weight:900; font-size:.92rem;
-        color:#c8b8ff; letter-spacing:1.5px; text-transform:uppercase;
-        border-bottom:2px solid rgba(102,126,234,.3);
-        border-top:3px solid rgba(102,126,234,.25);
-      ">
-        <i class="fas fa-calendar-alt me-2" style="color:#9b79ff;"></i>
-        ${MONTHS_FR[monday.getMonth()]} ${monday.getFullYear()}
+      monthRow.innerHTML = `<td colspan="9" style="background:linear-gradient(135deg,rgba(102,126,234,.18),rgba(118,75,162,.12));padding:1rem 1.5rem;font-weight:900;font-size:.92rem;color:#c8b8ff;letter-spacing:1.5px;text-transform:uppercase;border-bottom:2px solid rgba(102,126,234,.3);border-top:3px solid rgba(102,126,234,.25);">
+        <i class="fas fa-calendar-alt me-2" style="color:#9b79ff;"></i>${MONTHS_FR[monday.getMonth()]} ${monday.getFullYear()}
       </td>`;
       tbody.appendChild(monthRow);
     }
 
-    // ── En-tête de semaine ───────────────────────────────────
     const isoWeekNum = getISOWeek(monday);
     const headerRow = document.createElement('tr');
     headerRow.className = 'week-header-row';
     headerRow.setAttribute('data-week', wk.soNum);
-    headerRow.innerHTML = `<td colspan="9" style="
-      background:linear-gradient(135deg,rgba(0,212,170,.13),rgba(0,212,170,.04));
-      padding:.7rem 1.4rem; font-weight:800; font-size:.82rem;
-      color:var(--neon); letter-spacing:.5px;
-      border-bottom:1px solid rgba(0,212,170,.2);
-      border-top:2px solid rgba(0,212,170,.18);
-      cursor:pointer; user-select:none;
-    " onclick="toggleWeek(${wk.soNum}, this)">
-      <span>
-        <i class="fas fa-calendar-week me-2"></i>
-        <strong>S${(''+wk.soNum).padStart(2,'0')}</strong>
-        &nbsp;·&nbsp;
-        Semaine ${isoWeekNum} — du <em>${fmt(monday)}</em> au <em>${fmt(sunday)}</em>
-      </span>
+    headerRow.innerHTML = `<td colspan="9" style="background:linear-gradient(135deg,rgba(0,212,170,.13),rgba(0,212,170,.04));padding:.7rem 1.4rem;font-weight:800;font-size:.82rem;color:var(--neon);letter-spacing:.5px;border-bottom:1px solid rgba(0,212,170,.2);border-top:2px solid rgba(0,212,170,.18);cursor:pointer;user-select:none;" onclick="toggleWeek(${wk.soNum}, this)">
+      <span><i class="fas fa-calendar-week me-2"></i><strong>S${(''+wk.soNum).padStart(2,'0')}</strong>&nbsp;·&nbsp;Semaine ${isoWeekNum} — du <em>${fmt(monday)}</em> au <em>${fmt(sunday)}</em></span>
       <span style="float:right;display:flex;align-items:center;gap:1rem;">
         <span style="color:#a8b2d1;font-weight:400;font-size:.76rem;">${wk.items.length} transaction(s)</span>
         <i class="fas fa-chevron-up week-chevron" style="font-size:.7rem;transition:transform .3s;"></i>
@@ -898,71 +949,123 @@ document.addEventListener('DOMContentLoaded', function() {
     </td>`;
     tbody.appendChild(headerRow);
 
-    // ── Lignes de transactions ────────────────────────────────
-    let periodRev = 0, periodExp = 0;
     wk.items.forEach(item => {
       item.el.setAttribute('data-week-group', wk.soNum);
+      item.el.removeAttribute('data-month-group');
+      item.el.removeAttribute('data-quarter-group');
       tbody.appendChild(item.el);
-      const amtVal = parseFloat((item.el.cells[5]?.textContent || '0').replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
-      if (['revenue','receivable','credit','epargne'].includes(item.el.dataset.type)) {
-        periodRev += amtVal;
-      } else {
-        periodExp += amtVal;
-      }
     });
-
-    // ── Bilan de la semaine ───────────────────────────────────
-    const net = periodRev - periodExp;
-    const totalRow = document.createElement('tr');
-    totalRow.className = 'week-total-row';
-    totalRow.setAttribute('data-week-group', wk.soNum);
-    totalRow.innerHTML = `
-      <td colspan="9" style="
-        padding:.75rem 1.4rem;
-        background:rgba(0,0,0,.18);
-        border-top:1px dashed rgba(255,255,255,.09);
-        border-bottom:2px solid rgba(0,212,170,.08);
-      ">
-        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.75rem;">
-          <!-- Bilan détaillé -->
-          <div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;">
-            <span style="font-size:.73rem;color:#a8b2d1;font-weight:700;text-transform:uppercase;letter-spacing:.8px;">
-              Bilan S${(''+wk.soNum).padStart(2,'0')}
-            </span>
-            <span style="font-size:.82rem;">
-              <i class="fas fa-arrow-up me-1" style="color:#2ed573;"></i>
-              Revenus&nbsp;:&nbsp;<strong style="color:#2ed573;">${periodRev.toFixed(2)}€</strong>
-              <span style="color:#444;margin:0 .3rem;">|</span>
-              <span style="font-size:.72rem;color:#4aaa72;">${(periodRev*655.96).toFixed(0)} XAF</span>
-            </span>
-            <span style="font-size:.82rem;">
-              <i class="fas fa-arrow-down me-1" style="color:#ff4757;"></i>
-              Dépenses&nbsp;:&nbsp;<strong style="color:#ff4757;">${periodExp.toFixed(2)}€</strong>
-              <span style="color:#444;margin:0 .3rem;">|</span>
-              <span style="font-size:.72rem;color:#aa4a53;">${(periodExp*655.96).toFixed(0)} XAF</span>
-            </span>
-          </div>
-          <!-- Solde net -->
-          <div style="
-            background:${net>=0?'rgba(46,213,115,.1)':'rgba(255,71,87,.1)'};
-            border:1px solid ${net>=0?'rgba(46,213,115,.25)':'rgba(255,71,87,.25)'};
-            border-radius:10px; padding:.4rem 1rem;
-            display:flex;flex-direction:column;align-items:center;min-width:120px;
-          ">
-            <span style="font-size:.65rem;color:#a8b2d1;text-transform:uppercase;letter-spacing:.8px;">Solde Net</span>
-            <strong style="font-size:1rem;color:${net>=0?'#2ed573':'#ff4757'};">
-              <i class="fas fa-${net>=0?'arrow-up':'arrow-down'} me-1" style="font-size:.75rem;"></i>
-              ${net>=0?'+':''}${net.toFixed(2)}€
-            </strong>
-            <span style="font-size:.68rem;color:#a8b2d1;">${(net*655.96).toFixed(0)} XAF</span>
-          </div>
-        </div>
-      </td>`;
-    tbody.appendChild(totalRow);
+    tbody.appendChild(makeBilanRow(`S${(''+wk.soNum).padStart(2,'0')}`, calcPeriod(wk.items), wk.soNum, 'data-week-group'));
   });
-});
+}
 
-/* ══ Toggle affichage semaine (dépliable) ══ */
+/* ══ VUE MOIS ══ */
+function buildMonthView() {
+  const tbody = document.getElementById('tableBody');
+  const rowsWithDate = getRawRows();
+  if (rowsWithDate.length === 0) return;
+
+  const monthMap = new Map();
+  rowsWithDate.forEach(item => {
+    const d = item.date;
+    const key = `${d.getFullYear()}-${(''+( d.getMonth()+1)).padStart(2,'0')}`;
+    if (!monthMap.has(key)) monthMap.set(key, { key, items: [], year: d.getFullYear(), month: d.getMonth() });
+    monthMap.get(key).items.push(item);
+  });
+  const sortedMonths = Array.from(monthMap.values()).sort((a,b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
+  sortedMonths.forEach((m, idx) => { m.soNum = idx + 1; });
+
+  let lastQuarter = null;
+  tbody.innerHTML = '';
+
+  sortedMonths.forEach(mo => {
+    const qNum = Math.floor(mo.month / 3) + 1;
+    const qKey = `${mo.year}-Q${qNum}`;
+
+    if (qKey !== lastQuarter) {
+      lastQuarter = qKey;
+      const qRow = document.createElement('tr');
+      qRow.innerHTML = `<td colspan="9" style="background:linear-gradient(135deg,rgba(255,215,0,.14),rgba(255,165,0,.08));padding:1rem 1.5rem;font-weight:900;font-size:.92rem;color:#FFD700;letter-spacing:1.5px;text-transform:uppercase;border-bottom:2px solid rgba(255,215,0,.28);border-top:3px solid rgba(255,215,0,.2);">
+        <i class="fas fa-layer-group me-2" style="color:#ffc107;"></i>${mo.year} &nbsp;—&nbsp; ${QUARTERS_LABEL[qNum-1]}
+      </td>`;
+      tbody.appendChild(qRow);
+    }
+
+    const headerRow = document.createElement('tr');
+    headerRow.className = 'month-header-row';
+    headerRow.setAttribute('data-month-hdr', mo.soNum);
+    headerRow.innerHTML = `<td colspan="9" style="background:linear-gradient(135deg,rgba(102,126,234,.15),rgba(118,75,162,.06));padding:.7rem 1.4rem;font-weight:800;font-size:.85rem;color:#c8b8ff;letter-spacing:.5px;border-bottom:1px solid rgba(102,126,234,.22);border-top:2px solid rgba(102,126,234,.18);cursor:pointer;user-select:none;" onclick="toggleMonth(${mo.soNum}, this)">
+      <span><i class="fas fa-calendar-alt me-2"></i><strong>${MONTHS_FR[mo.month]}</strong>&nbsp;·&nbsp;<em style="font-weight:400;font-size:.78rem;">${mo.year}</em></span>
+      <span style="float:right;display:flex;align-items:center;gap:1rem;">
+        <span style="color:#a8b2d1;font-weight:400;font-size:.76rem;">${mo.items.length} transaction(s)</span>
+        <i class="fas fa-chevron-up week-chevron" style="font-size:.7rem;transition:transform .3s;"></i>
+      </span>
+    </td>`;
+    tbody.appendChild(headerRow);
+
+    mo.items.forEach(item => {
+      item.el.setAttribute('data-month-group', mo.soNum);
+      item.el.removeAttribute('data-week-group');
+      item.el.removeAttribute('data-quarter-group');
+      tbody.appendChild(item.el);
+    });
+    tbody.appendChild(makeBilanRow(`${MONTHS_FR[mo.month]} ${mo.year}`, calcPeriod(mo.items), mo.soNum, 'data-month-group'));
+  });
+}
+
+/* ══ VUE TRIMESTRES ══ */
+function buildQuarterView() {
+  const tbody = document.getElementById('tableBody');
+  const rowsWithDate = getRawRows();
+  if (rowsWithDate.length === 0) return;
+
+  const qMap = new Map();
+  rowsWithDate.forEach(item => {
+    const d = item.date;
+    const qNum = Math.floor(d.getMonth() / 3) + 1;
+    const key = `${d.getFullYear()}-Q${qNum}`;
+    if (!qMap.has(key)) qMap.set(key, { key, items: [], year: d.getFullYear(), q: qNum });
+    qMap.get(key).items.push(item);
+  });
+  const sortedQ = Array.from(qMap.values()).sort((a,b) => b.year !== a.year ? b.year - a.year : b.q - a.q);
+  sortedQ.forEach((q, idx) => { q.soNum = idx + 1; });
+
+  let lastYear = null;
+  tbody.innerHTML = '';
+
+  sortedQ.forEach(qo => {
+    if (qo.year !== lastYear) {
+      lastYear = qo.year;
+      const yRow = document.createElement('tr');
+      yRow.innerHTML = `<td colspan="9" style="background:linear-gradient(135deg,rgba(46,213,115,.13),rgba(0,212,170,.07));padding:1rem 1.5rem;font-weight:900;font-size:.95rem;color:#2ed573;letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid rgba(46,213,115,.28);border-top:3px solid rgba(46,213,115,.2);">
+        <i class="fas fa-calendar-check me-2" style="color:#00d4aa;"></i>Année ${qo.year}
+      </td>`;
+      tbody.appendChild(yRow);
+    }
+
+    const headerRow = document.createElement('tr');
+    headerRow.className = 'quarter-header-row';
+    headerRow.setAttribute('data-quarter-hdr', qo.soNum);
+    headerRow.innerHTML = `<td colspan="9" style="background:linear-gradient(135deg,rgba(255,215,0,.13),rgba(255,165,0,.05));padding:.7rem 1.4rem;font-weight:800;font-size:.85rem;color:var(--gold);letter-spacing:.5px;border-bottom:1px solid rgba(255,215,0,.2);border-top:2px solid rgba(255,215,0,.16);cursor:pointer;user-select:none;" onclick="toggleQuarter(${qo.soNum}, this)">
+      <span><i class="fas fa-layer-group me-2"></i><strong>${QUARTERS_LABEL[qo.q-1]}</strong>&nbsp;·&nbsp;<em style="font-weight:400;font-size:.78rem;">${qo.year}</em></span>
+      <span style="float:right;display:flex;align-items:center;gap:1rem;">
+        <span style="color:#a8b2d1;font-weight:400;font-size:.76rem;">${qo.items.length} transaction(s)</span>
+        <i class="fas fa-chevron-up week-chevron" style="font-size:.7rem;transition:transform .3s;"></i>
+      </span>
+    </td>`;
+    tbody.appendChild(headerRow);
+
+    qo.items.forEach(item => {
+      item.el.setAttribute('data-quarter-group', qo.soNum);
+      item.el.removeAttribute('data-week-group');
+      item.el.removeAttribute('data-month-group');
+      tbody.appendChild(item.el);
+    });
+    tbody.appendChild(makeBilanRow(`T${qo.q} ${qo.year}`, calcPeriod(qo.items), qo.soNum, 'data-quarter-group'));
+  });
+}
+
+/* ══ Toggle dépliable ══ */
 function toggleWeek(soNum, headerCell) {
   const rows = document.querySelectorAll(`[data-week-group="${soNum}"]`);
   const chevron = headerCell.querySelector('.week-chevron');
@@ -973,6 +1076,43 @@ function toggleWeek(soNum, headerCell) {
   });
   if (chevron) chevron.style.transform = hidden ? '' : 'rotate(180deg)';
 }
+function toggleMonth(soNum, headerCell) {
+  const rows = document.querySelectorAll(`[data-month-group="${soNum}"]`);
+  const chevron = headerCell.querySelector('.week-chevron');
+  let hidden = false;
+  rows.forEach(r => {
+    if (r.style.display === 'none') { r.style.display = ''; hidden = true; }
+    else r.style.display = 'none';
+  });
+  if (chevron) chevron.style.transform = hidden ? '' : 'rotate(180deg)';
+}
+function toggleQuarter(soNum, headerCell) {
+  const rows = document.querySelectorAll(`[data-quarter-group="${soNum}"]`);
+  const chevron = headerCell.querySelector('.week-chevron');
+  let hidden = false;
+  rows.forEach(r => {
+    if (r.style.display === 'none') { r.style.display = ''; hidden = true; }
+    else r.style.display = 'none';
+  });
+  if (chevron) chevron.style.transform = hidden ? '' : 'rotate(180deg)';
+}
+
+/* ══ Sélecteur de vue ══ */
+function setPeriodView(mode, btn) {
+  document.querySelectorAll('.p-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _rawRows = null;
+  if (mode === 'week')         buildWeekView();
+  else if (mode === 'month')   buildMonthView();
+  else if (mode === 'quarter') buildQuarterView();
+}
+
+/* ══ Initialisation ══ */
+document.addEventListener('DOMContentLoaded', function() {
+  const tbody = document.getElementById('tableBody');
+  if (!tbody || tbody.querySelectorAll('.tbl-row').length === 0) return;
+  buildWeekView();
+});
 
 /* ══ Chart.js — Donut ══ */
 const tRev = {{ summary['total_revenue']  if summary else 0 }};

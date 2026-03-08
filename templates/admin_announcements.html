@@ -1,0 +1,716 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Annonces — Admin{% endblock %}
+{% block content %}
+<div class="container-fluid py-4" style="max-width:1100px;">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <div style="display:flex;align-items:center;gap:.75rem;">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#00d4aa,#00ff88);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#0f1419;font-weight:900;">
+                    📢
+                </div>
+                <div>
+                    <h4 style="color:#e0e6f8;font-weight:800;margin:0;">Gestion des Annonces</h4>
+                    <p style="color:#a8b2d1;font-size:.8rem;margin:0;">Splash screen après authentification 2FA</p>
+                </div>
+            </div>
+        </div>
+        <button onclick="openCreateModal()" class="btn btn-sm" style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#0f1419;font-weight:700;border:none;border-radius:10px;padding:.55rem 1.2rem;">
+            <i class="fas fa-plus me-2"></i> Nouvelle annonce
+        </button>
+    </div>
+
+    <!-- Stats rapides -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:14px;padding:1rem;">
+                <div style="font-size:1.6rem;font-weight:800;color:#00d4aa;">{{ stats.total }}</div>
+                <div style="font-size:.75rem;color:#a8b2d1;">Total annonces</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:14px;padding:1rem;">
+                <div style="font-size:1.6rem;font-weight:800;color:#10b981;">{{ stats.active }}</div>
+                <div style="font-size:.75rem;color:#a8b2d1;">Actives maintenant</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:14px;padding:1rem;">
+                <div style="font-size:1.6rem;font-weight:800;color:#f59e0b;">{{ stats.upcoming }}</div>
+                <div style="font-size:.75rem;color:#a8b2d1;">À venir</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div style="background:rgba(100,116,139,.08);border:1px solid rgba(100,116,139,.2);border-radius:14px;padding:1rem;">
+                <div style="font-size:1.6rem;font-weight:800;color:#64748b;">{{ stats.expired }}</div>
+                <div style="font-size:.75rem;color:#a8b2d1;">Expirées</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des annonces -->
+    {% if announcements %}
+    <div class="d-flex flex-column gap-3">
+        {% for ann in announcements %}
+        <div class="ann-item" id="ann-{{ ann.id }}" style="background:linear-gradient(145deg,#1a1a2e,#16213e);border:1px solid {{ 'rgba(0,212,170,.25)' if ann.is_currently_active else 'rgba(255,255,255,.07)' }};border-radius:18px;overflow:hidden;transition:.3s;">
+
+            <div style="padding:1.25rem 1.5rem;">
+                <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                    <div style="flex:1;min-width:0;">
+                        <!-- Badges statut -->
+                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            {% if ann.is_currently_active %}
+                            <span style="background:rgba(0,212,170,.15);border:1px solid rgba(0,212,170,.3);color:#00d4aa;border-radius:20px;padding:.2rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;">
+                                <i class="fas fa-circle me-1" style="font-size:.4rem;vertical-align:middle;"></i> ACTIVE
+                            </span>
+                            {% elif ann.is_upcoming %}
+                            <span style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:#f59e0b;border-radius:20px;padding:.2rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;">
+                                <i class="fas fa-clock me-1"></i> À VENIR
+                            </span>
+                            {% else %}
+                            <span style="background:rgba(100,116,139,.12);border:1px solid rgba(100,116,139,.2);color:#64748b;border-radius:20px;padding:.2rem .7rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;">
+                                EXPIRÉE
+                            </span>
+                            {% endif %}
+
+                            {% if ann.is_active == 0 %}
+                            <span style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#ef4444;border-radius:20px;padding:.2rem .7rem;font-size:.68rem;font-weight:700;">
+                                <i class="fas fa-pause me-1"></i> DÉSACTIVÉE
+                            </span>
+                            {% endif %}
+
+                            <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#a8b2d1;border-radius:20px;padding:.2rem .7rem;font-size:.68rem;font-weight:600;">
+                                {{ ann.badge_label or 'Annonce' }}
+                            </span>
+                        </div>
+
+                        <!-- Titre -->
+                        <h5 style="color:#e0e6f8;font-weight:700;margin-bottom:.4rem;font-size:1.05rem;">{{ ann.title }}</h5>
+
+                        <!-- Méta infos -->
+                        <div class="d-flex gap-3 flex-wrap">
+                            <span style="font-size:.76rem;color:#a8b2d1;">
+                                <i class="fas fa-calendar-alt me-1" style="color:#00d4aa;"></i>
+                                {{ ann.start_date }} → {{ ann.end_date }}
+                            </span>
+                            <span style="font-size:.76rem;color:#a8b2d1;">
+                                <i class="fas fa-images me-1" style="color:#00d4aa;"></i>
+                                {{ ann.images_count }} image(s)
+                            </span>
+                            <span style="font-size:.76rem;color:#a8b2d1;">
+                                <i class="fas fa-user me-1" style="color:#00d4aa;"></i>
+                                {{ ann.author }}
+                            </span>
+                            <span style="font-size:.76rem;color:#a8b2d1;">
+                                <i class="fas fa-eye me-1" style="color:#00d4aa;"></i>
+                                {{ ann.view_count or 0 }} vue(s)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-2 align-items-center flex-shrink-0">
+                        <!-- Toggle actif/inactif -->
+                        <button onclick="toggleAnn({{ ann.id }}, {{ ann.is_active }})"
+                            class="btn btn-sm"
+                            title="{{ 'Désactiver' if ann.is_active else 'Activer' }}"
+                            style="background:{{ 'rgba(0,212,170,.12)' if ann.is_active else 'rgba(100,116,139,.12)' }};border:1px solid {{ 'rgba(0,212,170,.3)' if ann.is_active else 'rgba(100,116,139,.2)' }};color:{{ '#00d4aa' if ann.is_active else '#64748b' }};border-radius:9px;padding:.4rem .7rem;font-size:.78rem;">
+                            <i class="fas {{ 'fa-toggle-on' if ann.is_active else 'fa-toggle-off' }}"></i>
+                        </button>
+                        <!-- Éditer -->
+                        <button onclick="openEditModal({{ ann | tojson | safe }})"
+                            class="btn btn-sm"
+                            style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#818cf8;border-radius:9px;padding:.4rem .7rem;font-size:.78rem;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <!-- Supprimer -->
+                        <button onclick="deleteAnn({{ ann.id }}, '{{ ann.title | e }}')"
+                            class="btn btn-sm"
+                            style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#ef4444;border-radius:9px;padding:.4rem .7rem;font-size:.78rem;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Aperçu contenu -->
+                <div style="margin-top:.85rem;padding:.75rem 1rem;background:rgba(0,0,0,.2);border-radius:10px;font-size:.8rem;color:#a8b2d1;line-height:1.6;max-height:60px;overflow:hidden;">
+                    {{ ann.content | striptags | truncate(180) }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div style="text-align:center;padding:4rem 2rem;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:18px;">
+        <div style="font-size:3rem;margin-bottom:1rem;">📢</div>
+        <p style="color:#a8b2d1;font-size:.95rem;">Aucune annonce créée</p>
+        <button onclick="openCreateModal()" class="btn btn-sm mt-2" style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#0f1419;font-weight:700;border:none;border-radius:10px;padding:.55rem 1.4rem;">
+            <i class="fas fa-plus me-2"></i> Créer la première annonce
+        </button>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     MODAL — Créer / Modifier une annonce
+════════════════════════════════════════════════════ -->
+<div class="modal fade" id="annModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="background:#1a1a2e;border:1px solid rgba(0,212,170,.15);border-radius:20px;">
+            <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,.07);padding:1.25rem 1.5rem;">
+                <h5 class="modal-title" id="modalTitle" style="color:#e0e6f8;font-weight:700;">Nouvelle annonce</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:1.5rem;">
+                <form id="annForm" enctype="multipart/form-data">
+                    <input type="hidden" id="annId" name="ann_id" value="">
+
+                    <div class="row g-3">
+                        <!-- Titre -->
+                        <div class="col-12">
+                            <label class="form-label" style="color:#a8b2d1;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Titre de l'annonce *</label>
+                            <input type="text" class="form-control" id="annTitle" name="title" required
+                                placeholder="Ex: Mise à jour importante de la plateforme"
+                                style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:10px;padding:.75rem;">
+                        </div>
+
+                        <!-- Badge label + type -->
+                        <div class="col-md-6">
+                            <label class="form-label" style="color:#a8b2d1;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Label du badge</label>
+                            <input type="text" class="form-control" id="annBadgeLabel" name="badge_label"
+                                placeholder="Ex: Annonce, Urgent, Info…"
+                                style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:10px;padding:.75rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="color:#a8b2d1;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Type de badge</label>
+                            <select class="form-select" id="annBadgeType" name="badge_type"
+                                style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:10px;padding:.75rem;">
+                                <option value="default">⭐ Standard (vert)</option>
+                                <option value="urgent">⚡ Urgent (orange)</option>
+                                <option value="info">ℹ️ Info (violet)</option>
+                            </select>
+                        </div>
+
+                        <!-- ═══ ÉDITEUR STRUCTURÉ ═══ -->
+                        <div class="col-12">
+                            <label class="form-label" style="color:#a8b2d1;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">
+                                Contenu * <span style="color:#64748b;text-transform:none;font-weight:400;font-size:.75rem;">— Structure en 2 colonnes avec emojis</span>
+                            </label>
+
+                            <!-- Bloc éditeur -->
+                            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;">
+
+                                <!-- Barre d'outils -->
+                                <div style="background:rgba(0,0,0,.2);border-bottom:1px solid rgba(255,255,255,.07);padding:.6rem .9rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+
+                                    <!-- Label -->
+                                    <span style="font-size:.7rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-right:.3rem;">Insérer :</span>
+
+                                    <!-- Bouton emoji picker -->
+                                    <div style="position:relative;">
+                                        <button type="button" id="emojiToggle" onclick="toggleEmojiPicker()"
+                                            style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;border-radius:8px;padding:.3rem .7rem;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;">
+                                            😊 Emoji
+                                        </button>
+                                        <!-- Panel emoji -->
+                                        <div id="emojiPanel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:9999;background:#1a1a2e;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:.85rem;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+                                            <div style="font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:.6rem;">Cliquer pour insérer</div>
+
+                                            <!-- Catégories -->
+                                            <div id="emojiCatBtns" style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.75rem;">
+                                            </div>
+                                            <div id="emojiGrid" style="display:flex;flex-wrap:wrap;gap:.2rem;max-height:200px;overflow-y:auto;"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Séparateur -->
+                                    <div style="width:1px;height:18px;background:rgba(255,255,255,.1);margin:0 .2rem;"></div>
+
+                                    <!-- Boutons formatage -->
+                                    <button type="button" onclick="insertTag('<b>','</b>')" title="Gras"
+                                        style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:7px;padding:.25rem .55rem;font-size:.8rem;font-weight:700;cursor:pointer;">B</button>
+                                    <button type="button" onclick="insertTag('<i>','</i>')" title="Italique"
+                                        style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:7px;padding:.25rem .55rem;font-size:.8rem;font-style:italic;cursor:pointer;">I</button>
+                                    <button type="button" onclick="insertTag('<u>','</u>')" title="Souligné"
+                                        style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:7px;padding:.25rem .55rem;font-size:.8rem;text-decoration:underline;cursor:pointer;">U</button>
+                                    <button type="button" onclick="insertTag('<p>','</p>')" title="Paragraphe"
+                                        style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#a8b2d1;border-radius:7px;padding:.25rem .55rem;font-size:.75rem;cursor:pointer;">&lt;p&gt;</button>
+
+                                    <!-- Séparateur -->
+                                    <div style="width:1px;height:18px;background:rgba(255,255,255,.1);margin:0 .2rem;"></div>
+
+                                    <!-- Toggle mode -->
+                                    <button type="button" onclick="setMode('simple')" id="btnModeSimple"
+                                        style="background:rgba(0,212,170,.2);border:1px solid rgba(0,212,170,.4);color:#00d4aa;border-radius:8px;padding:.25rem .65rem;font-size:.75rem;font-weight:700;cursor:pointer;">
+                                        📝 Simple
+                                    </button>
+                                    <button type="button" onclick="setMode('columns')" id="btnModeColumns"
+                                        style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#a8b2d1;border-radius:8px;padding:.25rem .65rem;font-size:.75rem;font-weight:700;cursor:pointer;">
+                                        ⬛⬛ 2 Colonnes
+                                    </button>
+
+                                    <!-- Aperçu -->
+                                    <button type="button" onclick="togglePreview()"
+                                        style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#818cf8;border-radius:8px;padding:.25rem .65rem;font-size:.75rem;cursor:pointer;margin-left:auto;">
+                                        👁 Aperçu
+                                    </button>
+                                </div>
+
+                                <!-- ── MODE SIMPLE ── -->
+                                <div id="modeSimple" style="padding:.85rem;">
+                                    <textarea id="annContentSimple" rows="6"
+                                        placeholder="Contenu de l'annonce... HTML accepté. Ex: <b>Important !</b> Nouvelle fonctionnalité disponible 🚀"
+                                        style="width:100%;background:transparent;border:none;outline:none;color:#e0e6f8;font-size:.88rem;line-height:1.7;resize:vertical;font-family:'Inter',sans-serif;"
+                                        oninput="syncContent()"></textarea>
+                                </div>
+
+                                <!-- ── MODE 2 COLONNES ── -->
+                                <div id="modeColumns" style="display:none;padding:.85rem;">
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+
+                                        <!-- Colonne gauche -->
+                                        <div>
+                                            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+                                                <input type="text" id="colLeftTitle"
+                                                    placeholder="❌ Erreurs à éviter"
+                                                    style="flex:1;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#fca5a5;border-radius:8px;padding:.4rem .7rem;font-size:.8rem;font-weight:700;outline:none;"
+                                                    oninput="syncContent()">
+                                            </div>
+                                            <textarea id="colLeftContent" rows="8"
+                                                placeholder="• Négliger le risk management&#10;• Trader sans plan&#10;• Ignorer les niveaux clés"
+                                                style="width:100%;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.12);border-radius:8px;padding:.65rem;color:#e0e6f8;font-size:.83rem;line-height:1.7;resize:vertical;outline:none;font-family:'Inter',sans-serif;"
+                                                oninput="syncContent()"></textarea>
+                                        </div>
+
+                                        <!-- Colonne droite -->
+                                        <div>
+                                            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+                                                <input type="text" id="colRightTitle"
+                                                    placeholder="✅ Habitudes à adopter"
+                                                    style="flex:1;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:#6ee7b7;border-radius:8px;padding:.4rem .7rem;font-size:.8rem;font-weight:700;outline:none;"
+                                                    oninput="syncContent()">
+                                            </div>
+                                            <textarea id="colRightContent" rows="8"
+                                                placeholder="• Respecter son plan de trading&#10;• Journal de trading quotidien&#10;• Analyser avant d'agir"
+                                                style="width:100%;background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.12);border-radius:8px;padding:.65rem;color:#e0e6f8;font-size:.83rem;line-height:1.7;resize:vertical;outline:none;font-family:'Inter',sans-serif;"
+                                                oninput="syncContent()"></textarea>
+                                        </div>
+                                    </div>
+                                    <div style="font-size:.72rem;color:#64748b;margin-top:.5rem;">💡 Les titres sont modifiables — mets n'importe quel texte ou emoji que tu veux</div>
+                                </div>
+
+                                <!-- ── APERÇU ── -->
+                                <div id="previewBox" style="display:none;border-top:1px solid rgba(255,255,255,.07);padding:.85rem;">
+                                    <div style="font-size:.72rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:.6rem;">Aperçu :</div>
+                                    <div id="previewContent" style="color:#e0e6f8;font-size:.88rem;line-height:1.7;"></div>
+                                </div>
+
+                            </div>
+
+                            <!-- Champ caché qui contient le HTML final -->
+                            <input type="hidden" id="annContent" name="content">
+                        </div>
+
+                        <!-- Dates -->
+                        <div class="col-md-6">
+                            <label class="form-label" style="color:#a8b2d1;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Date de début *</label>
+                            <input type="date" class="form-control" id="annStartDate" name="start_date" required
+                                style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:10px;padding:.75rem;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="color:#a8b2d1;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Date de fin *</label>
+                            <input type="date" class="form-control" id="annEndDate" name="end_date" required
+                                style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:10px;padding:.75rem;">
+                        </div>
+
+                        <!-- Secondes avant skip auto -->
+                        <div class="col-md-6">
+                            <label class="form-label" style="color:#a8b2d1;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Auto-skip après (secondes)</label>
+                            <input type="number" class="form-control" id="annAutoSkip" name="auto_skip_seconds" value="15" min="5" max="120"
+                                style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e0e6f8;border-radius:10px;padding:.75rem;">
+                            <div style="font-size:.72rem;color:#a8b2d1;margin-top:.3rem;">Délai avant redirection automatique (5–120 sec)</div>
+                        </div>
+
+                        <!-- Actif -->
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check form-switch" style="padding:.75rem 0;">
+                                <input class="form-check-input" type="checkbox" id="annIsActive" name="is_active" checked style="width:2.5em;height:1.3em;cursor:pointer;">
+                                <label class="form-check-label" for="annIsActive" style="color:#a8b2d1;font-size:.85rem;margin-left:.5rem;">Annonce active</label>
+                            </div>
+                        </div>
+
+                        <!-- Upload images -->
+                        <div class="col-12">
+                            <label class="form-label" style="color:#a8b2d1;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;">Images (optionnel — max 5)</label>
+                            <div style="background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.12);border-radius:12px;padding:1.25rem;text-align:center;cursor:pointer;" onclick="document.getElementById('annImages').click()">
+                                <i class="fas fa-cloud-upload-alt" style="font-size:1.5rem;color:#00d4aa;margin-bottom:.5rem;"></i>
+                                <p style="color:#a8b2d1;font-size:.82rem;margin:0;">Cliquer pour ajouter des images<br><span style="font-size:.72rem;color:#64748b;">JPG, PNG, WEBP — Max 2 Mo par image</span></p>
+                            </div>
+                            <input type="file" id="annImages" name="images" multiple accept="image/*" style="display:none;" onchange="previewImages(this)">
+                            <div id="imagePreview" class="d-flex gap-2 flex-wrap mt-2"></div>
+                            <!-- Images existantes (mode édition) -->
+                            <div id="existingImages" class="d-flex gap-2 flex-wrap mt-1"></div>
+                            <input type="hidden" id="annKeepImages" name="keep_images" value="[]">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,.07);padding:1.25rem 1.5rem;gap:.75rem;">
+                <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
+                    style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#a8b2d1;border-radius:9px;padding:.5rem 1.1rem;">
+                    Annuler
+                </button>
+                <button type="button" onclick="saveAnn()"
+                    style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#0f1419;font-weight:700;border:none;border-radius:9px;padding:.5rem 1.4rem;font-size:.88rem;cursor:pointer;">
+                    <i class="fas fa-save me-2"></i><span id="saveLabel">Créer l'annonce</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast feedback -->
+<div id="toastBox" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;"></div>
+
+<script>
+// ════════════════════════════════════════════════════
+// ÉDITEUR STRUCTURÉ
+// ════════════════════════════════════════════════════
+
+let currentMode = 'simple';
+let activeTarget = 'annContentSimple'; // zone de texte active pour l'insertion emoji
+
+// ── Changer de mode (simple / 2 colonnes) ──
+function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('modeSimple').style.display  = mode === 'simple'  ? 'block' : 'none';
+    document.getElementById('modeColumns').style.display = mode === 'columns' ? 'block' : 'none';
+
+    const btnS = document.getElementById('btnModeSimple');
+    const btnC = document.getElementById('btnModeColumns');
+    if (mode === 'simple') {
+        btnS.style.background = 'rgba(0,212,170,.2)'; btnS.style.borderColor = 'rgba(0,212,170,.4)'; btnS.style.color = '#00d4aa';
+        btnC.style.background = 'rgba(255,255,255,.05)'; btnC.style.borderColor = 'rgba(255,255,255,.1)'; btnC.style.color = '#a8b2d1';
+        activeTarget = 'annContentSimple';
+    } else {
+        btnC.style.background = 'rgba(0,212,170,.2)'; btnC.style.borderColor = 'rgba(0,212,170,.4)'; btnC.style.color = '#00d4aa';
+        btnS.style.background = 'rgba(255,255,255,.05)'; btnS.style.borderColor = 'rgba(255,255,255,.1)'; btnS.style.color = '#a8b2d1';
+        activeTarget = 'colLeftContent';
+    }
+    syncContent();
+}
+
+// Focus tracker — savoir dans quelle zone on écrit
+['annContentSimple','colLeftContent','colRightContent'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('focus', () => { activeTarget = id; });
+});
+
+// ── Insérer une balise HTML autour du texte sélectionné ──
+function insertTag(open, close) {
+    const ta = document.getElementById(activeTarget);
+    if (!ta) return;
+    ta.focus();
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const selected = ta.value.substring(s, e);
+    const before = ta.value.substring(0, s);
+    const after  = ta.value.substring(e);
+    ta.value = before + open + selected + close + after;
+    ta.selectionStart = s + open.length;
+    ta.selectionEnd   = s + open.length + selected.length;
+    syncContent();
+}
+
+// ── Insérer un emoji ──
+function insertEmoji(emoji) {
+    const ta = document.getElementById(activeTarget);
+    if (!ta) return;
+    ta.focus();
+    const pos = ta.selectionStart || ta.value.length;
+    ta.value = ta.value.substring(0, pos) + emoji + ta.value.substring(pos);
+    ta.selectionStart = ta.selectionEnd = pos + emoji.length;
+    syncContent();
+}
+
+// ── Assembler le HTML final dans le champ caché ──
+function syncContent() {
+    let html = '';
+    if (currentMode === 'simple') {
+        const raw = document.getElementById('annContentSimple').value.trim();
+        // Convertir les sauts de ligne en <br> si pas déjà HTML
+        html = raw.includes('<') ? raw : raw.replace(/\n/g, '<br>');
+    } else {
+        const lt = (document.getElementById('colLeftTitle').value.trim()   || '❌ Erreurs à éviter');
+        const rt = (document.getElementById('colRightTitle').value.trim()  || '✅ Habitudes à adopter');
+        const lc = (document.getElementById('colLeftContent').value.trim());
+        const rc = (document.getElementById('colRightContent').value.trim());
+
+        // Convertir chaque ligne en <li> si commence par • ou -
+        const toList = (text) => {
+            const lines = text.split('\n').filter(l => l.trim());
+            const items = lines.map(l => l.replace(/^[•\-]\s*/, '').trim()).filter(Boolean);
+            return '<ul style="margin:0;padding-left:1.2rem;line-height:1.9;">' +
+                   items.map(i => `<li>${i}</li>`).join('') + '</ul>';
+        };
+
+        html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin:.5rem 0;">
+  <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);border-radius:12px;padding:1rem;">
+    <div style="font-weight:800;color:#fca5a5;font-size:.9rem;margin-bottom:.6rem;">${lt}</div>
+    <div style="color:#e0e6f8;font-size:.85rem;">${lc.includes('<') ? lc : toList(lc)}</div>
+  </div>
+  <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.18);border-radius:12px;padding:1rem;">
+    <div style="font-weight:800;color:#6ee7b7;font-size:.9rem;margin-bottom:.6rem;">${rt}</div>
+    <div style="color:#e0e6f8;font-size:.85rem;">${rc.includes('<') ? rc : toList(rc)}</div>
+  </div>
+</div>`;
+    }
+    document.getElementById('annContent').value = html;
+    // Mettre à jour aperçu si visible
+    if (document.getElementById('previewBox').style.display !== 'none') {
+        document.getElementById('previewContent').innerHTML = html;
+    }
+}
+
+// ── Aperçu ──
+function togglePreview() {
+    syncContent();
+    const box = document.getElementById('previewBox');
+    const visible = box.style.display !== 'none';
+    box.style.display = visible ? 'none' : 'block';
+    if (!visible) document.getElementById('previewContent').innerHTML = document.getElementById('annContent').value;
+}
+
+// ════════════════════════════════════════════════════
+// SÉLECTEUR D'EMOJIS PRO
+// ════════════════════════════════════════════════════
+
+const EMOJI_CATS = {
+    '📈 Trading': ['📈','📉','💹','📊','💰','💵','💸','🏦','💳','🔔','⚠️','🚨','✅','❌','🎯','🔑','🔐','📌','📍','⚡','🔥','💡','🧠','📝','📋','📅','⏰','🕐','📱','💻'],
+    '💪 Mindset': ['💪','🧘','🎓','🏆','🥇','👑','🌟','⭐','✨','🚀','🛡️','⚔️','🧩','🎲','🎯','🔍','👀','🤔','💭','📚','✍️','🗂️','📁','🗃️','💼','🎒','🧾','📜'],
+    '😊 Expressions': ['😊','😎','🤩','💯','👍','👏','🙌','✊','🤝','🫡','😤','😤','🤯','😱','🥴','😴','🤓','🧐','🤑','😏','😬','🫠','💀','🫶','❤️','🔥','💥','⚡','🌊','🌈'],
+    '⚠️ Alertes': ['⚠️','🚨','🔴','🟠','🟡','🟢','🔵','⛔','🚫','❗','❕','‼️','⁉️','🔔','🔕','📣','📢','🗣️','💬','📩','📨','✉️','🔖','🏷️','📎','🖇️'],
+    '📋 Structure': ['📋','📝','📄','📃','📑','📊','📈','📉','📆','📅','🗓️','🗃️','📁','📂','🗂️','🗑️','✅','☑️','🔲','🔳','▪️','▫️','◾','◽','🔹','🔸','🔷','🔶','🔺','🔻'],
+};
+
+let currentCat = Object.keys(EMOJI_CATS)[0];
+
+function buildEmojiPicker() {
+    const catBtns = document.getElementById('emojiCatBtns');
+    const grid    = document.getElementById('emojiGrid');
+    catBtns.innerHTML = '';
+    Object.keys(EMOJI_CATS).forEach(cat => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = cat;
+        btn.style.cssText = `background:${cat===currentCat?'rgba(0,212,170,.2)':'rgba(255,255,255,.05)'};border:1px solid ${cat===currentCat?'rgba(0,212,170,.35)':'rgba(255,255,255,.1)'};color:${cat===currentCat?'#00d4aa':'#a8b2d1'};border-radius:7px;padding:.2rem .55rem;font-size:.7rem;cursor:pointer;white-space:nowrap;`;
+        btn.onclick = () => { currentCat = cat; buildEmojiPicker(); };
+        catBtns.appendChild(btn);
+    });
+    grid.innerHTML = '';
+    EMOJI_CATS[currentCat].forEach(em => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = em;
+        btn.title = em;
+        btn.style.cssText = 'background:none;border:none;font-size:1.3rem;cursor:pointer;padding:.2rem;border-radius:6px;transition:.15s;';
+        btn.onmouseenter = () => btn.style.background = 'rgba(255,255,255,.1)';
+        btn.onmouseleave = () => btn.style.background = 'none';
+        btn.onclick = () => { insertEmoji(em); };
+        grid.appendChild(btn);
+    });
+}
+
+function toggleEmojiPicker() {
+    const panel = document.getElementById('emojiPanel');
+    const visible = panel.style.display !== 'none';
+    panel.style.display = visible ? 'none' : 'block';
+    if (!visible) buildEmojiPicker();
+}
+
+// Fermer le panel emoji en cliquant ailleurs
+document.addEventListener('click', function(e) {
+    const toggle = document.getElementById('emojiToggle');
+    const panel  = document.getElementById('emojiPanel');
+    if (panel && toggle && !toggle.contains(e.target) && !panel.contains(e.target)) {
+        panel.style.display = 'none';
+    }
+});
+
+// ════════════════════════════════════════════════════
+// MODAL OPEN/CLOSE — adapté pour le nouvel éditeur
+// ════════════════════════════════════════════════════
+
+function resetEditor() {
+    document.getElementById('annContentSimple').value = '';
+    document.getElementById('colLeftTitle').value   = '';
+    document.getElementById('colRightTitle').value  = '';
+    document.getElementById('colLeftContent').value  = '';
+    document.getElementById('colRightContent').value = '';
+    document.getElementById('annContent').value = '';
+    document.getElementById('previewBox').style.display = 'none';
+    setMode('simple');
+}
+
+function loadContentIntoEditor(htmlContent) {
+    // Détecter si le contenu est en mode 2 colonnes (contient notre signature grid)
+    if (htmlContent && htmlContent.includes('grid-template-columns:1fr 1fr')) {
+        setMode('columns');
+        // Parser les titres et contenu via regex simple
+        const ltMatch = htmlContent.match(/font-weight:800;color:#fca5a5[^>]*>([^<]*)</);
+        const rtMatch = htmlContent.match(/font-weight:800;color:#6ee7b7[^>]*>([^<]*)</);
+        if (ltMatch) document.getElementById('colLeftTitle').value  = ltMatch[1];
+        if (rtMatch) document.getElementById('colRightTitle').value = rtMatch[1];
+        // Pour le contenu des colonnes on remet le HTML brut
+        const lcMatch = htmlContent.match(/color:#fca5a5[^<]*<\/div>\s*<div[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<div/);
+        const rcMatch = htmlContent.match(/color:#6ee7b7[^<]*<\/div>\s*<div[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/);
+        if (lcMatch) document.getElementById('colLeftContent').value  = lcMatch[1].trim();
+        if (rcMatch) document.getElementById('colRightContent').value = rcMatch[1].trim();
+    } else {
+        setMode('simple');
+        document.getElementById('annContentSimple').value = htmlContent || '';
+    }
+    syncContent();
+}
+
+// ── Initialisation sécurisée du modal ──
+let _modal = null;
+function getModal() {
+    if (!_modal) {
+        const el = document.getElementById('annModal');
+        if (el && typeof bootstrap !== 'undefined') {
+            _modal = new bootstrap.Modal(el);
+        }
+    }
+    return _modal;
+}
+
+// ── Ouvrir modal création ──
+function openCreateModal() {
+    document.getElementById('annId').value = '';
+    document.getElementById('annForm').reset();
+    document.getElementById('existingImages').innerHTML = '';
+    document.getElementById('imagePreview').innerHTML = '';
+    document.getElementById('annKeepImages').value = '[]';
+    document.getElementById('modalTitle').textContent = 'Nouvelle annonce';
+    document.getElementById('saveLabel').textContent = "Créer l'annonce";
+    const today = new Date().toISOString().split('T')[0];
+    const end = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
+    document.getElementById('annStartDate').value = today;
+    document.getElementById('annEndDate').value = end;
+    resetEditor();
+    getModal()?.show();
+}
+
+// ── Ouvrir modal édition ──
+function openEditModal(ann) {
+    document.getElementById('annId').value = ann.id;
+    document.getElementById('annTitle').value = ann.title || '';
+    document.getElementById('annBadgeLabel').value = ann.badge_label || '';
+    document.getElementById('annBadgeType').value = ann.badge_type || 'default';
+    document.getElementById('annStartDate').value = ann.start_date || '';
+    document.getElementById('annEndDate').value = ann.end_date || '';
+    document.getElementById('annAutoSkip').value = ann.auto_skip_seconds || 15;
+    document.getElementById('annIsActive').checked = !!ann.is_active;
+    document.getElementById('modalTitle').textContent = 'Modifier l\'annonce';
+    document.getElementById('saveLabel').textContent = 'Enregistrer les modifications';
+    loadContentIntoEditor(ann.content || '');
+
+    // Afficher images existantes
+    const existDiv = document.getElementById('existingImages');
+    existDiv.innerHTML = '';
+    let keep = [];
+    try { keep = JSON.parse(ann.images || '[]'); } catch(e) {}
+    keep.forEach((src, i) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'position:relative;';
+        div.innerHTML = `<img src="${src}" style="width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1);">
+            <button type="button" onclick="removeExisting(this,'${src}')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;line-height:1;">✕</button>`;
+        existDiv.appendChild(div);
+    });
+    document.getElementById('annKeepImages').value = JSON.stringify(keep);
+    document.getElementById('imagePreview').innerHTML = '';
+    getModal()?.show();
+}
+
+function removeExisting(btn, src) {
+    btn.parentElement.remove();
+    let keep = JSON.parse(document.getElementById('annKeepImages').value || '[]');
+    keep = keep.filter(s => s !== src);
+    document.getElementById('annKeepImages').value = JSON.stringify(keep);
+}
+
+// ── Prévisualisation images ──
+function previewImages(input) {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    Array.from(input.files).slice(0, 5).forEach(f => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const div = document.createElement('div');
+            div.innerHTML = `<img src="${e.target.result}" style="width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,212,170,.3);">`;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(f);
+    });
+}
+
+// ── Sauvegarder (créer ou modifier) ──
+async function saveAnn() {
+    syncContent(); // s'assurer que le champ caché est à jour
+    const id = document.getElementById('annId').value;
+    if (!document.getElementById('annContent').value.trim()) {
+        toast('Le contenu ne peut pas être vide', 'error'); return;
+    }
+    const fd = new FormData(document.getElementById('annForm'));
+    fd.set('is_active', document.getElementById('annIsActive').checked ? 1 : 0);
+
+    const url = id ? `/admin/announcements/update/${id}` : '/admin/announcements/create';
+    try {
+        const res = await fetch(url, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            getModal()?.hide();
+            toast(id ? 'Annonce modifiée ✓' : 'Annonce créée ✓', 'success');
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            toast(data.message || 'Erreur', 'error');
+        }
+    } catch(e) { toast('Erreur réseau', 'error'); }
+}
+
+// ── Toggle actif/inactif ──
+async function toggleAnn(id, currentState) {
+    const res = await fetch(`/admin/announcements/toggle/${id}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+        toast(currentState ? 'Annonce désactivée' : 'Annonce activée', 'info');
+        setTimeout(() => location.reload(), 800);
+    }
+}
+
+// ── Supprimer ──
+async function deleteAnn(id, title) {
+    if (!confirm(`Supprimer l'annonce "${title}" ? Cette action est irréversible.`)) return;
+    const res = await fetch(`/admin/announcements/delete/${id}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+        document.getElementById(`ann-${id}`)?.remove();
+        toast('Annonce supprimée', 'info');
+    }
+}
+
+// ── Toast ──
+function toast(msg, type='info') {
+    const colors = { success:'#00d4aa', error:'#ef4444', info:'#f59e0b' };
+    const box = document.getElementById('toastBox');
+    const t = document.createElement('div');
+    t.style.cssText = `background:#1a1a2e;border:1px solid ${colors[type]};color:#e0e6f8;border-radius:10px;padding:.75rem 1.1rem;font-size:.85rem;animation:slideUp .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4);`;
+    t.innerHTML = `<i class="fas fa-circle" style="color:${colors[type]};font-size:.5rem;vertical-align:middle;margin-right:.5rem;"></i>${msg}`;
+    box.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+</script>
+{% endblock %}
