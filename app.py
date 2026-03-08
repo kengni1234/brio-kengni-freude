@@ -62,7 +62,7 @@ AGENDA_EVENT_COLORS = {
 
 # ── Informations de paiement Kengni Trading Academy ─────────────────────────
 PAYMENT_INFO = {
-    'orange_money': {'numero': '695 072 659', 'nom': 'Fabrice Kengni', 'label': 'Orange Money'},
+    'orange_money': {'numero': '695 072 759', 'nom': 'Fabrice Kengni', 'label': 'Orange Money'},
     'mtn_money':    {'numero': '670 695 946', 'nom': 'Fabrice Kengni', 'label': 'MTN MoMo'},
     'paypal':       {'adresse': 'fabrice.kengni@icloud.com', 'label': 'PayPal'},
     'crypto':       {'adresse': 'fabrice.kengni@icloud.com', 'label': 'Crypto (via email)'},
@@ -2294,6 +2294,8 @@ def export_portfolio():
                             'message': 'ReportLab non installé. Installez avec: pip install reportlab'}), 500
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/export-finances')
 @login_required
 def export_finances():
     """Export financial transactions to various formats"""
@@ -3244,7 +3246,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     c.setFont('Helvetica-Bold', 9.5)
     c.drawRightString(width - 12 * mm, y_top, 'Fabrice Kengni Nzoyem')
     c.setFont('Helvetica', 7)
-    c.drawRightString(width - 12 * mm, y_top - 5 * mm,   'WhatsApp : +237 695 072 659')
+    c.drawRightString(width - 12 * mm, y_top - 5 * mm,   'WhatsApp : +237 695 072 759')
     c.drawRightString(width - 12 * mm, y_top - 9.5 * mm,  'kengni.pythonanywhere.com')
     c.drawRightString(width - 12 * mm, y_top - 14 * mm,   'Kengni Trading Academy')
     c.drawRightString(width - 12 * mm, y_top - 18.5 * mm,
@@ -3264,7 +3266,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
 
         qr_data = (
             'https://kengni.pythonanywhere.com/inscription-trading'
-            '?ref=kf_doc&wa=237695072659'
+            '?ref=kf_doc&wa=237695072759'
         )
         qr = _qrcode.QRCode(
             version=2, box_size=5, border=2,
@@ -3331,7 +3333,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
         'Document certifié — Kengni Finance v2.1 — © 2025 Tous droits réservés')
     c.setFont('Helvetica', 6)
     c.drawCentredString(width / 2, ftr_h - 7.5 * mm,
-        'k-ni chez Htech-training  ·  +237 695 072 659  ·  WhatsApp : +237 695 072 659')
+        'k-ni chez Htech-training  ·  +237 695 072 759  ·  WhatsApp : +237 695 072 759')
     c.setFont('Helvetica', 5.5)
     c.drawCentredString(width / 2, ftr_h - 11 * mm,
         f"Généré le {now.strftime('%d/%m/%Y à %H:%M')}  ·  Document confidentiel  ·  kengni.pythonanywhere.com")
@@ -6841,6 +6843,385 @@ def api_news_analyze(article_id):
 # ═══════════════════════════════════════════════════════════════════
 # FIN MODULE WORD DOCUMENTS + NEWS API
 # ═══════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+# MODULE BOUTIQUE E-COMMERCE — Produits physiques (Alibaba/AliExpress)
+# ═══════════════════════════════════════════════════════════════════
+
+def init_shop_db():
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        conn.executescript("""
+        CREATE TABLE IF NOT EXISTS shop_products (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            name           TEXT    NOT NULL,
+            description    TEXT    DEFAULT '',
+            features       TEXT    DEFAULT '',
+            category       TEXT    NOT NULL DEFAULT 'electronique',
+            price          REAL    NOT NULL DEFAULT 0,
+            original_price REAL    DEFAULT 0,
+            stock          INTEGER DEFAULT 10,
+            image_url      TEXT    DEFAULT '',
+            badge          TEXT    DEFAULT '',
+            delivery_info  TEXT    DEFAULT 'Livraison 3-7 jours',
+            reviews_count  INTEGER DEFAULT 0,
+            is_active      INTEGER DEFAULT 1,
+            created_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
+            updated_at     TEXT    DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS shop_orders (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_name  TEXT    DEFAULT '',
+            customer_phone TEXT    DEFAULT '',
+            customer_city  TEXT    DEFAULT '',
+            items_summary  TEXT    DEFAULT '',
+            items_json     TEXT    DEFAULT '[]',
+            total          REAL    NOT NULL DEFAULT 0,
+            pay_method     TEXT    DEFAULT 'orange_money',
+            note           TEXT    DEFAULT '',
+            status         TEXT    DEFAULT 'pending',
+            created_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
+            updated_at     TEXT    DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+        conn.commit()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM shop_products")
+        if cur.fetchone()[0] == 0:
+            demos = [
+                ("Écouteurs Bluetooth TWS Pro",
+                 "Écouteurs sans fil avec réduction de bruit active. Autonomie 30h avec le boîtier. Compatible iOS & Android. Son cristallin et basses profondes.",
+                 "✔ Réduction bruit active (ANC)\n✔ Autonomie 8h + 22h boîtier\n✔ Résistant à l'eau IPX5\n✔ Connexion Bluetooth 5.3\n✔ Micro HD intégré",
+                 "electronique", 8500, 15000, 25, "", "hot", "Livraison 3-5 jours"),
+
+                ("Montre Connectée Sport",
+                 "Smartwatch multifonction : fréquence cardiaque, suivi du sommeil, GPS, notifications. Bracelet silicone lavable. Étanche 5ATM.",
+                 "✔ Écran AMOLED 1.8 pouces\n✔ GPS intégré\n✔ Fréquence cardiaque 24/7\n✔ +100 modes sport\n✔ Autonomie 7 jours",
+                 "electronique", 12000, 22000, 15, "", "hot", "Livraison 3-5 jours"),
+
+                ("Sac à Dos Imperméable 30L",
+                 "Sac à dos résistant à l'eau, port USB intégré pour recharger votre téléphone. Plusieurs compartiments. Idéal école, bureau, voyage.",
+                 "✔ Matière Oxford imperméable\n✔ Port USB de charge externe\n✔ Compartiment laptop 15,6\"\n✔ Rembourrage dorsal ergonomique\n✔ Volume 30 litres",
+                 "mode", 7500, 12000, 30, "", "new", "Livraison 4-7 jours"),
+
+                ("Lampe de Bureau LED Rechargeable",
+                 "Lampe tactile 3 niveaux de luminosité, rechargeable USB. Idéale pour travailler ou étudier. Protège les yeux. Design moderne compact.",
+                 "✔ 3 températures de couleur\n✔ Rechargeable (batterie 2000mAh)\n✔ Tactile + intensité réglable\n✔ Col flexible 360°\n✔ Autonomie 5-8 heures",
+                 "maison", 4500, 8000, 40, "", "new", "Livraison 3-5 jours"),
+
+                ("Organisateur de Bureau en Bois",
+                 "Organisateur multifonction en bois naturel : stylos, téléphone, notes, câbles. Élégant et fonctionnel. Parfait pour le bureau ou la chambre.",
+                 "✔ Bois naturel éco-responsable\n✔ 5 compartiments\n✔ Support téléphone intégré\n✔ Espace câbles discret\n✔ Finition vernis mat",
+                 "maison", 5500, 9000, 20, "", "", "Livraison 5-7 jours"),
+
+                ("Power Bank 20000mAh Ultra-Slim",
+                 "Batterie externe grande capacité, ultra-plate. Charge rapide 22.5W. 2 ports USB-A + 1 USB-C. Idéale pour voyager sans tomber en panne.",
+                 "✔ Capacité 20000mAh\n✔ Charge rapide 22.5W\n✔ 3 ports simultanés\n✔ Indicateur LED précis\n✔ Compatible tous appareils",
+                 "electronique", 9000, 16000, 35, "", "promo", "Livraison 3-5 jours"),
+
+                ("Set Cuisine 5 Pièces Inox",
+                 "Ensemble de spatules et ustensiles de cuisine en inox et silicone haute température. Résistant, lavable au lave-vaisselle, anti-rayures.",
+                 "✔ Inox 304 alimentaire\n✔ Manche silicone anti-chaleur\n✔ Résistant jusqu'à 230°C\n✔ Lavable lave-vaisselle\n✔ 5 ustensiles inclus",
+                 "maison", 6000, 10000, 18, "", "", "Livraison 5-7 jours"),
+
+                ("Filet de Football 120×80cm",
+                 "Filet de but de football taille réduite, idéal pour l'entraînement individuel ou les petits terrains. Tube acier + filet polyester.",
+                 "✔ Structure acier galvanisé\n✔ Filet polyester renforcé\n✔ Montage sans outils\n✔ Piquets de fixation inclus\n✔ Adapté enfants & adultes",
+                 "sport", 11000, 18000, 10, "", "new", "Livraison 5-10 jours"),
+
+                ("Vélo Enfant 16 Pouces",
+                 "Vélo pour enfants 4-8 ans avec roues stabilisatrices, cadre acier robuste, freins V-brake, selle réglable. Couleurs vives.",
+                 "✔ Cadre acier résistant\n✔ Roues stabilisatrices incluses\n✔ Freins V-brake avant/arrière\n✔ Selle et guidon réglables\n✔ Cloché et réflecteurs",
+                 "sport", 28000, 45000, 8, "", "hot", "Livraison 7-14 jours"),
+
+                ("Chaussures de Course Running",
+                 "Chaussures légères et respirantes pour la course à pied. Semelle EVA amortissante, mesh technique anti-transpiration. Unisexe.",
+                 "✔ Mesh respirant ultra-léger\n✔ Semelle EVA amortissante\n✔ Grip extérieur tout terrain\n✔ Disponible tailles 36-46\n✔ Poids 280g seulement",
+                 "sport", 14000, 25000, 22, "", "promo", "Livraison 5-7 jours"),
+
+                ("Climatiseur Portable USB",
+                 "Mini climatiseur de bureau refroidissement par eau. Silencieux, 3 vitesses, réservoir 500ml. Parfait pour les espaces de travail.",
+                 "✔ Refroidissement par évaporation\n✔ 3 vitesses de ventilation\n✔ Humidificateur intégré\n✔ Réservoir 500ml\n✔ Silencieux <40dB",
+                 "maison", 7000, 12000, 14, "", "hot", "Livraison 3-5 jours"),
+
+                ("Trousse Maquillage 24 Pièces",
+                 "Set complet de pinceaux de maquillage professionnel avec trousse de rangement. Poils synthétiques, doux et lavables. Idéal débutant et pro.",
+                 "✔ 24 pinceaux inclus\n✔ Poils synthétiques premium\n✔ Manche ergonomique aluminium\n✔ Trousse de rangement fournie\n✔ Facile à laver",
+                 "beaute", 5000, 9500, 30, "", "new", "Livraison 4-6 jours"),
+            ]
+            cur.executemany("""
+                INSERT INTO shop_products
+                (name,description,features,category,price,original_price,
+                 stock,image_url,badge,delivery_info)
+                VALUES (?,?,?,?,?,?,?,?,?,?)
+            """, demos)
+            conn.commit()
+    except Exception as e:
+        print(f"[Shop] init error: {e}")
+    finally:
+        conn.close()
+
+try:
+    init_shop_db()
+except Exception as _e:
+    print(f"[Shop] init skipped: {_e}")
+
+
+@app.route('/shop')
+def shop():
+    conn = get_db_connection()
+    products, orders_count = [], 0
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT * FROM shop_products WHERE is_active=1
+            ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END,
+                     created_at DESC
+        """)
+        products = [dict(r) for r in cur.fetchall()]
+        cur.execute("SELECT COUNT(*) FROM shop_orders")
+        orders_count = cur.fetchone()[0] or 0
+    except Exception as e:
+        print(f"[Shop] {e}")
+    finally:
+        if conn: conn.close()
+    return render_template('shop.html', products=products, orders_count=orders_count)
+
+
+@app.route('/shop/order', methods=['POST'])
+def shop_create_order():
+    import json as _json
+    data = request.get_json(force=True, silent=True) or {}
+    items          = data.get('items', [])
+    total          = float(data.get('total', 0) or 0)
+    customer_name  = (data.get('name') or '').strip()
+    customer_phone = (data.get('phone') or '').strip()
+    customer_city  = (data.get('city') or '').strip()
+    pay_method     = data.get('pay_method', 'orange_money')
+    note           = data.get('note', '')
+
+    if not items or not customer_name:
+        return jsonify({'success': False, 'error': 'Données manquantes'})
+
+    items_summary = ', '.join(f"{i.get('name','?')} ×{i.get('qty',1)}" for i in items)
+
+    conn = get_db_connection()
+    order_id = None
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO shop_orders
+            (customer_name, customer_phone, customer_city,
+             items_summary, items_json, total, pay_method, note, status)
+            VALUES (?,?,?,?,?,?,?,?,'pending')
+        """, (customer_name, customer_phone, customer_city,
+              items_summary, _json.dumps(items, ensure_ascii=False),
+              total, pay_method, note))
+        conn.commit()
+        order_id = cur.lastrowid
+        # Décrémente stock
+        for item in items:
+            pid = item.get('id')
+            qty = int(item.get('qty', 1))
+            if pid:
+                cur.execute("""
+                    UPDATE shop_products
+                    SET stock = MAX(0, stock - ?), updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ? AND stock > 0
+                """, (qty, pid))
+        conn.commit()
+        # Notif admin
+        try:
+            cur.execute("""
+                INSERT INTO notifications (user_id,type,title,message,is_read,created_at)
+                SELECT id,'shop','🛒 Nouvelle commande',?,0,CURRENT_TIMESTAMP
+                FROM users WHERE role IN ('admin','superadmin') LIMIT 3
+            """, (f"#{order_id} — {customer_name} — {items_summary} — {total:,.0f} XAF",))
+            conn.commit()
+        except Exception:
+            pass
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+    return jsonify({'success': True, 'order_id': order_id})
+
+
+@app.route('/shop/admin')
+@login_required
+def shop_admin():
+    if session.get('role') not in ('admin', 'superadmin'):
+        return redirect(url_for('shop'))
+    conn = get_db_connection()
+    products, orders = [], []
+    total_revenue = pending_count = active_count = 0
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM shop_products ORDER BY created_at DESC")
+        products = [dict(r) for r in cur.fetchall()]
+        cur.execute("SELECT * FROM shop_orders ORDER BY created_at DESC LIMIT 200")
+        orders = [dict(r) for r in cur.fetchall()]
+        cur.execute("SELECT COALESCE(SUM(total),0) FROM shop_orders WHERE status='paid'")
+        total_revenue = cur.fetchone()[0] or 0
+        pending_count = sum(1 for o in orders if o['status']=='pending')
+        active_count  = sum(1 for p in products if p['is_active'])
+    except Exception as e:
+        print(f"[ShopAdmin] {e}")
+    finally:
+        if conn: conn.close()
+    return render_template('shop_admin.html',
+        products=products, orders=orders,
+        total_revenue=total_revenue,
+        pending_count=pending_count, active_count=active_count)
+
+
+@app.route('/shop/api/product', methods=['POST'])
+@login_required
+def shop_create_product():
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    name = (d.get('name') or '').strip()
+    if not name: return jsonify({'success':False,'error':'Nom requis'})
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO shop_products
+            (name,description,features,category,price,original_price,
+             stock,image_url,badge,delivery_info,is_active)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        """, (name, d.get('description',''), d.get('features',''),
+              d.get('category','electronique'),
+              float(d.get('price',0) or 0), float(d.get('original_price',0) or 0),
+              int(d.get('stock',10)), d.get('image_url',''),
+              d.get('badge',''), d.get('delivery_info','Livraison 3-7 jours'),
+              1 if d.get('is_active', True) else 0))
+        conn.commit()
+        return jsonify({'success':True,'id':cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/product/<int:pid>', methods=['PUT'])
+@login_required
+def shop_update_product(pid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        conn.execute("""
+            UPDATE shop_products SET
+                name=?,description=?,features=?,category=?,price=?,
+                original_price=?,stock=?,image_url=?,badge=?,
+                delivery_info=?,is_active=?,updated_at=CURRENT_TIMESTAMP
+            WHERE id=?
+        """, ((d.get('name') or '').strip(), d.get('description',''),
+              d.get('features',''), d.get('category','electronique'),
+              float(d.get('price',0) or 0), float(d.get('original_price',0) or 0),
+              int(d.get('stock',10)), d.get('image_url',''),
+              d.get('badge',''), d.get('delivery_info','Livraison 3-7 jours'),
+              1 if d.get('is_active', True) else 0, pid))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/product/<int:pid>/toggle', methods=['POST'])
+@login_required
+def shop_toggle_product(pid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE shop_products SET is_active=1-is_active, updated_at=CURRENT_TIMESTAMP WHERE id=?", (pid,))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/product/<int:pid>', methods=['DELETE'])
+@login_required
+def shop_delete_product(pid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM shop_products WHERE id=?", (pid,))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/product/upload-image', methods=['POST'])
+@login_required
+def shop_upload_product_image():
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    if 'image' not in request.files:
+        return jsonify({'success':False,'error':'Aucun fichier'})
+    f = request.files['image']
+    if not f or not allowed_file(f.filename):
+        return jsonify({'success':False,'error':'Extension invalide (png, jpg, gif, webp)'})
+    try:
+        ext   = f.filename.rsplit('.',1)[1].lower()
+        fname = secure_filename(f'shop_{datetime.now().strftime("%Y%m%d_%H%M%S%f")}.{ext}')
+        dest  = os.path.join(app.config['UPLOAD_FOLDER'], 'shop')
+        os.makedirs(dest, exist_ok=True)
+        f.save(os.path.join(dest, fname))
+        return jsonify({'success':True, 'url':f'/static/uploads/shop/{fname}'})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+
+
+@app.route('/shop/api/order/<int:oid>/status', methods=['POST'])
+@login_required
+def shop_update_order_status(oid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    status = (request.get_json(force=True, silent=True) or {}).get('status','pending')
+    if status not in ('pending','paid','shipped','delivered','cancelled'):
+        return jsonify({'success':False,'error':'Statut invalide'})
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE shop_orders SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?", (status,oid))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/order/<int:oid>', methods=['DELETE'])
+@login_required
+def shop_delete_order(oid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM shop_orders WHERE id=?", (oid,))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+# ── FIN MODULE BOUTIQUE ─────────────────────────────────────────────
+
 if __name__ == '__main__':
 
     # Initialize database on startup
