@@ -754,6 +754,27 @@
             <!-- ── BOUTIQUE ── -->
             <li><div class="sidebar-section-label">Boutique</div></li>
             <li>
+                <a href="/shop" class="{% if request.endpoint == 'shop' %}active{% endif %}" style="position:relative;">
+                    <i class="fas fa-store"></i>
+                    <span>Boutique</span>
+                    <span style="
+                        position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                        background:linear-gradient(135deg,#10b981,#00ff88);
+                        color:#000; border-radius:20px;
+                        padding:.05rem .45rem; font-size:.58rem; font-weight:800;
+                        line-height:1.6;
+                    ">NEW</span>
+                </a>
+            </li>
+            {% if session.get('role') in ('admin', 'superadmin') %}
+            <li>
+                <a href="/shop/admin" class="{% if request.endpoint == 'shop_admin' %}active{% endif %}">
+                    <i class="fas fa-boxes"></i>
+                    <span>Gérer Boutique</span>
+                </a>
+            </li>
+            {% endif %}
+            <li>
                 <a href="/documents/access" class="{% if 'documents' in request.endpoint %}active{% endif %}">
                     <i class="fas fa-book-open"></i>
                     <span>Documents</span>

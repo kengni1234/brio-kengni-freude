@@ -1,5 +1,30 @@
 {% extends "base.html" %}
-{% block title %}💬 Chat — Kengni Finance{% endblock %}
+{% block title %}💬 Chat — Kengni Finance
+// ── Mobile sidebar toggle ──────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.querySelector('.chat-sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('sidebarToggle');
+  const isOpen = sb.classList.toggle('open');
+  ov.classList.toggle('open', isOpen);
+  btn.textContent = isOpen ? '✕' : '👥';
+}
+function closeSidebar() {
+  const sb = document.querySelector('.chat-sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('sidebarToggle');
+  sb.classList.remove('open');
+  ov.classList.remove('open');
+  btn.textContent = '👥';
+}
+// Fermer sidebar au click sur un membre
+document.querySelectorAll('.member-row').forEach(r => {
+  r.addEventListener('click', () => {
+    if (window.innerWidth <= 768) closeSidebar();
+  });
+});
+
+{% endblock %}
 
 {% block content %}
 <style>
@@ -595,11 +620,141 @@
 @keyframes decrypt{0%{filter:blur(8px);opacity:.2;}100%{filter:blur(0);opacity:1;}}
 .decrypting { animation:decrypt .45s ease forwards; }
 
-@media(max-width:640px){
-  .chat-sidebar{display:none;}
-  .signal-modal{max-width:100%;}
-  .sm-row, .sm-row-3{grid-template-columns:1fr;}
+
+/* ══════════════════════════════════════════════════════
+   CHAT.HTML — RESPONSIVE MOBILE (toutes tailles)
+══════════════════════════════════════════════════════ */
+
+/* Bouton toggle sidebar mobile */
+.sidebar-toggle-btn {
+  display: none;
+  position: fixed;
+  bottom: 90px;
+  left: 12px;
+  z-index: 500;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--green2), #009944);
+  border: none;
+  color: #000;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0,200,83,.4);
+  align-items: center;
+  justify-content: center;
 }
+
+/* ── 768px : tablette portrait ── */
+@media (max-width: 768px) {
+  .chat-root {
+    height: calc(100vh - 70px);
+    border-radius: 12px;
+  }
+  .chat-sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0; bottom: 0;
+    width: 240px;
+    z-index: 400;
+    transition: left .3s ease;
+    box-shadow: 4px 0 30px rgba(0,0,0,.7);
+  }
+  .chat-sidebar.open { left: 0; }
+  .sidebar-toggle-btn { display: flex; }
+  .chat-header { padding: 12px 14px; }
+  .header-icon { width: 36px; height: 36px; font-size: 1.1rem; }
+  .header-title { font-size: 15px; }
+  .header-sub { font-size: 11px; }
+  .online-pill { font-size: 11px; padding: 4px 9px; }
+  .chat-tab { font-size: 12px; padding: 10px 6px; }
+  .chat-messages { padding: 14px 12px; }
+  .chat-msg { max-width: 90%; }
+  .msg-bubble { font-size: 14px; padding: 10px 14px; }
+  .ai-bubble { font-size: 14px; padding: 10px 14px; max-width: 90%; }
+  .chat-input-area { padding: 10px 12px; }
+  .chat-textarea { font-size: 14px; padding: 10px 12px; min-height: 44px; }
+  .cbtn { width: 42px; height: 42px; font-size: 16px; border-radius: 11px; }
+  .cbtn-send { font-size: 19px; }
+  .input-row { gap: 6px; }
+  .emoji-picker { width: 240px; bottom: 56px; }
+  .ej { font-size: 20px; }
+  .signal-modal { max-width: 100%; margin: 0 8px; }
+  .sm-body { padding: 14px 16px; }
+  .sm-row, .sm-row-3 { grid-template-columns: 1fr 1fr; }
+  .glow-toast { bottom: 14px; right: 14px; font-size: 13px; }
+  .ai-sug { font-size: 12px; padding: 6px 12px; }
+  .ai-welcome h3 { font-size: 16px; }
+  .ai-welcome p { font-size: 13px; }
+}
+
+/* ── 480px : mobile standard ── */
+@media (max-width: 480px) {
+  .chat-root {
+    height: calc(100vh - 60px);
+    border-radius: 8px;
+  }
+  .chat-header { padding: 10px 12px; gap: 10px; }
+  .header-icon { width: 32px; height: 32px; font-size: 1rem; }
+  .header-title { font-size: 14px; }
+  .online-pill { display: none; }
+  .chat-tab { font-size: 11px; padding: 9px 4px; }
+  .chat-messages { padding: 10px 8px; gap: 4px; }
+  .chat-msg { max-width: 94%; gap: 6px; }
+  .msg-av { width: 28px; height: 28px; font-size: 11px; }
+  .msg-bubble { font-size: 13.5px; padding: 9px 12px; border-radius: 16px 16px 16px 4px; }
+  .chat-msg.is-me .msg-bubble { border-radius: 16px 16px 4px 16px; }
+  .msg-name { font-size: 10px; }
+  .msg-time { font-size: 10px; }
+  .chat-input-area { padding: 8px 10px; }
+  .chat-textarea { font-size: 14px; padding: 9px 11px; min-height: 42px; max-height: 100px; }
+  .cbtn { width: 38px; height: 38px; font-size: 15px; border-radius: 10px; }
+  .cbtn-send { font-size: 17px; }
+  .cbtn-lock, .cbtn-img { display: none; } /* Masquer sur très petit */
+  .input-row { gap: 5px; }
+  .emoji-picker { width: 220px; left: -10px; }
+  .sm-row { grid-template-columns: 1fr; }
+  .sm-row-3 { grid-template-columns: 1fr 1fr; }
+  .sm-header { padding: 14px 16px 10px; }
+  .sm-title { font-size: 14px; }
+  .sm-footer { gap: 8px; }
+  .sm-btn { padding: 9px 16px; font-size: 13px; }
+  .ai-panel { padding: 14px 10px; }
+  .ai-icon { width: 52px; height: 52px; font-size: 1.6rem; }
+  .ai-sugs { gap: 6px; }
+  .ai-sug { font-size: 11px; padding: 5px 10px; }
+  .msg-image-wrap { max-width: 240px; }
+  .tag-chip { font-size: 11px; padding: 2px 9px; }
+  .react-badge { font-size: 13px; padding: 2px 7px; }
+  .sidebar-toggle-btn { bottom: 76px; left: 10px; width: 38px; height: 38px; font-size: 16px; }
+}
+
+/* ── 360px : très petits mobiles ── */
+@media (max-width: 360px) {
+  .chat-root { height: calc(100vh - 55px); border-radius: 6px; }
+  .header-title { font-size: 13px; }
+  .header-sub { display: none; }
+  .chat-tab { font-size: 10px; padding: 8px 3px; }
+  .chat-messages { padding: 8px 6px; }
+  .chat-msg { max-width: 97%; }
+  .msg-bubble { font-size: 13px; padding: 8px 11px; }
+  .chat-input-area { padding: 7px 8px; }
+  .cbtn { width: 36px; height: 36px; font-size: 14px; }
+  .cbtn-emoji { display: none; }
+  .chat-textarea { font-size: 13px; }
+  .ai-welcome h3 { font-size: 15px; }
+  .ai-welcome p { font-size: 12px; }
+}
+
+/* Overlay sidebar mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 399;
+}
+.sidebar-overlay.open { display: block; }
+
 </style>
 
 <!-- ══ MODAL SIGNAL ══ -->
@@ -678,6 +833,10 @@
 <input type="file" id="imgFileInput" accept="image/*,image/gif" multiple style="display:none" onchange="handleImgSelect(event)">
 
 <div class="chat-root">
+<!-- Overlay sidebar mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<!-- Bouton toggle sidebar mobile -->
+<button class="sidebar-toggle-btn" id="sidebarToggle" onclick="toggleSidebar()" title="Membres">👥</button>
   <!-- SIDEBAR -->
   <div class="chat-sidebar">
     <div class="sidebar-top">👥 Membres · {{ members|length }}</div>
