@@ -750,7 +750,7 @@
 
   <!-- STAFF MODAL -->
   <div id="staffModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);
-       display:none;align-items:center;justify-content:center;padding:1rem">
+       align-items:center;justify-content:center;padding:1rem">
     <div style="background:var(--secondary-color);border-radius:18px;width:100%;max-width:560px;
                 max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)">
       <!-- Modal header -->
@@ -1004,9 +1004,10 @@ function toast(m,ok=true){const t=document.getElementById('atoast');document.get
 
 const SECS=['Dash','Prod','New','Ord','Staff','Acc'];
 function go(n){
+  const displayMap = {dash:'block',prod:'block',new:'block',ord:'block',staff:'block',acc:'block'};
   SECS.forEach(s=>{
     const el=document.getElementById('sec'+s);
-    if(el) el.style.display=s.toLowerCase()===n?'':'none';
+    if(el) el.style.display=s.toLowerCase()===n?(displayMap[s.toLowerCase()]||'block'):'none';
     const b=document.getElementById('nav'+s);if(b)b.classList.toggle('active',s.toLowerCase()===n);
     const bb=document.getElementById('bnav'+s);if(bb)bb.classList.toggle('active',s.toLowerCase()===n);
   });
