@@ -4,978 +4,615 @@
 
 {% block content %}
 <style>
-
-/* ══ STAFF ASSISTANCE ═══════════════════════════════════════ */
-.staff-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1.1rem; }
-.staff-card {
-    background:var(--secondary-color); border:1px solid var(--border-color);
-    border-radius:16px; padding:1.1rem;
-    display:flex; gap:1rem; align-items:flex-start;
-    transition:border-color .2s, box-shadow .2s;
-}
-.staff-card:hover { border-color:var(--primary-color); box-shadow:0 4px 20px rgba(0,212,170,.08); }
-.staff-av-wrap { position:relative; flex-shrink:0; }
-.staff-av {
-    width:64px; height:64px; border-radius:14px;
-    object-fit:cover; background:var(--bg-color);
-    border:2px solid var(--border-color);
-    display:block;
-}
-.staff-av-ph {
-    width:64px; height:64px; border-radius:14px; flex-shrink:0;
-    background:linear-gradient(135deg,rgba(0,212,170,.15),rgba(0,212,170,.05));
-    border:2px solid rgba(0,212,170,.25);
-    display:flex; align-items:center; justify-content:center;
-    font-size:1.6rem; font-weight:800; color:var(--primary-color);
-}
-.staff-av-upload {
-    position:absolute; bottom:-6px; right:-6px;
-    width:24px; height:24px; border-radius:50%;
-    background:var(--primary-color); color:#fff; border:none;
-    font-size:.65rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    box-shadow:0 2px 6px rgba(0,212,170,.4);
-}
-.staff-av-upload:hover { transform:scale(1.1); }
-.staff-role-badge {
-    display:inline-flex; align-items:center; gap:.3rem;
-    padding:.2rem .6rem; border-radius:20px;
-    font-size:.68rem; font-weight:700; margin-bottom:.4rem;
-}
-.staff-role-badge.tech { background:rgba(99,102,241,.12); color:#818cf8; border:1px solid rgba(99,102,241,.2); }
-.staff-role-badge.comm { background:rgba(245,158,11,.1); color:#f59e0b; border:1px solid rgba(245,158,11,.2); }
-.staff-info { flex:1; min-width:0; }
-.staff-name { font-size:.95rem; font-weight:700; color:var(--text-primary); margin-bottom:.25rem; }
-.staff-bio  { font-size:.76rem; color:var(--text-secondary); line-height:1.45; margin-bottom:.4rem;
-               display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.staff-contacts { display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.5rem; }
-.staff-contact-chip {
-    font-size:.69rem; padding:.2rem .55rem; border-radius:8px;
-    background:var(--bg-color); border:1px solid var(--border-color);
-    color:var(--text-secondary); display:flex; align-items:center; gap:.28rem;
-}
-.staff-contact-chip i { color:var(--primary-color); font-size:.6rem; }
-.staff-specs { display:flex; flex-wrap:wrap; gap:.3rem; margin-bottom:.5rem; }
-.staff-spec-tag {
-    font-size:.65rem; padding:.15rem .5rem; border-radius:6px;
-    background:rgba(0,212,170,.08); color:var(--primary-color);
-    border:1px solid rgba(0,212,170,.15);
-}
-.staff-actions { display:flex; gap:.4rem; flex-shrink:0; flex-direction:column; align-items:flex-end; }
-.staff-toggle {
-    display:flex; align-items:center; gap:.3rem;
-    font-size:.72rem; color:var(--text-secondary);
-}
-.staff-toggle input[type=checkbox] { cursor:pointer; accent-color:var(--primary-color); }
-.staff-edit-btn {
-    padding:.38rem .8rem; border-radius:8px;
-    background:rgba(0,212,170,.1); color:var(--primary-color);
-    border:1px solid rgba(0,212,170,.2); font-size:.75rem;
-    font-weight:600; cursor:pointer; white-space:nowrap;
-}
-.staff-edit-btn:hover { background:rgba(0,212,170,.2); }
-.staff-del-btn {
-    padding:.38rem .65rem; border-radius:8px;
-    background:rgba(239,68,68,.08); color:#f87171;
-    border:1px solid rgba(239,68,68,.15); font-size:.72rem;
-    cursor:pointer;
-}
-.staff-del-btn:hover { background:rgba(239,68,68,.15); }
-/* Staff modal form */
-.staff-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
-.staff-form-grid .fg-full { grid-column:1/-1; }
-.staff-modal-av-zone {
-    width:80px; height:80px; border-radius:16px;
-    background:var(--bg-color); border:2px dashed var(--border-color);
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer; overflow:hidden; transition:border-color .2s; position:relative;
-    flex-shrink:0;
-}
-.staff-modal-av-zone:hover { border-color:var(--primary-color); }
-.staff-modal-av-zone img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
-.staff-modal-av-zone .av-hint { font-size:.65rem; color:var(--text-secondary); text-align:center; padding:.3rem; }
-.staff-specs-input {
-    display:flex; flex-wrap:wrap; gap:.35rem; padding:.45rem;
-    border:1px solid var(--border-color); border-radius:8px; min-height:42px;
-    background:var(--bg-color); cursor:text;
-}
-.staff-spec-chip {
-    display:flex; align-items:center; gap:.25rem;
-    background:rgba(0,212,170,.1); color:var(--primary-color);
-    border-radius:6px; padding:.18rem .5rem; font-size:.73rem; font-weight:600;
-}
-.staff-spec-chip button { background:none; border:none; color:inherit; cursor:pointer; padding:0; font-size:.65rem; }
-.staff-stars { display:flex; gap:.2rem; }
-.staff-star { font-size:1.2rem; cursor:pointer; color:var(--border-color); transition:color .1s; }
-.staff-star.on { color:#f59e0b; }
-
+/* ══ STAFF ══════════════════════════════════════════════════ */
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.1rem}
+.staff-card{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:16px;padding:1.1rem;display:flex;gap:1rem;align-items:flex-start;transition:.2s}
+.staff-card:hover{border-color:var(--primary-color);box-shadow:0 4px 20px rgba(0,212,170,.08)}
+.staff-av-wrap{position:relative;flex-shrink:0}
+.staff-av{width:64px;height:64px;border-radius:14px;object-fit:cover;background:var(--bg-color);border:2px solid var(--border-color);display:block}
+.staff-av-ph{width:64px;height:64px;border-radius:14px;flex-shrink:0;background:linear-gradient(135deg,rgba(0,212,170,.15),rgba(0,212,170,.05));border:2px solid rgba(0,212,170,.25);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:var(--primary-color)}
+.staff-av-upload{position:absolute;bottom:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--primary-color);color:#fff;border:none;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,212,170,.4)}
+.staff-av-upload:hover{transform:scale(1.1)}
+.staff-role-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:20px;font-size:.68rem;font-weight:700;margin-bottom:.4rem}
+.staff-role-badge.tech{background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.2)}
+.staff-role-badge.comm{background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.2)}
+.staff-info{flex:1;min-width:0}
+.staff-name{font-size:.95rem;font-weight:700;color:var(--text-primary);margin-bottom:.25rem}
+.staff-bio{font-size:.76rem;color:var(--text-secondary);line-height:1.45;margin-bottom:.4rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.staff-contacts{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem}
+.staff-contact-chip{font-size:.69rem;padding:.2rem .55rem;border-radius:8px;background:var(--bg-color);border:1px solid var(--border-color);color:var(--text-secondary);display:flex;align-items:center;gap:.28rem}
+.staff-contact-chip i{color:var(--primary-color);font-size:.6rem}
+.staff-specs{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem}
+.staff-spec-tag{font-size:.65rem;padding:.15rem .5rem;border-radius:6px;background:rgba(0,212,170,.08);color:var(--primary-color);border:1px solid rgba(0,212,170,.15)}
+.staff-actions{display:flex;gap:.4rem;flex-shrink:0;flex-direction:column;align-items:flex-end}
+.staff-toggle{display:flex;align-items:center;gap:.3rem;font-size:.72rem;color:var(--text-secondary)}
+.staff-toggle input[type=checkbox]{cursor:pointer;accent-color:var(--primary-color)}
+.staff-edit-btn{padding:.38rem .8rem;border-radius:8px;background:rgba(0,212,170,.1);color:var(--primary-color);border:1px solid rgba(0,212,170,.2);font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.staff-edit-btn:hover{background:rgba(0,212,170,.2)}
+.staff-del-btn{padding:.38rem .65rem;border-radius:8px;background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.15);font-size:.72rem;cursor:pointer}
+.staff-del-btn:hover{background:rgba(239,68,68,.15)}
+.staff-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.staff-form-grid .fg-full{grid-column:1/-1}
+.staff-modal-av-zone{width:80px;height:80px;border-radius:16px;background:var(--bg-color);border:2px dashed var(--border-color);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:.2s;position:relative;flex-shrink:0}
+.staff-modal-av-zone:hover{border-color:var(--primary-color)}
+.staff-modal-av-zone img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.staff-modal-av-zone .av-hint{font-size:.65rem;color:var(--text-secondary);text-align:center;padding:.3rem}
+.staff-specs-input{display:flex;flex-wrap:wrap;gap:.35rem;padding:.45rem;border:1px solid var(--border-color);border-radius:8px;min-height:42px;background:var(--bg-color);cursor:text}
+.staff-spec-chip{display:flex;align-items:center;gap:.25rem;background:rgba(0,212,170,.1);color:var(--primary-color);border-radius:6px;padding:.18rem .5rem;font-size:.73rem;font-weight:600}
+.staff-spec-chip button{background:none;border:none;color:inherit;cursor:pointer;padding:0;font-size:.65rem}
+.staff-stars{display:flex;gap:.2rem}
+.staff-star{font-size:1.2rem;cursor:pointer;color:var(--border-color);transition:.1s}
+.staff-star.on{color:#f59e0b}
 /* ══ LAYOUT ══════════════════════════════════════════════ */
-.sa-wrap { display:flex; gap:0; height:calc(100vh - 120px); overflow:hidden; }
-
-/* ══ SIDEBAR NAV ═════════════════════════════════════════ */
-.sa-nav {
-    width:200px; flex-shrink:0;
-    background:var(--secondary-color);
-    border-right:1px solid var(--border-color);
-    display:flex; flex-direction:column; padding:1rem 0;
-}
-.sa-nav-btn {
-    display:flex; align-items:center; gap:.65rem;
-    padding:.7rem 1.25rem; font-size:.84rem; font-weight:600;
-    color:var(--text-secondary); border:none; background:none;
-    cursor:pointer; transition:.15s; text-align:left; width:100%;
-    border-left:3px solid transparent;
-}
-.sa-nav-btn:hover { color:var(--text-primary); background:rgba(0,212,170,.05); }
-.sa-nav-btn.active {
-    color:var(--primary-color); background:rgba(0,212,170,.08);
-    border-left-color:var(--primary-color);
-}
-.sa-nav-badge {
-    margin-left:auto; background:#ef4444;
-    color:#fff; border-radius:20px; font-size:.62rem;
-    padding:.05rem .42rem; font-weight:800;
-}
-.sa-nav-sep { height:1px; background:var(--border-color); margin:.5rem 1rem; }
-
-/* ══ MAIN CONTENT ════════════════════════════════════════ */
-.sa-main { flex:1; overflow-y:auto; padding:1.5rem; }
-
-/* ══ KPIs ════════════════════════════════════════════════ */
-.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
-.kpi {
-    background:var(--secondary-color); border:1px solid var(--border-color);
-    border-radius:14px; padding:1.1rem 1.25rem;
-    display:flex; align-items:center; gap:1rem;
-}
-.kpi-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; }
-.kpi-num { font-size:1.55rem; font-weight:800; line-height:1; display:block; }
-.kpi-lbl { font-size:.72rem; color:var(--text-secondary); margin-top:.15rem; }
-
-/* ══ SECTION HEADER ══════════════════════════════════════ */
-.sec-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; gap:.75rem; flex-wrap:wrap; }
-.sec-hd h4 { font-size:1rem; font-weight:800; margin:0; }
-
-/* ══ PRODUCT GRID ════════════════════════════════════════ */
-.prod-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1.1rem; }
-.pc { background:var(--secondary-color); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; transition:.2s; position:relative; }
-.pc:hover { border-color:var(--primary-color); box-shadow:0 6px 24px rgba(0,212,170,.1); }
-.pc-img { height:155px; background:var(--accent-color); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
-.pc-img img { width:100%; height:100%; object-fit:cover; }
-.pc-img i { font-size:2.5rem; color:var(--primary-color); opacity:.2; }
-.pc-inactive { position:absolute; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:800; color:#fff; letter-spacing:.05em; }
-.pc-body { padding:.9rem; }
-.pc-cat { font-size:.65rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--primary-color); margin-bottom:.2rem; }
-.pc-name { font-weight:700; font-size:.9rem; margin-bottom:.3rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.pc-price { font-weight:800; color:var(--primary-color); font-family:var(--font-mono); }
-.pc-old { font-size:.76rem; color:var(--text-secondary); text-decoration:line-through; margin-left:.35rem; }
-.pc-stock { font-size:.72rem; margin-top:.3rem; }
-.stk-ok{color:#10b981} .stk-low{color:#f59e0b} .stk-out{color:#ef4444}
-.pc-actions { display:flex; gap:.4rem; margin-top:.7rem; padding-top:.7rem; border-top:1px solid var(--border-color); flex-wrap:wrap; }
-.abtn { flex:1; padding:.36rem .5rem; border-radius:8px; font-size:.73rem; font-weight:700; border:none; cursor:pointer; transition:.15s; display:flex; align-items:center; justify-content:center; gap:.3rem; min-width:55px; font-family:inherit; }
-.abtn-edit  { background:rgba(59,130,246,.15); color:#60a5fa; } .abtn-edit:hover{background:rgba(59,130,246,.28)}
-.abtn-view  { background:rgba(0,212,170,.12); color:var(--primary-color); } .abtn-view:hover{background:rgba(0,212,170,.22)}
-.abtn-toggle{ background:rgba(255,255,255,.07); color:var(--text-secondary); } .abtn-toggle:hover{background:rgba(255,255,255,.14)}
-.abtn-del   { background:rgba(239,68,68,.12); color:#f87171; } .abtn-del:hover{background:rgba(239,68,68,.22)}
-
-/* ══ ORDERS ══════════════════════════════════════════════ */
-.ord-wrap { background:var(--secondary-color); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; }
-.ord-table { width:100%; border-collapse:collapse; }
-.ord-table th { padding:.65rem 1rem; text-align:left; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-secondary); border-bottom:1px solid var(--border-color); background:rgba(0,0,0,.1); white-space:nowrap; }
-.ord-table td { padding:.8rem 1rem; font-size:.83rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
-.ord-table tr:last-child td { border-bottom:none; }
-.ord-table tr:hover td { background:rgba(0,212,170,.03); }
-.sp { padding:.22rem .7rem; border-radius:20px; font-size:.69rem; font-weight:800; display:inline-flex; align-items:center; gap:.3rem; border:none; cursor:pointer; font-family:inherit; }
-.sp-pending{background:rgba(245,158,11,.15);color:#fbbf24}
-.sp-paid{background:rgba(16,185,129,.15);color:#34d399}
-.sp-shipped{background:rgba(59,130,246,.15);color:#60a5fa}
-.sp-delivered{background:rgba(0,212,170,.15);color:var(--primary-color)}
+.sa-wrap{display:flex;gap:0;height:calc(100vh - 120px);overflow:hidden}
+.sa-nav{width:210px;flex-shrink:0;background:var(--secondary-color);border-right:1px solid var(--border-color);display:flex;flex-direction:column;padding:1rem 0;overflow-y:auto}
+.sa-nav-btn{display:flex;align-items:center;gap:.65rem;padding:.7rem 1.25rem;font-size:.84rem;font-weight:600;color:var(--text-secondary);border:none;background:none;cursor:pointer;transition:.15s;text-align:left;width:100%;border-left:3px solid transparent;text-decoration:none;white-space:nowrap}
+.sa-nav-btn:hover{color:var(--text-primary);background:rgba(0,212,170,.05)}
+.sa-nav-btn.active{color:var(--primary-color);background:rgba(0,212,170,.08);border-left-color:var(--primary-color)}
+.sa-nav-badge{margin-left:auto;background:#ef4444;color:#fff;border-radius:20px;font-size:.62rem;padding:.05rem .42rem;font-weight:800}
+.sa-nav-sep{height:1px;background:var(--border-color);margin:.5rem 1rem}
+.sa-nav-group{padding:.35rem 1.25rem .15rem;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-secondary);opacity:.6}
+.sa-main{flex:1;overflow-y:auto;padding:1.5rem}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;padding:1.1rem 1.25rem;display:flex;align-items:center;gap:1rem;transition:.2s}
+.kpi:hover{border-color:rgba(0,212,170,.3);transform:translateY(-1px)}
+.kpi-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0}
+.kpi-num{font-size:1.55rem;font-weight:800;line-height:1;display:block}
+.kpi-lbl{font-size:.72rem;color:var(--text-secondary);margin-top:.15rem}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;gap:.75rem;flex-wrap:wrap}
+.sec-hd h4{font-size:1rem;font-weight:800;margin:0}
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.1rem}
+.pc{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;overflow:hidden;transition:.2s;position:relative}
+.pc:hover{border-color:var(--primary-color);box-shadow:0 6px 24px rgba(0,212,170,.1)}
+.pc-img{height:155px;background:var(--accent-color);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.pc-img img{width:100%;height:100%;object-fit:cover}
+.pc-img i{font-size:2.5rem;color:var(--primary-color);opacity:.2}
+.pc-inactive{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;color:#fff;letter-spacing:.05em}
+.pc-body{padding:.9rem}
+.pc-cat{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--primary-color);margin-bottom:.2rem}
+.pc-name{font-weight:700;font-size:.9rem;margin-bottom:.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pc-price{font-weight:800;color:var(--primary-color);font-family:var(--font-mono)}
+.pc-old{font-size:.76rem;color:var(--text-secondary);text-decoration:line-through;margin-left:.35rem}
+.pc-stock{font-size:.72rem;margin-top:.3rem}
+.stk-ok{color:#10b981}.stk-low{color:#f59e0b}.stk-out{color:#ef4444}
+.pc-actions{display:flex;gap:.4rem;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border-color);flex-wrap:wrap}
+.abtn{flex:1;padding:.36rem .5rem;border-radius:8px;font-size:.73rem;font-weight:700;border:none;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:.3rem;min-width:55px;font-family:inherit}
+.abtn-edit{background:rgba(59,130,246,.15);color:#60a5fa}.abtn-edit:hover{background:rgba(59,130,246,.28)}
+.abtn-view{background:rgba(0,212,170,.12);color:var(--primary-color)}.abtn-view:hover{background:rgba(0,212,170,.22)}
+.abtn-toggle{background:rgba(255,255,255,.07);color:var(--text-secondary)}.abtn-toggle:hover{background:rgba(255,255,255,.14)}
+.abtn-del{background:rgba(239,68,68,.12);color:#f87171}.abtn-del:hover{background:rgba(239,68,68,.22)}
+.ord-wrap{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;overflow:hidden}
+.ord-table{width:100%;border-collapse:collapse}
+.ord-table th{padding:.65rem 1rem;text-align:left;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-secondary);border-bottom:1px solid var(--border-color);background:rgba(0,0,0,.1);white-space:nowrap}
+.ord-table td{padding:.8rem 1rem;font-size:.83rem;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.ord-table tr:last-child td{border-bottom:none}
+.ord-table tr:hover td{background:rgba(0,212,170,.03)}
+.sp{padding:.22rem .7rem;border-radius:20px;font-size:.69rem;font-weight:800;display:inline-flex;align-items:center;gap:.3rem;border:none;cursor:pointer;font-family:inherit}
+.sp-pending{background:rgba(245,158,11,.15);color:#fbbf24}.sp-paid{background:rgba(16,185,129,.15);color:#34d399}
+.sp-shipped{background:rgba(59,130,246,.15);color:#60a5fa}.sp-delivered{background:rgba(0,212,170,.15);color:var(--primary-color)}
 .sp-cancelled{background:rgba(239,68,68,.15);color:#f87171}
-
-/* ══ FILTER ROW ══════════════════════════════════════════ */
-.filter-row { display:flex; gap:.5rem; margin-bottom:1rem; flex-wrap:wrap; align-items:center; }
-.fchip { padding:.32rem .85rem; border-radius:20px; font-size:.77rem; font-weight:700; border:1.5px solid var(--border-color); background:transparent; color:var(--text-secondary); cursor:pointer; transition:.15s; font-family:inherit; }
-.fchip:hover,.fchip.on { background:var(--primary-color); color:#0f1419; border-color:var(--primary-color); }
-.fsearch { flex:1; min-width:160px; background:var(--accent-color); border:1px solid var(--border-color); border-radius:9px; color:var(--text-primary); padding:.4rem .85rem; font-size:.82rem; outline:none; font-family:inherit; transition:border-color .2s; }
-.fsearch:focus { border-color:var(--primary-color); }
-.fsearch::placeholder { color:var(--text-secondary); }
-
-/* ══ FORM INPUTS ═════════════════════════════════════════ */
-.fi { width:100%; background:var(--accent-color); border:1.5px solid var(--border-color); color:var(--text-primary); border-radius:10px; padding:.6rem .9rem; font-size:.85rem; outline:none; font-family:inherit; transition:border-color .2s; }
-.fi:focus { border-color:var(--primary-color); }
-.fi::placeholder { color:var(--text-secondary); }
-.fl { display:block; font-size:.74rem; font-weight:700; color:var(--text-secondary); margin-bottom:.32rem; letter-spacing:.02em; }
-.fg { margin-bottom:.85rem; }
-.fg2 { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
-.fg3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.75rem; }
-.fg4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:.75rem; }
-.fhint { font-size:.68rem; color:var(--text-secondary); margin-top:.22rem; }
-.ftag { display:inline-flex; align-items:center; background:rgba(0,212,170,.12); color:var(--primary-color); border-radius:6px; padding:.15rem .45rem; font-size:.7rem; font-weight:700; margin:.18rem; cursor:pointer; }
-.ftag:hover { background:rgba(239,68,68,.15); color:#f87171; }
-
-/* ══ FORM SECTIONS ═══════════════════════════════════════ */
-.fsect { border:1px solid var(--border-color); border-radius:12px; overflow:hidden; margin-bottom:1.1rem; }
-.fsect-hd { background:rgba(0,0,0,.15); padding:.6rem 1rem; font-size:.74rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary); display:flex; align-items:center; gap:.5rem; }
-.fsect-bd { padding:1rem; }
-
-/* ══ FORM TABS ═══════════════════════════════════════════ */
-.ftabs { display:flex; gap:.3rem; border-bottom:1px solid var(--border-color); margin-bottom:1.1rem; padding-bottom:0; overflow-x:auto; }
-.ftab { padding:.5rem .9rem; font-size:.8rem; font-weight:700; border:none; background:none; color:var(--text-secondary); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:.15s; white-space:nowrap; font-family:inherit; }
-.ftab.active { color:var(--primary-color); border-bottom-color:var(--primary-color); }
-.ftab-p { display:none; } .ftab-p.active { display:block; }
-
-/* ══ SPEC TABLE ══════════════════════════════════════════ */
-.spec-tbl { width:100%; border-collapse:collapse; margin-bottom:.65rem; }
-.spec-tbl td { padding:.3rem .4rem; }
-.spec-tbl td:first-child { width:42%; }
-.spec-del { width:28px; height:28px; border-radius:7px; border:none; background:rgba(239,68,68,.1); color:#f87171; cursor:pointer; font-size:.78rem; display:flex; align-items:center; justify-content:center; }
-.spec-del:hover { background:rgba(239,68,68,.25); }
-.btn-spec { width:100%; background:rgba(0,212,170,.1); color:var(--primary-color); border:1px dashed rgba(0,212,170,.3); border-radius:8px; padding:.38rem; font-size:.76rem; font-weight:700; cursor:pointer; font-family:inherit; transition:.15s; }
-.btn-spec:hover { background:rgba(0,212,170,.2); }
-
-/* ══ IMAGE ZONE ══════════════════════════════════════════ */
-.img-zone { border:2px dashed var(--border-color); border-radius:11px; min-height:130px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.4rem; cursor:pointer; transition:.2s; position:relative; overflow:hidden; padding:.75rem; }
-.img-zone:hover,.img-zone.dg { border-color:var(--primary-color); background:rgba(0,212,170,.04); }
-.img-zone img { max-height:115px; max-width:100%; border-radius:8px; object-fit:contain; }
-.img-zone i { font-size:1.7rem; color:var(--text-secondary); opacity:.3; }
-.img-zone small { font-size:.7rem; color:var(--text-secondary); text-align:center; }
-.itabs { display:flex; gap:.3rem; margin-bottom:.5rem; }
-.itab { flex:1; padding:.3rem; border-radius:7px; font-size:.72rem; font-weight:700; border:1px solid var(--border-color); background:transparent; color:var(--text-secondary); cursor:pointer; transition:.15s; text-align:center; }
-.itab.active { background:var(--primary-color); color:#0f1419; border-color:var(--primary-color); }
-.upbar { width:100%; height:3px; background:var(--border-color); border-radius:2px; margin-top:.3rem; display:none; }
-.upbar-f { height:100%; background:var(--primary-color); border-radius:2px; width:0; transition:width .25s; }
-
-/* ══ SAVE BTN ════════════════════════════════════════════ */
-.save-btn { width:100%; background:linear-gradient(135deg,var(--primary-color),#00ff88); border:none; color:#0f1419; padding:.78rem; border-radius:11px; font-weight:800; font-size:.92rem; cursor:pointer; transition:.2s; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:.5rem; }
-.save-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,212,170,.28); }
-.save-btn:disabled { opacity:.6; transform:none; cursor:not-allowed; }
-
-/* ══ DETAIL PANEL ════════════════════════════════════════ */
-.dp { width:360px; flex-shrink:0; border-left:1px solid var(--border-color); background:var(--secondary-color); display:flex; flex-direction:column; overflow-y:auto; transition:.3s; }
-.dp.hidden { width:0; overflow:hidden; border:none; }
-.dp-hd { padding:.9rem 1.15rem; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:var(--secondary-color); z-index:1; }
-.dp-hd h5 { font-size:.88rem; font-weight:800; margin:0; }
-.dp-close { width:28px; height:28px; border-radius:7px; border:1px solid var(--border-color); background:none; color:var(--text-secondary); cursor:pointer; font-size:.78rem; display:flex; align-items:center; justify-content:center; }
-.dp-close:hover { color:#f87171; border-color:#f87171; }
-.dp-bd { padding:1.1rem; flex:1; }
-.dp-img { width:100%; height:170px; border-radius:11px; overflow:hidden; background:var(--accent-color); display:flex; align-items:center; justify-content:center; margin-bottom:.9rem; }
-.dp-img img { width:100%; height:100%; object-fit:cover; }
-.dp-img i { font-size:2.8rem; color:var(--primary-color); opacity:.2; }
-.dp-sec { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--text-secondary); margin:.85rem 0 .35rem; }
-.dp-feat li { font-size:.8rem; margin-bottom:.18rem; color:var(--text-primary); }
-.dp-feat li::before { content:'✔'; color:var(--primary-color); margin-right:.4rem; font-weight:800; }
-.spec-dl { display:grid; grid-template-columns:1fr 1fr; gap:.25rem .75rem; }
-.spec-dt { font-size:.72rem; color:var(--text-secondary); }
-.spec-dd { font-size:.72rem; font-weight:700; }
-
-/* ══ TOAST ═══════════════════════════════════════════════ */
-#atoast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; background:var(--secondary-color); border:1px solid var(--primary-color); border-radius:12px; padding:.65rem 1rem; font-size:.83rem; font-weight:600; transform:translateX(130%); transition:transform .3s; max-width:290px; display:flex; align-items:center; gap:.5rem; }
-#atoast.show { transform:translateX(0); }
-
-/* ══ EMPTY ═══════════════════════════════════════════════ */
-.empty-bl { text-align:center; padding:3rem; color:var(--text-secondary); }
-.empty-bl i { font-size:2.3rem; opacity:.15; display:block; margin-bottom:.65rem; }
-
-/* ══ MULTI-IMAGE GALLERY ═════════════════════════════════ */
-.img-gallery { display:grid; grid-template-columns:repeat(3,1fr); gap:.55rem; margin-top:.65rem; }
-.img-slot {
-  position:relative; border-radius:10px; overflow:hidden;
-  background:var(--accent-color); border:1.5px dashed var(--border-color);
-  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
-  cursor:pointer; transition:.2s; flex-direction:column; gap:.2rem;
-}
-.img-slot:hover { border-color:var(--primary-color); background:rgba(0,212,170,.06); }
-.img-slot img { position:absolute;inset:0; width:100%; height:100%; object-fit:cover; border-radius:8px; }
-.img-slot .img-slot-ico { font-size:1.4rem; color:var(--text-secondary); opacity:.25; }
-.img-slot .img-slot-del {
-  position:absolute; top:4px; right:4px; width:22px; height:22px;
-  border-radius:6px; border:none; background:rgba(239,68,68,.9);
-  color:#fff; font-size:.66rem; display:none; align-items:center;
-  justify-content:center; cursor:pointer; z-index:3;
-}
-.img-slot:hover .img-slot-del { display:flex; }
-.img-slot .img-slot-badge {
-  position:absolute; bottom:4px; left:4px;
-  background:rgba(0,0,0,.75); color:#fff;
-  font-size:.56rem; font-weight:800; padding:.1rem .35rem;
-  border-radius:4px; letter-spacing:.04em; pointer-events:none; z-index:2;
-}
-.img-slot-add {
-  border:1.5px dashed rgba(0,212,170,.35)!important;
-  background:rgba(0,212,170,.04)!important;
-  font-size:.68rem; color:var(--primary-color); font-weight:700;
-}
-.img-slot-add i { font-size:1.25rem; opacity:.7; display:block; margin-bottom:.18rem; }
-.img-slot-add:hover { border-color:var(--primary-color)!important; background:rgba(0,212,170,.1)!important; }
-.img-upbar { height:2px; background:var(--border-color); border-radius:2px; margin-top:.4rem; display:none; }
-.img-upbar-f { height:100%; width:0; background:var(--primary-color); border-radius:2px; transition:width .2s; }
-
-/* ══ ACCESS MANAGEMENT ════════════════════════════════════ */
-.user-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:.85rem; }
-.ucard {
-  background:var(--secondary-color); border:1px solid var(--border-color);
-  border-radius:14px; padding:1rem; display:flex; align-items:center; gap:.85rem; transition:.2s;
-}
-.ucard:hover { border-color:rgba(0,212,170,.3); box-shadow:0 4px 16px rgba(0,212,170,.07); }
-.ucard-av {
-  width:42px; height:42px; border-radius:12px; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800;
-}
-.ucard-info { flex:1; min-width:0; }
-.ucard-name { font-weight:700; font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ucard-email { font-size:.72rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ucard-role-lbl { font-size:.63rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; margin-top:.18rem; }
-.ucard-ctrl { display:flex; flex-direction:column; align-items:flex-end; gap:.35rem; flex-shrink:0; }
-.toggle-sw { position:relative; width:42px; height:22px; cursor:pointer; display:inline-block; }
-.toggle-sw input { opacity:0; width:0; height:0; position:absolute; }
-.toggle-sw-track { position:absolute; inset:0; border-radius:11px; background:#374151; transition:.25s; }
-.toggle-sw input:checked + .toggle-sw-track { background:#00d4aa; }
-.toggle-sw-thumb {
-  position:absolute; top:3px; left:3px;
-  width:16px; height:16px; border-radius:50%;
-  background:#fff; transition:.25s; box-shadow:0 1px 4px rgba(0,0,0,.3); pointer-events:none;
-}
-.toggle-sw input:checked ~ .toggle-sw-thumb { left:23px; }
-.acc-badge { font-size:.62rem; font-weight:800; padding:.15rem .55rem; border-radius:20px; white-space:nowrap; }
-.acc-badge-on  { background:rgba(0,212,170,.15); color:#00d4aa; border:1px solid rgba(0,212,170,.3); }
-.acc-badge-off { background:rgba(107,114,128,.12); color:var(--text-secondary); border:1px solid var(--border-color); }
-.acc-info-box {
-  background:rgba(0,212,170,.05); border:1px solid rgba(0,212,170,.2);
-  border-radius:12px; padding:.85rem 1rem; margin-bottom:1.25rem;
-  font-size:.8rem; color:var(--text-secondary); line-height:1.65;
-  display:flex; gap:.75rem; align-items:flex-start;
-}
-.acc-info-box i { color:var(--primary-color); margin-top:.12rem; flex-shrink:0; }
-.perm-matrix {
-  background:var(--secondary-color); border:1px solid var(--border-color);
-  border-radius:14px; overflow:hidden; margin-bottom:1.25rem;
-}
-.perm-matrix-hd {
-  display:grid; grid-template-columns:1fr repeat(3,110px);
-  background:rgba(0,0,0,.15); padding:.55rem 1rem;
-  font-size:.68rem; font-weight:800; text-transform:uppercase;
-  letter-spacing:.07em; color:var(--text-secondary); gap:.5rem; text-align:center;
-}
-.perm-matrix-hd span:first-child { text-align:left; }
-.perm-matrix-row {
-  display:grid; grid-template-columns:1fr repeat(3,110px);
-  padding:.7rem 1rem; border-top:1px solid rgba(255,255,255,.04);
-  align-items:center; gap:.5rem; font-size:.82rem;
-}
-.perm-cell { display:flex; justify-content:center; }
-.perm-yes { color:#10b981; } .perm-no { color:#6b7280; opacity:.5; }
-.acc-guard-bar {
-  background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2);
-  border-radius:11px; padding:.65rem 1rem; margin-bottom:1rem;
-  font-size:.8rem; color:#f87171; display:flex; align-items:center; gap:.6rem;
-}
-@media(max-width:600px){
-  .img-gallery { grid-template-columns:repeat(3,1fr); }
-  .perm-matrix-hd,.perm-matrix-row { grid-template-columns:1fr repeat(3,70px); font-size:.72rem; }
-  .user-grid { grid-template-columns:1fr; }
-}
-
-/* ══ RESPONSIVE MOBILE ═══════════════════════════════ */
-@media(max-width:900px){
-  .sa-nav{display:none}
-  .dp{display:none}
-  .fg3{grid-template-columns:1fr 1fr}
-  .fg4{grid-template-columns:1fr 1fr}
-  /* Barre nav fixe en bas sur mobile */
-  .sa-wrap{padding-bottom:64px}
-}
-@media(max-width:600px){
-  .kpi-row{grid-template-columns:1fr 1fr}
-  .fg2,.fg3,.fg4{grid-template-columns:1fr}
-  .sa-main{padding:1rem .75rem}
-  .sec-hd{flex-direction:column;align-items:flex-start;gap:.5rem}
-  .sec-hd .save-btn{width:100%!important}
-  .kpi{padding:.85rem .9rem;gap:.75rem}
-  .kpi-icon{width:38px;height:38px;font-size:1rem}
-  .kpi-num{font-size:1.25rem}
-  .prod-grid{grid-template-columns:1fr 1fr;gap:.75rem}
-  .pc-img{height:130px}
-  .pc-body{padding:.75rem}
-  .pc-name{font-size:.82rem}
-  .abtn{font-size:.7rem;padding:.32rem .4rem}
-  /* Table commandes → scroll horizontal */
-  .ord-wrap{overflow-x:auto}
-  .ord-table{min-width:560px}
-  .filter-row{gap:.4rem}
-  .fchip{font-size:.72rem;padding:.28rem .65rem}
-  /* Tabs formulaire */
-  .ftabs{gap:.2rem}
-  .ftab{font-size:.75rem;padding:.45rem .65rem}
-}
-@media(max-width:360px){
-  .kpi-row{grid-template-columns:1fr 1fr}
-  .kpi-num{font-size:1.1rem}
-  .prod-grid{grid-template-columns:1fr}
-  .sa-main{padding:.75rem .6rem}
-}
-
-/* ══ BARRE NAV MOBILE BAS ════════════════════════════ */
-.sa-bottom-nav{
-  display:none;
-  position:fixed;bottom:0;left:0;right:0;z-index:500;
-  background:var(--secondary-color);
-  border-top:1px solid var(--border-color);
-  height:64px;
-  align-items:center;justify-content:space-around;
-  padding:0 .25rem;
-  backdrop-filter:blur(10px);
-}
-.sa-bnav-btn{
-  display:flex;flex-direction:column;align-items:center;
-  gap:.18rem;background:none;border:none;cursor:pointer;
-  color:var(--text-secondary);font-size:.6rem;font-weight:700;
-  padding:.5rem .75rem;border-radius:10px;transition:.15s;
-  text-transform:uppercase;letter-spacing:.05em;font-family:inherit;
-  position:relative;min-width:56px;
-}
+.filter-row{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.fchip{padding:.32rem .85rem;border-radius:20px;font-size:.77rem;font-weight:700;border:1.5px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;transition:.15s;font-family:inherit}
+.fchip:hover,.fchip.on{background:var(--primary-color);color:#0f1419;border-color:var(--primary-color)}
+.fsearch{flex:1;min-width:160px;background:var(--accent-color);border:1px solid var(--border-color);border-radius:9px;color:var(--text-primary);padding:.4rem .85rem;font-size:.82rem;outline:none;font-family:inherit;transition:.2s}
+.fsearch:focus{border-color:var(--primary-color)}.fsearch::placeholder{color:var(--text-secondary)}
+.fi{width:100%;background:var(--accent-color);border:1.5px solid var(--border-color);color:var(--text-primary);border-radius:10px;padding:.6rem .9rem;font-size:.85rem;outline:none;font-family:inherit;transition:.2s}
+.fi:focus{border-color:var(--primary-color)}.fi::placeholder{color:var(--text-secondary)}
+.fl{display:block;font-size:.74rem;font-weight:700;color:var(--text-secondary);margin-bottom:.32rem;letter-spacing:.02em}
+.fg{margin-bottom:.85rem}.fg2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}.fg4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.75rem}
+.fhint{font-size:.68rem;color:var(--text-secondary);margin-top:.22rem}
+.ftag{display:inline-flex;align-items:center;background:rgba(0,212,170,.12);color:var(--primary-color);border-radius:6px;padding:.15rem .45rem;font-size:.7rem;font-weight:700;margin:.18rem;cursor:pointer}
+.ftag:hover{background:rgba(239,68,68,.15);color:#f87171}
+.fsect{border:1px solid var(--border-color);border-radius:12px;overflow:hidden;margin-bottom:1.1rem}
+.fsect-hd{background:rgba(0,0,0,.15);padding:.6rem 1rem;font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-secondary);display:flex;align-items:center;gap:.5rem}
+.fsect-bd{padding:1rem}
+.ftabs{display:flex;gap:.3rem;border-bottom:1px solid var(--border-color);margin-bottom:1.1rem;overflow-x:auto}
+.ftab{padding:.5rem .9rem;font-size:.8rem;font-weight:700;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s;white-space:nowrap;font-family:inherit}
+.ftab.active{color:var(--primary-color);border-bottom-color:var(--primary-color)}
+.ftab-p{display:none}.ftab-p.active{display:block}
+.spec-tbl{width:100%;border-collapse:collapse;margin-bottom:.65rem}
+.spec-tbl td{padding:.3rem .4rem}.spec-tbl td:first-child{width:42%}
+.spec-del{width:28px;height:28px;border-radius:7px;border:none;background:rgba(239,68,68,.1);color:#f87171;cursor:pointer;font-size:.78rem;display:flex;align-items:center;justify-content:center}
+.spec-del:hover{background:rgba(239,68,68,.25)}
+.btn-spec{width:100%;background:rgba(0,212,170,.1);color:var(--primary-color);border:1px dashed rgba(0,212,170,.3);border-radius:8px;padding:.38rem;font-size:.76rem;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.btn-spec:hover{background:rgba(0,212,170,.2)}
+.img-zone{border:2px dashed var(--border-color);border-radius:11px;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;cursor:pointer;transition:.2s;position:relative;overflow:hidden;padding:.75rem}
+.img-zone:hover,.img-zone.dg{border-color:var(--primary-color);background:rgba(0,212,170,.04)}
+.img-zone i{font-size:1.7rem;color:var(--text-secondary);opacity:.3}
+.img-zone small{font-size:.7rem;color:var(--text-secondary);text-align:center}
+.upbar{width:100%;height:3px;background:var(--border-color);border-radius:2px;margin-top:.3rem;display:none}
+.upbar-f{height:100%;background:var(--primary-color);border-radius:2px;width:0;transition:width .25s}
+.img-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-top:.65rem}
+.img-slot{position:relative;border-radius:10px;overflow:hidden;background:var(--accent-color);border:1.5px dashed var(--border-color);aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;flex-direction:column;gap:.2rem}
+.img-slot:hover{border-color:var(--primary-color);background:rgba(0,212,170,.06)}
+.img-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px}
+.img-slot .img-slot-del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:6px;border:none;background:rgba(239,68,68,.9);color:#fff;font-size:.66rem;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:3}
+.img-slot:hover .img-slot-del{display:flex}
+.img-slot .img-slot-badge{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.75);color:#fff;font-size:.56rem;font-weight:800;padding:.1rem .35rem;border-radius:4px;pointer-events:none;z-index:2}
+.img-slot-add{border:1.5px dashed rgba(0,212,170,.35)!important;background:rgba(0,212,170,.04)!important;font-size:.68rem;color:var(--primary-color);font-weight:700}
+.img-slot-add i{font-size:1.25rem;opacity:.7;display:block;margin-bottom:.18rem}
+.img-slot-add:hover{border-color:var(--primary-color)!important;background:rgba(0,212,170,.1)!important}
+.img-upbar{height:2px;background:var(--border-color);border-radius:2px;margin-top:.4rem;display:none}
+.img-upbar-f{height:100%;width:0;background:var(--primary-color);border-radius:2px;transition:width .2s}
+.save-btn{width:100%;background:linear-gradient(135deg,var(--primary-color),#00ff88);border:none;color:#0f1419;padding:.78rem;border-radius:11px;font-weight:800;font-size:.92rem;cursor:pointer;transition:.2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.save-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,212,170,.28)}
+.save-btn:disabled{opacity:.6;transform:none;cursor:not-allowed}
+.dp{width:360px;flex-shrink:0;border-left:1px solid var(--border-color);background:var(--secondary-color);display:flex;flex-direction:column;overflow-y:auto;transition:.3s}
+.dp.hidden{width:0;overflow:hidden;border:none}
+.dp-hd{padding:.9rem 1.15rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--secondary-color);z-index:1}
+.dp-hd h5{font-size:.88rem;font-weight:800;margin:0}
+.dp-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border-color);background:none;color:var(--text-secondary);cursor:pointer;font-size:.78rem;display:flex;align-items:center;justify-content:center}
+.dp-close:hover{color:#f87171;border-color:#f87171}
+.dp-bd{padding:1.1rem;flex:1}
+.dp-img{width:100%;height:170px;border-radius:11px;overflow:hidden;background:var(--accent-color);display:flex;align-items:center;justify-content:center;margin-bottom:.9rem}
+.dp-img img{width:100%;height:100%;object-fit:cover}
+.dp-img i{font-size:2.8rem;color:var(--primary-color);opacity:.2}
+.dp-sec{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-secondary);margin:.85rem 0 .35rem}
+.dp-feat{list-style:none;padding:0;margin:0}
+.dp-feat li{font-size:.8rem;margin-bottom:.18rem}
+.dp-feat li::before{content:'✔';color:var(--primary-color);margin-right:.4rem;font-weight:800}
+.spec-dl{display:grid;grid-template-columns:1fr 1fr;gap:.25rem .75rem}
+.spec-dt{font-size:.72rem;color:var(--text-secondary)}.spec-dd{font-size:.72rem;font-weight:700}
+#atoast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:var(--secondary-color);border:1px solid var(--primary-color);border-radius:12px;padding:.65rem 1rem;font-size:.83rem;font-weight:600;transform:translateX(130%);transition:transform .3s;max-width:290px;display:flex;align-items:center;gap:.5rem}
+#atoast.show{transform:translateX(0)}
+.empty-bl{text-align:center;padding:3rem;color:var(--text-secondary)}
+.empty-bl i{font-size:2.3rem;opacity:.15;display:block;margin-bottom:.65rem}
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.85rem}
+.ucard{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;padding:1rem;display:flex;align-items:center;gap:.85rem;transition:.2s}
+.ucard:hover{border-color:rgba(0,212,170,.3);box-shadow:0 4px 16px rgba(0,212,170,.07)}
+.ucard-av{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800}
+.ucard-info{flex:1;min-width:0}
+.ucard-name{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ucard-email{font-size:.72rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ucard-role-lbl{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-top:.18rem}
+.ucard-ctrl{display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;flex-shrink:0}
+.toggle-sw{position:relative;width:42px;height:22px;cursor:pointer;display:inline-block}
+.toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.toggle-sw-track{position:absolute;inset:0;border-radius:11px;background:#374151;transition:.25s}
+.toggle-sw input:checked + .toggle-sw-track{background:#00d4aa}
+.toggle-sw-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 4px rgba(0,0,0,.3);pointer-events:none}
+.toggle-sw input:checked ~ .toggle-sw-thumb{left:23px}
+.acc-badge{font-size:.62rem;font-weight:800;padding:.15rem .55rem;border-radius:20px;white-space:nowrap}
+.acc-badge-on{background:rgba(0,212,170,.15);color:#00d4aa;border:1px solid rgba(0,212,170,.3)}
+.acc-badge-off{background:rgba(107,114,128,.12);color:var(--text-secondary);border:1px solid var(--border-color)}
+.acc-info-box{background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.2);border-radius:12px;padding:.85rem 1rem;margin-bottom:1.25rem;font-size:.8rem;color:var(--text-secondary);line-height:1.65;display:flex;gap:.75rem;align-items:flex-start}
+.acc-info-box i{color:var(--primary-color);margin-top:.12rem;flex-shrink:0}
+.perm-matrix{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;overflow:hidden;margin-bottom:1.25rem}
+.perm-matrix-hd{display:grid;grid-template-columns:1fr repeat(3,110px);background:rgba(0,0,0,.15);padding:.55rem 1rem;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text-secondary);gap:.5rem;text-align:center}
+.perm-matrix-hd span:first-child{text-align:left}
+.perm-matrix-row{display:grid;grid-template-columns:1fr repeat(3,110px);padding:.7rem 1rem;border-top:1px solid rgba(255,255,255,.04);align-items:center;gap:.5rem;font-size:.82rem}
+.perm-cell{display:flex;justify-content:center}
+.perm-yes{color:#10b981}.perm-no{color:#6b7280;opacity:.5}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem}
+.stat-box{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:12px;padding:.9rem 1rem;text-align:center}
+.stat-num{font-size:1.3rem;font-weight:800;color:var(--primary-color)}
+.stat-lbl{font-size:.68rem;color:var(--text-secondary);margin-top:.12rem}
+.chart-wrap{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem}
+.chart-title{font-size:.82rem;font-weight:800;margin-bottom:1rem}
+.alert-row{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);border-radius:10px;padding:.6rem 1rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;font-size:.82rem}
+.alert-row .alert-name{font-weight:700}.alert-row .alert-stock{color:#f87171;font-weight:800;font-size:.75rem}
+.alert-row-warn{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.18)}
+.alert-row-warn .alert-stock{color:#fbbf24}
+@media(max-width:900px){.sa-nav{display:none}.dp{display:none}.fg3{grid-template-columns:1fr 1fr}.fg4{grid-template-columns:1fr 1fr}.sa-wrap{padding-bottom:64px}}
+@media(max-width:600px){.kpi-row{grid-template-columns:1fr 1fr}.fg2,.fg3,.fg4{grid-template-columns:1fr}.sa-main{padding:1rem .75rem}.sec-hd{flex-direction:column;align-items:flex-start;gap:.5rem}.kpi{padding:.85rem .9rem;gap:.75rem}.kpi-icon{width:38px;height:38px;font-size:1rem}.kpi-num{font-size:1.25rem}.prod-grid{grid-template-columns:1fr 1fr;gap:.75rem}.pc-img{height:130px}.pc-body{padding:.75rem}.pc-name{font-size:.82rem}.abtn{font-size:.7rem;padding:.32rem .4rem}.ord-wrap{overflow-x:auto}.ord-table{min-width:560px}.filter-row{gap:.4rem}.fchip{font-size:.72rem;padding:.28rem .65rem}.ftabs{gap:.2rem}.ftab{font-size:.75rem;padding:.45rem .65rem}.stats-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:360px){.kpi-row{grid-template-columns:1fr 1fr}.kpi-num{font-size:1.1rem}.prod-grid{grid-template-columns:1fr}.sa-main{padding:.75rem .6rem}}
+.sa-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;background:var(--secondary-color);border-top:1px solid var(--border-color);height:64px;align-items:center;justify-content:space-around;padding:0 .25rem;backdrop-filter:blur(10px)}
+.sa-bnav-btn{display:flex;flex-direction:column;align-items:center;gap:.18rem;background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:.6rem;font-weight:700;padding:.5rem .75rem;border-radius:10px;transition:.15s;text-transform:uppercase;letter-spacing:.05em;font-family:inherit;position:relative;min-width:56px;text-decoration:none}
 .sa-bnav-btn i{font-size:1.2rem}
 .sa-bnav-btn.active,.sa-bnav-btn:hover{color:var(--primary-color)}
 .sa-bnav-btn .sa-nav-badge{position:absolute;top:4px;right:8px}
-@media(max-width:900px){
-  .sa-bottom-nav{display:flex}
-}
+@media(max-width:900px){.sa-bottom-nav{display:flex}}
 </style>
 
 <div class="sa-wrap">
-
-<!-- ══ LEFT NAV ══ -->
 <nav class="sa-nav">
+  <div class="sa-nav-group">Principal</div>
   <button class="sa-nav-btn active" id="navDash" onclick="go('dash')"><i class="fas fa-chart-pie"></i> Tableau de bord</button>
+  <div class="sa-nav-sep"></div>
+  <div class="sa-nav-group">Catalogue</div>
   <button class="sa-nav-btn" id="navProd" onclick="go('prod')"><i class="fas fa-boxes"></i> Produits <span style="margin-left:auto;font-size:.68rem;color:var(--text-secondary)">{{ products|length }}</span></button>
+  {% if session.get('role') in ('admin', 'superadmin', 'shop_manager') %}
   <button class="sa-nav-btn" id="navNew" onclick="go('new')"><i class="fas fa-plus-circle"></i> Ajouter produit</button>
-  <div class="sa-nav-sep"></div>
-  <button class="sa-nav-btn" id="navOrd" onclick="go('ord')"><i class="fas fa-receipt"></i> Commandes {% if pending_count %}<span class="sa-nav-badge">{{ pending_count }}</span>{% endif %}</button>
-  <div class="sa-nav-sep"></div>
-  <button class="sa-nav-btn" id="navStaff" onclick="go('staff')"><i class="fas fa-headset"></i> Équipe assistance</button>
-  <div class="sa-nav-sep"></div>
-  {% if session.get('role') == 'superadmin' %}
-  <button class="sa-nav-btn" id="navAcc" onclick="go('acc')"><i class="fas fa-user-shield"></i> Accès boutique</button>
-  <div class="sa-nav-sep"></div>
   {% endif %}
-  <a href="/shop" target="_blank" class="sa-nav-btn" style="text-decoration:none"><i class="fas fa-store"></i> Voir boutique</a>
+  <div class="sa-nav-sep"></div>
+  <div class="sa-nav-group">Ventes</div>
+  <button class="sa-nav-btn" id="navOrd" onclick="go('ord')"><i class="fas fa-receipt"></i> Commandes {% if pending_count %}<span class="sa-nav-badge">{{ pending_count }}</span>{% endif %}</button>
+  <button class="sa-nav-btn" id="navAnalytics" onclick="go('analytics')"><i class="fas fa-chart-line"></i> Analytiques</button>
+  <div class="sa-nav-sep"></div>
+  <div class="sa-nav-group">Équipe</div>
+  <button class="sa-nav-btn" id="navStaff" onclick="go('staff')"><i class="fas fa-headset"></i> Assistance</button>
+  {% if session.get('role') == 'superadmin' %}
+  <div class="sa-nav-sep"></div>
+  <div class="sa-nav-group">Admin</div>
+  <button class="sa-nav-btn" id="navAcc" onclick="go('acc')"><i class="fas fa-user-shield"></i> Accès boutique</button>
+  {% endif %}
+  <div class="sa-nav-sep"></div>
+  <a href="/shop" target="_blank" class="sa-nav-btn"><i class="fas fa-store"></i> Voir boutique <i class="fas fa-external-link-alt" style="font-size:.6rem;opacity:.5;margin-left:auto"></i></a>
 </nav>
 
-<!-- ══ MAIN ══ -->
 <div class="sa-main" id="saMain">
 
-  <!-- DASHBOARD -->
-  <div id="secDash">
-    <div class="kpi-row">
-      <div class="kpi"><div class="kpi-icon" style="background:rgba(0,212,170,.12)"><i class="fas fa-boxes" style="color:var(--primary-color)"></i></div><div><span class="kpi-num">{{ products|length }}</span><span class="kpi-lbl">Produits</span></div></div>
-      <div class="kpi"><div class="kpi-icon" style="background:rgba(245,158,11,.12)"><i class="fas fa-receipt" style="color:#fbbf24"></i></div><div><span class="kpi-num">{{ orders|length }}</span><span class="kpi-lbl">Commandes</span></div></div>
-      <div class="kpi"><div class="kpi-icon" style="background:rgba(16,185,129,.12)"><i class="fas fa-money-bill-wave" style="color:#34d399"></i></div><div><span class="kpi-num">{{ "{:,.0f}".format(total_revenue) }}</span><span class="kpi-lbl">XAF encaissés</span></div></div>
-      <div class="kpi"><div class="kpi-icon" style="background:rgba(239,68,68,.12)"><i class="fas fa-clock" style="color:#f87171"></i></div><div><span class="kpi-num">{{ pending_count }}</span><span class="kpi-lbl">En attente</span></div></div>
-    </div>
-    <div class="sec-hd"><h4>📦 Dernières commandes</h4><button class="fchip on" onclick="go('ord')">Voir tout →</button></div>
-    {% if orders %}
-    <div class="ord-wrap"><table class="ord-table"><thead><tr><th>Réf</th><th>Client</th><th>Produits</th><th>Total</th><th>Statut</th><th>Date</th></tr></thead><tbody>
-    {% for o in orders[:6] %}
-    <tr style="cursor:pointer" onclick="showOrd({{ o.id }})">
-      <td><code style="color:var(--primary-color)">#{{ o.id }}</code></td>
-      <td><strong>{{ o.customer_name or '—' }}</strong><br><small style="color:var(--text-secondary)">{{ o.customer_city or '' }}</small></td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;color:var(--text-secondary)">{{ o.items_summary or '—' }}</td>
-      <td style="font-family:var(--font-mono);font-weight:700;color:var(--primary-color);white-space:nowrap">{{ "{:,.0f}".format(o.total) }} XAF</td>
-      <td><span class="sp sp-{{ o.status }}">{{ {'pending':'⏳ En attente','paid':'✅ Payé','shipped':'🚚 Expédié','delivered':'📬 Livré','cancelled':'❌ Annulé'}.get(o.status, o.status) }}</span></td>
-      <td style="font-size:.72rem;color:var(--text-secondary)">{{ o.created_at[:16] if o.created_at else '—' }}</td>
-    </tr>
-    {% endfor %}
-    </tbody></table></div>
-    {% else %}<div class="empty-bl"><i class="fas fa-receipt"></i><p>Aucune commande.</p></div>{% endif %}
+<!-- ══ DASHBOARD ══ -->
+<div id="secDash">
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-icon" style="background:rgba(0,212,170,.12)"><i class="fas fa-boxes" style="color:var(--primary-color)"></i></div><div><span class="kpi-num">{{ products|length }}</span><span class="kpi-lbl">Produits</span></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:rgba(245,158,11,.12)"><i class="fas fa-receipt" style="color:#fbbf24"></i></div><div><span class="kpi-num">{{ orders|length }}</span><span class="kpi-lbl">Commandes</span></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:rgba(16,185,129,.12)"><i class="fas fa-money-bill-wave" style="color:#34d399"></i></div><div><span class="kpi-num">{{ "{:,.0f}".format(total_revenue) }}</span><span class="kpi-lbl">XAF encaissés</span></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:rgba(239,68,68,.12)"><i class="fas fa-clock" style="color:#f87171"></i></div><div><span class="kpi-num">{{ pending_count }}</span><span class="kpi-lbl">En attente</span></div></div>
   </div>
-
-  <!-- PRODUCTS LIST -->
-  <div id="secProd" style="display:none">
-    <div class="sec-hd"><h4>📦 Catalogue produits</h4>
-      {% if session.get('role') in ('admin', 'superadmin', 'shop_manager') %}
-      <button class="save-btn" style="width:auto;padding:.5rem 1.1rem" onclick="go('new')"><i class="fas fa-plus"></i> Nouveau produit</button>
-      {% endif %}
-    </div>
-    <div class="filter-row">
-      <input class="fsearch" placeholder="🔍 Rechercher un produit…" oninput="filterP(this.value)">
-      <button class="fchip on" data-fc="all" onclick="filterCat(this)">Tout</button>
-      <button class="fchip" data-fc="electronique" onclick="filterCat(this)">📱</button>
-      <button class="fchip" data-fc="mode" onclick="filterCat(this)">👗</button>
-      <button class="fchip" data-fc="maison" onclick="filterCat(this)">🏠</button>
-      <button class="fchip" data-fc="sport" onclick="filterCat(this)">⚽</button>
-      <button class="fchip" data-fc="beaute" onclick="filterCat(this)">💄</button>
-    </div>
-    <div class="prod-grid" id="prodGrid">
-      {% for p in products %}
-      <div class="pc" data-cat="{{ p.category }}" data-name="{{ p.name|lower }}" id="pc-{{ p.id }}">
-        <div class="pc-img">
-          {% if p.image_url %}<img src="{{ p.image_url }}" onerror="this.style.display='none'">{% endif %}
-          <i class="fas fa-{{ 'mobile-alt' if p.category=='electronique' else 'tshirt' if p.category=='mode' else 'home' if p.category=='maison' else 'futbol' if p.category=='sport' else 'magic' if p.category=='beaute' else 'box' }}" {% if p.image_url %}style="display:none"{% endif %}></i>
-          {% if not p.is_active %}<div class="pc-inactive">MASQUÉ</div>{% endif %}
+  {% set low_stock = products | selectattr('stock', 'lessthan', 6) | selectattr('stock', 'greaterthan', -1) | list %}
+  {% if low_stock %}
+  <div class="fsect" style="margin-bottom:1.25rem">
+    <div class="fsect-hd"><i class="fas fa-exclamation-triangle" style="color:#f59e0b"></i> Alertes stock ({{ low_stock|length }} produit{{ 's' if low_stock|length > 1 }})</div>
+    <div class="fsect-bd" style="padding:.7rem">
+      {% for p in low_stock[:5] %}
+      <div class="alert-row {{ '' if p.stock == 0 else 'alert-row-warn' }}">
+        <span class="alert-name">{{ p.name[:45] }}{% if p.name|length > 45 %}…{% endif %}</span>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span class="alert-stock">{{ 'RUPTURE' if p.stock == 0 else p.stock ~ ' restants' }}</span>
+          <button class="abtn abtn-edit" onclick="loadEdit({{ p.id }})" style="padding:.25rem .55rem;font-size:.68rem">Modifier</button>
         </div>
-        <div class="pc-body">
-          <div class="pc-cat">{{ p.category }}</div>
-          <div class="pc-name">{{ p.name }}</div>
-          <div><span class="pc-price">{{ "{:,.0f}".format(p.price) }} XAF</span>{% if p.original_price and p.original_price > p.price %}<span class="pc-old">{{ "{:,.0f}".format(p.original_price) }} XAF</span>{% endif %}</div>
-          <div class="pc-stock {{ 'stk-out' if p.stock==0 else 'stk-low' if 0 < p.stock <= 5 else 'stk-ok' }}">
-            <i class="fas fa-circle" style="font-size:.38rem"></i>
-            {% if p.stock==0 %}Rupture{% elif p.stock<0 %}Illimité{% else %}{{ p.stock }} en stock{% endif %}
-          </div>
-          <div class="pc-actions">
-            <button class="abtn abtn-view" onclick="showProd({{ p.id }})"><i class="fas fa-eye"></i> Voir</button>
-            {% if session.get('role') in ('admin', 'superadmin', 'shop_manager') %}
-            <button class="abtn abtn-edit" onclick="loadEdit({{ p.id }})"><i class="fas fa-edit"></i> Modifier</button>
-            <button class="abtn abtn-toggle" onclick="toggleP({{ p.id }})"><i class="fas fa-{{ 'eye-slash' if p.is_active else 'eye' }}"></i></button>
-            {% endif %}
-            {% if session.get('role') in ('admin', 'superadmin') %}
-            <button class="abtn abtn-del" onclick="delProd({{ p.id }},'{{ p.name|replace("'","\\'") }}')"><i class="fas fa-trash"></i></button>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      {% else %}<div class="empty-bl" style="grid-column:1/-1"><i class="fas fa-boxes"></i><p>Aucun produit.</p></div>{% endfor %}
-    </div>
-  </div>
-
-  <!-- NEW / EDIT PRODUCT -->
-  <div id="secNew" style="display:none">
-    <div class="sec-hd"><h4 id="formTitle">➕ Nouveau produit</h4><button class="fchip" onclick="resetForm()"><i class="fas fa-undo"></i> Réinitialiser</button></div>
-    <input type="hidden" id="eid">
-
-    <div class="ftabs">
-      <button class="ftab active" onclick="st(0,this)">📋 Infos générales</button>
-      <button class="ftab" onclick="st(1,this)">📐 Caractéristiques</button>
-      <button class="ftab" onclick="st(2,this)">🖼 Images</button>
-      <button class="ftab" onclick="st(3,this)">⚙ Options</button>
-    </div>
-
-    <!-- TAB 0 -->
-    <div class="ftab-p active" id="tp0">
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-tag"></i> Identification</div><div class="fsect-bd">
-        <div class="fg"><label class="fl">Nom du produit *</label><input class="fi" id="pn" placeholder="Ex: Écouteurs Bluetooth TWS Pro 5.3 ANC"></div>
-        <div class="fg3">
-          <div class="fg"><label class="fl">Catégorie *</label><select class="fi" id="pcat"><option value="electronique">📱 Électronique</option><option value="mode">👗 Mode & Sacs</option><option value="maison">🏠 Maison & Déco</option><option value="sport">⚽ Sport & Loisirs</option><option value="beaute">💄 Beauté & Soin</option></select></div>
-          <div class="fg"><label class="fl">Marque</label><input class="fi" id="pbrand" placeholder="Ex: Xiaomi, Nike…"></div>
-          <div class="fg"><label class="fl">Référence / SKU</label><input class="fi" id="psku" placeholder="Ex: TWS-BLK-001"></div>
-        </div>
-        <div class="fg"><label class="fl">Accroche (courte)</label><input class="fi" id="pshort" placeholder="Ex: Son immersif, 30h autonomie, livraison rapide"></div>
-        <div class="fg"><label class="fl">Description complète</label><textarea class="fi" id="pd" rows="5" style="resize:vertical" placeholder="Décrivez le produit en détail…"></textarea></div>
-      </div></div>
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-money-bill"></i> Prix & Stock</div><div class="fsect-bd">
-        <div class="fg4">
-          <div class="fg"><label class="fl">Prix de vente (XAF) *</label><input class="fi" id="pp" type="number" min="0" placeholder="0"></div>
-          <div class="fg"><label class="fl">Prix barré (XAF)</label><input class="fi" id="pop" type="number" min="0" placeholder="0"><div class="fhint">Affiché barré (promo)</div></div>
-          <div class="fg"><label class="fl">Stock</label><input class="fi" id="pstock" type="number" value="10" min="0"></div>
-          <div class="fg"><label class="fl">Alerte stock bas</label><input class="fi" id="pstockwarn" type="number" value="5" min="0"></div>
-        </div>
-        <div class="fg2">
-          <div class="fg"><label class="fl">Badge</label><select class="fi" id="pbadge"><option value="">Aucun</option><option value="new">✨ Nouveau</option><option value="hot">🔥 Populaire</option><option value="promo">🏷 Promo</option></select></div>
-          <div class="fg"><label class="fl">Info livraison</label><input class="fi" id="pdel" value="Livraison 3-7 jours"></div>
-        </div>
-      </div></div>
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-list-check"></i> Points forts</div><div class="fsect-bd">
-        <div class="fg"><label class="fl">Un avantage par ligne</label><textarea class="fi" id="pfeats" rows="5" style="resize:vertical" placeholder="✔ Bluetooth 5.3 — connexion stable&#10;✔ Réduction de bruit active (ANC)&#10;✔ Autonomie 8h + 22h boîtier&#10;✔ Résistant à l'eau IPX5&#10;✔ Compatible iOS & Android"></textarea><div class="fhint">Affichés avec des ✔ sur la fiche produit</div></div>
-      </div></div>
-    </div>
-
-    <!-- TAB 1 — SPECS -->
-    <div class="ftab-p" id="tp1">
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-ruler-combined"></i> Dimensions & Poids</div><div class="fsect-bd">
-        <div class="fg4">
-          <div class="fg"><label class="fl">Longueur (cm)</label><input class="fi" id="slen" placeholder="—"></div>
-          <div class="fg"><label class="fl">Largeur (cm)</label><input class="fi" id="swid" placeholder="—"></div>
-          <div class="fg"><label class="fl">Hauteur (cm)</label><input class="fi" id="shgt" placeholder="—"></div>
-          <div class="fg"><label class="fl">Poids (g)</label><input class="fi" id="swgt" placeholder="—"></div>
-        </div>
-      </div></div>
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-palette"></i> Variantes</div><div class="fsect-bd">
-        <div class="fg2">
-          <div class="fg"><label class="fl">Couleurs disponibles</label><input class="fi" id="pcolors" placeholder="Noir, Blanc, Rouge…" oninput="renderTags('pcolors','colorTags')"><div id="colorTags" style="margin-top:.35rem"></div></div>
-          <div class="fg"><label class="fl">Tailles disponibles</label><input class="fi" id="psizes" placeholder="S, M, L, XL — ou 36, 38…" oninput="renderTags('psizes','sizeTags')"><div id="sizeTags" style="margin-top:.35rem"></div></div>
-        </div>
-        <div class="fg"><label class="fl">Matériaux / Composition</label><input class="fi" id="pmats" placeholder="Ex: Plastique ABS, Silicone, Inox 304…"></div>
-      </div></div>
-      <div class="fsect">
-        <div class="fsect-hd"><i class="fas fa-table"></i> Fiche technique personnalisée</div>
-        <div class="fsect-bd">
-          <table class="spec-tbl"><thead><tr><td><span class="fl" style="margin:0">Caractéristique</span></td><td><span class="fl" style="margin:0">Valeur</span></td><td style="width:34px"></td></tr></thead><tbody id="specBody"></tbody></table>
-          <button class="btn-spec" onclick="addSpecRow()">+ Ajouter une caractéristique</button>
-        </div>
-      </div>
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-shield-alt"></i> Garantie & Origine</div><div class="fsect-bd">
-        <div class="fg3">
-          <div class="fg"><label class="fl">Garantie</label><input class="fi" id="pwarranty" placeholder="Ex: 1 an constructeur"></div>
-          <div class="fg"><label class="fl">Pays d'origine</label><input class="fi" id="porigin" placeholder="Ex: Chine"></div>
-          <div class="fg"><label class="fl">Certifications</label><input class="fi" id="pcert" placeholder="CE, RoHS, FCC…"></div>
-        </div>
-        <div class="fg"><label class="fl">Contenu de la boîte</label><input class="fi" id="pbox" placeholder="Ex: 1x Écouteur, 1x Boîtier, 3x Embouts, 1x Câble USB-C"></div>
-      </div></div>
-    </div>
-
-    <!-- TAB 2 — IMAGES -->
-    <div class="ftab-p" id="tp2">
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-images"></i> Galerie d'images (max 6)</div><div class="fsect-bd">
-        <div class="acc-info-box" style="margin-bottom:.85rem">
-          <i class="fas fa-lightbulb"></i>
-          <span>La <strong>1ère image</strong> est l'image principale affichée dans la boutique. Ajoutez jusqu'à 6 images. Glissez-déposez ou cliquez sur un emplacement pour uploader.</span>
-        </div>
-        <!-- Zone principale drag & drop -->
-        <div id="imgMainZone" class="img-zone"
-             ondragover="e=>{e.preventDefault();this.classList.add('dg')}"
-             ondragleave="this.classList.remove('dg')"
-             ondrop="galleryDrop(event,0)"
-             onclick="trigGalleryInput(0)"
-             style="margin-bottom:.75rem">
-          <i class="fas fa-image" id="imgIco"></i>
-          <small>Glissez l'image principale ici ou cliquez</small>
-          <img id="imgPrev" src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9px">
-          <div class="upbar" id="upbar"><div class="upbar-f" id="upbarf"></div></div>
-        </div>
-        <!-- Champ URL caché mais maintenu pour compatibilité -->
-        <input type="hidden" id="pimg">
-        <!-- Grille 6 images -->
-        <div class="img-gallery" id="imgGallery">
-          <!-- Slots 1-5 (slot 0 = image principale ci-dessus) -->
-        </div>
-        <!-- Input file caché -->
-        <input type="file" id="imgFileGlobal" accept="image/*" multiple style="display:none" onchange="handleGalleryFiles(this)">
-        <div class="img-upbar" id="galleryUpbar"><div class="img-upbar-f" id="galleryUpbarf"></div></div>
-        <div style="margin-top:.55rem;font-size:.72rem;color:var(--text-secondary)">
-          <i class="fas fa-info-circle"></i> Formats acceptés : JPG, PNG, GIF, WebP — 5 Mo max par image
-        </div>
-      </div></div>
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-link"></i> Lien source Alibaba / AliExpress</div><div class="fsect-bd">
-        <div class="fg"><label class="fl">URL du produit source (interne)</label><input class="fi" id="psource" placeholder="https://www.alibaba.com/product/…"><div class="fhint">Non visible sur la boutique publique</div></div>
-      </div></div>
-    </div>
-
-    <!-- TAB 3 — OPTIONS -->
-    <div class="ftab-p" id="tp3">
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-tags"></i> Mots-clés</div><div class="fsect-bd">
-        <div class="fg"><label class="fl">Mots-clés (séparés par virgules)</label><input class="fi" id="ptags" placeholder="bluetooth, écouteurs, sans fil, sport…" oninput="renderTags('ptags','tagsP')"><div id="tagsP" style="margin-top:.35rem"></div></div>
-      </div></div>
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-truck"></i> Logistique</div><div class="fsect-bd">
-        <div class="fg3">
-          <div class="fg"><label class="fl">Délai livraison</label><input class="fi" id="pdel2" placeholder="3-7 jours"></div>
-          <div class="fg"><label class="fl">Frais livraison (XAF)</label><input class="fi" id="pship" type="number" min="0" value="0"></div>
-          <div class="fg"><label class="fl">Zones livrées</label><input class="fi" id="pzones" value="Tout le Cameroun"></div>
-        </div>
-        <div class="fg"><label class="fl">Notes internes (non visibles)</label><textarea class="fi" id="pnotes" rows="2" style="resize:vertical" placeholder="Prix d'achat, fournisseur, remarques…"></textarea></div>
-      </div></div>
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-toggle-on"></i> Visibilité</div><div class="fsect-bd">
-        <div class="fg2">
-          <div class="fg"><label class="fl">Statut</label><select class="fi" id="pactive"><option value="1">✅ Visible sur la boutique</option><option value="0">🚫 Masqué (brouillon)</option></select></div>
-          <div class="fg"><label class="fl">Nombre d'avis initial</label><input class="fi" id="previews" type="number" min="0" value="0"></div>
-        </div>
-      </div></div>
-    </div>
-
-    <button class="save-btn" id="saveBtn" onclick="saveProd()" style="margin-top:1rem">
-      <i class="fas fa-save"></i> Enregistrer le produit
-    </button>
-  </div>
-
-  <!-- ORDERS -->
-  <div id="secOrd" style="display:none">
-    <div class="sec-hd"><h4>📋 Toutes les commandes</h4><input class="fsearch" placeholder="🔍 Nom, téléphone…" oninput="filterOrds(this.value)" style="max-width:210px"></div>
-    <div class="filter-row" id="ordFilts">
-      <button class="fchip on" data-os="all" onclick="filterOS(this)">Tout ({{ orders|length }})</button>
-      <button class="fchip" data-os="pending" onclick="filterOS(this)">⏳ En attente ({{ orders|selectattr('status','eq','pending')|list|length }})</button>
-      <button class="fchip" data-os="paid" onclick="filterOS(this)">✅ Payé ({{ orders|selectattr('status','eq','paid')|list|length }})</button>
-      <button class="fchip" data-os="shipped" onclick="filterOS(this)">🚚 Expédié ({{ orders|selectattr('status','eq','shipped')|list|length }})</button>
-      <button class="fchip" data-os="delivered" onclick="filterOS(this)">📬 Livré ({{ orders|selectattr('status','eq','delivered')|list|length }})</button>
-      <button class="fchip" data-os="cancelled" onclick="filterOS(this)">❌ Annulé ({{ orders|selectattr('status','eq','cancelled')|list|length }})</button>
-    </div>
-    {% if orders %}
-    <div class="ord-wrap"><div style="overflow-x:auto">
-      <table class="ord-table" id="ordTbl">
-        <thead><tr><th>Réf</th><th>Client</th><th>Téléphone</th><th>Ville</th><th>Produits</th><th>Total</th><th>Paiement</th><th>Statut</th><th>Date</th><th></th></tr></thead>
-        <tbody>
-        {% for o in orders %}
-        <tr class="ord-row" data-status="{{ o.status }}" data-q="{{ ((o.customer_name or '')+(o.customer_phone or '')+(o.items_summary or ''))|lower }}" style="cursor:pointer" onclick="showOrd({{ o.id }})">
-          <td><code style="color:var(--primary-color)">#{{ o.id }}</code></td>
-          <td><strong>{{ o.customer_name or '—' }}</strong></td>
-          <td style="font-family:var(--font-mono);font-size:.76rem">{{ o.customer_phone or '—' }}</td>
-          <td style="font-size:.78rem;color:var(--text-secondary)">{{ o.customer_city or '—' }}</td>
-          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;color:var(--text-secondary)">{{ o.items_summary or '—' }}</td>
-          <td style="font-family:var(--font-mono);font-weight:800;color:var(--primary-color);white-space:nowrap">{{ "{:,.0f}".format(o.total) }} XAF</td>
-          <td style="font-size:.76rem">{{ {'orange_money':'🟠 Orange Money','mtn_momo':'🟡 MTN','whatsapp':'💬 WhatsApp'}.get(o.pay_method, o.pay_method or '—') }}</td>
-          <td onclick="event.stopPropagation()">
-            <select class="sp sp-{{ o.status }}" id="st{{ o.id }}" onchange="updOS({{ o.id }},this)" style="border:none;outline:none;cursor:pointer;font-family:inherit;font-weight:800;background:transparent">
-              <option value="pending" {% if o.status=='pending' %}selected{% endif %}>⏳ En attente</option>
-              <option value="paid" {% if o.status=='paid' %}selected{% endif %}>✅ Payé</option>
-              <option value="shipped" {% if o.status=='shipped' %}selected{% endif %}>🚚 Expédié</option>
-              <option value="delivered" {% if o.status=='delivered' %}selected{% endif %}>📬 Livré</option>
-              <option value="cancelled" {% if o.status=='cancelled' %}selected{% endif %}>❌ Annulé</option>
-            </select>
-          </td>
-          <td style="font-size:.71rem;color:var(--text-secondary)">{{ o.created_at[:16] if o.created_at else '—' }}</td>
-          <td onclick="event.stopPropagation()">
-            <div style="display:flex;gap:.3rem">
-              {% if o.customer_phone %}<button class="abtn abtn-view" onclick="waC('{{ o.customer_phone }}','#{{ o.id }}')"><i class="fab fa-whatsapp"></i></button>{% endif %}
-              <button class="abtn abtn-del" onclick="delOrd({{ o.id }})"><i class="fas fa-trash"></i></button>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    </div></div>
-    {% else %}<div class="empty-bl"><i class="fas fa-receipt"></i><p>Aucune commande.</p></div>{% endif %}
-  </div>
-
-
-  <!-- ══ STAFF ASSISTANCE ══ -->
-  <div id="secStaff" style="display:none">
-    <div class="sec-hd">
-      <h4>👥 Équipe d'assistance</h4>
-      <button class="save-btn" style="width:auto;padding:.5rem 1.1rem" onclick="staffOpenModal()">
-        <i class="fas fa-plus"></i> Ajouter un agent
-      </button>
-    </div>
-
-    <div class="acc-info-box" style="margin-bottom:1.2rem">
-      <i class="fas fa-info-circle"></i>
-      <div>
-        <strong style="color:var(--text-primary)">Techniciens &amp; Commerciaux</strong><br>
-        Gérez les profils de votre équipe. Ils seront proposés automatiquement aux clients
-        dans le widget d'assistance flottant après la prise en charge par l'IA.
-      </div>
-    </div>
-
-    <div class="staff-grid" id="staffGrid">
-      <div class="empty-bl" style="grid-column:1/-1">
-        <i class="fas fa-spinner fa-spin"></i><p>Chargement…</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- STAFF MODAL -->
-  <div id="staffModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);
-       align-items:center;justify-content:center;padding:1rem">
-    <div style="background:var(--secondary-color);border-radius:18px;width:100%;max-width:560px;
-                max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)">
-      <!-- Modal header -->
-      <div style="padding:1.1rem 1.3rem;border-bottom:1px solid var(--border-color);
-                  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;
-                  background:var(--secondary-color);z-index:1;border-radius:18px 18px 0 0">
-        <h4 style="font-size:1rem;font-weight:700" id="staffModalTitle">Ajouter un agent</h4>
-        <button onclick="staffCloseModal()" style="background:none;border:none;font-size:1.2rem;
-                cursor:pointer;color:var(--text-secondary);padding:.2rem">&times;</button>
-      </div>
-      <!-- Modal body -->
-      <div style="padding:1.3rem">
-        <!-- Avatar + Nom + Rôle -->
-        <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1rem">
-          <div class="staff-modal-av-zone" id="staffAvZone" onclick="document.getElementById('staffAvInput').click()">
-            <img id="staffAvPreview" src="" style="display:none">
-            <div class="av-hint" id="staffAvHint"><i class="fas fa-camera" style="font-size:1.3rem;display:block;margin-bottom:.3rem"></i>Photo</div>
-          </div>
-          <input type="file" id="staffAvInput" accept="image/*" style="display:none" onchange="staffHandleAvatar(this)">
-          <div style="flex:1">
-            <div class="fg" style="margin-bottom:.6rem">
-              <label class="fl">Nom complet *</label>
-              <input class="fi" id="sfName" placeholder="Ex: Jean Dupont" required>
-            </div>
-            <div class="fg">
-              <label class="fl">Type de rôle *</label>
-              <select class="fi" id="sfRole">
-                <option value="commercial">💼 Commercial</option>
-                <option value="technicien">🔧 Technicien</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bio -->
-        <div class="fg" style="margin-bottom:.7rem">
-          <label class="fl">Présentation courte</label>
-          <textarea class="fi" id="sfBio" rows="2" style="resize:vertical"
-            placeholder="Ex: Spécialiste électronique, 5 ans d'expérience chez k-ni..."></textarea>
-        </div>
-
-        <!-- Contacts -->
-        <div class="staff-form-grid" style="margin-bottom:.7rem">
-          <div class="fg">
-            <label class="fl"><i class="fas fa-phone" style="color:var(--primary-color)"></i> Téléphone</label>
-            <input class="fi" id="sfPhone" placeholder="+237 6XX XXX XXX">
-          </div>
-          <div class="fg">
-            <label class="fl"><i class="fab fa-whatsapp" style="color:#25d366"></i> WhatsApp</label>
-            <input class="fi" id="sfWhatsapp" placeholder="+237 6XX XXX XXX">
-          </div>
-          <div class="fg fg-full">
-            <label class="fl"><i class="fas fa-envelope" style="color:var(--primary-color)"></i> Email</label>
-            <input class="fi" id="sfEmail" type="email" placeholder="agent@kni-store.cm">
-          </div>
-        </div>
-
-        <!-- Spécialités -->
-        <div class="fg" style="margin-bottom:.7rem">
-          <label class="fl">Spécialités (Entrée pour ajouter)</label>
-          <div class="staff-specs-input" id="sfSpecsBox" onclick="document.getElementById('sfSpecsInp').focus()">
-            <!-- chips dynamiques -->
-            <input id="sfSpecsInp" style="border:none;outline:none;background:transparent;font-size:.78rem;
-                   color:var(--text-primary);min-width:120px;flex:1;font-family:inherit"
-                   placeholder="Ex: Bluetooth, iPhone…"
-                   onkeydown="staffSpecKeydown(event)">
-          </div>
-        </div>
-
-        <!-- Temps de réponse + Note + Ordre -->
-        <div class="staff-form-grid" style="margin-bottom:.7rem">
-          <div class="fg">
-            <label class="fl">Temps de réponse moyen</label>
-            <input class="fi" id="sfRespTime" value="< 5 min" placeholder="< 5 min">
-          </div>
-          <div class="fg">
-            <label class="fl">Ordre d'affichage</label>
-            <input class="fi" id="sfOrder" type="number" min="0" value="0">
-          </div>
-          <div class="fg fg-full">
-            <label class="fl">Note (étoiles)</label>
-            <div class="staff-stars" id="sfStarsBox">
-              <span class="staff-star on" data-v="1" onclick="staffSetRating(1)">★</span>
-              <span class="staff-star on" data-v="2" onclick="staffSetRating(2)">★</span>
-              <span class="staff-star on" data-v="3" onclick="staffSetRating(3)">★</span>
-              <span class="staff-star on" data-v="4" onclick="staffSetRating(4)">★</span>
-              <span class="staff-star on" data-v="5" onclick="staffSetRating(5)">★</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Statut actif -->
-        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.1rem">
-          <input type="checkbox" id="sfActive" checked style="accent-color:var(--primary-color);width:16px;height:16px">
-          <label for="sfActive" style="font-size:.82rem;font-weight:600;cursor:pointer">Agent actif (visible dans le widget boutique)</label>
-        </div>
-
-        <!-- Boutons -->
-        <div style="display:flex;gap:.65rem;justify-content:flex-end">
-          <button onclick="staffCloseModal()" style="padding:.65rem 1.2rem;border-radius:10px;
-                  background:rgba(107,114,128,.1);color:var(--text-secondary);border:1px solid var(--border-color);
-                  font-size:.85rem;cursor:pointer">Annuler</button>
-          <button onclick="staffSave()" class="save-btn" style="width:auto;padding:.65rem 1.4rem">
-            <i class="fas fa-save"></i> <span id="staffSaveLbl">Enregistrer</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ACCESS MANAGEMENT — superadmin only -->
-  {% if session.get('role') == 'superadmin' %}
-  <div id="secAcc" style="display:none">
-    <div class="sec-hd"><h4>🔐 Accès &amp; Permissions Boutique</h4></div>
-
-    <div class="acc-info-box">
-      <i class="fas fa-shield-halved"></i>
-      <div>
-        <strong style="color:var(--text-primary)">Gérez qui peut intervenir sur la boutique.</strong><br>
-        Activez le rôle <em>Gestionnaire boutique</em> pour permettre à un utilisateur d'ajouter, modifier et masquer des produits — sans pouvoir les supprimer ni accéder aux autres sections admin.
-      </div>
-    </div>
-
-    <!-- Tableau des permissions par rôle -->
-    <div class="perm-matrix">
-      <div class="perm-matrix-hd">
-        <span>Action</span>
-        <span>Gestionnaire</span>
-        <span>Admin</span>
-        <span>Super Admin</span>
-      </div>
-      <div class="perm-matrix-row">
-        <span>Voir les produits</span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-      </div>
-      <div class="perm-matrix-row">
-        <span>Ajouter un produit</span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-      </div>
-      <div class="perm-matrix-row">
-        <span>Modifier un produit</span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-      </div>
-      <div class="perm-matrix-row">
-        <span>Masquer / Afficher</span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-      </div>
-      <div class="perm-matrix-row">
-        <span>Supprimer un produit</span>
-        <span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-      </div>
-      <div class="perm-matrix-row">
-        <span>Gérer les commandes</span>
-        <span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-      </div>
-      <div class="perm-matrix-row">
-        <span>Gérer les accès</span>
-        <span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span>
-        <span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span>
-        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
-      </div>
-    </div>
-
-    <!-- Liste des utilisateurs -->
-    <div class="sec-hd" style="margin-bottom:.9rem"><h4 style="font-size:.88rem">👥 Utilisateurs ({{ all_users|default([])|length }})</h4></div>
-    <div class="user-grid" id="userGrid">
-      {% for u in all_users|default([]) %}
-      {% if u.role not in ('admin','superadmin') %}
-      {% set is_manager = (u.role == 'shop_manager') %}
-      <div class="ucard" id="ucard-{{ u.id }}">
-        <div class="ucard-av" style="background:{{ 'rgba(0,212,170,.15)' if is_manager else 'rgba(107,114,128,.1)' }};color:{{ '#00d4aa' if is_manager else 'var(--text-secondary)' }}">
-          {{ u.username[0].upper() if u.username else '?' }}
-        </div>
-        <div class="ucard-info">
-          <div class="ucard-name">{{ u.username }}</div>
-          <div class="ucard-email">{{ u.email }}</div>
-          <div class="ucard-role-lbl" style="color:{{ '#00d4aa' if is_manager else 'var(--text-secondary)' }}">
-            {{ '🛍 Gestionnaire boutique' if is_manager else '👤 Utilisateur' }}
-          </div>
-        </div>
-        <div class="ucard-ctrl">
-          <span class="acc-badge {{ 'acc-badge-on' if is_manager else 'acc-badge-off' }}" id="ubadge-{{ u.id }}">
-            {{ '✅ Actif' if is_manager else 'Inactif' }}
-          </span>
-          <label class="toggle-sw" title="{{ 'Retirer l\'accès' if is_manager else 'Donner l\'accès boutique' }}">
-            <input type="checkbox" {{ 'checked' if is_manager else '' }}
-                   onchange="toggleShopAccess({{ u.id }}, this.checked, '{{ u.username }}')">
-            <span class="toggle-sw-track"></span>
-            <span class="toggle-sw-thumb"></span>
-          </label>
-        </div>
-      </div>
-      {% endif %}
-      {% else %}
-      <div class="empty-bl" style="grid-column:1/-1;padding:2rem">
-        <i class="fas fa-users"></i><p>Aucun utilisateur standard trouvé.</p>
       </div>
       {% endfor %}
     </div>
   </div>
   {% endif %}
+  <div class="sec-hd"><h4>📦 Dernières commandes</h4><button class="fchip on" onclick="go('ord')">Voir tout →</button></div>
+  {% if orders %}
+  <div class="ord-wrap"><table class="ord-table"><thead><tr><th>Réf</th><th>Client</th><th>Produits</th><th>Total</th><th>Statut</th><th>Date</th></tr></thead><tbody>
+  {% for o in orders[:6] %}
+  <tr style="cursor:pointer" onclick="showOrd({{ o.id }})">
+    <td><code style="color:var(--primary-color)">#{{ o.id }}</code></td>
+    <td><strong>{{ o.customer_name or '—' }}</strong><br><small style="color:var(--text-secondary)">{{ o.customer_city or '' }}</small></td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;color:var(--text-secondary)">{{ o.items_summary or '—' }}</td>
+    <td style="font-family:var(--font-mono);font-weight:700;color:var(--primary-color);white-space:nowrap">{{ "{:,.0f}".format(o.total) }} XAF</td>
+    <td><span class="sp sp-{{ o.status }}">{{ {'pending':'⏳ En attente','paid':'✅ Payé','shipped':'🚚 Expédié','delivered':'📬 Livré','cancelled':'❌ Annulé'}.get(o.status, o.status) }}</span></td>
+    <td style="font-size:.72rem;color:var(--text-secondary)">{{ o.created_at[:16] if o.created_at else '—' }}</td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty-bl"><i class="fas fa-receipt"></i><p>Aucune commande.</p></div>{% endif %}
+</div>
+
+<!-- ══ PRODUITS ══ -->
+<div id="secProd" style="display:none">
+  <div class="sec-hd"><h4>📦 Catalogue produits</h4>
+    {% if session.get('role') in ('admin', 'superadmin', 'shop_manager') %}
+    <button class="save-btn" style="width:auto;padding:.5rem 1.1rem" onclick="go('new')"><i class="fas fa-plus"></i> Nouveau produit</button>
+    {% endif %}
+  </div>
+  <div class="filter-row">
+    <input class="fsearch" placeholder="🔍 Rechercher un produit…" oninput="filterP(this.value)">
+    <button class="fchip on" data-fc="all" onclick="filterCat(this)">Tout</button>
+    <button class="fchip" data-fc="electronique" onclick="filterCat(this)">📱</button>
+    <button class="fchip" data-fc="mode" onclick="filterCat(this)">👗</button>
+    <button class="fchip" data-fc="maison" onclick="filterCat(this)">🏠</button>
+    <button class="fchip" data-fc="sport" onclick="filterCat(this)">⚽</button>
+    <button class="fchip" data-fc="beaute" onclick="filterCat(this)">💄</button>
+    <select class="fi" id="stockFilter" onchange="applyPF()" style="width:auto;padding:.32rem .65rem;font-size:.77rem">
+      <option value="all">Tout stock</option><option value="available">En stock</option>
+      <option value="low">Stock bas</option><option value="out">Rupture</option>
+    </select>
+  </div>
+  <div class="prod-grid" id="prodGrid">
+    {% for p in products %}
+    <div class="pc" data-cat="{{ p.category }}" data-name="{{ p.name|lower }}" data-stock="{{ p.stock }}" id="pc-{{ p.id }}">
+      <div class="pc-img">
+        {% if p.image_url %}<img src="{{ p.image_url }}" onerror="this.style.display='none'">{% endif %}
+        <i class="fas fa-{{ 'mobile-alt' if p.category=='electronique' else 'tshirt' if p.category=='mode' else 'home' if p.category=='maison' else 'futbol' if p.category=='sport' else 'magic' if p.category=='beaute' else 'box' }}" {% if p.image_url %}style="display:none"{% endif %}></i>
+        {% if not p.is_active %}<div class="pc-inactive">MASQUÉ</div>{% endif %}
+        {% if p.badge %}<div style="position:absolute;top:8px;left:8px;background:{% if p.badge=='new' %}#6366f1{% elif p.badge=='hot' %}#ef4444{% else %}#f59e0b{% endif %};color:#fff;font-size:.62rem;font-weight:800;padding:.18rem .5rem;border-radius:6px">{{ {'new':'✨ New','hot':'🔥 Hot','promo':'🏷 Promo'}.get(p.badge, p.badge) }}</div>{% endif %}
+      </div>
+      <div class="pc-body">
+        <div class="pc-cat">{{ p.category }}</div>
+        <div class="pc-name">{{ p.name }}</div>
+        <div><span class="pc-price">{{ "{:,.0f}".format(p.price) }} XAF</span>{% if p.original_price and p.original_price > p.price %}<span class="pc-old">{{ "{:,.0f}".format(p.original_price) }} XAF</span>{% endif %}</div>
+        <div class="pc-stock {{ 'stk-out' if p.stock==0 else 'stk-low' if 0 < p.stock <= 5 else 'stk-ok' }}">
+          <i class="fas fa-circle" style="font-size:.38rem"></i>
+          {% if p.stock==0 %}Rupture{% elif p.stock<0 %}Illimité{% else %}{{ p.stock }} en stock{% endif %}
+        </div>
+        <div class="pc-actions">
+          <button class="abtn abtn-view" onclick="showProd({{ p.id }})"><i class="fas fa-eye"></i> Voir</button>
+          {% if session.get('role') in ('admin', 'superadmin', 'shop_manager') %}
+          <button class="abtn abtn-edit" onclick="loadEdit({{ p.id }})"><i class="fas fa-edit"></i> Modifier</button>
+          <button class="abtn abtn-toggle" onclick="toggleP({{ p.id }})"><i class="fas fa-{{ 'eye-slash' if p.is_active else 'eye' }}"></i></button>
+          {% endif %}
+          {% if session.get('role') in ('admin', 'superadmin') %}
+          <button class="abtn abtn-del" onclick="delProd({{ p.id }},'{{ p.name|replace("'","\\'") }}')"><i class="fas fa-trash"></i></button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}<div class="empty-bl" style="grid-column:1/-1"><i class="fas fa-boxes"></i><p>Aucun produit.</p></div>{% endfor %}
+  </div>
+</div>
+
+<!-- ══ NOUVEAU / MODIFIER PRODUIT ══ -->
+<div id="secNew" style="display:none">
+  <div class="sec-hd"><h4 id="formTitle">➕ Nouveau produit</h4><button class="fchip" onclick="resetForm()"><i class="fas fa-undo"></i> Réinitialiser</button></div>
+  <input type="hidden" id="eid">
+  <div class="ftabs">
+    <button class="ftab active" onclick="st(0,this)">📋 Infos générales</button>
+    <button class="ftab" onclick="st(1,this)">📐 Caractéristiques</button>
+    <button class="ftab" onclick="st(2,this)">🖼 Images</button>
+    <button class="ftab" onclick="st(3,this)">⚙ Options</button>
+  </div>
+  <div class="ftab-p active" id="tp0">
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-tag"></i> Identification</div><div class="fsect-bd">
+      <div class="fg"><label class="fl">Nom du produit *</label><input class="fi" id="pn" placeholder="Ex: Écouteurs Bluetooth TWS Pro 5.3 ANC"></div>
+      <div class="fg3">
+        <div class="fg"><label class="fl">Catégorie *</label><select class="fi" id="pcat"><option value="electronique">📱 Électronique</option><option value="mode">👗 Mode & Sacs</option><option value="maison">🏠 Maison & Déco</option><option value="sport">⚽ Sport & Loisirs</option><option value="beaute">💄 Beauté & Soin</option></select></div>
+        <div class="fg"><label class="fl">Marque</label><input class="fi" id="pbrand" placeholder="Ex: Xiaomi, Nike…"></div>
+        <div class="fg"><label class="fl">Référence / SKU</label><input class="fi" id="psku" placeholder="Ex: TWS-BLK-001"></div>
+      </div>
+      <div class="fg"><label class="fl">Accroche courte</label><input class="fi" id="pshort" placeholder="Son immersif, 30h autonomie…"></div>
+      <div class="fg"><label class="fl">Description complète</label><textarea class="fi" id="pd" rows="5" style="resize:vertical" placeholder="Décrivez le produit en détail…"></textarea></div>
+    </div></div>
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-money-bill"></i> Prix & Stock</div><div class="fsect-bd">
+      <div class="fg4">
+        <div class="fg"><label class="fl">Prix de vente (XAF) *</label><input class="fi" id="pp" type="number" min="0" placeholder="0"></div>
+        <div class="fg"><label class="fl">Prix barré (XAF)</label><input class="fi" id="pop" type="number" min="0" placeholder="0"><div class="fhint">Promo</div></div>
+        <div class="fg"><label class="fl">Stock</label><input class="fi" id="pstock" type="number" value="10" min="-1"><div class="fhint">-1 = illimité</div></div>
+        <div class="fg"><label class="fl">Alerte stock bas</label><input class="fi" id="pstockwarn" type="number" value="5" min="0"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Badge</label><select class="fi" id="pbadge"><option value="">Aucun</option><option value="new">✨ Nouveau</option><option value="hot">🔥 Populaire</option><option value="promo">🏷 Promo</option></select></div>
+        <div class="fg"><label class="fl">Info livraison</label><input class="fi" id="pdel" value="Livraison 3-7 jours"></div>
+      </div>
+    </div></div>
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-list-check"></i> Points forts</div><div class="fsect-bd">
+      <div class="fg"><label class="fl">Un avantage par ligne</label><textarea class="fi" id="pfeats" rows="5" style="resize:vertical" placeholder="✔ Bluetooth 5.3&#10;✔ Réduction de bruit ANC&#10;✔ Autonomie 30h&#10;✔ IPX5 waterproof&#10;✔ iOS & Android"></textarea><div class="fhint">Affichés avec ✔ sur la fiche produit</div></div>
+    </div></div>
+  </div>
+  <div class="ftab-p" id="tp1">
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-ruler-combined"></i> Dimensions & Poids</div><div class="fsect-bd">
+      <div class="fg4">
+        <div class="fg"><label class="fl">Longueur (cm)</label><input class="fi" id="slen" placeholder="—"></div>
+        <div class="fg"><label class="fl">Largeur (cm)</label><input class="fi" id="swid" placeholder="—"></div>
+        <div class="fg"><label class="fl">Hauteur (cm)</label><input class="fi" id="shgt" placeholder="—"></div>
+        <div class="fg"><label class="fl">Poids (g)</label><input class="fi" id="swgt" placeholder="—"></div>
+      </div>
+    </div></div>
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-palette"></i> Variantes</div><div class="fsect-bd">
+      <div class="fg2">
+        <div class="fg"><label class="fl">Couleurs disponibles</label><input class="fi" id="pcolors" placeholder="Noir, Blanc, Rouge…" oninput="renderTags('pcolors','colorTags')"><div id="colorTags" style="margin-top:.35rem"></div></div>
+        <div class="fg"><label class="fl">Tailles disponibles</label><input class="fi" id="psizes" placeholder="S, M, L, XL…" oninput="renderTags('psizes','sizeTags')"><div id="sizeTags" style="margin-top:.35rem"></div></div>
+      </div>
+      <div class="fg"><label class="fl">Matériaux / Composition</label><input class="fi" id="pmats" placeholder="Plastique ABS, Silicone…"></div>
+    </div></div>
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-table"></i> Fiche technique personnalisée</div><div class="fsect-bd">
+      <table class="spec-tbl"><thead><tr><td><span class="fl" style="margin:0">Caractéristique</span></td><td><span class="fl" style="margin:0">Valeur</span></td><td style="width:34px"></td></tr></thead><tbody id="specBody"></tbody></table>
+      <button class="btn-spec" onclick="addSpecRow()">+ Ajouter une caractéristique</button>
+    </div></div>
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-shield-alt"></i> Garantie & Origine</div><div class="fsect-bd">
+      <div class="fg3">
+        <div class="fg"><label class="fl">Garantie</label><input class="fi" id="pwarranty" placeholder="1 an constructeur"></div>
+        <div class="fg"><label class="fl">Pays d'origine</label><input class="fi" id="porigin" placeholder="Chine"></div>
+        <div class="fg"><label class="fl">Certifications</label><input class="fi" id="pcert" placeholder="CE, RoHS…"></div>
+      </div>
+      <div class="fg"><label class="fl">Contenu de la boîte</label><input class="fi" id="pbox" placeholder="1x Écouteur, 1x Boîtier, 3x Embouts…"></div>
+    </div></div>
+  </div>
+  <div class="ftab-p" id="tp2">
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-images"></i> Galerie d'images (max 6)</div><div class="fsect-bd">
+      <div class="acc-info-box" style="margin-bottom:.85rem"><i class="fas fa-lightbulb"></i><span>La <strong>1ère image</strong> est l'image principale. Ajoutez jusqu'à 6 images. Glissez-déposez ou cliquez.</span></div>
+      <div id="imgMainZone" class="img-zone" ondragover="event.preventDefault();this.classList.add('dg')" ondragleave="this.classList.remove('dg')" ondrop="galleryDrop(event,0)" onclick="trigGalleryInput(0)" style="margin-bottom:.75rem">
+        <i class="fas fa-image" id="imgIco"></i>
+        <small>Glissez l'image principale ici ou cliquez</small>
+        <img id="imgPrev" src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9px">
+        <div class="upbar" id="upbar"><div class="upbar-f" id="upbarf"></div></div>
+      </div>
+      <input type="hidden" id="pimg">
+      <div class="img-gallery" id="imgGallery"></div>
+      <input type="file" id="imgFileGlobal" accept="image/*" style="display:none" onchange="handleGalleryFiles(this)">
+      <div class="img-upbar" id="galleryUpbar"><div class="img-upbar-f" id="galleryUpbarf"></div></div>
+      <div style="margin-top:.55rem;font-size:.72rem;color:var(--text-secondary)"><i class="fas fa-info-circle"></i> JPG, PNG, GIF, WebP — 5 Mo max</div>
+    </div></div>
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-link"></i> Lien source Alibaba / AliExpress</div><div class="fsect-bd">
+      <div class="fg"><label class="fl">URL source (interne, non visible boutique)</label><input class="fi" id="psource" placeholder="https://www.alibaba.com/…"></div>
+    </div></div>
+  </div>
+  <div class="ftab-p" id="tp3">
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-tags"></i> Mots-clés SEO</div><div class="fsect-bd">
+      <div class="fg"><label class="fl">Mots-clés séparés par virgules</label><input class="fi" id="ptags" placeholder="bluetooth, écouteurs, sans fil…" oninput="renderTags('ptags','tagsP')"><div id="tagsP" style="margin-top:.35rem"></div></div>
+    </div></div>
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-truck"></i> Logistique</div><div class="fsect-bd">
+      <div class="fg3">
+        <div class="fg"><label class="fl">Délai livraison</label><input class="fi" id="pdel2" placeholder="3-7 jours"></div>
+        <div class="fg"><label class="fl">Frais livraison (XAF)</label><input class="fi" id="pship" type="number" min="0" value="0"></div>
+        <div class="fg"><label class="fl">Zones livrées</label><input class="fi" id="pzones" value="Tout le Cameroun"></div>
+      </div>
+      <div class="fg"><label class="fl">Notes internes (non visibles)</label><textarea class="fi" id="pnotes" rows="2" style="resize:vertical" placeholder="Prix d'achat, fournisseur…"></textarea></div>
+    </div></div>
+    <div class="fsect"><div class="fsect-hd"><i class="fas fa-toggle-on"></i> Visibilité</div><div class="fsect-bd">
+      <div class="fg2">
+        <div class="fg"><label class="fl">Statut</label><select class="fi" id="pactive"><option value="1">✅ Visible sur la boutique</option><option value="0">🚫 Masqué (brouillon)</option></select></div>
+        <div class="fg"><label class="fl">Nombre d'avis initial</label><input class="fi" id="previews" type="number" min="0" value="0"></div>
+      </div>
+    </div></div>
+  </div>
+  <button class="save-btn" id="saveBtn" onclick="saveProd()" style="margin-top:1rem"><i class="fas fa-save"></i> Enregistrer le produit</button>
+</div>
+
+<!-- ══ COMMANDES ══ -->
+<div id="secOrd" style="display:none">
+  <div class="sec-hd"><h4>📋 Toutes les commandes</h4><input class="fsearch" placeholder="🔍 Nom, téléphone…" oninput="filterOrds(this.value)" style="max-width:210px"></div>
+  <div class="filter-row" id="ordFilts">
+    <button class="fchip on" data-os="all" onclick="filterOS(this)">Tout ({{ orders|length }})</button>
+    <button class="fchip" data-os="pending" onclick="filterOS(this)">⏳ En attente ({{ orders|selectattr('status','eq','pending')|list|length }})</button>
+    <button class="fchip" data-os="paid" onclick="filterOS(this)">✅ Payé ({{ orders|selectattr('status','eq','paid')|list|length }})</button>
+    <button class="fchip" data-os="shipped" onclick="filterOS(this)">🚚 Expédié ({{ orders|selectattr('status','eq','shipped')|list|length }})</button>
+    <button class="fchip" data-os="delivered" onclick="filterOS(this)">📬 Livré ({{ orders|selectattr('status','eq','delivered')|list|length }})</button>
+    <button class="fchip" data-os="cancelled" onclick="filterOS(this)">❌ Annulé ({{ orders|selectattr('status','eq','cancelled')|list|length }})</button>
+  </div>
+  {% if orders %}
+  <div class="ord-wrap"><div style="overflow-x:auto"><table class="ord-table" id="ordTbl">
+    <thead><tr><th>Réf</th><th>Client</th><th>Téléphone</th><th>Ville</th><th>Produits</th><th>Total</th><th>Paiement</th><th>Statut</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+    {% for o in orders %}
+    <tr class="ord-row" data-status="{{ o.status }}" data-q="{{ ((o.customer_name or '')+(o.customer_phone or '')+(o.items_summary or ''))|lower }}" style="cursor:pointer" onclick="showOrd({{ o.id }})">
+      <td><code style="color:var(--primary-color)">#{{ o.id }}</code></td>
+      <td><strong>{{ o.customer_name or '—' }}</strong></td>
+      <td style="font-family:var(--font-mono);font-size:.76rem">{{ o.customer_phone or '—' }}</td>
+      <td style="font-size:.78rem;color:var(--text-secondary)">{{ o.customer_city or '—' }}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;color:var(--text-secondary)">{{ o.items_summary or '—' }}</td>
+      <td style="font-family:var(--font-mono);font-weight:800;color:var(--primary-color);white-space:nowrap">{{ "{:,.0f}".format(o.total) }} XAF</td>
+      <td style="font-size:.76rem">{{ {'orange_money':'🟠 Orange Money','mtn_momo':'🟡 MTN','whatsapp':'💬 WhatsApp'}.get(o.pay_method, o.pay_method or '—') }}</td>
+      <td onclick="event.stopPropagation()"><select class="sp sp-{{ o.status }}" id="st{{ o.id }}" onchange="updOS({{ o.id }},this)" style="border:none;outline:none;cursor:pointer;font-family:inherit;font-weight:800;background:transparent">
+        <option value="pending" {% if o.status=='pending' %}selected{% endif %}>⏳ En attente</option>
+        <option value="paid" {% if o.status=='paid' %}selected{% endif %}>✅ Payé</option>
+        <option value="shipped" {% if o.status=='shipped' %}selected{% endif %}>🚚 Expédié</option>
+        <option value="delivered" {% if o.status=='delivered' %}selected{% endif %}>📬 Livré</option>
+        <option value="cancelled" {% if o.status=='cancelled' %}selected{% endif %}>❌ Annulé</option>
+      </select></td>
+      <td style="font-size:.71rem;color:var(--text-secondary)">{{ o.created_at[:16] if o.created_at else '—' }}</td>
+      <td onclick="event.stopPropagation()"><div style="display:flex;gap:.3rem">
+        {% if o.customer_phone %}<button class="abtn abtn-view" onclick="waC('{{ o.customer_phone }}','#{{ o.id }}')"><i class="fab fa-whatsapp"></i></button>{% endif %}
+        <button class="abtn abtn-del" onclick="delOrd({{ o.id }})"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div></div>
+  {% else %}<div class="empty-bl"><i class="fas fa-receipt"></i><p>Aucune commande.</p></div>{% endif %}
+</div>
+
+<!-- ══ ANALYTIQUES ══ -->
+<div id="secAnalytics" style="display:none">
+  <div class="sec-hd"><h4>📊 Analytiques boutique</h4></div>
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-num">{{ active_count }}</div><div class="stat-lbl">Produits actifs</div></div>
+    <div class="stat-box"><div class="stat-num">{{ products|selectattr('stock', 'equalto', 0)|list|length }}</div><div class="stat-lbl">En rupture</div></div>
+    <div class="stat-box"><div class="stat-num">{{ orders|selectattr('status', 'eq', 'delivered')|list|length }}</div><div class="stat-lbl">Commandes livrées</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:#fbbf24">{{ orders|selectattr('status', 'eq', 'pending')|list|length }}</div><div class="stat-lbl">En attente paiement</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:#34d399">{{ "{:,.0f}".format(total_revenue) }}</div><div class="stat-lbl">XAF encaissés</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:#f87171">{{ orders|selectattr('status', 'eq', 'cancelled')|list|length }}</div><div class="stat-lbl">Commandes annulées</div></div>
+  </div>
+  <div class="chart-wrap"><div class="chart-title">📦 Répartition par catégorie</div><div id="catChart" style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-end;padding-top:.5rem"></div></div>
+  <div class="chart-wrap"><div class="chart-title">🏆 Top 5 produits par prix</div><div id="topProdsChart"></div></div>
+</div>
+
+<!-- ══ STAFF ASSISTANCE ══ -->
+<div id="secStaff" style="display:none">
+  <div class="sec-hd">
+    <h4>👥 Équipe d'assistance</h4>
+    <button class="save-btn" style="width:auto;padding:.5rem 1.1rem" onclick="staffOpenModal()"><i class="fas fa-plus"></i> Ajouter un agent</button>
+  </div>
+  <div class="acc-info-box" style="margin-bottom:1.2rem">
+    <i class="fas fa-info-circle"></i>
+    <div><strong style="color:var(--text-primary)">Techniciens &amp; Commerciaux</strong><br>Gérez les profils de votre équipe. Ils seront proposés automatiquement aux clients dans le widget d'assistance flottant.</div>
+  </div>
+  <div class="staff-grid" id="staffGrid">
+    <div class="empty-bl" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Chargement…</p></div>
+  </div>
+</div>
+
+<!-- ══ STAFF MODAL — CORRIGÉ : display:none une seule fois, JS met flex ══ -->
+<div id="staffModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--secondary-color);border-radius:18px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div style="padding:1.1rem 1.3rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--secondary-color);z-index:1;border-radius:18px 18px 0 0">
+      <h4 style="font-size:1rem;font-weight:700" id="staffModalTitle">Ajouter un agent</h4>
+      <button onclick="staffCloseModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-secondary);padding:.2rem">&times;</button>
+    </div>
+    <div style="padding:1.3rem">
+      <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1rem">
+        <div class="staff-modal-av-zone" id="staffAvZone" onclick="document.getElementById('staffAvInput').click()">
+          <img id="staffAvPreview" src="" style="display:none">
+          <div class="av-hint" id="staffAvHint"><i class="fas fa-camera" style="font-size:1.3rem;display:block;margin-bottom:.3rem"></i>Photo</div>
+        </div>
+        <input type="file" id="staffAvInput" accept="image/*" style="display:none" onchange="staffHandleAvatar(this)">
+        <div style="flex:1">
+          <div class="fg" style="margin-bottom:.6rem"><label class="fl">Nom complet *</label><input class="fi" id="sfName" placeholder="Ex: Jean Dupont" required></div>
+          <div class="fg"><label class="fl">Type de rôle *</label><select class="fi" id="sfRole"><option value="commercial">💼 Commercial</option><option value="technicien">🔧 Technicien</option></select></div>
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:.7rem"><label class="fl">Présentation courte</label><textarea class="fi" id="sfBio" rows="2" style="resize:vertical" placeholder="Spécialiste électronique, 5 ans d'expérience…"></textarea></div>
+      <div class="staff-form-grid" style="margin-bottom:.7rem">
+        <div class="fg"><label class="fl"><i class="fas fa-phone" style="color:var(--primary-color)"></i> Téléphone</label><input class="fi" id="sfPhone" placeholder="+237 6XX XXX XXX"></div>
+        <div class="fg"><label class="fl"><i class="fab fa-whatsapp" style="color:#25d366"></i> WhatsApp</label><input class="fi" id="sfWhatsapp" placeholder="+237 6XX XXX XXX"></div>
+        <div class="fg fg-full"><label class="fl"><i class="fas fa-envelope" style="color:var(--primary-color)"></i> Email</label><input class="fi" id="sfEmail" type="email" placeholder="agent@kni-store.cm"></div>
+      </div>
+      <div class="fg" style="margin-bottom:.7rem">
+        <label class="fl">Spécialités (Entrée pour ajouter)</label>
+        <div class="staff-specs-input" id="sfSpecsBox" onclick="document.getElementById('sfSpecsInp').focus()">
+          <input id="sfSpecsInp" style="border:none;outline:none;background:transparent;font-size:.78rem;color:var(--text-primary);min-width:120px;flex:1;font-family:inherit" placeholder="Ex: Bluetooth, iPhone…" onkeydown="staffSpecKeydown(event)">
+        </div>
+      </div>
+      <div class="staff-form-grid" style="margin-bottom:.7rem">
+        <div class="fg"><label class="fl">Temps de réponse</label><input class="fi" id="sfRespTime" value="&lt; 5 min"></div>
+        <div class="fg"><label class="fl">Ordre d'affichage</label><input class="fi" id="sfOrder" type="number" min="0" value="0"></div>
+        <div class="fg fg-full"><label class="fl">Note (étoiles)</label>
+          <div class="staff-stars" id="sfStarsBox">
+            <span class="staff-star on" data-v="1" onclick="staffSetRating(1)">★</span>
+            <span class="staff-star on" data-v="2" onclick="staffSetRating(2)">★</span>
+            <span class="staff-star on" data-v="3" onclick="staffSetRating(3)">★</span>
+            <span class="staff-star on" data-v="4" onclick="staffSetRating(4)">★</span>
+            <span class="staff-star on" data-v="5" onclick="staffSetRating(5)">★</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.1rem">
+        <input type="checkbox" id="sfActive" checked style="accent-color:var(--primary-color);width:16px;height:16px">
+        <label for="sfActive" style="font-size:.82rem;font-weight:600;cursor:pointer">Agent actif (visible dans le widget boutique)</label>
+      </div>
+      <div style="display:flex;gap:.65rem;justify-content:flex-end">
+        <button onclick="staffCloseModal()" style="padding:.65rem 1.2rem;border-radius:10px;background:rgba(107,114,128,.1);color:var(--text-secondary);border:1px solid var(--border-color);font-size:.85rem;cursor:pointer">Annuler</button>
+        <button onclick="staffSave()" class="save-btn" style="width:auto;padding:.65rem 1.4rem"><i class="fas fa-save"></i> <span id="staffSaveLbl">Enregistrer</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ACCÈS — superadmin only ══ -->
+{% if session.get('role') == 'superadmin' %}
+<div id="secAcc" style="display:none">
+  <div class="sec-hd"><h4>🔐 Accès &amp; Permissions Boutique</h4></div>
+  <div class="acc-info-box"><i class="fas fa-shield-halved"></i><div><strong style="color:var(--text-primary)">Gérez qui peut intervenir sur la boutique.</strong><br>Le rôle <em>Gestionnaire boutique</em> permet d'ajouter, modifier et masquer des produits.</div></div>
+  <div class="perm-matrix">
+    <div class="perm-matrix-hd"><span>Action</span><span>Gestionnaire</span><span>Admin</span><span>Super Admin</span></div>
+    <div class="perm-matrix-row"><span>Voir les produits</span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span></div>
+    <div class="perm-matrix-row"><span>Ajouter un produit</span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span></div>
+    <div class="perm-matrix-row"><span>Modifier un produit</span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span></div>
+    <div class="perm-matrix-row"><span>Masquer / Afficher</span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span></div>
+    <div class="perm-matrix-row"><span>Supprimer un produit</span><span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span></div>
+    <div class="perm-matrix-row"><span>Gérer les commandes</span><span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span></div>
+    <div class="perm-matrix-row"><span>Gérer les accès</span><span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span><span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span><span class="perm-cell"><i class="fas fa-check perm-yes"></i></span></div>
+  </div>
+  <div class="sec-hd" style="margin-bottom:.9rem"><h4 style="font-size:.88rem">👥 Utilisateurs ({{ all_users|default([])|length }})</h4></div>
+  <div class="user-grid">
+    {% for u in all_users|default([]) %}{% if u.role not in ('admin','superadmin') %}
+    {% set is_manager = (u.role == 'shop_manager') %}
+    <div class="ucard" id="ucard-{{ u.id }}">
+      <div class="ucard-av" style="background:{{ 'rgba(0,212,170,.15)' if is_manager else 'rgba(107,114,128,.1)' }};color:{{ '#00d4aa' if is_manager else 'var(--text-secondary)' }}">{{ u.username[0].upper() if u.username else '?' }}</div>
+      <div class="ucard-info">
+        <div class="ucard-name">{{ u.username }}</div>
+        <div class="ucard-email">{{ u.email }}</div>
+        <div class="ucard-role-lbl" style="color:{{ '#00d4aa' if is_manager else 'var(--text-secondary)' }}">{{ '🛍 Gestionnaire boutique' if is_manager else '👤 Utilisateur' }}</div>
+      </div>
+      <div class="ucard-ctrl">
+        <span class="acc-badge {{ 'acc-badge-on' if is_manager else 'acc-badge-off' }}" id="ubadge-{{ u.id }}">{{ '✅ Actif' if is_manager else 'Inactif' }}</span>
+        <label class="toggle-sw">
+          <input type="checkbox" {{ 'checked' if is_manager else '' }} onchange="toggleShopAccess({{ u.id }},this.checked,'{{ u.username }}')">
+          <span class="toggle-sw-track"></span><span class="toggle-sw-thumb"></span>
+        </label>
+      </div>
+    </div>
+    {% endif %}{% else %}
+    <div class="empty-bl" style="grid-column:1/-1;padding:2rem"><i class="fas fa-users"></i><p>Aucun utilisateur standard.</p></div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 </div><!-- /sa-main -->
 
-<!-- ══ DETAIL PANEL ══ -->
 <aside class="dp hidden" id="dpanel">
   <div class="dp-hd"><h5 id="dpTitle">Détail</h5><button class="dp-close" onclick="closeDP()"><i class="fas fa-times"></i></button></div>
   <div class="dp-bd" id="dpBody"></div>
 </aside>
-
 </div><!-- /sa-wrap -->
 
-<!-- ══ BARRE NAV MOBILE (visible < 900px) ══ -->
 <nav class="sa-bottom-nav">
   <button class="sa-bnav-btn active" id="bnavDash" onclick="go('dash')"><i class="fas fa-chart-pie"></i>Tableau</button>
   <button class="sa-bnav-btn" id="bnavProd" onclick="go('prod')"><i class="fas fa-boxes"></i>Produits</button>
@@ -983,15 +620,11 @@
   <button class="sa-bnav-btn" id="bnavNew" onclick="go('new')"><i class="fas fa-plus-circle"></i>Ajouter</button>
   {% endif %}
   <button class="sa-bnav-btn" id="bnavOrd" onclick="go('ord')"><i class="fas fa-receipt"></i>Commandes{% if pending_count %}<span class="sa-nav-badge">{{ pending_count }}</span>{% endif %}</button>
-  <button class="sa-bnav-btn" id="bnavStaff" onclick="go('staff')"><i class="fas fa-headset"></i>Assistance</button>
-  {% if session.get('role') == 'superadmin' %}
-  <button class="sa-bnav-btn" id="bnavAcc" onclick="go('acc')"><i class="fas fa-user-shield"></i>Accès</button>
-  {% endif %}
-  <a href="/shop" target="_blank" class="sa-bnav-btn" style="text-decoration:none"><i class="fas fa-store"></i>Boutique</a>
+  <button class="sa-bnav-btn" id="bnavStaff" onclick="go('staff')"><i class="fas fa-headset"></i>Équipe</button>
+  {% if session.get('role') == 'superadmin' %}<button class="sa-bnav-btn" id="bnavAcc" onclick="go('acc')"><i class="fas fa-user-shield"></i>Accès</button>{% endif %}
+  <a href="/shop" target="_blank" class="sa-bnav-btn"><i class="fas fa-store"></i>Boutique</a>
 </nav>
-
 <div id="atoast"><i id="ati" class="fas fa-check-circle"></i> <span id="atm"></span></div>
-
 <script>
 const PRODS={ {% for p in products %}{{p.id}}:{{{'id':p.id,'name':p.name,'description':p.description or '','features':p.features or '','category':p.category,'price':p.price,'original_price':p.original_price or 0,'stock':p.stock,'image_url':p.image_url or '','images':p.images or '[]','badge':p.badge or '','is_active':p.is_active,'reviews_count':p.reviews_count or 0,'delivery_info':p.delivery_info or 'Livraison 3-7 jours'}|tojson}},{% endfor %}};
 const ORDERS={ {% for o in orders %}{{o.id}}:{{{'id':o.id,'customer_name':o.customer_name or '','customer_phone':o.customer_phone or '','customer_city':o.customer_city or '','items_summary':o.items_summary or '','items_json':o.items_json or '[]','total':o.total,'pay_method':o.pay_method or '','note':o.note or '','status':o.status,'created_at':o.created_at or ''}|tojson}},{% endfor %}};
@@ -1000,212 +633,187 @@ const SC={pending:'sp-pending',paid:'sp-paid',shipped:'sp-shipped',delivered:'sp
 const CI={electronique:'mobile-alt',mode:'tshirt',maison:'home',sport:'futbol',beaute:'magic'};
 const PL={orange_money:'🟠 Orange Money',mtn_momo:'🟡 MTN MoMo',whatsapp:'💬 WhatsApp'};
 
-function toast(m,ok=true){const t=document.getElementById('atoast');document.getElementById('ati').className=`fas fa-${ok?'check-circle':'exclamation-circle'}`;document.getElementById('ati').style.color=ok?'var(--primary-color)':'#f87171';document.getElementById('atm').textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
-
-const SECS=['Dash','Prod','New','Ord','Staff','Acc'];
-function go(n){
-  const displayMap = {dash:'block',prod:'block',new:'block',ord:'block',staff:'block',acc:'block'};
-  SECS.forEach(s=>{
-    const el=document.getElementById('sec'+s);
-    if(el) el.style.display=s.toLowerCase()===n?(displayMap[s.toLowerCase()]||'block'):'none';
-    const b=document.getElementById('nav'+s);if(b)b.classList.toggle('active',s.toLowerCase()===n);
-    const bb=document.getElementById('bnav'+s);if(bb)bb.classList.toggle('active',s.toLowerCase()===n);
-  });
-  closeDP();
-  if (n==='staff') loadStaff();
+/* ══ TOAST ══ */
+function toast(m,ok=true){
+  const t=document.getElementById('atoast');
+  document.getElementById('ati').className=`fas fa-${ok?'check-circle':'exclamation-circle'}`;
+  document.getElementById('ati').style.color=ok?'var(--primary-color)':'#f87171';
+  document.getElementById('atm').textContent=m;
+  t.classList.add('show');clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),3200);
 }
 
-function st(i,btn){document.querySelectorAll('.ftab').forEach((b,j)=>b.classList.toggle('active',j===i));document.querySelectorAll('.ftab-p').forEach((p,j)=>p.classList.toggle('active',j===i));}
+/* ══ NAVIGATION — BUG CORRIGÉ (display block, pas chaîne vide) ══ */
+const SECS=['Dash','Prod','New','Ord','Analytics','Staff','Acc'];
+function go(n){
+  SECS.forEach(s=>{
+    const el=document.getElementById('sec'+s);
+    if(el) el.style.display=(s.toLowerCase()===n)?'block':'none';
+    const b=document.getElementById('nav'+s);
+    if(b) b.classList.toggle('active',s.toLowerCase()===n);
+    const bb=document.getElementById('bnav'+s);
+    if(bb) bb.classList.toggle('active',s.toLowerCase()===n);
+  });
+  closeDP();
+  if(n==='staff') loadStaff();
+  if(n==='analytics') buildAnalytics();
+}
 
-/* ── SPEC ROWS ── */
+/* ══ FORM TABS ══ */
+function st(i){
+  document.querySelectorAll('.ftab').forEach((b,j)=>b.classList.toggle('active',j===i));
+  document.querySelectorAll('.ftab-p').forEach((p,j)=>p.classList.toggle('active',j===i));
+}
+
+/* ══ SPEC ROWS ══ */
 function addSpecRow(k='',v=''){
   const id='s'+Date.now()+Math.random().toString(36).slice(2);
   const tr=document.createElement('tr');tr.id=id;
   tr.innerHTML=`<td><input class="fi" placeholder="Ex: Bluetooth" value="${k}" style="font-size:.78rem;padding:.32rem .55rem"></td><td><input class="fi" placeholder="Ex: 5.3" value="${v}" style="font-size:.78rem;padding:.32rem .55rem"></td><td><button class="spec-del" onclick="document.getElementById('${id}').remove()"><i class="fas fa-times"></i></button></td>`;
   document.getElementById('specBody').appendChild(tr);
 }
-function getSpecs(){const s={};document.querySelectorAll('#specBody tr').forEach(r=>{const ins=r.querySelectorAll('input');const k=(ins[0]?.value||'').trim(),v=(ins[1]?.value||'').trim();if(k)s[k]=v;});return s;}
-function loadSpecs(j){document.getElementById('specBody').innerHTML='';try{Object.entries(JSON.parse(j||'{}')).forEach(([k,v])=>addSpecRow(k,v));}catch(e){}}
+function getSpecs(){
+  const s={};
+  document.querySelectorAll('#specBody tr').forEach(r=>{
+    const ins=r.querySelectorAll('input');
+    const k=(ins[0]?.value||'').trim(),v=(ins[1]?.value||'').trim();
+    if(k)s[k]=v;
+  });
+  return s;
+}
 
-/* ── TAGS ── */
+/* ══ TAGS ══ */
 function renderTags(inp,cont){
   const vals=(document.getElementById(inp)?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
   const c=document.getElementById(cont);if(!c)return;
   c.innerHTML=vals.map((v,i)=>`<span class="ftag" data-i="${i}">${v} ×</span>`).join('');
-  c.querySelectorAll('.ftag').forEach(tag=>{tag.onclick=()=>{const cur=document.getElementById(inp).value.split(',').map(s=>s.trim()).filter(Boolean);cur.splice(+tag.dataset.i,1);document.getElementById(inp).value=cur.join(', ');renderTags(inp,cont);};});
+  c.querySelectorAll('.ftag').forEach(tag=>{
+    tag.onclick=()=>{
+      const cur=document.getElementById(inp).value.split(',').map(s=>s.trim()).filter(Boolean);
+      cur.splice(+tag.dataset.i,1);
+      document.getElementById(inp).value=cur.join(', ');
+      renderTags(inp,cont);
+    };
+  });
 }
 
-/* ── MULTI-IMAGE GALLERY ─────────────────────────────── */
-// galleryUrls[0] = image principale, [1..5] = images extra
-let galleryUrls = ['','','','','',''];
-let _pendingSlot = 0;
+/* ══ GALLERY ══ */
+let galleryUrls=['','','','','',''],_pendingSlot=0;
 
 function initGallery(){
-  const g = document.getElementById('imgGallery'); if(!g) return;
-  g.innerHTML = '';
-  // Slots 1-5 (slot 0 est la zone principale)
+  const g=document.getElementById('imgGallery');if(!g)return;g.innerHTML='';
   for(let i=1;i<=5;i++){
-    const div = document.createElement('div');
-    div.className = 'img-slot' + (galleryUrls[i]?'':' img-slot-add');
-    div.id = 'gslot-'+i;
-    div.onclick = ()=>trigGalleryInput(i);
-    div.ondragover = (e)=>{e.preventDefault();div.style.borderColor='var(--primary-color)';};
-    div.ondragleave = ()=>{div.style.borderColor='';};
-    div.ondrop = (e)=>galleryDrop(e,i);
+    const div=document.createElement('div');
+    div.className='img-slot'+(galleryUrls[i]?'':' img-slot-add');
+    div.id='gslot-'+i;
+    div.onclick=()=>trigGalleryInput(i);
+    div.ondragover=(e)=>{e.preventDefault();div.style.borderColor='var(--primary-color)';};
+    div.ondragleave=()=>{div.style.borderColor='';};
+    div.ondrop=(e)=>galleryDrop(e,i);
     if(galleryUrls[i]){
-      div.innerHTML = `
-        <img src="${galleryUrls[i]}" onerror="this.src=''">
-        <button class="img-slot-del" onclick="event.stopPropagation();clearSlot(${i})"><i class="fas fa-times"></i></button>
-        <span class="img-slot-badge">Photo ${i+1}</span>`;
-    } else {
-      div.innerHTML = `<i class="fas fa-plus"></i><span style="font-size:.64rem">Ajouter</span>`;
+      div.innerHTML=`<img src="${galleryUrls[i]}" onerror="this.src=''"><button class="img-slot-del" onclick="event.stopPropagation();clearSlot(${i})"><i class="fas fa-times"></i></button><span class="img-slot-badge">Photo ${i+1}</span>`;
+    }else{
+      div.innerHTML=`<i class="fas fa-plus"></i><span style="font-size:.64rem">Ajouter</span>`;
     }
     g.appendChild(div);
   }
 }
 
-function trigGalleryInput(slot){
-  _pendingSlot = slot;
-  const inp = document.getElementById('imgFileGlobal');
-  inp.multiple = false;
-  inp.click();
-}
+function trigGalleryInput(slot){_pendingSlot=slot;const inp=document.getElementById('imgFileGlobal');inp.multiple=false;inp.click();}
+function handleGalleryFiles(inp){if(!inp.files.length)return;uploadGalleryFile(inp.files[0],_pendingSlot);inp.value='';}
 
-function handleGalleryFiles(inp){
-  if(!inp.files.length) return;
-  uploadGalleryFile(inp.files[0], _pendingSlot);
-  inp.value='';
-}
-
-function galleryDrop(e, slot){
+function galleryDrop(e,slot){
   e.preventDefault();
-  const z = slot===0?document.getElementById('imgMainZone'):document.getElementById('gslot-'+slot);
-  if(z){ z.classList.remove('dg'); z.style.borderColor=''; }
-  const f = e.dataTransfer.files[0];
-  if(!f||!f.type.startsWith('image/')){ toast('Image requise',false); return; }
-  uploadGalleryFile(f, slot);
+  const z=slot===0?document.getElementById('imgMainZone'):document.getElementById('gslot-'+slot);
+  if(z){z.classList.remove('dg');z.style.borderColor='';}
+  const f=e.dataTransfer.files[0];
+  if(!f||!f.type.startsWith('image/')){toast('Image requise',false);return;}
+  uploadGalleryFile(f,slot);
 }
 
-async function uploadGalleryFile(f, slot){
-  if(!f||f.size>5*1024*1024){ toast('Max 5 Mo par image',false); return; }
-  // Barre progression
-  const isMain = slot===0;
-  const ub = document.getElementById(isMain?'upbar':'galleryUpbar');
-  const ubf = document.getElementById(isMain?'upbarf':'galleryUpbarf');
-  ub.style.display='block'; let p=0;
-  const t = setInterval(()=>{p=Math.min(p+8,82);ubf.style.width=p+'%';},60);
-  const fd = new FormData(); fd.append('image',f);
+async function uploadGalleryFile(f,slot){
+  if(!f||f.size>5*1024*1024){toast('Max 5 Mo par image',false);return;}
+  const isMain=slot===0;
+  const ub=document.getElementById(isMain?'upbar':'galleryUpbar');
+  const ubf=document.getElementById(isMain?'upbarf':'galleryUpbarf');
+  ub.style.display='block';let p=0;
+  const t=setInterval(()=>{p=Math.min(p+8,82);ubf.style.width=p+'%';},60);
+  const fd=new FormData();fd.append('image',f);
   try{
-    const r = await fetch('/shop/api/product/upload-image',{method:'POST',body:fd});
-    const res = await r.json();
-    clearInterval(t);
+    const r=await fetch('/shop/api/product/upload-image',{method:'POST',body:fd});
+    const res=await r.json();clearInterval(t);
     if(res.success){
       ubf.style.width='100%';
       setTimeout(()=>{ub.style.display='none';ubf.style.width='0';},450);
-      galleryUrls[slot] = res.url;
+      galleryUrls[slot]=res.url;
       if(isMain){
-        // Mettre à jour la zone principale
         const prev=document.getElementById('imgPrev');
         const ico=document.getElementById('imgIco');
         const sm=document.querySelector('#imgMainZone small');
-        prev.src=res.url; prev.style.display='block';
-        if(ico) ico.style.display='none';
-        if(sm) sm.style.display='none';
-        document.getElementById('pimg').value = res.url;
+        prev.src=res.url;prev.style.display='block';
+        if(ico)ico.style.display='none';
+        if(sm)sm.style.display='none';
+        document.getElementById('pimg').value=res.url;
       }
-      initGallery();
-      toast(`Photo ${slot+1} uploadée ✅`);
-    } else { ub.style.display='none'; toast('❌ '+res.error,false); }
-  } catch(e){ clearInterval(t); ub.style.display='none'; toast('Erreur réseau',false); }
+      initGallery();toast(`Photo ${slot+1} uploadée ✅`);
+    }else{ub.style.display='none';toast('❌ '+res.error,false);}
+  }catch(e){clearInterval(t);ub.style.display='none';toast('Erreur réseau',false);}
 }
 
 function clearSlot(slot){
   galleryUrls[slot]='';
   if(slot===0){
-    const prev=document.getElementById('imgPrev');
-    const ico=document.getElementById('imgIco');
-    const sm=document.querySelector('#imgMainZone small');
-    prev.src=''; prev.style.display='none';
-    if(ico) ico.style.display='';
-    if(sm) sm.style.display='';
+    const prev=document.getElementById('imgPrev'),ico=document.getElementById('imgIco'),sm=document.querySelector('#imgMainZone small');
+    prev.src='';prev.style.display='none';
+    if(ico)ico.style.display='';if(sm)sm.style.display='';
     document.getElementById('pimg').value='';
   }
   initGallery();
 }
 
-function loadGallery(mainUrl, extraJson){
-  galleryUrls = ['','','','','',''];
-  galleryUrls[0] = mainUrl||'';
-  try{
-    const extras = JSON.parse(extraJson||'[]');
-    extras.forEach((u,i)=>{ if(i<5 && u) galleryUrls[i+1]=u; });
-  }catch(e){}
-  // Mettre à jour zone principale
-  const prev=document.getElementById('imgPrev');
-  const ico=document.getElementById('imgIco');
-  const sm=document.querySelector('#imgMainZone small');
-  if(mainUrl){
-    prev.src=mainUrl; prev.style.display='block';
-    if(ico) ico.style.display='none';
-    if(sm) sm.style.display='none';
-  } else {
-    prev.src=''; prev.style.display='none';
-    if(ico) ico.style.display='';
-    if(sm) sm.style.display='';
-  }
-  document.getElementById('pimg').value = mainUrl||'';
+function loadGallery(mainUrl,extraJson){
+  galleryUrls=['','','','','',''];galleryUrls[0]=mainUrl||'';
+  try{const extras=JSON.parse(extraJson||'[]');extras.forEach((u,i)=>{if(i<5&&u)galleryUrls[i+1]=u;});}catch(e){}
+  const prev=document.getElementById('imgPrev'),ico=document.getElementById('imgIco'),sm=document.querySelector('#imgMainZone small');
+  if(mainUrl){prev.src=mainUrl;prev.style.display='block';if(ico)ico.style.display='none';if(sm)sm.style.display='none';}
+  else{prev.src='';prev.style.display='none';if(ico)ico.style.display='';if(sm)sm.style.display='';}
+  document.getElementById('pimg').value=mainUrl||'';
   initGallery();
 }
-
-// Compat legacy — gardé pour ne pas casser d'autres appels
-function prevImg(url){ if(url) loadGallery(url, '[]'); else clearSlot(0); }
+function prevImg(url){if(url)loadGallery(url,'[]');else clearSlot(0);}
 function switchImg(){}
-function handleImgFile(inp){ if(inp.files[0]) uploadGalleryFile(inp.files[0],0); }
-function imgDrop(e){ galleryDrop(e,0); }
+function handleImgFile(inp){if(inp.files[0])uploadGalleryFile(inp.files[0],0);}
+function imgDrop(e){galleryDrop(e,0);}
 
-/* ── TOGGLE SHOP ACCESS ──────────────────────────────── */
-async function toggleShopAccess(uid, grant, name){
-  const newRole = grant ? 'shop_manager' : 'user';
+/* ══ SHOP ACCESS TOGGLE ══ */
+async function toggleShopAccess(uid,grant,name){
+  const newRole=grant?'shop_manager':'user';
   try{
-    const r = await fetch('/shop/api/access/set',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({user_id: uid, role: newRole})
-    });
-    const res = await r.json();
+    const r=await fetch('/shop/api/access/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,role:newRole})});
+    const res=await r.json();
     if(res.success){
-      // Mettre à jour visuellement la carte
-      const card = document.getElementById('ucard-'+uid);
-      const badge = document.getElementById('ubadge-'+uid);
-      if(badge){
-        badge.textContent = grant ? '✅ Actif' : 'Inactif';
-        badge.className = 'acc-badge ' + (grant ? 'acc-badge-on' : 'acc-badge-off');
-      }
-      toast(grant ? `✅ ${name} peut maintenant gérer la boutique` : `🚫 Accès retiré à ${name}`);
-    } else {
-      toast('❌ '+res.error, false);
-      // Annuler le toggle visuellement
-      const inp = document.querySelector(`#ucard-${uid} input[type=checkbox]`);
-      if(inp) inp.checked = !grant;
+      const badge=document.getElementById('ubadge-'+uid);
+      if(badge){badge.textContent=grant?'✅ Actif':'Inactif';badge.className='acc-badge '+(grant?'acc-badge-on':'acc-badge-off');}
+      toast(grant?`✅ ${name} peut gérer la boutique`:`🚫 Accès retiré à ${name}`);
+    }else{
+      toast('❌ '+res.error,false);
+      const inp=document.querySelector(`#ucard-${uid} input[type=checkbox]`);
+      if(inp)inp.checked=!grant;
     }
-  } catch(e){
-    toast('Erreur réseau',false);
-    const inp = document.querySelector(`#ucard-${uid} input[type=checkbox]`);
-    if(inp) inp.checked = !grant;
-  }
+  }catch(e){toast('Erreur réseau',false);const inp=document.querySelector(`#ucard-${uid} input[type=checkbox]`);if(inp)inp.checked=!grant;}
 }
 
-/* ── SAVE ── */
+/* ══ SAVE PRODUCT ══ */
 async function saveProd(){
   const id=document.getElementById('eid').value;
   const name=document.getElementById('pn').value.trim();
-  if(!name){toast('Nom requis',false);st(0,document.querySelectorAll('.ftab')[0]);return;}
+  if(!name){toast('Nom requis',false);st(0);return;}
   const body={
     name,category:document.getElementById('pcat').value,
     description:document.getElementById('pd').value.trim(),
     features:document.getElementById('pfeats').value.trim(),
     image_url:galleryUrls[0]||document.getElementById('pimg').value.trim(),
-    images: galleryUrls.slice(1).filter(Boolean),
+    images:galleryUrls.slice(1).filter(Boolean),
     price:parseFloat(document.getElementById('pp').value)||0,
     original_price:parseFloat(document.getElementById('pop').value)||0,
     stock:parseInt(document.getElementById('pstock').value)||0,
@@ -1230,7 +838,8 @@ async function saveProd(){
     height:document.getElementById('shgt').value.trim(),
     weight:document.getElementById('swgt').value.trim(),
   };
-  const btn=document.getElementById('saveBtn');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Enregistrement…';
+  const btn=document.getElementById('saveBtn');
+  btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Enregistrement…';
   try{
     const r=await fetch(id?`/shop/api/product/${id}`:'/shop/api/product',{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const res=await r.json();
@@ -1239,7 +848,7 @@ async function saveProd(){
   }catch(e){toast('Erreur réseau',false);btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Enregistrer le produit';}
 }
 
-/* ── LOAD EDIT ── */
+/* ══ LOAD EDIT ══ */
 function loadEdit(id){
   const p=PRODS[id];if(!p)return;
   go('new');
@@ -1257,8 +866,8 @@ function loadEdit(id){
   document.getElementById('pdel').value=p.delivery_info;
   document.getElementById('pactive').value=p.is_active?'1':'0';
   document.getElementById('previews').value=p.reviews_count;
-  loadGallery(p.image_url, p.images||'[]');
-  st(0,document.querySelectorAll('.ftab')[0]);
+  loadGallery(p.image_url,p.images||'[]');
+  st(0);
   document.getElementById('saMain').scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1268,20 +877,29 @@ function resetForm(){
   document.querySelectorAll('#secNew .fi').forEach(el=>{if(el.tagName==='SELECT')return;el.value='';});
   document.getElementById('pstock').value=10;document.getElementById('pstockwarn').value=5;
   document.getElementById('pship').value=0;document.getElementById('pzones').value='Tout le Cameroun';
-  document.getElementById('pdel').value='Livraison 3-7 jours';document.getElementById('pactive').value='1';document.getElementById('previews').value=0;
+  document.getElementById('pdel').value='Livraison 3-7 jours';
+  document.getElementById('pactive').value='1';document.getElementById('previews').value=0;
   document.getElementById('specBody').innerHTML='';
   ['colorTags','sizeTags','tagsP'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='';});
-  prevImg('');
-  galleryUrls=['','','','','',''];
-  initGallery();
-  st(0,document.querySelectorAll('.ftab')[0]);toast('Formulaire réinitialisé');
+  prevImg('');galleryUrls=['','','','','',''];initGallery();
+  st(0);toast('Formulaire réinitialisé');
 }
 
-/* ── PRODUCT ACTIONS ── */
-async function toggleP(id){const r=await fetch(`/shop/api/product/${id}/toggle`,{method:'POST'});const res=await r.json();if(res.success)location.reload();else toast('❌ '+res.error,false);}
-async function delProd(id,name){if(!confirm(`Supprimer "${name}" ?`))return;const r=await fetch(`/shop/api/product/${id}`,{method:'DELETE'});const res=await r.json();if(res.success){document.getElementById(`pc-${id}`)?.remove();toast('Produit supprimé');}else toast('❌ '+res.error,false);}
+/* ══ PRODUCT ACTIONS ══ */
+async function toggleP(id){
+  const r=await fetch(`/shop/api/product/${id}/toggle`,{method:'POST'});
+  const res=await r.json();
+  if(res.success)location.reload();else toast('❌ '+res.error,false);
+}
+async function delProd(id,name){
+  if(!confirm(`Supprimer "${name}" ?`))return;
+  const r=await fetch(`/shop/api/product/${id}`,{method:'DELETE'});
+  const res=await r.json();
+  if(res.success){document.getElementById(`pc-${id}`)?.remove();toast('Produit supprimé');}
+  else toast('❌ '+res.error,false);
+}
 
-/* ── SHOW PRODUCT DETAIL ── */
+/* ══ SHOW PRODUCT DETAIL ══ */
 function showProd(id){
   const p=PRODS[id];if(!p)return;
   document.getElementById('dpTitle').textContent=p.name;
@@ -1293,7 +911,7 @@ function showProd(id){
     <div style="font-size:1.25rem;font-weight:900;color:var(--primary-color);font-family:var(--font-mono)">${p.price>0?p.price.toLocaleString('fr-FR')+' XAF':'Gratuit'}</div>
     ${p.original_price>p.price?`<div style="font-size:.78rem;color:var(--text-secondary);text-decoration:line-through">${p.original_price.toLocaleString('fr-FR')} XAF</div>`:''}
     ${p.description?`<div style="font-size:.8rem;color:var(--text-secondary);line-height:1.6;margin:.75rem 0">${p.description}</div>`:''}
-    ${feats?`<div class="dp-sec">Points forts</div><ul class="dp-feat list-unstyled">${feats}</ul>`:''}
+    ${feats?`<div class="dp-sec">Points forts</div><ul class="dp-feat">${feats}</ul>`:''}
     <div class="dp-sec">Infos</div>
     <div class="spec-dl">
       <span class="spec-dt">Stock</span><span class="spec-dd">${p.stock<0?'Illimité':p.stock+' u.'}</span>
@@ -1308,13 +926,12 @@ function showProd(id){
   document.getElementById('dpanel').classList.remove('hidden');
 }
 
-/* ── SHOW ORDER DETAIL ── */
+/* ══ SHOW ORDER DETAIL ══ */
 function showOrd(id){
   const o=ORDERS[id];if(!o)return;
   document.getElementById('dpTitle').textContent='Commande #'+id;
   let items=[];try{items=JSON.parse(o.items_json||'[]');}catch(e){}
-  const iHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.28rem 0;border-bottom:1px solid var(--border-color)"><span>${it.name} <span style="color:var(--text-secondary)">×${it.qty}</span></span><span style="font-weight:700">${(it.price*it.qty).toLocaleString('fr-FR')} XAF</span></div>`).join(''):
-    `<div style="font-size:.8rem;color:var(--text-secondary)">${o.items_summary}</div>`;
+  const iHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.28rem 0;border-bottom:1px solid var(--border-color)"><span>${it.name} <span style="color:var(--text-secondary)">×${it.qty}</span></span><span style="font-weight:700">${(it.price*it.qty).toLocaleString('fr-FR')} XAF</span></div>`).join(''):`<div style="font-size:.8rem;color:var(--text-secondary)">${o.items_summary}</div>`;
   const wn=(o.customer_phone||'').replace(/\D/g,'');const wp=wn.startsWith('237')?'':'237';
   const wm=`Bonjour ${o.customer_name}, concernant votre commande #${id} (${o.items_summary}) — Total: ${o.total.toLocaleString('fr-FR')} XAF.`;
   document.getElementById('dpBody').innerHTML=`
@@ -1343,14 +960,14 @@ function showOrd(id){
       <option value="delivered" ${o.status==='delivered'?'selected':''}>📬 Livré</option>
       <option value="cancelled" ${o.status==='cancelled'?'selected':''}>❌ Annulé</option>
     </select>
-    ${wn?`<a href="https://wa.me/${wp}${wn}?text=${encodeURIComponent(wm)}" target="_blank" class="save-btn" style="text-decoration:none;background:#25d366;color:#fff;padding:.55rem;font-size:.82rem;margin-bottom:.45rem"><i class="fab fa-whatsapp"></i> Contacter</a>`:''}
-    <button class="save-btn" style="background:rgba(239,68,68,.12);color:#f87171;font-size:.78rem;padding:.45rem" onclick="delOrd(${id})"><i class="fas fa-trash"></i> Supprimer</button>`;
+    ${wn?`<a href="https://wa.me/${wp}${wn}?text=${encodeURIComponent(wm)}" target="_blank" class="save-btn" style="text-decoration:none;background:#25d366;color:#fff;padding:.55rem;font-size:.82rem;margin-bottom:.45rem"><i class="fab fa-whatsapp"></i> Contacter sur WhatsApp</a>`:''}
+    <button class="save-btn" style="background:rgba(239,68,68,.12);color:#f87171;font-size:.78rem;padding:.45rem" onclick="delOrd(${id})"><i class="fas fa-trash"></i> Supprimer la commande</button>`;
   document.getElementById('dpanel').classList.remove('hidden');
 }
 
 function closeDP(){document.getElementById('dpanel').classList.add('hidden');}
 
-/* ── ORDER STATUS ── */
+/* ══ ORDER STATUS ══ */
 async function updOS(id,sel){
   const r=await fetch(`/shop/api/order/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:sel.value})});
   const res=await r.json();
@@ -1363,296 +980,223 @@ async function updOSdirect(id,status){
   if(res.success){const s=document.getElementById('st'+id);if(s){s.className='sp '+SC[status];s.value=status;}toast('Statut mis à jour ✅');}
   else toast('❌ '+res.error,false);
 }
-async function delOrd(id){if(!confirm('Supprimer cette commande ?'))return;const r=await fetch(`/shop/api/order/${id}`,{method:'DELETE'});const res=await r.json();if(res.success){closeDP();location.reload();}else toast('❌ '+res.error,false);}
+async function delOrd(id){
+  if(!confirm('Supprimer cette commande ?'))return;
+  const r=await fetch(`/shop/api/order/${id}`,{method:'DELETE'});
+  const res=await r.json();
+  if(res.success){closeDP();location.reload();}else toast('❌ '+res.error,false);
+}
 
-/* ── FILTERS ── */
+/* ══ FILTERS ══ */
 let pCat='all',oCat='all';
 function filterCat(btn){document.querySelectorAll('#secProd .fchip[data-fc]').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pCat=btn.dataset.fc;applyPF();}
 function filterP(q){applyPF(q);}
-function applyPF(q=''){const s=(q||document.querySelector('#secProd .fsearch')?.value||'').toLowerCase();document.querySelectorAll('.pc').forEach(c=>{c.style.display=(pCat==='all'||c.dataset.cat===pCat)&&(!s||c.dataset.name.includes(s))?'':  'none';});}
+function applyPF(q=''){
+  const s=(q||document.querySelector('#secProd .fsearch')?.value||'').toLowerCase();
+  const stockF=document.getElementById('stockFilter')?.value||'all';
+  document.querySelectorAll('.pc').forEach(c=>{
+    const catOk=pCat==='all'||c.dataset.cat===pCat;
+    const nameOk=!s||c.dataset.name.includes(s);
+    const stk=parseInt(c.dataset.stock||'0');
+    const stockOk=stockF==='all'||(stockF==='available'&&stk>0)||(stockF==='low'&&stk>0&&stk<=5)||(stockF==='out'&&stk===0);
+    c.style.display=(catOk&&nameOk&&stockOk)?'':'none';
+  });
+}
 function filterOS(btn){document.querySelectorAll('#ordFilts .fchip').forEach(b=>b.classList.remove('on'));btn.classList.add('on');oCat=btn.dataset.os;applyOF();}
 function filterOrds(q){applyOF(q);}
-function applyOF(q=''){const s=(q||document.querySelector('#secOrd .fsearch')?.value||'').toLowerCase();document.querySelectorAll('.ord-row').forEach(r=>{r.style.display=(oCat==='all'||r.dataset.status===oCat)&&(!s||r.dataset.q.includes(s))?'':'none';});}
+function applyOF(q=''){
+  const s=(q||document.querySelector('#secOrd .fsearch')?.value||'').toLowerCase();
+  document.querySelectorAll('.ord-row').forEach(r=>{r.style.display=(oCat==='all'||r.dataset.status===oCat)&&(!s||r.dataset.q.includes(s))?'':'none';});
+}
 function waC(phone,ref){const n=phone.replace(/\D/g,'');const p=n.startsWith('237')?'':'237';window.open(`https://wa.me/${p}${n}?text=Bonjour, concernant votre commande ${ref}…`,'_blank');}
 
-
-
-/* ══════════════════════════════════════════════════════
-   STAFF ASSISTANCE — Logic Admin
-   ══════════════════════════════════════════════════════ */
-let staffData = [];
-let staffEditId = null;
-let sfRating = 5;
-let sfSpecs  = [];
-let sfAvUrl  = '';
-
-// ── Chargement ──────────────────────────────────────────
-async function loadStaff() {
-  const grid = document.getElementById('staffGrid');
-  if (!grid) return;
-  try {
-    const r = await fetch('/shop/api/staff/all');
-    const d = await r.json();
-    staffData = d.staff || [];
-    renderStaffGrid();
-  } catch(e) {
-    grid.innerHTML = '<div class="empty-bl"><i class="fas fa-exclamation-circle"></i><p>Erreur chargement.</p></div>';
-  }
+/* ══ ANALYTICS ══ */
+function buildAnalytics(){
+  const cats={};Object.values(PRODS).forEach(p=>{cats[p.category]=(cats[p.category]||0)+1;});
+  const catNames={electronique:'📱 Électro',mode:'👗 Mode',maison:'🏠 Maison',sport:'⚽ Sport',beaute:'💄 Beauté'};
+  const max=Math.max(...Object.values(cats),1);
+  const c=document.getElementById('catChart');if(!c)return;
+  c.innerHTML=Object.entries(cats).map(([cat,n])=>`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;min-width:60px">
+      <div style="font-size:.75rem;font-weight:700;color:var(--primary-color)">${n}</div>
+      <div style="width:40px;background:rgba(0,212,170,.25);border-radius:6px 6px 0 0;height:${Math.max(8,Math.round(n/max*120))}px;transition:.5s"></div>
+      <div style="font-size:.65rem;color:var(--text-secondary);text-align:center">${catNames[cat]||'📦'}</div>
+    </div>`).join('');
+  const tp=document.getElementById('topProdsChart');if(!tp)return;
+  const top5=Object.values(PRODS).sort((a,b)=>b.price-a.price).slice(0,5);
+  tp.innerHTML=top5.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border-color)">
+      <div style="width:22px;height:22px;border-radius:50%;background:rgba(0,212,170,.12);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:var(--primary-color);flex-shrink:0">${i+1}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div><div style="font-size:.7rem;color:var(--text-secondary)">${p.category}</div></div>
+      <div style="font-family:var(--font-mono);font-weight:800;color:var(--primary-color);font-size:.85rem;white-space:nowrap">${p.price.toLocaleString('fr-FR')} XAF</div>
+    </div>`).join('');
 }
 
-function renderStaffGrid() {
-  const grid = document.getElementById('staffGrid');
-  if (!grid) return;
-  if (!staffData.length) {
-    grid.innerHTML = '<div class="empty-bl" style="grid-column:1/-1"><i class="fas fa-users"></i><p>Aucun agent encore. Ajoutez votre premier conseiller !</p></div>';
-    return;
-  }
-  grid.innerHTML = staffData.map(s => {
-    const initials = (s.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-    const rc = s.role_type === 'technicien' ? 'tech' : 'comm';
-    const rl = s.role_type === 'technicien' ? '🔧 Technicien' : '💼 Commercial';
-    const stars = '★'.repeat(Math.min(5,Math.round(s.rating||5))) + '☆'.repeat(Math.max(0,5-Math.round(s.rating||5)));
-    const specs = (s.specialties||[]).map(sp=>`<span class="staff-spec-tag">${sp}</span>`).join('');
-    const av = s.avatar_url
-      ? `<img class="staff-av" src="${s.avatar_url}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
-      : '';
-    return `<div class="staff-card" id="scard-${s.id}">
+/* ══ STAFF ══ */
+let staffData=[],staffEditId=null,sfSpecs=[],sfAvUrl='',sfRating=5;
+
+async function loadStaff(){
+  try{
+    const r=await fetch('/shop/api/staff/all');const d=await r.json();
+    if(d.success){staffData=d.staff;renderStaffGrid();}
+    else document.getElementById('staffGrid').innerHTML=`<div class="empty-bl" style="grid-column:1/-1"><i class="fas fa-exclamation-circle"></i><p>Erreur: ${d.error}</p></div>`;
+  }catch(e){document.getElementById('staffGrid').innerHTML=`<div class="empty-bl" style="grid-column:1/-1"><i class="fas fa-wifi"></i><p>Erreur réseau</p></div>`;}
+}
+
+function renderStaffGrid(){
+  const g=document.getElementById('staffGrid');
+  if(!staffData.length){g.innerHTML='<div class="empty-bl" style="grid-column:1/-1"><i class="fas fa-headset"></i><p>Aucun agent. Ajoutez votre première équipe.</p></div>';return;}
+  g.innerHTML=staffData.map(s=>{
+    const initials=s.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const isComm=s.role_type==='commercial';
+    const specs=(s.specialties||[]).slice(0,3).map(sp=>`<span class="staff-spec-tag">${sp}</span>`).join('');
+    const rating=Math.round(s.rating||5);
+    const stars='★'.repeat(rating)+'☆'.repeat(5-rating);
+    return `<div class="staff-card">
       <div class="staff-av-wrap">
-        ${av}
-        <div class="staff-av-ph" style="display:${s.avatar_url?'none':'flex'}">${initials}</div>
-        <button class="staff-av-upload" onclick="staffAvatarEdit(${s.id})" title="Changer photo">
-          <i class="fas fa-camera"></i>
-        </button>
-        <input type="file" id="savInput-${s.id}" accept="image/*" style="display:none"
-               onchange="staffUploadAvatar(this,${s.id})">
+        ${s.avatar_url?`<img class="staff-av" src="${s.avatar_url}" onerror="this.style.display='none'">`:`<div class="staff-av-ph">${initials}</div>`}
+        <button class="staff-av-upload" onclick="staffAvatarEdit(${s.id})" title="Changer photo"><i class="fas fa-camera"></i></button>
+        <input type="file" id="savInput-${s.id}" accept="image/*" style="display:none" onchange="staffUploadAvatar(this,${s.id})">
       </div>
       <div class="staff-info">
-        <div class="staff-name">${s.name}</div>
-        <span class="staff-role-badge ${rc}">${rl}</span>
-        <div class="staff-bio">${s.bio||'<em style="opacity:.5">Pas de présentation</em>'}</div>
+        <span class="staff-role-badge ${isComm?'comm':'tech'}">${isComm?'💼 Commercial':'🔧 Technicien'}</span>
+        <div class="staff-name">${s.name}${s.is_active?'':' <span style="font-size:.65rem;color:var(--text-secondary)">(inactif)</span>'}</div>
+        ${s.bio?`<div class="staff-bio">${s.bio}</div>`:''}
         <div class="staff-contacts">
           ${s.phone?`<span class="staff-contact-chip"><i class="fas fa-phone"></i>${s.phone}</span>`:''}
-          ${s.whatsapp?`<span class="staff-contact-chip"><i class="fab fa-whatsapp" style="color:#25d366"></i>${s.whatsapp}</span>`:''}
+          ${s.whatsapp?`<span class="staff-contact-chip"><i class="fab fa-whatsapp"></i>${s.whatsapp}</span>`:''}
           ${s.email?`<span class="staff-contact-chip"><i class="fas fa-envelope"></i>${s.email}</span>`:''}
-          ${s.response_time?`<span class="staff-contact-chip"><i class="fas fa-clock"></i>${s.response_time}</span>`:''}
         </div>
         ${specs?`<div class="staff-specs">${specs}</div>`:''}
         <div style="font-size:.72rem;color:#f59e0b">${stars} <span style="color:var(--text-secondary)">(${s.reviews||0} avis)</span></div>
+        ${s.response_time?`<div style="font-size:.68rem;color:var(--text-secondary);margin-top:.2rem">⏱ ${s.response_time}</div>`:''}
       </div>
       <div class="staff-actions">
-        <label class="staff-toggle">
-          <input type="checkbox" ${s.is_active?'checked':''} onchange="staffToggleActive(${s.id},this.checked)">
-          <span style="font-size:.7rem">${s.is_active?'Actif':'Inactif'}</span>
-        </label>
-        <button class="staff-edit-btn" onclick="staffOpenModal(${s.id})"><i class="fas fa-pen"></i> Modifier</button>
+        <label class="staff-toggle"><input type="checkbox" ${s.is_active?'checked':''} onchange="staffToggleActive(${s.id},this.checked)"> Actif</label>
+        <button class="staff-edit-btn" onclick="staffOpenModal(${s.id})"><i class="fas fa-edit"></i> Modifier</button>
         <button class="staff-del-btn" onclick="staffDelete(${s.id})"><i class="fas fa-trash"></i></button>
       </div>
     </div>`;
   }).join('');
 }
 
-// ── Modal ────────────────────────────────────────────────
-function staffOpenModal(id=null) {
-  staffEditId = id;
-  sfSpecs = []; sfAvUrl = ''; sfRating = 5;
-  const modal = document.getElementById('staffModal');
-  modal.style.display = 'flex';
-  document.getElementById('staffModalTitle').textContent = id ? 'Modifier l'agent' : 'Ajouter un agent';
-  document.getElementById('staffSaveLbl').textContent = id ? 'Enregistrer les modifications' : 'Enregistrer';
-
-  // Reset form
-  ['sfName','sfBio','sfPhone','sfWhatsapp','sfEmail','sfRespTime'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  document.getElementById('sfOrder').value = '0';
-  document.getElementById('sfActive').checked = true;
-  document.getElementById('sfRole').value = 'commercial';
-  document.getElementById('sfAvPreview').style.display = 'none';
-  document.getElementById('sfAvHint').style.display = '';
-  document.getElementById('sfRespTime').value = '< 5 min';
-  sfSpecsRender();
-  staffSetRating(5);
-
-  if (id) {
-    const s = staffData.find(x=>x.id===id);
-    if (s) {
-      document.getElementById('sfName').value = s.name||'';
-      document.getElementById('sfBio').value = s.bio||'';
-      document.getElementById('sfPhone').value = s.phone||'';
-      document.getElementById('sfWhatsapp').value = s.whatsapp||'';
-      document.getElementById('sfEmail').value = s.email||'';
-      document.getElementById('sfRole').value = s.role_type||'commercial';
-      document.getElementById('sfRespTime').value = s.response_time||'< 5 min';
-      document.getElementById('sfOrder').value = s.display_order||0;
-      document.getElementById('sfActive').checked = !!s.is_active;
-      sfSpecs = [...(s.specialties||[])];
-      sfAvUrl = s.avatar_url||'';
-      sfRating = s.rating||5;
-      sfSpecsRender();
-      staffSetRating(sfRating);
-      if (sfAvUrl) {
-        document.getElementById('sfAvPreview').src = sfAvUrl;
-        document.getElementById('sfAvPreview').style.display = 'block';
-        document.getElementById('sfAvHint').style.display = 'none';
-      }
+/* ══ Staff Modal ══ */
+function staffOpenModal(id=null){
+  staffEditId=id;sfSpecs=[];sfAvUrl='';sfRating=5;
+  const modal=document.getElementById('staffModal');
+  modal.style.display='flex';
+  document.getElementById('staffModalTitle').textContent=id?'Modifier l\'agent':'Ajouter un agent';
+  document.getElementById('staffSaveLbl').textContent=id?'Enregistrer les modifications':'Enregistrer';
+  ['sfName','sfBio','sfPhone','sfWhatsapp','sfEmail'].forEach(fid=>{const el=document.getElementById(fid);if(el)el.value='';});
+  document.getElementById('sfOrder').value='0';
+  document.getElementById('sfActive').checked=true;
+  document.getElementById('sfRole').value='commercial';
+  document.getElementById('sfRespTime').value='< 5 min';
+  document.getElementById('sfAvPreview').style.display='none';
+  document.getElementById('sfAvHint').style.display='';
+  sfSpecsRender();staffSetRating(5);
+  if(id){
+    const s=staffData.find(x=>x.id===id);
+    if(s){
+      document.getElementById('sfName').value=s.name||'';
+      document.getElementById('sfBio').value=s.bio||'';
+      document.getElementById('sfPhone').value=s.phone||'';
+      document.getElementById('sfWhatsapp').value=s.whatsapp||'';
+      document.getElementById('sfEmail').value=s.email||'';
+      document.getElementById('sfRole').value=s.role_type||'commercial';
+      document.getElementById('sfRespTime').value=s.response_time||'< 5 min';
+      document.getElementById('sfOrder').value=s.display_order||0;
+      document.getElementById('sfActive').checked=!!s.is_active;
+      sfSpecs=[...(s.specialties||[])];
+      sfAvUrl=s.avatar_url||'';sfRating=s.rating||5;
+      sfSpecsRender();staffSetRating(sfRating);
+      if(sfAvUrl){document.getElementById('sfAvPreview').src=sfAvUrl;document.getElementById('sfAvPreview').style.display='block';document.getElementById('sfAvHint').style.display='none';}
     }
   }
 }
 
-function staffCloseModal() {
-  document.getElementById('staffModal').style.display = 'none';
-  staffEditId = null;
-}
+function staffCloseModal(){document.getElementById('staffModal').style.display='none';staffEditId=null;}
 
-// ── Spécialités ──────────────────────────────────────────
-function sfSpecsRender() {
-  const box = document.getElementById('sfSpecsBox');
-  const inp = document.getElementById('sfSpecsInp');
-  if (!box || !inp) return;
-  // Supprimer les chips existants
+function sfSpecsRender(){
+  const box=document.getElementById('sfSpecsBox'),inp=document.getElementById('sfSpecsInp');if(!box||!inp)return;
   box.querySelectorAll('.staff-spec-chip').forEach(c=>c.remove());
-  sfSpecs.forEach((sp,i)=>{
-    const chip = document.createElement('span');
-    chip.className = 'staff-spec-chip';
-    chip.innerHTML = `${sp} <button type="button" onclick="sfSpecRemove(${i})">×</button>`;
-    box.insertBefore(chip, inp);
-  });
+  sfSpecs.forEach((sp,i)=>{const chip=document.createElement('span');chip.className='staff-spec-chip';chip.innerHTML=`${sp} <button type="button" onclick="sfSpecRemove(${i})">×</button>`;box.insertBefore(chip,inp);});
 }
-function sfSpecRemove(i) { sfSpecs.splice(i,1); sfSpecsRender(); }
-function staffSpecKeydown(e) {
-  if (e.key==='Enter'||e.key===',') {
-    e.preventDefault();
-    const v = e.target.value.trim().replace(/,$/,'');
-    if (v && !sfSpecs.includes(v)) { sfSpecs.push(v); sfSpecsRender(); }
-    e.target.value='';
-  }
+function sfSpecRemove(i){sfSpecs.splice(i,1);sfSpecsRender();}
+function staffSpecKeydown(e){
+  if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.trim().replace(/,$/,'');if(v&&!sfSpecs.includes(v)){sfSpecs.push(v);sfSpecsRender();}e.target.value='';}
 }
+function staffSetRating(v){sfRating=v;document.querySelectorAll('.staff-star').forEach(s=>{s.classList.toggle('on',parseInt(s.dataset.v)<=v);});}
 
-// ── Rating ───────────────────────────────────────────────
-function staffSetRating(v) {
-  sfRating = v;
-  document.querySelectorAll('.staff-star').forEach(s=>{
-    s.classList.toggle('on', parseInt(s.dataset.v)<=v);
-  });
+async function staffHandleAvatar(inp){
+  if(!inp.files[0])return;
+  const fd=new FormData();fd.append('avatar',inp.files[0]);if(staffEditId)fd.append('sid',staffEditId);
+  try{
+    const r=await fetch('/shop/api/staff/upload-avatar',{method:'POST',body:fd});const d=await r.json();
+    if(d.success){sfAvUrl=d.url;document.getElementById('sfAvPreview').src=d.url;document.getElementById('sfAvPreview').style.display='block';document.getElementById('sfAvHint').style.display='none';toast('Photo uploadée ✅');}
+    else toast('❌ '+d.error,false);
+  }catch(e){toast('❌ Erreur upload',false);}
 }
 
-// ── Avatar ───────────────────────────────────────────────
-async function staffHandleAvatar(inp) {
-  if (!inp.files[0]) return;
-  const fd = new FormData();
-  fd.append('avatar', inp.files[0]);
-  if (staffEditId) fd.append('sid', staffEditId);
-  try {
-    const r = await fetch('/shop/api/staff/upload-avatar', {method:'POST', body:fd});
-    const d = await r.json();
-    if (d.success) {
-      sfAvUrl = d.url;
-      document.getElementById('sfAvPreview').src = d.url;
-      document.getElementById('sfAvPreview').style.display = 'block';
-      document.getElementById('sfAvHint').style.display = 'none';
-      toast('Photo uploadée ✅');
-    } else toast('❌ ' + d.error, false);
-  } catch(e) { toast('❌ Erreur upload', false); }
+function staffAvatarEdit(sid){document.getElementById('savInput-'+sid)?.click();}
+async function staffUploadAvatar(inp,sid){
+  if(!inp.files[0])return;
+  const fd=new FormData();fd.append('avatar',inp.files[0]);fd.append('sid',sid);
+  try{const r=await fetch('/shop/api/staff/upload-avatar',{method:'POST',body:fd});const d=await r.json();if(d.success){toast('Photo mise à jour ✅');staffData=staffData.map(s=>s.id===sid?{...s,avatar_url:d.url}:s);renderStaffGrid();}else toast('❌ '+d.error,false);}catch(e){toast('❌ Erreur',false);}
 }
 
-function staffAvatarEdit(sid) {
-  document.getElementById('savInput-'+sid)?.click();
-}
-
-async function staffUploadAvatar(inp, sid) {
-  if (!inp.files[0]) return;
-  const fd = new FormData();
-  fd.append('avatar', inp.files[0]);
-  fd.append('sid', sid);
-  try {
-    const r = await fetch('/shop/api/staff/upload-avatar',{method:'POST',body:fd});
-    const d = await r.json();
-    if (d.success) {
-      toast('Photo mise à jour ✅');
-      staffData = staffData.map(s=>s.id===sid?{...s,avatar_url:d.url}:s);
-      renderStaffGrid();
-    } else toast('❌ '+d.error, false);
-  } catch(e) { toast('❌ Erreur', false); }
-}
-
-// ── Sauvegarde ───────────────────────────────────────────
-async function staffSave() {
-  const name = document.getElementById('sfName').value.trim();
-  if (!name) { toast('❌ Nom requis', false); return; }
-
-  // Flush input spécialité non validé
-  const sInp = document.getElementById('sfSpecsInp');
-  if (sInp && sInp.value.trim()) { sfSpecs.push(sInp.value.trim()); sInp.value=''; sfSpecsRender(); }
-
-  const payload = {
-    name,
-    role_type:     document.getElementById('sfRole').value,
-    bio:           document.getElementById('sfBio').value.trim(),
-    phone:         document.getElementById('sfPhone').value.trim(),
-    whatsapp:      document.getElementById('sfWhatsapp').value.trim(),
-    email:         document.getElementById('sfEmail').value.trim(),
-    avatar_url:    sfAvUrl,
-    specialties:   sfSpecs,
-    rating:        sfRating,
-    reviews:       0,
-    response_time: document.getElementById('sfRespTime').value.trim()||'< 5 min',
-    is_active:     document.getElementById('sfActive').checked,
-    display_order: parseInt(document.getElementById('sfOrder').value)||0,
+async function staffSave(){
+  const name=document.getElementById('sfName').value.trim();
+  if(!name){toast('❌ Nom requis',false);return;}
+  const sInp=document.getElementById('sfSpecsInp');
+  if(sInp&&sInp.value.trim()){sfSpecs.push(sInp.value.trim());sInp.value='';sfSpecsRender();}
+  const payload={
+    name,role_type:document.getElementById('sfRole').value,
+    bio:document.getElementById('sfBio').value.trim(),
+    phone:document.getElementById('sfPhone').value.trim(),
+    whatsapp:document.getElementById('sfWhatsapp').value.trim(),
+    email:document.getElementById('sfEmail').value.trim(),
+    avatar_url:sfAvUrl,specialties:sfSpecs,rating:sfRating,reviews:0,
+    response_time:document.getElementById('sfRespTime').value.trim()||'< 5 min',
+    is_active:document.getElementById('sfActive').checked,
+    display_order:parseInt(document.getElementById('sfOrder').value)||0,
   };
-
-  const url    = staffEditId ? `/shop/api/staff/${staffEditId}` : '/shop/api/staff';
-  const method = staffEditId ? 'PUT' : 'POST';
-
-  try {
-    const r = await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const d = await r.json();
-    if (d.success) {
-      toast(staffEditId ? 'Agent mis à jour ✅' : 'Agent ajouté ✅');
-      staffCloseModal();
-      await loadStaff();
-    } else toast('❌ ' + d.error, false);
-  } catch(e) { toast('❌ Erreur réseau', false); }
+  const url=staffEditId?`/shop/api/staff/${staffEditId}`:'/shop/api/staff';
+  const method=staffEditId?'PUT':'POST';
+  try{
+    const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.success){toast(staffEditId?'Agent mis à jour ✅':'Agent ajouté ✅');staffCloseModal();await loadStaff();}
+    else toast('❌ '+d.error,false);
+  }catch(e){toast('❌ Erreur réseau',false);}
 }
 
-// ── Toggle actif ─────────────────────────────────────────
-async function staffToggleActive(id, active) {
-  const s = staffData.find(x=>x.id===id); if(!s) return;
-  try {
-    const r = await fetch(`/shop/api/staff/${id}`,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({...s, specialties:s.specialties||[], is_active:active})
-    });
-    const d = await r.json();
-    if (d.success) {
-      staffData = staffData.map(x=>x.id===id?{...x,is_active:active}:x);
-      toast(active?'Agent activé ✅':'Agent désactivé');
-    } else toast('❌ '+d.error, false);
-  } catch(e) { toast('❌ Erreur', false); }
+async function staffToggleActive(id,active){
+  const s=staffData.find(x=>x.id===id);if(!s)return;
+  try{
+    const r=await fetch(`/shop/api/staff/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...s,specialties:s.specialties||[],is_active:active})});
+    const d=await r.json();
+    if(d.success){staffData=staffData.map(x=>x.id===id?{...x,is_active:active}:x);toast(active?'Agent activé ✅':'Agent désactivé');}
+    else toast('❌ '+d.error,false);
+  }catch(e){toast('❌ Erreur',false);}
 }
 
-// ── Suppression ──────────────────────────────────────────
-async function staffDelete(id) {
-  if (!confirm('Supprimer cet agent ? Cette action est irréversible.')) return;
-  try {
-    const r = await fetch(`/shop/api/staff/${id}`,{method:'DELETE'});
-    const d = await r.json();
-    if (d.success) {
-      staffData = staffData.filter(x=>x.id!==id);
-      renderStaffGrid();
-      toast('Agent supprimé');
-    } else toast('❌ '+d.error, false);
-  } catch(e) { toast('❌ Erreur', false); }
+async function staffDelete(id){
+  if(!confirm('Supprimer cet agent ? Cette action est irréversible.'))return;
+  try{
+    const r=await fetch(`/shop/api/staff/${id}`,{method:'DELETE'});const d=await r.json();
+    if(d.success){staffData=staffData.filter(x=>x.id!==id);renderStaffGrid();toast('Agent supprimé');}
+    else toast('❌ '+d.error,false);
+  }catch(e){toast('❌ Erreur',false);}
 }
 
-// Fermer modal au clic backdrop
-document.getElementById('staffModal')?.addEventListener('click', function(e){
-  if (e.target===this) staffCloseModal();
-});
+// Fermer modal sur clic backdrop
+document.getElementById('staffModal').addEventListener('click',function(e){if(e.target===this)staffCloseModal();});
 
-// Init
-addSpecRow('Bluetooth','5.3');addSpecRow('Couleur','Noir');addSpecRow('Garantie','1 an');
+/* ══ INIT ══ */
+addSpecRow('Bluetooth','5.3');
+addSpecRow('Couleur','Noir');
+addSpecRow('Garantie','1 an');
 initGallery();
-
 </script>
 {% endblock %}
