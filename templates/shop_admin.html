@@ -993,7 +993,7 @@
 <div id="atoast"><i id="ati" class="fas fa-check-circle"></i> <span id="atm"></span></div>
 
 <script>
-const PRODS={ {% for p in products %}{{p.id}}:{{{'id':p.id,'name':p.name,'description':p.description or '','features':p.features or '','category':p.category,'price':p.price,'original_price':p.original_price or 0,'stock':p.stock,'image_url':p.image_url or '','extra_images':p.extra_images or '[]','badge':p.badge or '','is_active':p.is_active,'reviews_count':p.reviews_count or 0,'delivery_info':p.delivery_info or 'Livraison 3-7 jours'}|tojson}},{% endfor %}};
+const PRODS={ {% for p in products %}{{p.id}}:{{{'id':p.id,'name':p.name,'description':p.description or '','features':p.features or '','category':p.category,'price':p.price,'original_price':p.original_price or 0,'stock':p.stock,'image_url':p.image_url or '','images':p.images or '[]','badge':p.badge or '','is_active':p.is_active,'reviews_count':p.reviews_count or 0,'delivery_info':p.delivery_info or 'Livraison 3-7 jours'}|tojson}},{% endfor %}};
 const ORDERS={ {% for o in orders %}{{o.id}}:{{{'id':o.id,'customer_name':o.customer_name or '','customer_phone':o.customer_phone or '','customer_city':o.customer_city or '','items_summary':o.items_summary or '','items_json':o.items_json or '[]','total':o.total,'pay_method':o.pay_method or '','note':o.note or '','status':o.status,'created_at':o.created_at or ''}|tojson}},{% endfor %}};
 const SL={pending:'⏳ En attente',paid:'✅ Payé',shipped:'🚚 Expédié',delivered:'📬 Livré',cancelled:'❌ Annulé'};
 const SC={pending:'sp-pending',paid:'sp-paid',shipped:'sp-shipped',delivered:'sp-delivered',cancelled:'sp-cancelled'};
@@ -1204,7 +1204,7 @@ async function saveProd(){
     description:document.getElementById('pd').value.trim(),
     features:document.getElementById('pfeats').value.trim(),
     image_url:galleryUrls[0]||document.getElementById('pimg').value.trim(),
-    extra_images: JSON.stringify(galleryUrls.slice(1).filter(Boolean)),
+    images: galleryUrls.slice(1).filter(Boolean),
     price:parseFloat(document.getElementById('pp').value)||0,
     original_price:parseFloat(document.getElementById('pop').value)||0,
     stock:parseInt(document.getElementById('pstock').value)||0,
@@ -1256,7 +1256,7 @@ function loadEdit(id){
   document.getElementById('pdel').value=p.delivery_info;
   document.getElementById('pactive').value=p.is_active?'1':'0';
   document.getElementById('previews').value=p.reviews_count;
-  loadGallery(p.image_url, p.extra_images||'[]');
+  loadGallery(p.image_url, p.images||'[]');
   st(0,document.querySelectorAll('.ftab')[0]);
   document.getElementById('saMain').scrollTo({top:0,behavior:'smooth'});
 }
