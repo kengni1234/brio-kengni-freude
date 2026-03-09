@@ -7069,10 +7069,23 @@ def shop_admin():
         print(f"[ShopAdmin] {e}")
     finally:
         if conn: conn.close()
+    # Récupérer tous les utilisateurs pour la section Accès
+    all_users = []
+    try:
+        conn2 = get_db_connection()
+        if conn2:
+            cur2 = conn2.cursor()
+            cur2.execute("SELECT id, username, email, role FROM users ORDER BY username ASC")
+            all_users = [dict(r) for r in cur2.fetchall()]
+            conn2.close()
+    except Exception as e:
+        print(f"[ShopAdmin users] {e}")
+
     return render_template('shop_admin.html',
         products=products, orders=orders,
         total_revenue=total_revenue,
-        pending_count=pending_count, active_count=active_count)
+        pending_count=pending_count, active_count=active_count,
+        all_users=all_users)
 
 
 @app.route('/shop/api/product', methods=['POST'])
@@ -7550,6 +7563,29 @@ def shop_upload_staff_avatar():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+
+@app.route('/shop/api/access/set', methods=['POST'])
+@login_required
+def shop_set_access():
+    """Donne ou retire le rôle shop_manager à un utilisateur."""
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    data = request.get_json(force=True, silent=True) or {}
+    user_id  = data.get('user_id')
+    new_role = data.get('role', 'user')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'user_id manquant'})
+    if new_role not in ('shop_manager', 'user'):
+        return jsonify({'success': False, 'error': 'Rôle invalide'})
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET role=? WHERE id=?", (new_role, user_id))
+        conn.commit()
+        return jsonify({'success': True, 'role': new_role})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
 
 # ── FIN MODULE STAFF ASSISTANCE ──────────────────────────────────────
 
