@@ -1527,5 +1527,764 @@ wishlist.forEach(id=>{
 window.addEventListener('scroll',()=>{
   document.getElementById('backTop').classList.toggle('visible', window.scrollY > 500);
 }, {passive:true});
+</script>
 
-// ════════════════�
+<!-- ══════════════════════════════════════════════════════════════════
+     WIDGET ASSISTANCE FLOTTANT — k-ni Store
+     ══════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Variables widget ─────────────────────────────────────────── */
+#aw-panel,#aw-trigger,#aw-panel *{box-sizing:border-box;font-family:'Outfit',sans-serif}
+:root{
+  --aw-g1:#10b981;--aw-g2:#059669;--aw-g3:#34d399;
+  --aw-dk:#0f172a;--aw-dk2:#1e293b;--aw-dk3:#162032;
+  --aw-bd:rgba(255,255,255,.07);--aw-txt:#f1f5f9;--aw-mut:#94a3b8;
+  --aw-r:16px;--aw-sh:0 24px 64px rgba(0,0,0,.4),0 4px 16px rgba(16,185,129,.12);
+}
+
+/* ── Bouton déclencheur ──────────────────────────────────────── */
+#aw-trigger{
+  position:fixed;bottom:28px;right:28px;z-index:9990;
+  width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--aw-g1),var(--aw-g3));
+  box-shadow:0 6px 24px rgba(16,185,129,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.45rem;color:#fff;
+  transition:transform .2s,box-shadow .2s,background .25s;
+  user-select:none;
+}
+#aw-trigger:hover{transform:scale(1.08);box-shadow:0 8px 32px rgba(16,185,129,.65)}
+#aw-trigger.aw-open{background:linear-gradient(135deg,#dc2626,#ef4444)}
+#aw-notif{
+  position:absolute;top:-4px;right:-4px;
+  background:#ef4444;color:#fff;border-radius:50%;
+  width:20px;height:20px;font-size:.6rem;font-weight:800;
+  display:none;align-items:center;justify-content:center;
+  border:2px solid #fff;animation:awPulse 2s infinite;
+}
+@keyframes awPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
+
+/* ── Fenêtre principale ──────────────────────────────────────── */
+#aw-panel{
+  position:fixed;bottom:104px;right:28px;z-index:9991;
+  width:370px;
+  background:var(--aw-dk);
+  border-radius:var(--aw-r);
+  border:1px solid var(--aw-bd);
+  box-shadow:var(--aw-sh);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:opacity .22s,transform .22s;
+  transform-origin:bottom right;
+  max-height:calc(100vh - 140px);
+}
+#aw-panel.aw-hidden{opacity:0;pointer-events:none;transform:scale(.9) translateY(8px)}
+
+/* ── Header draggable ─────────────────────────────────────────── */
+#aw-hdr{
+  background:linear-gradient(135deg,#064e3b,#065f46);
+  padding:.8rem 1rem;
+  display:flex;align-items:center;gap:.6rem;
+  cursor:grab;user-select:none;
+  border-bottom:1px solid var(--aw-bd);flex-shrink:0;
+}
+#aw-hdr:active{cursor:grabbing}
+.aw-hdr-av{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  background:rgba(16,185,129,.2);
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+}
+.aw-hdr-info{flex:1;min-width:0}
+.aw-hdr-info strong{display:block;font-size:.84rem;color:#fff;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-hdr-info small{font-size:.68rem;color:#6ee7b7}
+.aw-hdr-dot{width:8px;height:8px;border-radius:50%;background:#34d399;
+  box-shadow:0 0 6px #34d399;flex-shrink:0}
+.aw-hdr-btns{display:flex;gap:.3rem;flex-shrink:0}
+.aw-hdr-btn{
+  width:26px;height:26px;border-radius:7px;border:none;
+  background:rgba(255,255,255,.08);color:#94a3b8;
+  cursor:pointer;font-size:.72rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,color .15s;
+}
+.aw-hdr-btn:hover{background:rgba(255,255,255,.16);color:#fff}
+
+/* ── Body scroll ─────────────────────────────────────────────── */
+#aw-body{flex:1;overflow-y:auto;min-height:0;
+  scrollbar-width:thin;scrollbar-color:#334155 transparent}
+#aw-body::-webkit-scrollbar{width:3px}
+#aw-body::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
+
+/* ── Vue Accueil ─────────────────────────────────────────────── */
+#aw-home{padding:1.1rem}
+.aw-welcome{text-align:center;padding:.8rem 0 .6rem}
+.aw-welcome-ico{font-size:2.4rem;display:block;margin-bottom:.4rem;
+  animation:awBob 2.5s ease-in-out infinite}
+@keyframes awBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.aw-welcome h3{color:var(--aw-txt);font-size:.98rem;font-weight:700;margin-bottom:.3rem}
+.aw-welcome p{color:var(--aw-mut);font-size:.78rem;line-height:1.5}
+.aw-qbtns{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.8rem}
+.aw-qbtn{
+  background:var(--aw-dk2);border:1px solid var(--aw-bd);border-radius:11px;
+  padding:.65rem .5rem;cursor:pointer;text-align:center;
+  color:var(--aw-txt);font-size:.74rem;font-weight:600;
+  transition:all .18s;display:flex;flex-direction:column;align-items:center;gap:.3rem;
+}
+.aw-qbtn:hover{background:rgba(16,185,129,.1);border-color:var(--aw-g1);transform:translateY(-1px)}
+.aw-qbtn i{font-size:1.1rem;color:var(--aw-g1)}
+.aw-divider{display:flex;align-items:center;gap:.5rem;margin:.85rem 0 .55rem}
+.aw-divider::before,.aw-divider::after{content:'';flex:1;height:1px;background:var(--aw-bd)}
+.aw-divider span{color:var(--aw-mut);font-size:.7rem;white-space:nowrap}
+.aw-start-btn{
+  width:100%;padding:.7rem;border:none;border-radius:11px;
+  background:linear-gradient(135deg,var(--aw-g1),var(--aw-g3));
+  color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;
+  transition:opacity .15s,transform .15s;
+}
+.aw-start-btn:hover{opacity:.9;transform:translateY(-1px)}
+
+/* ── Vue Chat ─────────────────────────────────────────────────── */
+#aw-chat{display:none;flex-direction:column;height:100%}
+.aw-msgs{
+  flex:1;overflow-y:auto;padding:.8rem .85rem;
+  display:flex;flex-direction:column;gap:.65rem;
+  min-height:180px;
+  scrollbar-width:thin;scrollbar-color:#334155 transparent;
+}
+.aw-msgs::-webkit-scrollbar{width:3px}
+.aw-msgs::-webkit-scrollbar-thumb{background:#334155}
+.aw-msg{display:flex;gap:.45rem;align-items:flex-end}
+.aw-msg.u{flex-direction:row-reverse}
+.aw-msg-av{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;
+}
+.aw-msg.b .aw-msg-av{background:rgba(16,185,129,.18);color:var(--aw-g1)}
+.aw-msg.u .aw-msg-av{background:rgba(99,102,241,.18);color:#818cf8}
+.aw-bubble{
+  max-width:80%;padding:.55rem .8rem;border-radius:13px;
+  font-size:.78rem;line-height:1.55;
+}
+.aw-msg.b .aw-bubble{
+  background:var(--aw-dk2);color:var(--aw-txt);
+  border-bottom-left-radius:3px;border:1px solid var(--aw-bd);
+}
+.aw-msg.u .aw-bubble{
+  background:linear-gradient(135deg,var(--aw-g1),var(--aw-g3));
+  color:#fff;border-bottom-right-radius:3px;
+}
+.aw-msg-time{font-size:.62rem;color:var(--aw-mut);margin-top:.18rem}
+.aw-msg.u .aw-msg-time{text-align:right}
+.aw-typing{display:flex;align-items:center;gap:.35rem;padding:.45rem .75rem;
+  background:var(--aw-dk2);border-radius:13px;border-bottom-left-radius:3px;
+  border:1px solid var(--aw-bd);width:fit-content}
+.aw-dot{width:6px;height:6px;border-radius:50%;background:var(--aw-g1);
+  display:inline-block;animation:awDot 1.2s infinite}
+.aw-dot:nth-child(2){animation-delay:.2s}.aw-dot:nth-child(3){animation-delay:.4s}
+@keyframes awDot{0%,80%,100%{transform:scale(.75);opacity:.4}40%{transform:scale(1);opacity:1}}
+.aw-qreplies{display:flex;flex-wrap:wrap;gap:.35rem;padding:.45rem .85rem}
+.aw-qr{
+  background:var(--aw-dk2);border:1px solid var(--aw-bd);
+  border-radius:20px;padding:.35rem .7rem;
+  font-size:.72rem;color:var(--aw-g1);cursor:pointer;
+  white-space:nowrap;transition:all .15s;
+}
+.aw-qr:hover{background:rgba(16,185,129,.1);border-color:var(--aw-g1)}
+.aw-inp-row{
+  padding:.6rem .85rem .75rem;border-top:1px solid var(--aw-bd);
+  display:flex;gap:.45rem;align-items:center;
+  background:var(--aw-dk);flex-shrink:0;
+}
+.aw-inp-row input{
+  flex:1;background:var(--aw-dk2);border:1px solid var(--aw-bd);
+  border-radius:22px;padding:.5rem .9rem;
+  font-size:.78rem;color:var(--aw-txt);outline:none;
+  font-family:inherit;transition:border-color .15s;
+}
+.aw-inp-row input::placeholder{color:var(--aw-mut)}
+.aw-inp-row input:focus{border-color:var(--aw-g1)}
+.aw-send{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:var(--aw-g1);border:none;color:#fff;
+  cursor:pointer;font-size:.82rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s,opacity .15s;
+}
+.aw-send:hover{transform:scale(1.1)}.aw-send:disabled{opacity:.45;cursor:not-allowed}
+
+/* ── Vue Agents ───────────────────────────────────────────────── */
+#aw-agents{display:none;padding:.85rem}
+.aw-agents-intro{
+  background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.18);
+  border-radius:11px;padding:.65rem .8rem;margin-bottom:.8rem;
+  font-size:.76rem;color:#6ee7b7;text-align:center;line-height:1.5;
+}
+.aw-back{
+  display:flex;align-items:center;gap:.4rem;background:none;border:none;
+  color:var(--aw-mut);font-size:.75rem;cursor:pointer;padding:.2rem 0;
+  margin-bottom:.65rem;transition:color .15s;
+}
+.aw-back:hover{color:var(--aw-txt)}
+.aw-agent-card{
+  background:var(--aw-dk2);border:1px solid var(--aw-bd);
+  border-radius:13px;padding:.8rem;margin-bottom:.55rem;
+  display:flex;gap:.75rem;align-items:center;
+  cursor:pointer;transition:all .18s;
+}
+.aw-agent-card:hover{border-color:var(--aw-g1);transform:translateY(-1px);
+  box-shadow:0 4px 14px rgba(16,185,129,.1)}
+.aw-ag-av{
+  width:50px;height:50px;border-radius:12px;flex-shrink:0;
+  object-fit:cover;border:2px solid rgba(16,185,129,.25);
+}
+.aw-ag-ph{
+  width:50px;height:50px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(16,185,129,.18),rgba(52,211,153,.08));
+  border:2px solid rgba(16,185,129,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.25rem;font-weight:800;color:var(--aw-g1);
+}
+.aw-ag-info{flex:1;min-width:0}
+.aw-ag-name{font-size:.85rem;font-weight:700;color:var(--aw-txt);margin-bottom:.18rem}
+.aw-ag-role{
+  display:inline-flex;align-items:center;gap:.28rem;
+  font-size:.65rem;font-weight:700;padding:.15rem .5rem;border-radius:20px;margin-bottom:.3rem;
+}
+.aw-ag-role.t{background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.18)}
+.aw-ag-role.c{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.18)}
+.aw-ag-bio{font-size:.71rem;color:var(--aw-mut);line-height:1.4;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw-ag-meta{display:flex;gap:.45rem;margin-top:.25rem;flex-wrap:wrap}
+.aw-ag-meta span{font-size:.63rem;color:var(--aw-mut);display:flex;align-items:center;gap:.18rem}
+.aw-ag-meta i{font-size:.58rem}
+.aw-ag-ctas{display:flex;gap:.35rem;flex-direction:column;flex-shrink:0}
+.aw-cta{
+  padding:.35rem .6rem;border-radius:8px;font-size:.68rem;font-weight:700;
+  border:none;cursor:pointer;white-space:nowrap;
+  display:flex;align-items:center;gap:.28rem;transition:opacity .15s;
+  text-decoration:none;
+}
+.aw-cta:hover{opacity:.85}
+.aw-cta.wa{background:#25d366;color:#fff}
+.aw-cta.tel{background:rgba(16,185,129,.12);color:var(--aw-g1);border:1px solid rgba(16,185,129,.18)}
+.aw-no-agents{text-align:center;padding:1.8rem 1rem;color:var(--aw-mut);font-size:.78rem}
+.aw-no-agents i{font-size:1.8rem;display:block;margin-bottom:.5rem;opacity:.35}
+.aw-wa-fallback{
+  display:inline-flex;align-items:center;gap:.4rem;margin-top:.6rem;
+  background:#25d366;color:#fff;padding:.5rem 1rem;border-radius:9px;
+  text-decoration:none;font-size:.76rem;font-weight:700;
+}
+
+/* ── Action bot button inline ─────────────────────────────────── */
+.aw-bot-action{
+  display:inline-flex;align-items:center;gap:.4rem;margin-top:.45rem;
+  background:linear-gradient(135deg,var(--aw-g1),var(--aw-g3));color:#fff;
+  padding:.5rem 1rem;border-radius:9px;text-decoration:none;
+  font-size:.76rem;font-weight:700;border:none;cursor:pointer;
+}
+.aw-bot-action:hover{opacity:.9}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media(max-width:480px){
+  #aw-panel{width:calc(100vw - 20px);right:10px;bottom:86px}
+  #aw-trigger{bottom:16px;right:16px}
+}
+</style>
+
+<!-- ── Bouton déclencheur ── -->
+<button id="aw-trigger" onclick="awToggle()" title="Assistance k-ni Store" aria-label="Ouvrir l'assistance">
+  <i class="fas fa-headset" id="aw-ico"></i>
+  <span id="aw-notif">1</span>
+</button>
+
+<!-- ── Panneau flottant ── -->
+<div id="aw-panel" class="aw-hidden" role="dialog" aria-label="Chat d'assistance">
+
+  <!-- Header draggable -->
+  <div id="aw-hdr">
+    <div class="aw-hdr-av" id="aw-hdr-av">🤖</div>
+    <div class="aw-hdr-info">
+      <strong id="aw-hdr-name">Assistant k-ni</strong>
+      <small id="aw-hdr-sub">En ligne · Réponse immédiate</small>
+    </div>
+    <div class="aw-hdr-dot"></div>
+    <div class="aw-hdr-btns">
+      <button class="aw-hdr-btn" onclick="awMinimize()" title="Réduire" aria-label="Réduire">
+        <i class="fas fa-minus"></i>
+      </button>
+      <button class="aw-hdr-btn" onclick="awToggle()" title="Fermer" aria-label="Fermer">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div id="aw-body">
+
+    <!-- Vue Accueil -->
+    <div id="aw-home">
+      <div class="aw-welcome">
+        <span class="aw-welcome-ico">👋</span>
+        <h3>Bienvenue sur k-ni Store !</h3>
+        <p>Notre assistant IA répond en temps réel.<br>Besoin d'un conseiller expert ? On est là !</p>
+      </div>
+      <div class="aw-qbtns">
+        <button class="aw-qbtn" onclick="awStart('question')">
+          <i class="fas fa-question-circle"></i><span>Question produit</span>
+        </button>
+        <button class="aw-qbtn" onclick="awStart('commande')">
+          <i class="fas fa-box-open"></i><span>Suivi commande</span>
+        </button>
+        <button class="aw-qbtn" onclick="awStart('technique')">
+          <i class="fas fa-tools"></i><span>Support technique</span>
+        </button>
+        <button class="aw-qbtn" onclick="awStart('prix')">
+          <i class="fas fa-percent"></i><span>Prix & Promos</span>
+        </button>
+      </div>
+      <div class="aw-divider"><span>ou démarrez directement</span></div>
+      <button class="aw-start-btn" onclick="awStart()">
+        <i class="fas fa-comments" style="margin-right:.4rem"></i>
+        Démarrer une conversation
+      </button>
+    </div>
+
+    <!-- Vue Chat -->
+    <div id="aw-chat">
+      <div class="aw-msgs" id="aw-msgs"></div>
+      <div class="aw-qreplies" id="aw-qr"></div>
+      <div class="aw-inp-row">
+        <input type="text" id="aw-inp" placeholder="Votre message…"
+               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();awSend()}"
+               autocomplete="off">
+        <button class="aw-send" id="aw-send" onclick="awSend()" aria-label="Envoyer">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vue Agents -->
+    <div id="aw-agents">
+      <button class="aw-back" onclick="awView('chat')">
+        <i class="fas fa-arrow-left"></i> Retour au chat
+      </button>
+      <div class="aw-agents-intro">
+        <i class="fas fa-user-tie" style="margin-right:.35rem"></i>
+        Notre équipe est prête à vous accompagner personnellement.
+      </div>
+      <div id="aw-agents-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   WIDGET ASSISTANCE — k-ni Store v2
+   ════════════════════════════════════════════════════════ */
+
+// ── État global ──────────────────────────────────────────
+const AW = {
+  open:     false,
+  view:     'home',        // home | chat | agents
+  msgs:     0,             // messages échangés
+  history:  [],            // [{r:'b'|'u', t:'...' }]
+  agents:   null,          // cache agents
+  rating:   5,
+  dragging: false,
+  dox: 0, doy: 0,          // drag offsets
+  topic:    '',
+};
+
+// ── Constantes IA ────────────────────────────────────────
+const BOT_NAME  = '🤖 IA k-ni';
+const BOT_FLOWS = {
+  welcome: {
+    t: "Bonjour ! 👋 Je suis l'assistant IA de k-ni Store. Comment puis-je vous aider ?",
+    r: ["Question sur un produit","Suivi de commande","Support technique","Promotions & Prix","Parler à un conseiller"]
+  },
+  question: {
+    t: "Sur quel type de produit avez-vous une question ? 📦",
+    r: ["Électronique & High-Tech","Mode & Vêtements","Sport & Fitness","Maison & Déco","Je cherche encore"]
+  },
+  commande: {
+    t: "Pour le suivi de commande, avez-vous votre numéro de référence (#ID) ?",
+    r: ["Oui, j'ai la référence","Je n'ai pas la référence","Ma commande est en retard","Annuler une commande"]
+  },
+  technique: {
+    t: "Je vais vous connecter à un technicien. Pouvez-vous décrire brièvement le problème ? 🔧",
+    r: ["Produit défectueux","Problème installation","Incompatibilité","Pièce manquante"]
+  },
+  prix: {
+    t: "Super ! Nous avons régulièrement des promos. Sur quelle catégorie ? 💰",
+    r: ["Électronique","Mode","Sport","Toutes catégories","Voir les offres actuelles"]
+  },
+  suggest: {
+    t: "Je pense qu'un de nos experts peut vous aider plus efficacement. Souhaitez-vous voir les profils disponibles ? 👥",
+    r: ["✅ Voir les conseillers","Non, continuer avec l'IA","📞 Contacter par WhatsApp"]
+  }
+};
+
+const BOT_GENERIC = [
+  { k:['livraison','délai','expédié','reçu','livré'],
+    t:"📦 Livraison 3-14 jours selon votre ville au Cameroun. Après paiement confirmé, vous recevez un suivi WhatsApp.",
+    a:null },
+  { k:['paiement','payer','orange','mtn','momo','moyen'],
+    t:"✅ Paiements acceptés : Orange Money 🟠, MTN MoMo 🟡, WhatsApp Pay. 100% sécurisé, paiement après validation commande.",
+    a:null },
+  { k:['prix','combien','tarif','coût','cher','réduction','promo'],
+    t:"💰 Les prix affichés incluent déjà notre remise spéciale. Pour les grosses quantités, notre équipe commerciale peut vous faire une offre sur mesure !",
+    a:'offer_agents' },
+  { k:['retour','remboursement','échange','défaut','cassé','abîmé'],
+    t:"🔄 Retours acceptés sous 7 jours pour produit défectueux, échange sous 14 jours. Contactez-nous via WhatsApp avec photo du problème.",
+    a:null },
+  { k:['garantie','warranty','sav'],
+    t:"🛡️ Tous nos produits sont garantis (durée sur la fiche). En cas de panne, nos techniciens interviennent. Gardez votre référence d'achat !",
+    a:null },
+  { k:['stock','disponible','rupture','quantité'],
+    t:"📊 Le stock est visible sur chaque produit. Si épuisé, contactez-nous — nous pouvons souvent commander en 5-7 jours chez nos fournisseurs.",
+    a:null },
+  { k:['contact','joindre','whatsapp','téléphone','appeler'],
+    t:"📱 WhatsApp : +237 695 072 759 (8h-20h Lun-Sam). Ou je peux vous mettre en relation avec un conseiller disponible ici 👇",
+    a:'offer_agents' },
+];
+
+const BOT_FALLBACKS = [
+  "Je note votre demande ! Pourriez-vous préciser pour que je puisse mieux vous aider ? 🤔",
+  "Bonne question ! Pour une réponse précise, nos conseillers seraient plus adaptés. Souhaitez-vous les voir ? 👥",
+  "Je comprends votre demande ! Un de nos experts peut vous répondre directement. Que préférez-vous ?"
+];
+
+// ── Temps ─────────────────────────────────────────────────
+function awNow(){ return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+
+// ── Ouverture / Fermeture ─────────────────────────────────
+function awToggle(){
+  AW.open = !AW.open;
+  document.getElementById('aw-panel').classList.toggle('aw-hidden', !AW.open);
+  const ico = document.getElementById('aw-ico');
+  ico.className = AW.open ? 'fas fa-times' : 'fas fa-headset';
+  document.getElementById('aw-trigger').classList.toggle('aw-open', AW.open);
+  document.getElementById('aw-notif').style.display = 'none';
+}
+function awMinimize(){
+  AW.open = false;
+  document.getElementById('aw-panel').classList.add('aw-hidden');
+  document.getElementById('aw-ico').className = 'fas fa-headset';
+  document.getElementById('aw-trigger').classList.remove('aw-open');
+}
+
+// ── Changer de vue ─────────────────────────────────────────
+function awView(v){
+  AW.view = v;
+  document.getElementById('aw-home').style.display    = v==='home'   ? '' : 'none';
+  document.getElementById('aw-chat').style.display    = v==='chat'   ? 'flex' : 'none';
+  document.getElementById('aw-agents').style.display  = v==='agents' ? '' : 'none';
+
+  const nameEl = document.getElementById('aw-hdr-name');
+  const subEl  = document.getElementById('aw-hdr-sub');
+  const avEl   = document.getElementById('aw-hdr-av');
+
+  if(v==='chat'){
+    nameEl.textContent = BOT_NAME;
+    subEl.textContent  = 'IA · Réponse immédiate';
+    avEl.textContent   = '🤖';
+    setTimeout(()=>{ const m=document.getElementById('aw-msgs'); if(m) m.scrollTop=m.scrollHeight; },80);
+  } else if(v==='agents'){
+    nameEl.textContent = '👥 Notre équipe';
+    subEl.textContent  = 'Choisissez votre conseiller';
+    avEl.textContent   = '👥';
+    awLoadAgents();
+  } else {
+    nameEl.textContent = 'Assistant k-ni';
+    subEl.textContent  = 'En ligne · Prêt à vous aider';
+    avEl.textContent   = '🤖';
+  }
+}
+
+// ── Démarrer un chat ───────────────────────────────────────
+function awStart(topic=''){
+  AW.topic = topic;
+  awView('chat');
+  if(AW.history.length === 0){
+    awBotMsg(BOT_FLOWS.welcome.t);
+    awSetQR(BOT_FLOWS.welcome.r);
+    if(topic && BOT_FLOWS[topic]){
+      setTimeout(()=>{
+        awBotMsg(BOT_FLOWS[topic].t);
+        awSetQR(BOT_FLOWS[topic].r);
+      }, 850);
+    }
+  }
+}
+
+// ── Ajouter un message bot ─────────────────────────────────
+function awBotMsg(text, extra=null){
+  const box = document.getElementById('aw-msgs');
+  const d = document.createElement('div');
+  d.className = 'aw-msg b';
+  d.innerHTML = `<div class="aw-msg-av">🤖</div>
+    <div>
+      <div class="aw-bubble">${text.replace(/\n/g,'<br>')}</div>
+      ${extra || ''}
+      <div class="aw-msg-time">${awNow()}</div>
+    </div>`;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  AW.history.push({r:'b', t:text});
+}
+
+function awUserMsg(text){
+  const box = document.getElementById('aw-msgs');
+  const d = document.createElement('div');
+  d.className = 'aw-msg u';
+  d.innerHTML = `<div class="aw-msg-av">👤</div>
+    <div>
+      <div class="aw-bubble">${text}</div>
+      <div class="aw-msg-time">${awNow()}</div>
+    </div>`;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  AW.history.push({r:'u', t:text});
+}
+
+function awTyping(show){
+  const box = document.getElementById('aw-msgs');
+  const ex  = document.getElementById('aw-typing-ind');
+  if(!show){ if(ex) ex.remove(); return; }
+  if(ex) return;
+  const d = document.createElement('div');
+  d.className = 'aw-msg b'; d.id = 'aw-typing-ind';
+  d.innerHTML = `<div class="aw-msg-av">🤖</div>
+    <div class="aw-typing"><span class="aw-dot"></span><span class="aw-dot"></span><span class="aw-dot"></span></div>`;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+function awSetQR(items){
+  const box = document.getElementById('aw-qr');
+  box.innerHTML = '';
+  (items||[]).forEach(t=>{
+    const b = document.createElement('button');
+    b.className='aw-qr'; b.textContent=t;
+    b.onclick=()=>{ box.innerHTML=''; awHandle(t); };
+    box.appendChild(b);
+  });
+}
+
+// ── Envoyer message ────────────────────────────────────────
+function awSend(){
+  const inp = document.getElementById('aw-inp');
+  const txt = (inp.value||'').trim();
+  if(!txt) return;
+  inp.value='';
+  awHandle(txt);
+}
+
+// ── Logique IA ─────────────────────────────────────────────
+function awHandle(text){
+  awUserMsg(text);
+  document.getElementById('aw-qr').innerHTML='';
+  AW.msgs++;
+  const tl = text.toLowerCase();
+
+  // Demande explicite d'agents
+  if(/conseiller|agent|humain|technicien|commercial|voir les|équipe|parler à/i.test(tl)){
+    awTyping(true);
+    setTimeout(()=>{
+      awTyping(false);
+      awBotMsg("Voici notre équipe disponible pour vous 👥");
+      setTimeout(()=> awView('agents'), 500);
+    }, 700);
+    return;
+  }
+
+  // "Voir les conseillers" depuis QR
+  if(tl.includes('voir les conseillers') || tl.startsWith('✅')){
+    awTyping(true);
+    setTimeout(()=>{ awTyping(false); awView('agents'); }, 600);
+    return;
+  }
+
+  // Contact WA direct
+  if(tl.includes('contacter par whatsapp') || tl.includes('📞')){
+    awTyping(true);
+    setTimeout(()=>{
+      awTyping(false);
+      awBotMsg("Voici notre numéro WhatsApp principal :",
+        `<a class="aw-bot-action" href="https://wa.me/237695072759" target="_blank"><i class="fab fa-whatsapp"></i> +237 695 072 759</a>`);
+    }, 600);
+    return;
+  }
+
+  // Flow prédéfini
+  for(const [k,f] of Object.entries(BOT_FLOWS)){
+    if(k!=='welcome' && tl.includes(k)){
+      awTyping(true);
+      setTimeout(()=>{ awTyping(false); awBotMsg(f.t); if(f.r) awSetQR(f.r); }, 750);
+      return;
+    }
+  }
+
+  // Réponse générique par mots-clés
+  const match = BOT_GENERIC.find(g=> g.k.some(k=>tl.includes(k)));
+  if(match){
+    awTyping(true);
+    setTimeout(()=>{
+      awTyping(false);
+      awBotMsg(match.t);
+      if(match.a==='offer_agents'){
+        awSetQR(['✅ Voir les conseillers','Autre question','Merci, c\'est bon !']);
+      } else {
+        awSetQR(['Autre question','Parler à un conseiller','Merci !']);
+      }
+    }, 850);
+    return;
+  }
+
+  // Après 3 échanges → proposer agents
+  if(AW.msgs >= 3){
+    awTyping(true);
+    setTimeout(()=>{
+      awTyping(false);
+      awBotMsg(BOT_FLOWS.suggest.t);
+      awSetQR(BOT_FLOWS.suggest.r);
+    }, 900);
+    return;
+  }
+
+  // Fallback générique
+  awTyping(true);
+  const fb = BOT_FALLBACKS[Math.min(AW.msgs-1, BOT_FALLBACKS.length-1)];
+  setTimeout(()=>{
+    awTyping(false);
+    awBotMsg(fb);
+    awSetQR(['Parler à un conseiller','Autre question','Voir les produits']);
+  }, 950);
+}
+
+// ── Charger les agents ─────────────────────────────────────
+async function awLoadAgents(){
+  const list = document.getElementById('aw-agents-list');
+  if(!list) return;
+  if(AW.agents !== null){ awRenderAgents(AW.agents); return; }
+  list.innerHTML = '<div class="aw-no-agents"><i class="fas fa-spinner fa-spin"></i><p>Chargement…</p></div>';
+  try{
+    const r = await fetch('/shop/api/staff');
+    const d = await r.json();
+    AW.agents = (d.staff||[]).filter(s=>s.is_active);
+    awRenderAgents(AW.agents);
+  } catch(e){
+    list.innerHTML = '<div class="aw-no-agents"><i class="fas fa-exclamation-circle"></i><p>Impossible de charger l\'équipe.</p><a class="aw-wa-fallback" href="https://wa.me/237695072759" target="_blank"><i class="fab fa-whatsapp"></i> Nous contacter</a></div>';
+  }
+}
+
+function awRenderAgents(agents){
+  const list = document.getElementById('aw-agents-list');
+  if(!agents || !agents.length){
+    list.innerHTML = `<div class="aw-no-agents">
+      <i class="fas fa-user-slash"></i>
+      <p>Aucun conseiller disponible pour le moment.<br>Contactez-nous directement !</p>
+      <a class="aw-wa-fallback" href="https://wa.me/237695072759" target="_blank">
+        <i class="fab fa-whatsapp"></i> +237 695 072 759
+      </a>
+    </div>`;
+    return;
+  }
+  list.innerHTML = agents.map(a=>{
+    const init = (a.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const rc   = a.role_type==='technicien' ? 't' : 'c';
+    const rl   = a.role_type==='technicien' ? '🔧 Technicien' : '💼 Commercial';
+    const waRaw= (a.whatsapp||a.phone||'').replace(/\D/g,'');
+    const waPfx= waRaw.startsWith('237')?'':'237';
+    const waUrl= waRaw ? `https://wa.me/${waPfx}${waRaw}?text=${encodeURIComponent('Bonjour '+a.name+', je vous contacte depuis k-ni Store pour une assistance.')}` : '';
+    const stars= '⭐'.repeat(Math.min(5,Math.round(a.rating||5)));
+    const specs= (a.specialties||[]).slice(0,3).map(s=>`<span style="font-size:.6rem;background:rgba(16,185,129,.1);color:#34d399;border-radius:5px;padding:.1rem .4rem">${s}</span>`).join(' ');
+    const av   = a.avatar_url
+      ? `<img class="aw-ag-av" src="${a.avatar_url}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+      : '';
+    return `<div class="aw-agent-card" onclick="awPickAgent(${JSON.stringify(a).replace(/"/g,'&quot;')})">
+      ${av}
+      <div class="aw-ag-ph" style="display:${a.avatar_url?'none':'flex'}">${init}</div>
+      <div class="aw-ag-info">
+        <div class="aw-ag-name">${a.name}</div>
+        <span class="aw-ag-role ${rc}">${rl}</span>
+        <div class="aw-ag-bio">${a.bio||'Conseiller k-ni Store'}</div>
+        <div class="aw-ag-meta">
+          <span>${stars} (${a.reviews||0})</span>
+          ${a.response_time?`<span><i class="fas fa-clock"></i>${a.response_time}</span>`:''}
+        </div>
+        ${specs?`<div style="margin-top:.3rem;display:flex;gap:.3rem;flex-wrap:wrap">${specs}</div>`:''}
+      </div>
+      <div class="aw-ag-ctas">
+        ${waUrl?`<a class="aw-cta wa" href="${waUrl}" target="_blank" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i>WA</a>`:''}
+        ${a.phone?`<a class="aw-cta tel" href="tel:${a.phone}" onclick="event.stopPropagation()"><i class="fas fa-phone"></i>Tel</a>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function awPickAgent(agent){
+  awView('chat');
+  const waRaw= (agent.whatsapp||agent.phone||'').replace(/\D/g,'');
+  const waPfx= waRaw.startsWith('237')?'':'237';
+  const waUrl= waRaw ? `https://wa.me/${waPfx}${waRaw}?text=${encodeURIComponent('Bonjour '+agent.name+', je vous contacte depuis k-ni Store.')}` : '';
+  const rl   = agent.role_type==='technicien' ? '🔧 Technicien' : '💼 Commercial';
+  awBotMsg(`Vous avez choisi <strong>${agent.name}</strong> — ${rl}.<br>Cliquez ci-dessous pour le/la contacter directement 👇`,
+    waUrl ? `<a class="aw-bot-action" href="${waUrl}" target="_blank"><i class="fab fa-whatsapp"></i> Contacter ${agent.name.split(' ')[0]}</a>` : '');
+}
+
+// ── Drag & Drop ────────────────────────────────────────────
+(function(){
+  const panel  = document.getElementById('aw-panel');
+  const handle = document.getElementById('aw-hdr');
+  if(!panel||!handle) return;
+
+  function onDown(e){
+    if(e.target.closest('.aw-hdr-btn')) return;
+    AW.dragging = true;
+    const rect = panel.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    AW.dox = cx - rect.left;
+    AW.doy = cy - rect.top;
+    panel.style.transition = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend',  onUp);
+  }
+  function onMove(e){
+    if(!AW.dragging) return;
+    if(e.cancelable) e.preventDefault();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    const x  = Math.max(0, Math.min(cx - AW.dox, window.innerWidth  - panel.offsetWidth));
+    const y  = Math.max(0, Math.min(cy - AW.doy, window.innerHeight - panel.offsetHeight));
+    panel.style.left   = x + 'px';
+    panel.style.top    = y + 'px';
+    panel.style.right  = 'auto';
+    panel.style.bottom = 'auto';
+  }
+  function onUp(){
+    AW.dragging = false;
+    panel.style.transition = '';
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup',   onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend',  onUp);
+  }
+  handle.addEventListener('mousedown', onDown);
+  handle.addEventListener('touchstart', onDown, {passive:true});
+})();
+
+// ── Badge d'attention après 6s ─────────────────────────────
+setTimeout(()=>{
+  if(!AW.open){
+    const n = document.getElementById('aw-notif');
+    if(n){ n.style.display='flex'; }
+  }
+}, 6000);
+</script>
+</body>
+</html>

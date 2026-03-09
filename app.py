@@ -7345,6 +7345,215 @@ def shop_delete_order(oid):
 # ── FIN MODULE BOUTIQUE ─────────────────────────────────────────────
 
 
+# ═══════════════════════════════════════════════════════════════════
+# MODULE STAFF ASSISTANCE — Techniciens & Commerciaux
+# ═══════════════════════════════════════════════════════════════════
+
+def init_staff_db():
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        conn.executescript("""
+        CREATE TABLE IF NOT EXISTS shop_staff (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            name          TEXT    NOT NULL,
+            role_type     TEXT    NOT NULL DEFAULT 'commercial',
+            bio           TEXT    DEFAULT '',
+            phone         TEXT    DEFAULT '',
+            whatsapp      TEXT    DEFAULT '',
+            email         TEXT    DEFAULT '',
+            avatar_url    TEXT    DEFAULT '',
+            specialties   TEXT    DEFAULT '[]',
+            rating        REAL    DEFAULT 5.0,
+            reviews       INTEGER DEFAULT 0,
+            response_time TEXT    DEFAULT '< 5 min',
+            is_active     INTEGER DEFAULT 1,
+            display_order INTEGER DEFAULT 0,
+            created_at    TEXT    DEFAULT CURRENT_TIMESTAMP,
+            updated_at    TEXT    DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+        conn.commit()
+    except Exception as e:
+        print(f"[Staff] init error: {e}")
+    finally:
+        conn.close()
+
+try:
+    init_staff_db()
+except Exception as _e:
+    print(f"[Staff] init skipped: {_e}")
+
+
+@app.route('/shop/api/staff', methods=['GET'])
+def shop_get_staff():
+    """Liste publique des agents actifs (pour le widget boutique)."""
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id,name,role_type,bio,phone,whatsapp,avatar_url,
+                   specialties,rating,reviews,response_time
+            FROM shop_staff WHERE is_active=1
+            ORDER BY display_order ASC, name ASC
+        """)
+        staff = [dict(r) for r in cur.fetchall()]
+        for s in staff:
+            try: s['specialties'] = json.loads(s['specialties'] or '[]')
+            except: s['specialties'] = []
+        return jsonify({'success': True, 'staff': staff})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'staff': []})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/staff/all', methods=['GET'])
+@login_required
+def shop_get_staff_all():
+    """Liste complète des agents (admin)."""
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM shop_staff ORDER BY display_order ASC, name ASC")
+        staff = [dict(r) for r in cur.fetchall()]
+        for s in staff:
+            try: s['specialties'] = json.loads(s['specialties'] or '[]')
+            except: s['specialties'] = []
+        return jsonify({'success': True, 'staff': staff})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/staff', methods=['POST'])
+@login_required
+def shop_create_staff():
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    name = (d.get('name') or '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': 'Nom requis'})
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        specs = json.dumps(d.get('specialties', []) if isinstance(d.get('specialties'), list) else [])
+        cur.execute("""
+            INSERT INTO shop_staff
+            (name,role_type,bio,phone,whatsapp,email,avatar_url,
+             specialties,rating,reviews,response_time,is_active,display_order)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (name, d.get('role_type','commercial'), d.get('bio',''),
+              d.get('phone',''), d.get('whatsapp',''), d.get('email',''),
+              d.get('avatar_url',''), specs,
+              float(d.get('rating', 5.0) or 5.0),
+              int(d.get('reviews', 0) or 0),
+              d.get('response_time','< 5 min'),
+              1 if d.get('is_active', True) else 0,
+              int(d.get('display_order', 0) or 0)))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/staff/<int:sid>', methods=['PUT'])
+@login_required
+def shop_update_staff(sid):
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    specs = json.dumps(d.get('specialties', []) if isinstance(d.get('specialties'), list) else [])
+    conn = get_db_connection()
+    try:
+        conn.execute("""
+            UPDATE shop_staff SET
+                name=?,role_type=?,bio=?,phone=?,whatsapp=?,email=?,
+                avatar_url=?,specialties=?,rating=?,reviews=?,
+                response_time=?,is_active=?,display_order=?,
+                updated_at=CURRENT_TIMESTAMP
+            WHERE id=?
+        """, ((d.get('name') or '').strip(), d.get('role_type','commercial'),
+              d.get('bio',''), d.get('phone',''), d.get('whatsapp',''),
+              d.get('email',''), d.get('avatar_url',''), specs,
+              float(d.get('rating', 5.0) or 5.0),
+              int(d.get('reviews', 0) or 0),
+              d.get('response_time','< 5 min'),
+              1 if d.get('is_active', True) else 0,
+              int(d.get('display_order', 0) or 0), sid))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/staff/<int:sid>', methods=['DELETE'])
+@login_required
+def shop_delete_staff(sid):
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        # Supprimer l'avatar local si uploadé
+        cur = conn.cursor()
+        cur.execute("SELECT avatar_url FROM shop_staff WHERE id=?", (sid,))
+        row = cur.fetchone()
+        if row and row['avatar_url'] and '/uploads/staff/' in row['avatar_url']:
+            local = os.path.join('static', row['avatar_url'].lstrip('/'))
+            try:
+                if os.path.exists(local): os.remove(local)
+            except Exception: pass
+        conn.execute("DELETE FROM shop_staff WHERE id=?", (sid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/staff/upload-avatar', methods=['POST'])
+@login_required
+def shop_upload_staff_avatar():
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'error': 'Aucun fichier'})
+    f = request.files['avatar']
+    if not f or not f.filename or not allowed_file(f.filename):
+        return jsonify({'success': False, 'error': 'Fichier invalide'})
+    try:
+        ext   = f.filename.rsplit('.', 1)[1].lower()
+        fname = secure_filename(f'staff_{datetime.now().strftime("%Y%m%d_%H%M%S%f")}.{ext}')
+        dest  = os.path.join(app.config['UPLOAD_FOLDER'], 'staff')
+        os.makedirs(dest, exist_ok=True)
+        f.save(os.path.join(dest, fname))
+        url = f'/static/uploads/staff/{fname}'
+        # Si sid fourni, mettre à jour directement
+        sid = request.form.get('sid', type=int)
+        if sid:
+            conn = get_db_connection()
+            try:
+                conn.execute("UPDATE shop_staff SET avatar_url=?, updated_at=CURRENT_TIMESTAMP WHERE id=?", (url, sid))
+                conn.commit()
+            finally:
+                conn.close()
+        return jsonify({'success': True, 'url': url})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# ── FIN MODULE STAFF ASSISTANCE ──────────────────────────────────────
+
+
 if __name__ == '__main__':
 
     # Initialize database on startup
