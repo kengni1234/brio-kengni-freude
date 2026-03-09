@@ -1027,7 +1027,7 @@ function showOrd(id){
     </div>
     <div>${iHtml}</div>
     <div style="display:flex;justify-content:space-between;font-weight:900;padding:.5rem 0;border-top:2px solid var(--border-color);margin-top:.4rem;font-size:.92rem"><span>Total</span><span style="color:var(--primary-color);font-family:var(--font-mono)">${o.total.toLocaleString('fr-FR')} XAF</span></div>
-    <div style="font-size:.7rem;color:var(--text-secondary);margin-bottom:.85rem">Paiement : {{ {'orange_money':'🟠 Orange Money','mtn_momo':'🟡 MTN MoMo','whatsapp':'💬 WhatsApp'}.get(o.pay_method, o.pay_method) }}</div>
+    <div style="font-size:.7rem;color:var(--text-secondary);margin-bottom:.85rem">Paiement : ${ {'orange_money':'🟠 Orange Money','mtn_momo':'🟡 MTN MoMo','whatsapp':'💬 WhatsApp'}[o.pay_method]||o.pay_method}</div>
     <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--text-secondary);margin-bottom:.4rem">Changer statut</div>
     <select class="fi" style="margin-bottom:.85rem" onchange="updOSD(${id},this.value)">
       <option value="pending" ${o.status==='pending'?'selected':''}>⏳ En attente</option>
@@ -1422,7 +1422,7 @@ function printInvDirect(inv){
       <div class="inv-title">FACTURE</div>
       <div class="inv-num">${inv.invoice_number||''}</div>
       <div class="inv-num">Émise le ${new Date(inv.created_at||Date.now()).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})}</div>
-      <div><span class="inv-badge">{{ {'draft':'Brouillon','issued':'Émise','paid':'Payée','void':'Annulée'}.get(inv.status, inv.status or 'Brouillon') }}</span></div>
+      <div><span class="inv-badge">${ {draft:'Brouillon',issued:'Émise',paid:'Payée',void:'Annulée'}[inv.status]||inv.status||'Brouillon'}</span></div>
     </div>
   </div>
   <div class="parties">
