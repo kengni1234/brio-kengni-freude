@@ -900,17 +900,66 @@ window.showTab = function(name, btn) {
   }
 
   ::-webkit-scrollbar { width: 5px; height: 5px; }
+  @media(max-width:480px){ .hidden-xs{ display:none!important; } }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
   @media (max-width: 768px) {
     .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: .65rem; }
     .trades-grid { grid-template-columns: 1fr; }
     .stats-charts-grid { grid-template-columns: 1fr; }
-    .jt-header { padding: 1rem; }
-    .jt-content { padding: 1rem; }
+    .jt-header { padding: .9rem 1rem; flex-direction: column; align-items: flex-start; gap: .75rem; }
+    .jt-actions { width: 100%; display: flex; gap: .4rem; flex-wrap: wrap; }
+    .jt-actions .btn-accent, .jt-actions .btn-ghost { flex: 1; justify-content: center; font-size: .82rem; }
+    .jt-actions > span { display: none; }
+    .jt-content { padding: .9rem; }
+    .jt-title { font-size: 1.35rem; }
     .chart-outer { padding: .75rem; }
+    .trade-card { padding: 1rem; }
+  }
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+    .stat-card { padding: 1rem .85rem; border-radius: 12px; }
+    .stat-value { font-size: 1.4rem; }
+    .stat-label { font-size: .72rem; }
+    .stat-sub { font-size: .65rem; }
+    .jt-header { padding: .75rem; gap: .6rem; }
+    .jt-title { font-size: 1.2rem; }
+    .jt-content { padding: .75rem; }
+    /* Trades cards compactes */
+    .trade-card { padding: .85rem; border-radius: 12px; gap: .6rem; }
+    /* Modales full-bottom */
+    .modal-overlay { align-items: flex-end; padding: 0; }
+    .modal-box { border-radius: 18px 18px 0 0; width: 100%; max-width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal-header { padding: .9rem 1rem; }
+    .modal-body { padding: .9rem 1rem 1.5rem; }
+    /* Formulaire trade */
+    .form-grid, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+    .form-group label { font-size: .74rem; }
+    .form-group input, .form-group select, .form-group textarea { font-size: .9rem; padding: .55rem .8rem; }
+    /* Filtres */
+    .filters-bar { flex-direction: column; gap: .5rem; align-items: stretch; }
+    .filter-group { width: 100%; }
+    .filter-group select, .filter-group input { width: 100%; }
+    .filter-chips { flex-wrap: wrap; gap: .35rem; }
+    .filter-chip { font-size: .75rem; padding: .3rem .7rem; }
+    /* Graphiques */
+    .chart-outer { padding: .6rem; border-radius: 12px; }
+    canvas { max-height: 220px!important; }
+    .btn-accent { padding: .55rem 1rem; font-size: .82rem; }
+    .btn-ghost { padding: .5rem .85rem; font-size: .8rem; }
+  }
+  @media (max-width: 360px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: .4rem; }
+    .stat-card { padding: .8rem .65rem; border-radius: 10px; }
+    .stat-value { font-size: 1.2rem; }
+    .jt-content { padding: .6rem; }
+    .jt-header { padding: .65rem .7rem; }
+    .trade-card { padding: .75rem; }
+    .jt-title { font-size: 1.05rem; }
+    canvas { max-height: 180px!important; }
+    .journal-wrap { padding-bottom: .5rem; }
   }
 
   /* ============================================================
@@ -1514,6 +1563,14 @@ window.showTab = function(name, btn) {
   @media(max-width:768px) {
     .smc-det-sidebar { display: none; }
     .smc-auto-container { margin: .75rem; }
+    .smc-auto-grid { grid-template-columns: 1fr; }
+    .smc-card { padding: 1rem; }
+  }
+  @media(max-width:480px) {
+    .smc-auto-container { margin: .5rem; }
+    .smc-card-title { font-size: .85rem; }
+    .smc-pd-list { gap: .4rem; }
+    .smc-pd-item { padding: .65rem .85rem; font-size: .8rem; }
   }
 </style>
 
@@ -1522,7 +1579,7 @@ window.showTab = function(name, btn) {
   <div class="jt-header">
     <div class="jt-title">Journal <span>Trading</span></div>
     <div class="jt-actions">
-      <span style="font-size:.7rem;color:var(--text-muted);padding:.3rem .6rem;background:rgba(255,255,255,.04);border-radius:6px;border:1px solid var(--border);display:flex;gap:.8rem;align-items:center">
+      <span style="font-size:.7rem;color:var(--text-muted);padding:.3rem .6rem;background:rgba(255,255,255,.04);border-radius:6px;border:1px solid var(--border);display:flex;gap:.8rem;align-items:center" class="hidden-xs">
         <span title="Nouveau trade"><kbd style="background:rgba(255,255,255,.08);padding:.1rem .4rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">Ctrl+N</kbd></span>
         <span title="Aller au graphique"><kbd style="background:rgba(255,255,255,.08);padding:.1rem .4rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">Ctrl+G</kbd></span>
         <span title="Plein écran graphique"><kbd style="background:rgba(255,255,255,.08);padding:.1rem .4rem;border-radius:3px;font-family:var(--font-mono);font-size:.65rem">F</kbd></span>

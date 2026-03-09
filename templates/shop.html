@@ -617,15 +617,55 @@ footer{background:var(--ink);padding:3rem 2rem 1.5rem;border-top:1px solid #1f29
   .trust-grid{grid-template-columns:repeat(2,1fr)}
   .products-grid{grid-template-columns:repeat(2,1fr);gap:.75rem}
   .section{padding:2rem 1rem}
+  /* Cart panel pleine hauteur */
+  .overlay ~ div, [style*="right:-480px"]{width:100vw!important;right:-100vw!important}
+  .modal{margin:.5rem;border-radius:16px;max-height:92vh}
+  .modal-body{padding:1rem}
 }
 @media(max-width:480px){
+  .header-top{font-size:.72rem;padding:.3rem .75rem}
+  .logo{font-size:1.05rem}
+  .logo span{font-size:.75rem}
+  .hbtn{padding:.42rem .65rem;font-size:.8rem}
+  .hero-banner{padding:2rem .9rem}
+  .hero-banner h1{font-size:1.45rem}
+  .hero-banner p{font-size:.85rem}
   .products-grid{grid-template-columns:repeat(2,1fr);gap:.6rem}
-  .pcard-body{padding:.7rem}
+  .pcard{border-radius:12px}
+  .pcard-img{height:140px}
+  .pcard-body{padding:.65rem}
   .pcard-name{font-size:.82rem}
   .pcard-price .cur{font-size:.95rem}
   .btn-add{padding:.42rem .65rem;font-size:.72rem}
+  .trust-grid{grid-template-columns:repeat(2,1fr);gap:.6rem}
+  .trust-item{padding:.9rem .6rem}
+  .trust-icon{font-size:1.4rem}
+  .trust-label{font-size:.75rem}
   .foot-grid{grid-template-columns:1fr}
   .pay-methods{flex-direction:column;align-items:center}
+  .wa-float{bottom:1.1rem;right:1rem}
+  /* Modale full-bottom sur mobile */
+  .modal-bg{align-items:flex-end}
+  .modal{border-radius:18px 18px 0 0;max-width:100%;margin:0;width:100%;max-height:90vh}
+  .modal-head{padding:.9rem 1.1rem}
+  .modal-head h3{font-size:.95rem}
+  .modal-body{padding:.9rem 1rem 1.5rem}
+  .section-title{font-size:1.15rem}
+}
+@media(max-width:360px){
+  .header-main{padding:.5rem .75rem;gap:.4rem}
+  .logo{font-size:.95rem}
+  .products-grid{grid-template-columns:repeat(2,1fr);gap:.45rem}
+  .pcard-img{height:120px}
+  .pcard-body{padding:.55rem}
+  .pcard-name{font-size:.76rem}
+  .pcard-price .cur{font-size:.88rem}
+  .btn-add{padding:.35rem .5rem;font-size:.68rem}
+  .hero-banner h1{font-size:1.25rem}
+  .trust-grid{grid-template-columns:1fr 1fr}
+  .trust-item{padding:.7rem .5rem}
+  .cart-item-img{width:52px;height:52px}
+  .cart-item-name{font-size:.8rem}
 }
 </style>
 </head>

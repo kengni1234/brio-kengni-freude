@@ -99,7 +99,43 @@
 /* Sincire sent indicator */
 .al-sent-tag { font-size:.68rem; color:#a29bfe; display:block; margin-top:3px; }
 /* Responsive */
-@media(max-width:768px) { .al-table thead { display:none; } .al-table tr { display:block; margin-bottom:12px; background:var(--secondary-color); border-radius:12px; border:1px solid var(--border-color); padding:10px; } .al-table td { display:block; border:none; padding:5px 0; } }
+/* Responsive amélioré */
+@media(max-width:768px) {
+  .al-hero { padding:18px 16px; flex-direction:column; align-items:flex-start; gap:12px; }
+  .al-hero > div:last-child { width:100%; display:flex; flex-direction:column; gap:8px; }
+  .al-hero > div:last-child a, .al-hero > div:last-child button { width:100%; justify-content:center; }
+  .al-stats { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .al-stat-val { font-size:1.55rem; }
+  .al-filters { gap:6px; }
+  .al-pill { font-size:.72rem; padding:5px 12px; }
+  .al-table-wrap { border-radius:12px; overflow:hidden; }
+  .al-table thead { display:none; }
+  .al-table tr { display:block; margin-bottom:10px; background:var(--secondary-color); border-radius:12px; border:1px solid var(--border-color); padding:12px; }
+  .al-table td { display:flex; align-items:center; justify-content:space-between; border:none; padding:5px 0; font-size:.82rem; border-bottom:1px solid rgba(255,255,255,.04); }
+  .al-table td:last-child { border-bottom:none; padding-top:8px; }
+  .al-table td::before { content:attr(data-label); font-size:.68rem; font-weight:700; text-transform:uppercase; color:var(--text-secondary); min-width:90px; flex-shrink:0; }
+  .al-table td:last-child::before { display:none; }
+  /* Boutons actions côte à côte */
+  .al-table td:last-child { flex-direction:row; gap:6px; justify-content:flex-start; flex-wrap:wrap; }
+  .btn-act { padding:7px 14px; font-size:.78rem; }
+}
+@media(max-width:480px){
+  .al-stats { grid-template-columns:repeat(2,1fr); gap:6px; }
+  .al-stat { padding:12px 10px; }
+  .al-stat-val { font-size:1.3rem; }
+  .al-stat-lbl { font-size:.65rem; }
+  .al-hero h2 { font-size:1.15rem!important; }
+  .al-pill { font-size:.7rem; padding:4px 10px; }
+  .btn-act { padding:6px 10px; font-size:.74rem; }
+  .al-badge, .al-pay-badge { font-size:.66rem; padding:3px 8px; }
+  .al-toast { bottom:16px; right:12px; left:12px; max-width:none; font-size:.8rem; }
+  .container-fluid { padding-left:.6rem!important; padding-right:.6rem!important; }
+}
+@media(max-width:360px){
+  .al-stats { grid-template-columns:1fr 1fr; }
+  .al-stat-val { font-size:1.15rem; }
+  .al-hero { padding:14px 12px; }
+}
 </style>
 {% endblock %}
 
@@ -212,10 +248,10 @@
       <tr data-status="{{ lead.status }}" data-lead-id="{{ lead.id }}">
 
         <!-- ID -->
-        <td style="color:var(--text-secondary);font-size:.8rem;">#{{ lead.id }}</td>
+        <td data-label="#" style="color:var(--text-secondary);font-size:.8rem;">#{{ lead.id }}</td>
 
         <!-- Prospect -->
-        <td>
+        <td data-label="Prospect">
           <div style="font-weight:700;color:var(--text-primary);">{{ lead.full_name }}</div>
           <div style="font-size:.77rem;color:#4a9eff;">{{ lead.email }}</div>
           <div style="font-size:.77rem;color:#25d366;">
@@ -227,7 +263,7 @@
         </td>
 
         <!-- Formation -->
-        <td>
+        <td data-label="Formation">
           <div style="font-weight:600;">{{ lead.level_selected }}</div>
           {% if lead.capital %}
           <div style="font-size:.75rem;color:var(--text-secondary);">Capital : {{ lead.capital }}</div>
@@ -238,7 +274,7 @@
         </td>
 
         <!-- Statut -->
-        <td>
+        <td data-label="Statut">
           <span class="al-badge
             {% if lead.status == 'Nouveau'   %}al-badge-nouveau
             {% elif lead.status == 'Contacté'%}al-badge-contacte
@@ -260,7 +296,7 @@
         </td>
 
         <!-- Paiement -->
-        <td>
+        <td data-label="Paiement">
           {% set ps = lead.get('payment_status','En attente') if lead.get else 'En attente' %}
           <span class="al-pay-badge
             {% if ps == 'Complet'    %}al-pay-complet
@@ -282,12 +318,12 @@
         </td>
 
         <!-- Date -->
-        <td style="font-size:.77rem;color:var(--text-secondary);white-space:nowrap;">
+        <td data-label="Date" style="font-size:.77rem;color:var(--text-secondary);">
           {{ lead.created_at[:16].replace('T',' ') if lead.created_at else '—' }}
         </td>
 
         <!-- Actions -->
-        <td>
+        <td data-label="">
           <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;">
 
             <!-- 🟣 SINCIRE -->

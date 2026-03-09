@@ -69,7 +69,56 @@
         .toast{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);color:var(--text);padding:.75rem 1.25rem;border-radius:10px;font-size:.875rem;min-width:260px;animation:ti .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4)}
         .toast.error{border-left-color:var(--danger)}.toast.warning{border-left-color:var(--warning)}
         @keyframes ti{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
-        @media(max-width:768px){.container{padding:1rem}.header{padding:0 1rem}table{font-size:.8rem}td,th{padding:.7rem .8rem}.tda{flex-direction:column}}
+        /* ── RESPONSIVE MOBILE ── */
+        @media(max-width:768px){
+          .container{padding:.75rem}
+          .header{padding:0 .9rem;height:56px}
+          .hb{font-size:1rem}
+          .hr{gap:.5rem}
+          .badge{font-size:.62rem;padding:.2rem .45rem}
+          .back{padding:.35rem .7rem;font-size:.78rem}
+          .stats-grid{grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1.25rem}
+          .sn{font-size:1.55rem}
+          .roles-grid{grid-template-columns:1fr 1fr;gap:.5rem}
+          /* Table → cartes empilées */
+          .tw{border-radius:10px}
+          .tb{padding:.75rem;gap:.5rem}
+          .si{width:100%}
+          table{display:block}
+          thead{display:none}
+          tbody{display:block}
+          tbody tr{display:flex;flex-direction:column;gap:.25rem;padding:.8rem;border-bottom:1px solid var(--border);position:relative}
+          tbody tr:last-child{border-bottom:none}
+          td{padding:0;font-size:.85rem;display:flex;align-items:center;justify-content:space-between;gap:.4rem}
+          td::before{content:attr(data-label);font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;min-width:90px}
+          .tda{flex-direction:row;flex-wrap:wrap;justify-content:flex-end;padding:.4rem 0 0}
+          .tda::before{display:none}
+          /* Modale plein écran sur mobile */
+          .modal{padding:1.25rem;border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;max-width:100%;border-bottom:none;max-height:92vh}
+          .mb.open{align-items:flex-end}
+          .perms-grid{grid-template-columns:repeat(2,1fr)}
+          .perms-grid-actions{grid-template-columns:repeat(2,1fr)}
+          .ma{flex-direction:column-reverse;gap:.5rem}
+          .ma .btn{width:100%;justify-content:center}
+          .sh{flex-direction:column;align-items:flex-start;gap:.5rem}
+          .tab-bar{flex-wrap:wrap;gap:.3rem}
+          .secret-banner{font-size:.78rem}
+        }
+        @media(max-width:480px){
+          .header{height:50px}
+          .hb span{display:none}
+          .stats-grid{grid-template-columns:repeat(2,1fr);gap:.5rem}
+          .roles-grid{grid-template-columns:1fr}
+          .btn{font-size:.78rem;padding:.45rem .85rem}
+          .btn-xs,.btn-sm{font-size:.7rem;padding:.28rem .55rem}
+          .st{font-size:.95rem}
+          .sn{font-size:1.3rem}
+        }
+        @media(max-width:360px){
+          .container{padding:.5rem}
+          .stats-grid{grid-template-columns:1fr 1fr}
+          td::before{min-width:70px;font-size:.65rem}
+        }
 
         /* ── Permissions modal ── */
         .modal-perms{max-width:680px}
@@ -214,14 +263,14 @@
             <tbody>
             {% for u in users %}
             <tr data-role="{{ u.role }}" data-status="{{ u.status }}">
-                <td style="color:var(--muted)">{{ u.id }}</td>
-                <td><strong>{{ u.username }}</strong></td>
-                <td style="color:var(--muted)">{{ u.email }}</td>
-                <td><span class="chip chip-{{ u.role }}">{{ u.role }}</span></td>
-                <td><span class="chip chip-{{ u.status }}">{{ u.status }}</span></td>
-                <td style="color:var(--muted);font-size:.78rem">{{ u.created_at[:10] if u.created_at else '—' }}</td>
-                <td style="color:var(--muted);font-size:.78rem">{{ u.last_login[:16].replace('T',' ') if u.last_login else 'jamais' }}</td>
-                <td><div class="tda">
+                <td data-label="#" style="color:var(--muted)">{{ u.id }}</td>
+                <td data-label="Nom"><strong>{{ u.username }}</strong></td>
+                <td data-label="Email" style="color:var(--muted)">{{ u.email }}</td>
+                <td data-label="Rôle"><span class="chip chip-{{ u.role }}">{{ u.role }}</span></td>
+                <td data-label="Statut"><span class="chip chip-{{ u.status }}">{{ u.status }}</span></td>
+                <td data-label="Créé" style="color:var(--muted);font-size:.78rem">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+                <td data-label="Connexion" style="color:var(--muted);font-size:.78rem">{{ u.last_login[:16].replace('T',' ') if u.last_login else 'jamais' }}</td>
+                <td data-label="Actions"><div class="tda">
                     <button class="btn btn-ghost btn-sm" title="Modifier" onclick="openEditModal({{ u.id }},'{{ u.role }}','{{ u.status }}','{{ u.username }}')">✏️</button>
                     <button class="btn btn-ghost btn-sm" title="Réinitialiser MDP" onclick="openResetModal({{ u.id }},'{{ u.username }}')">🔑</button>
                     <button class="btn btn-ghost btn-sm" title="Permissions pages & actions" onclick="openPermsModal({{ u.id }},'{{ u.username }}')">🔓</button>

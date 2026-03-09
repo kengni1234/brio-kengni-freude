@@ -171,8 +171,70 @@
 .empty-bl { text-align:center; padding:3rem; color:var(--text-secondary); }
 .empty-bl i { font-size:2.3rem; opacity:.15; display:block; margin-bottom:.65rem; }
 
-@media(max-width:900px){ .sa-nav{display:none} .dp{display:none} .fg3{grid-template-columns:1fr 1fr} .fg4{grid-template-columns:1fr 1fr} }
-@media(max-width:600px){ .kpi-row{grid-template-columns:1fr 1fr} .fg2,.fg3,.fg4{grid-template-columns:1fr} }
+/* ══ RESPONSIVE MOBILE ═══════════════════════════════ */
+@media(max-width:900px){
+  .sa-nav{display:none}
+  .dp{display:none}
+  .fg3{grid-template-columns:1fr 1fr}
+  .fg4{grid-template-columns:1fr 1fr}
+  /* Barre nav fixe en bas sur mobile */
+  .sa-wrap{padding-bottom:64px}
+}
+@media(max-width:600px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .fg2,.fg3,.fg4{grid-template-columns:1fr}
+  .sa-main{padding:1rem .75rem}
+  .sec-hd{flex-direction:column;align-items:flex-start;gap:.5rem}
+  .sec-hd .save-btn{width:100%!important}
+  .kpi{padding:.85rem .9rem;gap:.75rem}
+  .kpi-icon{width:38px;height:38px;font-size:1rem}
+  .kpi-num{font-size:1.25rem}
+  .prod-grid{grid-template-columns:1fr 1fr;gap:.75rem}
+  .pc-img{height:130px}
+  .pc-body{padding:.75rem}
+  .pc-name{font-size:.82rem}
+  .abtn{font-size:.7rem;padding:.32rem .4rem}
+  /* Table commandes → scroll horizontal */
+  .ord-wrap{overflow-x:auto}
+  .ord-table{min-width:560px}
+  .filter-row{gap:.4rem}
+  .fchip{font-size:.72rem;padding:.28rem .65rem}
+  /* Tabs formulaire */
+  .ftabs{gap:.2rem}
+  .ftab{font-size:.75rem;padding:.45rem .65rem}
+}
+@media(max-width:360px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .kpi-num{font-size:1.1rem}
+  .prod-grid{grid-template-columns:1fr}
+  .sa-main{padding:.75rem .6rem}
+}
+
+/* ══ BARRE NAV MOBILE BAS ════════════════════════════ */
+.sa-bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:500;
+  background:var(--secondary-color);
+  border-top:1px solid var(--border-color);
+  height:64px;
+  align-items:center;justify-content:space-around;
+  padding:0 .25rem;
+  backdrop-filter:blur(10px);
+}
+.sa-bnav-btn{
+  display:flex;flex-direction:column;align-items:center;
+  gap:.18rem;background:none;border:none;cursor:pointer;
+  color:var(--text-secondary);font-size:.6rem;font-weight:700;
+  padding:.5rem .75rem;border-radius:10px;transition:.15s;
+  text-transform:uppercase;letter-spacing:.05em;font-family:inherit;
+  position:relative;min-width:56px;
+}
+.sa-bnav-btn i{font-size:1.2rem}
+.sa-bnav-btn.active,.sa-bnav-btn:hover{color:var(--primary-color)}
+.sa-bnav-btn .sa-nav-badge{position:absolute;top:4px;right:8px}
+@media(max-width:900px){
+  .sa-bottom-nav{display:flex}
+}
 </style>
 
 <div class="sa-wrap">
@@ -442,11 +504,20 @@
 
 </div><!-- /sa-wrap -->
 
+<!-- ══ BARRE NAV MOBILE (visible < 900px) ══ -->
+<nav class="sa-bottom-nav">
+  <button class="sa-bnav-btn active" id="bnavDash" onclick="go('dash')"><i class="fas fa-chart-pie"></i>Tableau</button>
+  <button class="sa-bnav-btn" id="bnavProd" onclick="go('prod')"><i class="fas fa-boxes"></i>Produits</button>
+  <button class="sa-bnav-btn" id="bnavNew" onclick="go('new')"><i class="fas fa-plus-circle"></i>Ajouter</button>
+  <button class="sa-bnav-btn" id="bnavOrd" onclick="go('ord')"><i class="fas fa-receipt"></i>Commandes{% if pending_count %}<span class="sa-nav-badge">{{ pending_count }}</span>{% endif %}</button>
+  <a href="/shop" target="_blank" class="sa-bnav-btn" style="text-decoration:none"><i class="fas fa-store"></i>Boutique</a>
+</nav>
+
 <div id="atoast"><i id="ati" class="fas fa-check-circle"></i> <span id="atm"></span></div>
 
 <script>
-const PRODS={{% for p in products %}{{p.id}}:{{{'id':p.id,'name':p.name,'description':p.description or '','features':p.features or '','category':p.category,'price':p.price,'original_price':p.original_price or 0,'stock':p.stock,'image_url':p.image_url or '','badge':p.badge or '','is_active':p.is_active,'reviews_count':p.reviews_count or 0,'delivery_info':p.delivery_info or 'Livraison 3-7 jours'}|tojson}},{% endfor %}};
-const ORDERS={{% for o in orders %}{{o.id}}:{{{'id':o.id,'customer_name':o.customer_name or '','customer_phone':o.customer_phone or '','customer_city':o.customer_city or '','items_summary':o.items_summary or '','items_json':o.items_json or '[]','total':o.total,'pay_method':o.pay_method or '','note':o.note or '','status':o.status,'created_at':o.created_at or ''}|tojson}},{% endfor %}};
+const PRODS={ {% for p in products %}{{p.id}}:{{{'id':p.id,'name':p.name,'description':p.description or '','features':p.features or '','category':p.category,'price':p.price,'original_price':p.original_price or 0,'stock':p.stock,'image_url':p.image_url or '','badge':p.badge or '','is_active':p.is_active,'reviews_count':p.reviews_count or 0,'delivery_info':p.delivery_info or 'Livraison 3-7 jours'}|tojson}},{% endfor %}};
+const ORDERS={ {% for o in orders %}{{o.id}}:{{{'id':o.id,'customer_name':o.customer_name or '','customer_phone':o.customer_phone or '','customer_city':o.customer_city or '','items_summary':o.items_summary or '','items_json':o.items_json or '[]','total':o.total,'pay_method':o.pay_method or '','note':o.note or '','status':o.status,'created_at':o.created_at or ''}|tojson}},{% endfor %}};
 const SL={pending:'⏳ En attente',paid:'✅ Payé',shipped:'🚚 Expédié',delivered:'📬 Livré',cancelled:'❌ Annulé'};
 const SC={pending:'sp-pending',paid:'sp-paid',shipped:'sp-shipped',delivered:'sp-delivered',cancelled:'sp-cancelled'};
 const CI={electronique:'mobile-alt',mode:'tshirt',maison:'home',sport:'futbol',beaute:'magic'};
@@ -456,7 +527,7 @@ function toast(m,ok=true){const t=document.getElementById('atoast');document.get
 
 const SECS=['Dash','Prod','New','Ord'];
 function go(n){
-  SECS.forEach(s=>{document.getElementById('sec'+s).style.display=s.toLowerCase()===n?'':'none';const b=document.getElementById('nav'+s);if(b)b.classList.toggle('active',s.toLowerCase()===n);});
+  SECS.forEach(s=>{document.getElementById('sec'+s).style.display=s.toLowerCase()===n?'':'none';const b=document.getElementById('nav'+s);if(b)b.classList.toggle('active',s.toLowerCase()===n);const bb=document.getElementById('bnav'+s);if(bb)bb.classList.toggle('active',s.toLowerCase()===n);});
   closeDP();
 }
 
