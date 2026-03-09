@@ -76,6 +76,16 @@ FORMATION_PRICES = {
 }
 
 # Add Python built-in functions to Jinja2 environment
+# Custom Jinja2 filter: safely parse JSON
+def _from_json_safe(s):
+    try:
+        import json as _j
+        return _j.loads(s) if s else {}
+    except Exception:
+        return {}
+
+app.jinja_env.filters['from_json_safe'] = _from_json_safe
+
 app.jinja_env.globals.update({
     'abs': abs,
     'min': min,
@@ -465,6 +475,61 @@ def init_db():
         except Exception:
             pass
 
+        # Migration: shop access pour tous les rôles (pas seulement shop_manager)
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN shop_access INTEGER DEFAULT 0")
+        except Exception:
+            pass
+
+        # Table factures boutique
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shop_invoices (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            invoice_number TEXT    NOT NULL UNIQUE,
+            order_id       INTEGER,
+            type           TEXT    NOT NULL DEFAULT 'order',
+            customer_name  TEXT    DEFAULT '',
+            customer_phone TEXT    DEFAULT '',
+            customer_city  TEXT    DEFAULT '',
+            customer_email TEXT    DEFAULT '',
+            items_json     TEXT    DEFAULT '[]',
+            subtotal       REAL    DEFAULT 0,
+            discount       REAL    DEFAULT 0,
+            tax_rate       REAL    DEFAULT 0,
+            tax_amount     REAL    DEFAULT 0,
+            total          REAL    DEFAULT 0,
+            pay_method     TEXT    DEFAULT '',
+            status         TEXT    DEFAULT 'draft',
+            notes          TEXT    DEFAULT '',
+            created_by     INTEGER,
+            created_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
+            updated_at     TEXT    DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+
+        # Table historique activité utilisateurs boutique (courbe évolution)
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS shop_activity_log (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL,
+            action      TEXT    NOT NULL,
+            entity_type TEXT    DEFAULT '',
+            entity_id   INTEGER DEFAULT 0,
+            details     TEXT    DEFAULT '',
+            created_at  TEXT    DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+
+        # Migration: ajouter handled_by aux commandes (qui a géré)
+        try:
+            cursor.execute("ALTER TABLE shop_orders ADD COLUMN handled_by INTEGER DEFAULT NULL")
+        except Exception:
+            pass
+        try:
+            cursor.execute("ALTER TABLE shop_orders ADD COLUMN handled_at TEXT DEFAULT NULL")
+        except Exception:
+            pass
+
         # Check if default user exists
         cursor.execute("SELECT COUNT(*) as count FROM users WHERE email = ?", ('fabrice.kengni@icloud.com',))
         if cursor.fetchone()[0] == 0:
@@ -577,29 +642,35 @@ def get_user_allowed_pages(user_id):
 
 def get_shop_perms(user_id):
     """Retourne les permissions boutique d'un utilisateur.
-    {'add': bool, 'edit': bool, 'delete': bool}
-    Les admins/superadmin ont tout par défaut.
+    {'add': bool, 'edit': bool, 'delete': bool, 'access': bool}
+    Les admins/superadmin ont tout par defaut.
+    Tout utilisateur avec shop_access=1 peut voir la boutique selon ses permissions.
     """
     role = session.get('role', 'user')
     if role in ('admin', 'superadmin'):
-        return {'add': True, 'edit': True, 'delete': True}
+        return {'add': True, 'edit': True, 'delete': True, 'access': True}
     conn = get_db_connection()
     if conn:
         try:
             row = conn.execute(
-                "SELECT shop_permissions FROM users WHERE id=?", (user_id,)
+                "SELECT shop_permissions, shop_access FROM users WHERE id=?", (user_id,)
             ).fetchone()
             conn.close()
-            if row and row['shop_permissions']:
-                p = json.loads(row['shop_permissions'])
-                return {
-                    'add':    bool(p.get('add',    False)),
-                    'edit':   bool(p.get('edit',   False)),
-                    'delete': bool(p.get('delete', False)),
-                }
+            if row:
+                has_access = bool(row['shop_access']) if 'shop_access' in row.keys() else False
+                if row['shop_permissions']:
+                    p = json.loads(row['shop_permissions'])
+                    return {
+                        'add':    bool(p.get('add',    False)),
+                        'edit':   bool(p.get('edit',   False)),
+                        'delete': bool(p.get('delete', False)),
+                        'access': has_access or any([p.get('add'), p.get('edit'), p.get('delete')]),
+                    }
+                if has_access:
+                    return {'add': False, 'edit': False, 'delete': False, 'access': True}
         except Exception:
             pass
-    return {'add': False, 'edit': False, 'delete': False}
+    return {'add': False, 'edit': False, 'delete': False, 'access': False}
 
 
 def can_shop(perm):
@@ -7120,28 +7191,63 @@ def shop_admin():
         print(f"[ShopAdmin] {e}")
     finally:
         if conn: conn.close()
-    # Récupérer tous les utilisateurs pour la section Accès
+    # Récupérer tous les utilisateurs pour la section Accès (tous les rôles sauf admin/superadmin)
     all_users = []
     try:
         conn2 = get_db_connection()
         if conn2:
             cur2 = conn2.cursor()
             cur2.execute(
-                "SELECT id, username, email, role, shop_permissions FROM users ORDER BY username ASC"
+                "SELECT id, username, email, role, shop_permissions, shop_access, last_login, status FROM users ORDER BY username ASC"
             )
             all_users = [dict(r) for r in cur2.fetchall()]
+            # Calculer inactivité : > 8 jours = inactif automatiquement
+            from datetime import datetime as _dt
+            for u in all_users:
+                ll = u.get('last_login')
+                if ll:
+                    try:
+                        delta = (_dt.now() - _dt.fromisoformat(ll[:19])).days
+                        u['days_inactive'] = delta
+                        u['auto_inactive'] = delta > 8
+                    except Exception:
+                        u['days_inactive'] = None
+                        u['auto_inactive'] = False
+                else:
+                    u['days_inactive'] = None
+                    u['auto_inactive'] = True  # Jamais connecté
             conn2.close()
     except Exception as e:
         print(f"[ShopAdmin users] {e}")
 
-    # Permissions de l'utilisateur connecté (pour afficher/masquer les boutons dans le template)
-    current_user_perms = get_shop_perms(session.get('user_id'))
+    # Données activité (courbes évolution 30 jours)
+    activity_data = {}
+    try:
+        conn3 = get_db_connection()
+        if conn3:
+            cur3 = conn3.cursor()
+            cur3.execute("""
+                SELECT handled_by, DATE(COALESCE(handled_at,updated_at)) as day, COUNT(*) as cnt
+                FROM shop_orders
+                WHERE handled_by IS NOT NULL AND DATE(COALESCE(handled_at,updated_at)) >= DATE('now','-30 days')
+                GROUP BY handled_by, day ORDER BY day ASC
+            """)
+            for row in cur3.fetchall():
+                uid2 = row["handled_by"]
+                if uid2 not in activity_data:
+                    activity_data[uid2] = {}
+                activity_data[uid2][row["day"]] = row["cnt"]
+            conn3.close()
+    except Exception as e:
+        print(f"[ShopAdmin activity] {e}")
 
-    return render_template('shop_admin.html',
+    current_user_perms = get_shop_perms(session.get("user_id"))
+    return render_template("shop_admin.html",
         products=products, orders=orders,
         total_revenue=total_revenue,
         pending_count=pending_count, active_count=active_count,
         all_users=all_users,
+        activity_data=activity_data,
         user_perms=current_user_perms)
 
 
@@ -7381,15 +7487,29 @@ def shop_set_main_image(pid):
 @app.route('/shop/api/order/<int:oid>/status', methods=['POST'])
 @login_required
 def shop_update_order_status(oid):
-    if session.get('role') not in ('admin', 'superadmin'):
+    """Met à jour le statut et enregistre qui a géré la commande."""
+    perms = get_shop_perms(session.get('user_id'))
+    if not (perms.get('access') or perms.get('edit')):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
     status = (request.get_json(force=True, silent=True) or {}).get('status', 'pending')
     if status not in ('pending', 'paid', 'shipped', 'delivered', 'cancelled'):
         return jsonify({'success': False, 'error': 'Statut invalide'})
     conn = get_db_connection()
     try:
-        conn.execute("UPDATE shop_orders SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?", (status, oid))
+        conn.execute(
+            """UPDATE shop_orders SET status=?, handled_by=?, handled_at=CURRENT_TIMESTAMP,
+               updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+            (status, session.get('user_id'), oid)
+        )
         conn.commit()
+        try:
+            conn.execute(
+                "INSERT INTO shop_activity_log (user_id, action, entity_type, entity_id, details) VALUES (?,?,?,?,?)",
+                (session.get('user_id'), 'order_status', 'order', oid, f'status={status}')
+            )
+            conn.commit()
+        except Exception:
+            pass
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -7663,6 +7783,343 @@ def shop_set_access():
         if conn: conn.close()
 
 # ── FIN MODULE STAFF ASSISTANCE ──────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════════
+# NOUVELLES ROUTES : accès étendu, inactivité, logs activité, factures
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/shop/api/access/set-v2', methods=['POST'])
+@login_required
+def shop_set_access_v2():
+    """Définit accès boutique + permissions granulaires pour N'IMPORTE quel utilisateur.
+    Body JSON : { user_id, access, add, edit, delete }
+    Réservé aux admins/superadmins.
+    """
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    data = request.get_json(force=True, silent=True) or {}
+    user_id = data.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'user_id manquant'})
+    perms = {
+        'add':    bool(data.get('add',    False)),
+        'edit':   bool(data.get('edit',   False)),
+        'delete': bool(data.get('delete', False)),
+    }
+    shop_access = 1 if data.get('access', False) else 0
+    conn = get_db_connection()
+    try:
+        row = conn.execute("SELECT role FROM users WHERE id=?", (user_id,)).fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Utilisateur introuvable'})
+        # Même les admins peuvent modifier d'autres utilisateurs (sauf superadmin)
+        if row['role'] == 'superadmin' and session.get('role') != 'superadmin':
+            return jsonify({'success': False, 'error': 'Seul le superadmin peut modifier ce compte'})
+        conn.execute(
+            "UPDATE users SET shop_permissions=?, shop_access=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (json.dumps(perms), shop_access, user_id)
+        )
+        conn.commit()
+        return jsonify({'success': True, 'permissions': perms, 'access': bool(shop_access)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/users/check-inactivity', methods=['POST'])
+@login_required
+def shop_check_inactivity():
+    """Passe en statut 'inactive' les users n'ayant pas connecté depuis > 8 jours.
+    Retourne la liste des utilisateurs mis à jour.
+    """
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    updated = []
+    try:
+        threshold = (datetime.now() - timedelta(days=8)).isoformat()
+        rows = conn.execute(
+            """SELECT id, username, last_login, status FROM users
+               WHERE (last_login IS NULL OR last_login < ?) AND status = 'active'
+               AND role NOT IN ('admin','superadmin')""",
+            (threshold,)
+        ).fetchall()
+        for r in rows:
+            conn.execute(
+                "UPDATE users SET status='inactive', updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (r['id'],)
+            )
+            updated.append({'id': r['id'], 'username': r['username'], 'last_login': r['last_login']})
+        conn.commit()
+        return jsonify({'success': True, 'updated': updated, 'count': len(updated)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/activity/log', methods=['GET'])
+@login_required
+def shop_get_activity():
+    """Retourne les données d'activité (commandes gérées) par utilisateur sur 30 jours."""
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        # Commandes gérées par utilisateur
+        cur.execute("""
+            SELECT u.id, u.username, u.email,
+                   COUNT(o.id) as total_orders,
+                   SUM(CASE WHEN o.status='delivered' THEN 1 ELSE 0 END) as delivered,
+                   SUM(CASE WHEN o.status='cancelled' THEN 1 ELSE 0 END) as cancelled,
+                   DATE(COALESCE(o.handled_at, o.updated_at)) as day
+            FROM users u
+            LEFT JOIN shop_orders o ON o.handled_by = u.id
+                AND DATE(COALESCE(o.handled_at, o.updated_at)) >= DATE('now','-30 days')
+            WHERE u.shop_access = 1 OR u.role IN ('admin','superadmin')
+            GROUP BY u.id, day
+            ORDER BY u.id, day
+        """)
+        rows = cur.fetchall()
+        # Structurer par utilisateur
+        users_data = {}
+        for r in rows:
+            uid2 = r['id']
+            if uid2 not in users_data:
+                users_data[uid2] = {
+                    'id': uid2, 'username': r['username'], 'email': r['email'],
+                    'days': {}
+                }
+            if r['day']:
+                users_data[uid2]['days'][r['day']] = {
+                    'orders': r['total_orders'] or 0,
+                    'delivered': r['delivered'] or 0,
+                    'cancelled': r['cancelled'] or 0,
+                }
+        # Totaux globaux
+        cur.execute("""
+            SELECT handled_by, COUNT(*) as total,
+                   SUM(CASE WHEN status='delivered' THEN 1 ELSE 0 END) as delivered
+            FROM shop_orders WHERE handled_by IS NOT NULL
+            GROUP BY handled_by
+        """)
+        for r in cur.fetchall():
+            uid2 = r['handled_by']
+            if uid2 in users_data:
+                users_data[uid2]['total_all_time'] = r['total']
+                users_data[uid2]['total_delivered'] = r['delivered']
+        return jsonify({'success': True, 'data': list(users_data.values())})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+
+# ── FACTURES ─────────────────────────────────────────────────────────
+
+def _next_invoice_number():
+    """Génère le prochain numéro de facture : FAC-YYYY-NNNN"""
+    conn = get_db_connection()
+    try:
+        year = datetime.now().year
+        row = conn.execute(
+            "SELECT COUNT(*) as cnt FROM shop_invoices WHERE invoice_number LIKE ?",
+            (f'FAC-{year}-%',)
+        ).fetchone()
+        n = (row['cnt'] if row else 0) + 1
+        return f'FAC-{year}-{n:04d}'
+    except Exception:
+        return f'FAC-{datetime.now().year}-{random.randint(1000,9999)}'
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/invoice', methods=['POST'])
+@login_required
+def shop_create_invoice():
+    """Crée une facture manuelle ou depuis une commande."""
+    perms = get_shop_perms(session.get('user_id'))
+    if not perms.get('access'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    items = d.get('items', [])
+    subtotal = sum(float(i.get('price', 0)) * int(i.get('qty', 1)) for i in items)
+    discount = float(d.get('discount', 0) or 0)
+    tax_rate = float(d.get('tax_rate', 0) or 0)
+    tax_amount = round((subtotal - discount) * tax_rate / 100, 2)
+    total = round(subtotal - discount + tax_amount, 2)
+    inv_num = _next_invoice_number()
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO shop_invoices
+            (invoice_number, order_id, type, customer_name, customer_phone,
+             customer_city, customer_email, items_json, subtotal, discount,
+             tax_rate, tax_amount, total, pay_method, status, notes, created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (inv_num, d.get('order_id'), d.get('type', 'manual'),
+              d.get('customer_name', ''), d.get('customer_phone', ''),
+              d.get('customer_city', ''), d.get('customer_email', ''),
+              json.dumps(items, ensure_ascii=False),
+              subtotal, discount, tax_rate, tax_amount, total,
+              d.get('pay_method', ''), d.get('status', 'draft'),
+              d.get('notes', ''), session.get('user_id')))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid, 'invoice_number': inv_num, 'total': total})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/invoice/all', methods=['GET'])
+@login_required
+def shop_get_invoices():
+    perms = get_shop_perms(session.get('user_id'))
+    if not perms.get('access'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM shop_invoices ORDER BY created_at DESC LIMIT 200"
+        ).fetchall()
+        invoices = []
+        for r in rows:
+            inv = dict(r)
+            try: inv['items'] = json.loads(inv['items_json'] or '[]')
+            except: inv['items'] = []
+            invoices.append(inv)
+        return jsonify({'success': True, 'invoices': invoices})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/invoice/<int:iid>', methods=['PUT'])
+@login_required
+def shop_update_invoice(iid):
+    perms = get_shop_perms(session.get('user_id'))
+    if not perms.get('access'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        items = d.get('items', [])
+        subtotal = sum(float(i.get('price', 0)) * int(i.get('qty', 1)) for i in items)
+        discount = float(d.get('discount', 0) or 0)
+        tax_rate = float(d.get('tax_rate', 0) or 0)
+        tax_amount = round((subtotal - discount) * tax_rate / 100, 2)
+        total = round(subtotal - discount + tax_amount, 2)
+        conn.execute("""
+            UPDATE shop_invoices SET
+                customer_name=?, customer_phone=?, customer_city=?, customer_email=?,
+                items_json=?, subtotal=?, discount=?, tax_rate=?, tax_amount=?, total=?,
+                pay_method=?, status=?, notes=?, updated_at=CURRENT_TIMESTAMP
+            WHERE id=?
+        """, (d.get('customer_name',''), d.get('customer_phone',''),
+              d.get('customer_city',''), d.get('customer_email',''),
+              json.dumps(items, ensure_ascii=False),
+              subtotal, discount, tax_rate, tax_amount, total,
+              d.get('pay_method',''), d.get('status','draft'),
+              d.get('notes',''), iid))
+        conn.commit()
+        return jsonify({'success': True, 'total': total})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/invoice/<int:iid>', methods=['DELETE'])
+@login_required
+def shop_delete_invoice(iid):
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM shop_invoices WHERE id=?", (iid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/invoice/from-order/<int:oid>', methods=['POST'])
+@login_required
+def shop_invoice_from_order(oid):
+    """Génère automatiquement une facture à partir d'une commande."""
+    perms = get_shop_perms(session.get('user_id'))
+    if not perms.get('access'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        # Vérifier si facture existe déjà
+        existing = conn.execute(
+            "SELECT id, invoice_number FROM shop_invoices WHERE order_id=?", (oid,)
+        ).fetchone()
+        if existing:
+            return jsonify({'success': True, 'id': existing['id'],
+                            'invoice_number': existing['invoice_number'], 'already_exists': True})
+        order = conn.execute("SELECT * FROM shop_orders WHERE id=?", (oid,)).fetchone()
+        if not order:
+            return jsonify({'success': False, 'error': 'Commande introuvable'})
+        order = dict(order)
+        items = json.loads(order.get('items_json') or '[]')
+        inv_num = _next_invoice_number()
+        total = float(order.get('total', 0))
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO shop_invoices
+            (invoice_number, order_id, type, customer_name, customer_phone,
+             customer_city, items_json, subtotal, total, pay_method, status, created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (inv_num, oid, 'order',
+              order.get('customer_name',''), order.get('customer_phone',''),
+              order.get('customer_city',''), order.get('items_json','[]'),
+              total, total, order.get('pay_method',''),
+              'issued', session.get('user_id')))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid, 'invoice_number': inv_num, 'total': total})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/products/stock-value', methods=['GET'])
+@login_required
+def shop_stock_value():
+    """Calcule la valeur totale du stock."""
+    perms = get_shop_perms(session.get('user_id'))
+    if not perms.get('access'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, name, price, stock, category FROM shop_products WHERE is_active=1 AND stock > 0"
+        ).fetchall()
+        items = []
+        total_value = 0
+        for r in rows:
+            val = float(r['price']) * int(r['stock'])
+            total_value += val
+            items.append({'id': r['id'], 'name': r['name'], 'price': r['price'],
+                          'stock': r['stock'], 'category': r['category'], 'value': val})
+        items.sort(key=lambda x: x['value'], reverse=True)
+        return jsonify({'success': True, 'items': items, 'total_value': total_value})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+# ── FIN NOUVELLES ROUTES ──────────────────────────────────────────────
 
 
 if __name__ == '__main__':
