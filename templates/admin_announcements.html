@@ -119,7 +119,7 @@
                             <i class="fas {{ 'fa-toggle-on' if ann.is_active else 'fa-toggle-off' }}"></i>
                         </button>
                         <!-- Éditer -->
-                        <button onclick="openEditModal({{ ann | tojson | safe }})"
+                        <button onclick="openEditModal({{ ann.id }})"
                             class="btn btn-sm"
                             style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#818cf8;border-radius:9px;padding:.4rem .7rem;font-size:.78rem;">
                             <i class="fas fa-edit"></i>
@@ -377,8 +377,24 @@
 
 <script>
 // ════════════════════════════════════════════════════
-// ÉDITEUR STRUCTURÉ
+// DONNÉES — dictionnaire des annonces (injection Jinja2 sécurisée)
 // ════════════════════════════════════════════════════
+const ANNOUNCEMENTS = {
+{% for ann in announcements %}
+  {{ ann.id }}: {{ {
+    'id':               ann.id,
+    'title':            ann.title or '',
+    'badge_label':      ann.badge_label or '',
+    'badge_type':       ann.badge_type or 'default',
+    'content':          ann.content or '',
+    'start_date':       ann.start_date or '',
+    'end_date':         ann.end_date or '',
+    'auto_skip_seconds':ann.auto_skip_seconds or 15,
+    'is_active':        ann.is_active,
+    'images':           ann.images or '[]'
+  } | tojson }},
+{% endfor %}
+};
 
 let currentMode = 'simple';
 let activeTarget = 'annContentSimple'; // zone de texte active pour l'insertion emoji
@@ -605,33 +621,43 @@ function openCreateModal() {
 }
 
 // ── Ouvrir modal édition ──
-function openEditModal(ann) {
-    document.getElementById('annId').value = ann.id;
-    document.getElementById('annTitle').value = ann.title || '';
-    document.getElementById('annBadgeLabel').value = ann.badge_label || '';
-    document.getElementById('annBadgeType').value = ann.badge_type || 'default';
-    document.getElementById('annStartDate').value = ann.start_date || '';
-    document.getElementById('annEndDate').value = ann.end_date || '';
-    document.getElementById('annAutoSkip').value = ann.auto_skip_seconds || 15;
-    document.getElementById('annIsActive').checked = !!ann.is_active;
-    document.getElementById('modalTitle').textContent = 'Modifier l\'annonce';
-    document.getElementById('saveLabel').textContent = 'Enregistrer les modifications';
+function openEditModal(id) {
+    const ann = ANNOUNCEMENTS[id];
+    if (!ann) { toast('Annonce introuvable', 'error'); return; }
+
+    document.getElementById('annId').value          = ann.id;
+    document.getElementById('annTitle').value        = ann.title;
+    document.getElementById('annBadgeLabel').value   = ann.badge_label;
+    document.getElementById('annBadgeType').value    = ann.badge_type || 'default';
+    document.getElementById('annStartDate').value    = ann.start_date;
+    document.getElementById('annEndDate').value      = ann.end_date;
+    document.getElementById('annAutoSkip').value     = ann.auto_skip_seconds || 15;
+    document.getElementById('annIsActive').checked   = !!ann.is_active;
+    document.getElementById('modalTitle').textContent  = 'Modifier l\'annonce';
+    document.getElementById('saveLabel').textContent   = 'Enregistrer les modifications';
+
+    // Réinitialiser aperçu et nouvelles images
+    document.getElementById('imagePreview').innerHTML = '';
+
+    // Charger le contenu dans l'éditeur
     loadContentIntoEditor(ann.content || '');
 
-    // Afficher images existantes
+    // Afficher les images existantes
     const existDiv = document.getElementById('existingImages');
     existDiv.innerHTML = '';
     let keep = [];
-    try { keep = JSON.parse(ann.images || '[]'); } catch(e) {}
-    keep.forEach((src, i) => {
+    try { keep = JSON.parse(ann.images || '[]'); } catch(e) { keep = []; }
+    keep.forEach(src => {
         const div = document.createElement('div');
         div.style.cssText = 'position:relative;';
-        div.innerHTML = `<img src="${src}" style="width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1);">
-            <button type="button" onclick="removeExisting(this,'${src}')" style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;line-height:1;">✕</button>`;
+        div.innerHTML = `
+            <img src="${src}" style="width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1);">
+            <button type="button" onclick="removeExisting(this,'${src}')"
+                style="position:absolute;top:-5px;right:-5px;background:#ef4444;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;line-height:1;">✕</button>`;
         existDiv.appendChild(div);
     });
     document.getElementById('annKeepImages').value = JSON.stringify(keep);
-    document.getElementById('imagePreview').innerHTML = '';
+
     getModal()?.show();
 }
 

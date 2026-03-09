@@ -171,6 +171,105 @@
 .empty-bl { text-align:center; padding:3rem; color:var(--text-secondary); }
 .empty-bl i { font-size:2.3rem; opacity:.15; display:block; margin-bottom:.65rem; }
 
+/* ══ MULTI-IMAGE GALLERY ═════════════════════════════════ */
+.img-gallery { display:grid; grid-template-columns:repeat(3,1fr); gap:.55rem; margin-top:.65rem; }
+.img-slot {
+  position:relative; border-radius:10px; overflow:hidden;
+  background:var(--accent-color); border:1.5px dashed var(--border-color);
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:.2s; flex-direction:column; gap:.2rem;
+}
+.img-slot:hover { border-color:var(--primary-color); background:rgba(0,212,170,.06); }
+.img-slot img { position:absolute;inset:0; width:100%; height:100%; object-fit:cover; border-radius:8px; }
+.img-slot .img-slot-ico { font-size:1.4rem; color:var(--text-secondary); opacity:.25; }
+.img-slot .img-slot-del {
+  position:absolute; top:4px; right:4px; width:22px; height:22px;
+  border-radius:6px; border:none; background:rgba(239,68,68,.9);
+  color:#fff; font-size:.66rem; display:none; align-items:center;
+  justify-content:center; cursor:pointer; z-index:3;
+}
+.img-slot:hover .img-slot-del { display:flex; }
+.img-slot .img-slot-badge {
+  position:absolute; bottom:4px; left:4px;
+  background:rgba(0,0,0,.75); color:#fff;
+  font-size:.56rem; font-weight:800; padding:.1rem .35rem;
+  border-radius:4px; letter-spacing:.04em; pointer-events:none; z-index:2;
+}
+.img-slot-add {
+  border:1.5px dashed rgba(0,212,170,.35)!important;
+  background:rgba(0,212,170,.04)!important;
+  font-size:.68rem; color:var(--primary-color); font-weight:700;
+}
+.img-slot-add i { font-size:1.25rem; opacity:.7; display:block; margin-bottom:.18rem; }
+.img-slot-add:hover { border-color:var(--primary-color)!important; background:rgba(0,212,170,.1)!important; }
+.img-upbar { height:2px; background:var(--border-color); border-radius:2px; margin-top:.4rem; display:none; }
+.img-upbar-f { height:100%; width:0; background:var(--primary-color); border-radius:2px; transition:width .2s; }
+
+/* ══ ACCESS MANAGEMENT ════════════════════════════════════ */
+.user-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:.85rem; }
+.ucard {
+  background:var(--secondary-color); border:1px solid var(--border-color);
+  border-radius:14px; padding:1rem; display:flex; align-items:center; gap:.85rem; transition:.2s;
+}
+.ucard:hover { border-color:rgba(0,212,170,.3); box-shadow:0 4px 16px rgba(0,212,170,.07); }
+.ucard-av {
+  width:42px; height:42px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800;
+}
+.ucard-info { flex:1; min-width:0; }
+.ucard-name { font-weight:700; font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ucard-email { font-size:.72rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ucard-role-lbl { font-size:.63rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; margin-top:.18rem; }
+.ucard-ctrl { display:flex; flex-direction:column; align-items:flex-end; gap:.35rem; flex-shrink:0; }
+.toggle-sw { position:relative; width:42px; height:22px; cursor:pointer; display:inline-block; }
+.toggle-sw input { opacity:0; width:0; height:0; position:absolute; }
+.toggle-sw-track { position:absolute; inset:0; border-radius:11px; background:#374151; transition:.25s; }
+.toggle-sw input:checked + .toggle-sw-track { background:#00d4aa; }
+.toggle-sw-thumb {
+  position:absolute; top:3px; left:3px;
+  width:16px; height:16px; border-radius:50%;
+  background:#fff; transition:.25s; box-shadow:0 1px 4px rgba(0,0,0,.3); pointer-events:none;
+}
+.toggle-sw input:checked ~ .toggle-sw-thumb { left:23px; }
+.acc-badge { font-size:.62rem; font-weight:800; padding:.15rem .55rem; border-radius:20px; white-space:nowrap; }
+.acc-badge-on  { background:rgba(0,212,170,.15); color:#00d4aa; border:1px solid rgba(0,212,170,.3); }
+.acc-badge-off { background:rgba(107,114,128,.12); color:var(--text-secondary); border:1px solid var(--border-color); }
+.acc-info-box {
+  background:rgba(0,212,170,.05); border:1px solid rgba(0,212,170,.2);
+  border-radius:12px; padding:.85rem 1rem; margin-bottom:1.25rem;
+  font-size:.8rem; color:var(--text-secondary); line-height:1.65;
+  display:flex; gap:.75rem; align-items:flex-start;
+}
+.acc-info-box i { color:var(--primary-color); margin-top:.12rem; flex-shrink:0; }
+.perm-matrix {
+  background:var(--secondary-color); border:1px solid var(--border-color);
+  border-radius:14px; overflow:hidden; margin-bottom:1.25rem;
+}
+.perm-matrix-hd {
+  display:grid; grid-template-columns:1fr repeat(3,110px);
+  background:rgba(0,0,0,.15); padding:.55rem 1rem;
+  font-size:.68rem; font-weight:800; text-transform:uppercase;
+  letter-spacing:.07em; color:var(--text-secondary); gap:.5rem; text-align:center;
+}
+.perm-matrix-hd span:first-child { text-align:left; }
+.perm-matrix-row {
+  display:grid; grid-template-columns:1fr repeat(3,110px);
+  padding:.7rem 1rem; border-top:1px solid rgba(255,255,255,.04);
+  align-items:center; gap:.5rem; font-size:.82rem;
+}
+.perm-cell { display:flex; justify-content:center; }
+.perm-yes { color:#10b981; } .perm-no { color:#6b7280; opacity:.5; }
+.acc-guard-bar {
+  background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2);
+  border-radius:11px; padding:.65rem 1rem; margin-bottom:1rem;
+  font-size:.8rem; color:#f87171; display:flex; align-items:center; gap:.6rem;
+}
+@media(max-width:600px){
+  .img-gallery { grid-template-columns:repeat(3,1fr); }
+  .perm-matrix-hd,.perm-matrix-row { grid-template-columns:1fr repeat(3,70px); font-size:.72rem; }
+  .user-grid { grid-template-columns:1fr; }
+}
+
 /* ══ RESPONSIVE MOBILE ═══════════════════════════════ */
 @media(max-width:900px){
   .sa-nav{display:none}
@@ -247,6 +346,10 @@
   <div class="sa-nav-sep"></div>
   <button class="sa-nav-btn" id="navOrd" onclick="go('ord')"><i class="fas fa-receipt"></i> Commandes {% if pending_count %}<span class="sa-nav-badge">{{ pending_count }}</span>{% endif %}</button>
   <div class="sa-nav-sep"></div>
+  {% if session.get('role') == 'superadmin' %}
+  <button class="sa-nav-btn" id="navAcc" onclick="go('acc')"><i class="fas fa-user-shield"></i> Accès boutique</button>
+  <div class="sa-nav-sep"></div>
+  {% endif %}
   <a href="/shop" target="_blank" class="sa-nav-btn" style="text-decoration:none"><i class="fas fa-store"></i> Voir boutique</a>
 </nav>
 
@@ -280,7 +383,11 @@
 
   <!-- PRODUCTS LIST -->
   <div id="secProd" style="display:none">
-    <div class="sec-hd"><h4>📦 Catalogue produits</h4><button class="save-btn" style="width:auto;padding:.5rem 1.1rem" onclick="go('new')"><i class="fas fa-plus"></i> Nouveau produit</button></div>
+    <div class="sec-hd"><h4>📦 Catalogue produits</h4>
+      {% if session.get('role') in ('admin', 'superadmin', 'shop_manager') %}
+      <button class="save-btn" style="width:auto;padding:.5rem 1.1rem" onclick="go('new')"><i class="fas fa-plus"></i> Nouveau produit</button>
+      {% endif %}
+    </div>
     <div class="filter-row">
       <input class="fsearch" placeholder="🔍 Rechercher un produit…" oninput="filterP(this.value)">
       <button class="fchip on" data-fc="all" onclick="filterCat(this)">Tout</button>
@@ -308,9 +415,13 @@
           </div>
           <div class="pc-actions">
             <button class="abtn abtn-view" onclick="showProd({{ p.id }})"><i class="fas fa-eye"></i> Voir</button>
+            {% if session.get('role') in ('admin', 'superadmin', 'shop_manager') %}
             <button class="abtn abtn-edit" onclick="loadEdit({{ p.id }})"><i class="fas fa-edit"></i> Modifier</button>
             <button class="abtn abtn-toggle" onclick="toggleP({{ p.id }})"><i class="fas fa-{{ 'eye-slash' if p.is_active else 'eye' }}"></i></button>
+            {% endif %}
+            {% if session.get('role') in ('admin', 'superadmin') %}
             <button class="abtn abtn-del" onclick="delProd({{ p.id }},'{{ p.name|replace("'","\\'") }}')"><i class="fas fa-trash"></i></button>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -395,24 +506,35 @@
 
     <!-- TAB 2 — IMAGES -->
     <div class="ftab-p" id="tp2">
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-image"></i> Image principale</div><div class="fsect-bd">
-        <div class="itabs">
-          <button class="itab active" id="itUrl" onclick="switchImg('url')">🔗 URL externe</button>
-          <button class="itab" id="itFile" onclick="switchImg('file')">📁 Upload fichier</button>
+      <div class="fsect"><div class="fsect-hd"><i class="fas fa-images"></i> Galerie d'images (max 6)</div><div class="fsect-bd">
+        <div class="acc-info-box" style="margin-bottom:.85rem">
+          <i class="fas fa-lightbulb"></i>
+          <span>La <strong>1ère image</strong> est l'image principale affichée dans la boutique. Ajoutez jusqu'à 6 images. Glissez-déposez ou cliquez sur un emplacement pour uploader.</span>
         </div>
-        <div id="imgUrlP"><input class="fi" id="pimg" placeholder="https://…" oninput="prevImg(this.value)" style="margin-bottom:.5rem"><div class="fhint">Lien direct depuis Alibaba, AliExpress, Google Images…</div></div>
-        <div id="imgFileP" style="display:none">
-          <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="handleImgFile(this)">
-          <button class="save-btn" style="padding:.45rem;font-size:.78rem;margin-bottom:.5rem" onclick="document.getElementById('imgFile').click()"><i class="fas fa-upload"></i> Choisir image (max 5Mo)</button>
+        <!-- Zone principale drag & drop -->
+        <div id="imgMainZone" class="img-zone"
+             ondragover="e=>{e.preventDefault();this.classList.add('dg')}"
+             ondragleave="this.classList.remove('dg')"
+             ondrop="galleryDrop(event,0)"
+             onclick="trigGalleryInput(0)"
+             style="margin-bottom:.75rem">
+          <i class="fas fa-image" id="imgIco"></i>
+          <small>Glissez l'image principale ici ou cliquez</small>
+          <img id="imgPrev" src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9px">
           <div class="upbar" id="upbar"><div class="upbar-f" id="upbarf"></div></div>
         </div>
-        <div class="img-zone" id="imgZone" ondragover="e=>{e.preventDefault();imgZone.classList.add('dg')}" ondragleave="imgZone.classList.remove('dg')" ondrop="imgDrop(event)">
-          <i class="fas fa-image" id="imgIco"></i><small>Glissez-déposez une image ici</small>
-          <img id="imgPrev" src="" style="display:none">
+        <!-- Champ URL caché mais maintenu pour compatibilité -->
+        <input type="hidden" id="pimg">
+        <!-- Grille 6 images -->
+        <div class="img-gallery" id="imgGallery">
+          <!-- Slots 1-5 (slot 0 = image principale ci-dessus) -->
         </div>
-      </div></div>
-      <div class="fsect"><div class="fsect-hd"><i class="fas fa-images"></i> Images supplémentaires</div><div class="fsect-bd">
-        <div class="fg"><label class="fl">URLs supplémentaires (une par ligne)</label><textarea class="fi" id="pimgextra" rows="4" style="resize:vertical" placeholder="https://image2.jpg&#10;https://image3.jpg"></textarea></div>
+        <!-- Input file caché -->
+        <input type="file" id="imgFileGlobal" accept="image/*" multiple style="display:none" onchange="handleGalleryFiles(this)">
+        <div class="img-upbar" id="galleryUpbar"><div class="img-upbar-f" id="galleryUpbarf"></div></div>
+        <div style="margin-top:.55rem;font-size:.72rem;color:var(--text-secondary)">
+          <i class="fas fa-info-circle"></i> Formats acceptés : JPG, PNG, GIF, WebP — 5 Mo max par image
+        </div>
       </div></div>
       <div class="fsect"><div class="fsect-hd"><i class="fas fa-link"></i> Lien source Alibaba / AliExpress</div><div class="fsect-bd">
         <div class="fg"><label class="fl">URL du produit source (interne)</label><input class="fi" id="psource" placeholder="https://www.alibaba.com/product/…"><div class="fhint">Non visible sur la boutique publique</div></div>
@@ -494,6 +616,110 @@
     {% else %}<div class="empty-bl"><i class="fas fa-receipt"></i><p>Aucune commande.</p></div>{% endif %}
   </div>
 
+  <!-- ACCESS MANAGEMENT — superadmin only -->
+  {% if session.get('role') == 'superadmin' %}
+  <div id="secAcc" style="display:none">
+    <div class="sec-hd"><h4>🔐 Accès &amp; Permissions Boutique</h4></div>
+
+    <div class="acc-info-box">
+      <i class="fas fa-shield-halved"></i>
+      <div>
+        <strong style="color:var(--text-primary)">Gérez qui peut intervenir sur la boutique.</strong><br>
+        Activez le rôle <em>Gestionnaire boutique</em> pour permettre à un utilisateur d'ajouter, modifier et masquer des produits — sans pouvoir les supprimer ni accéder aux autres sections admin.
+      </div>
+    </div>
+
+    <!-- Tableau des permissions par rôle -->
+    <div class="perm-matrix">
+      <div class="perm-matrix-hd">
+        <span>Action</span>
+        <span>Gestionnaire</span>
+        <span>Admin</span>
+        <span>Super Admin</span>
+      </div>
+      <div class="perm-matrix-row">
+        <span>Voir les produits</span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+      </div>
+      <div class="perm-matrix-row">
+        <span>Ajouter un produit</span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+      </div>
+      <div class="perm-matrix-row">
+        <span>Modifier un produit</span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+      </div>
+      <div class="perm-matrix-row">
+        <span>Masquer / Afficher</span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+      </div>
+      <div class="perm-matrix-row">
+        <span>Supprimer un produit</span>
+        <span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+      </div>
+      <div class="perm-matrix-row">
+        <span>Gérer les commandes</span>
+        <span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+      </div>
+      <div class="perm-matrix-row">
+        <span>Gérer les accès</span>
+        <span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span>
+        <span class="perm-cell"><i class="fas fa-xmark perm-no"></i></span>
+        <span class="perm-cell"><i class="fas fa-check perm-yes"></i></span>
+      </div>
+    </div>
+
+    <!-- Liste des utilisateurs -->
+    <div class="sec-hd" style="margin-bottom:.9rem"><h4 style="font-size:.88rem">👥 Utilisateurs ({{ all_users|default([])|length }})</h4></div>
+    <div class="user-grid" id="userGrid">
+      {% for u in all_users|default([]) %}
+      {% if u.role not in ('admin','superadmin') %}
+      {% set is_manager = (u.role == 'shop_manager') %}
+      <div class="ucard" id="ucard-{{ u.id }}">
+        <div class="ucard-av" style="background:{{ 'rgba(0,212,170,.15)' if is_manager else 'rgba(107,114,128,.1)' }};color:{{ '#00d4aa' if is_manager else 'var(--text-secondary)' }}">
+          {{ u.username[0].upper() if u.username else '?' }}
+        </div>
+        <div class="ucard-info">
+          <div class="ucard-name">{{ u.username }}</div>
+          <div class="ucard-email">{{ u.email }}</div>
+          <div class="ucard-role-lbl" style="color:{{ '#00d4aa' if is_manager else 'var(--text-secondary)' }}">
+            {{ '🛍 Gestionnaire boutique' if is_manager else '👤 Utilisateur' }}
+          </div>
+        </div>
+        <div class="ucard-ctrl">
+          <span class="acc-badge {{ 'acc-badge-on' if is_manager else 'acc-badge-off' }}" id="ubadge-{{ u.id }}">
+            {{ '✅ Actif' if is_manager else 'Inactif' }}
+          </span>
+          <label class="toggle-sw" title="{{ 'Retirer l\'accès' if is_manager else 'Donner l\'accès boutique' }}">
+            <input type="checkbox" {{ 'checked' if is_manager else '' }}
+                   onchange="toggleShopAccess({{ u.id }}, this.checked, '{{ u.username }}')">
+            <span class="toggle-sw-track"></span>
+            <span class="toggle-sw-thumb"></span>
+          </label>
+        </div>
+      </div>
+      {% endif %}
+      {% else %}
+      <div class="empty-bl" style="grid-column:1/-1;padding:2rem">
+        <i class="fas fa-users"></i><p>Aucun utilisateur standard trouvé.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
 </div><!-- /sa-main -->
 
 <!-- ══ DETAIL PANEL ══ -->
@@ -508,15 +734,20 @@
 <nav class="sa-bottom-nav">
   <button class="sa-bnav-btn active" id="bnavDash" onclick="go('dash')"><i class="fas fa-chart-pie"></i>Tableau</button>
   <button class="sa-bnav-btn" id="bnavProd" onclick="go('prod')"><i class="fas fa-boxes"></i>Produits</button>
+  {% if session.get('role') in ('admin', 'superadmin', 'shop_manager') %}
   <button class="sa-bnav-btn" id="bnavNew" onclick="go('new')"><i class="fas fa-plus-circle"></i>Ajouter</button>
+  {% endif %}
   <button class="sa-bnav-btn" id="bnavOrd" onclick="go('ord')"><i class="fas fa-receipt"></i>Commandes{% if pending_count %}<span class="sa-nav-badge">{{ pending_count }}</span>{% endif %}</button>
+  {% if session.get('role') == 'superadmin' %}
+  <button class="sa-bnav-btn" id="bnavAcc" onclick="go('acc')"><i class="fas fa-user-shield"></i>Accès</button>
+  {% endif %}
   <a href="/shop" target="_blank" class="sa-bnav-btn" style="text-decoration:none"><i class="fas fa-store"></i>Boutique</a>
 </nav>
 
 <div id="atoast"><i id="ati" class="fas fa-check-circle"></i> <span id="atm"></span></div>
 
 <script>
-const PRODS={ {% for p in products %}{{p.id}}:{{{'id':p.id,'name':p.name,'description':p.description or '','features':p.features or '','category':p.category,'price':p.price,'original_price':p.original_price or 0,'stock':p.stock,'image_url':p.image_url or '','badge':p.badge or '','is_active':p.is_active,'reviews_count':p.reviews_count or 0,'delivery_info':p.delivery_info or 'Livraison 3-7 jours'}|tojson}},{% endfor %}};
+const PRODS={ {% for p in products %}{{p.id}}:{{{'id':p.id,'name':p.name,'description':p.description or '','features':p.features or '','category':p.category,'price':p.price,'original_price':p.original_price or 0,'stock':p.stock,'image_url':p.image_url or '','extra_images':p.extra_images or '[]','badge':p.badge or '','is_active':p.is_active,'reviews_count':p.reviews_count or 0,'delivery_info':p.delivery_info or 'Livraison 3-7 jours'}|tojson}},{% endfor %}};
 const ORDERS={ {% for o in orders %}{{o.id}}:{{{'id':o.id,'customer_name':o.customer_name or '','customer_phone':o.customer_phone or '','customer_city':o.customer_city or '','items_summary':o.items_summary or '','items_json':o.items_json or '[]','total':o.total,'pay_method':o.pay_method or '','note':o.note or '','status':o.status,'created_at':o.created_at or ''}|tojson}},{% endfor %}};
 const SL={pending:'⏳ En attente',paid:'✅ Payé',shipped:'🚚 Expédié',delivered:'📬 Livré',cancelled:'❌ Annulé'};
 const SC={pending:'sp-pending',paid:'sp-paid',shipped:'sp-shipped',delivered:'sp-delivered',cancelled:'sp-cancelled'};
@@ -525,9 +756,14 @@ const PL={orange_money:'🟠 Orange Money',mtn_momo:'🟡 MTN MoMo',whatsapp:'�
 
 function toast(m,ok=true){const t=document.getElementById('atoast');document.getElementById('ati').className=`fas fa-${ok?'check-circle':'exclamation-circle'}`;document.getElementById('ati').style.color=ok?'var(--primary-color)':'#f87171';document.getElementById('atm').textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
 
-const SECS=['Dash','Prod','New','Ord'];
+const SECS=['Dash','Prod','New','Ord','Acc'];
 function go(n){
-  SECS.forEach(s=>{document.getElementById('sec'+s).style.display=s.toLowerCase()===n?'':'none';const b=document.getElementById('nav'+s);if(b)b.classList.toggle('active',s.toLowerCase()===n);const bb=document.getElementById('bnav'+s);if(bb)bb.classList.toggle('active',s.toLowerCase()===n);});
+  SECS.forEach(s=>{
+    const el=document.getElementById('sec'+s);
+    if(el) el.style.display=s.toLowerCase()===n?'':'none';
+    const b=document.getElementById('nav'+s);if(b)b.classList.toggle('active',s.toLowerCase()===n);
+    const bb=document.getElementById('bnav'+s);if(bb)bb.classList.toggle('active',s.toLowerCase()===n);
+  });
   closeDP();
 }
 
@@ -551,21 +787,165 @@ function renderTags(inp,cont){
   c.querySelectorAll('.ftag').forEach(tag=>{tag.onclick=()=>{const cur=document.getElementById(inp).value.split(',').map(s=>s.trim()).filter(Boolean);cur.splice(+tag.dataset.i,1);document.getElementById(inp).value=cur.join(', ');renderTags(inp,cont);};});
 }
 
-/* ── IMAGE ── */
-function switchImg(t){document.getElementById('itUrl').classList.toggle('active',t==='url');document.getElementById('itFile').classList.toggle('active',t==='file');document.getElementById('imgUrlP').style.display=t==='url'?'':'none';document.getElementById('imgFileP').style.display=t==='file'?'':'none';}
-function prevImg(url){const p=document.getElementById('imgPrev'),ic=document.getElementById('imgIco'),sm=document.querySelector('#imgZone small');if(url){p.src=url;p.style.display='';if(ic)ic.style.display='none';if(sm)sm.style.display='none';}else{p.style.display='none';if(ic)ic.style.display='';if(sm)sm.style.display='';}}
-async function uploadF(f){
-  if(!f||f.size>5*1024*1024){toast('Max 5Mo',false);return null;}
-  const ub=document.getElementById('upbar'),ubf=document.getElementById('upbarf');ub.style.display='block';let p=0;
-  const t=setInterval(()=>{p=Math.min(p+7,83);ubf.style.width=p+'%';},70);
-  const fd=new FormData();fd.append('image',f);
-  try{const r=await fetch('/shop/api/product/upload-image',{method:'POST',body:fd});const res=await r.json();clearInterval(t);
-    if(res.success){ubf.style.width='100%';setTimeout(()=>{ub.style.display='none';ubf.style.width='0';},500);document.getElementById('pimg').value=res.url;prevImg(res.url);toast('Image uploadée ✅');return res.url;}
-    else{ub.style.display='none';toast('❌ '+res.error,false);return null;}}
-  catch(e){clearInterval(t);ub.style.display='none';toast('Erreur réseau',false);return null;}
+/* ── MULTI-IMAGE GALLERY ─────────────────────────────── */
+// galleryUrls[0] = image principale, [1..5] = images extra
+let galleryUrls = ['','','','','',''];
+let _pendingSlot = 0;
+
+function initGallery(){
+  const g = document.getElementById('imgGallery'); if(!g) return;
+  g.innerHTML = '';
+  // Slots 1-5 (slot 0 est la zone principale)
+  for(let i=1;i<=5;i++){
+    const div = document.createElement('div');
+    div.className = 'img-slot' + (galleryUrls[i]?'':' img-slot-add');
+    div.id = 'gslot-'+i;
+    div.onclick = ()=>trigGalleryInput(i);
+    div.ondragover = (e)=>{e.preventDefault();div.style.borderColor='var(--primary-color)';};
+    div.ondragleave = ()=>{div.style.borderColor='';};
+    div.ondrop = (e)=>galleryDrop(e,i);
+    if(galleryUrls[i]){
+      div.innerHTML = `
+        <img src="${galleryUrls[i]}" onerror="this.src=''">
+        <button class="img-slot-del" onclick="event.stopPropagation();clearSlot(${i})"><i class="fas fa-times"></i></button>
+        <span class="img-slot-badge">Photo ${i+1}</span>`;
+    } else {
+      div.innerHTML = `<i class="fas fa-plus"></i><span style="font-size:.64rem">Ajouter</span>`;
+    }
+    g.appendChild(div);
+  }
 }
-function handleImgFile(inp){if(inp.files[0])uploadF(inp.files[0]);}
-function imgDrop(e){e.preventDefault();document.getElementById('imgZone').classList.remove('dg');const f=e.dataTransfer.files[0];if(!f||!f.type.startsWith('image/')){toast('Image requise',false);return;}switchImg('file');uploadF(f);}
+
+function trigGalleryInput(slot){
+  _pendingSlot = slot;
+  const inp = document.getElementById('imgFileGlobal');
+  inp.multiple = false;
+  inp.click();
+}
+
+function handleGalleryFiles(inp){
+  if(!inp.files.length) return;
+  uploadGalleryFile(inp.files[0], _pendingSlot);
+  inp.value='';
+}
+
+function galleryDrop(e, slot){
+  e.preventDefault();
+  const z = slot===0?document.getElementById('imgMainZone'):document.getElementById('gslot-'+slot);
+  if(z){ z.classList.remove('dg'); z.style.borderColor=''; }
+  const f = e.dataTransfer.files[0];
+  if(!f||!f.type.startsWith('image/')){ toast('Image requise',false); return; }
+  uploadGalleryFile(f, slot);
+}
+
+async function uploadGalleryFile(f, slot){
+  if(!f||f.size>5*1024*1024){ toast('Max 5 Mo par image',false); return; }
+  // Barre progression
+  const isMain = slot===0;
+  const ub = document.getElementById(isMain?'upbar':'galleryUpbar');
+  const ubf = document.getElementById(isMain?'upbarf':'galleryUpbarf');
+  ub.style.display='block'; let p=0;
+  const t = setInterval(()=>{p=Math.min(p+8,82);ubf.style.width=p+'%';},60);
+  const fd = new FormData(); fd.append('image',f);
+  try{
+    const r = await fetch('/shop/api/product/upload-image',{method:'POST',body:fd});
+    const res = await r.json();
+    clearInterval(t);
+    if(res.success){
+      ubf.style.width='100%';
+      setTimeout(()=>{ub.style.display='none';ubf.style.width='0';},450);
+      galleryUrls[slot] = res.url;
+      if(isMain){
+        // Mettre à jour la zone principale
+        const prev=document.getElementById('imgPrev');
+        const ico=document.getElementById('imgIco');
+        const sm=document.querySelector('#imgMainZone small');
+        prev.src=res.url; prev.style.display='block';
+        if(ico) ico.style.display='none';
+        if(sm) sm.style.display='none';
+        document.getElementById('pimg').value = res.url;
+      }
+      initGallery();
+      toast(`Photo ${slot+1} uploadée ✅`);
+    } else { ub.style.display='none'; toast('❌ '+res.error,false); }
+  } catch(e){ clearInterval(t); ub.style.display='none'; toast('Erreur réseau',false); }
+}
+
+function clearSlot(slot){
+  galleryUrls[slot]='';
+  if(slot===0){
+    const prev=document.getElementById('imgPrev');
+    const ico=document.getElementById('imgIco');
+    const sm=document.querySelector('#imgMainZone small');
+    prev.src=''; prev.style.display='none';
+    if(ico) ico.style.display='';
+    if(sm) sm.style.display='';
+    document.getElementById('pimg').value='';
+  }
+  initGallery();
+}
+
+function loadGallery(mainUrl, extraJson){
+  galleryUrls = ['','','','','',''];
+  galleryUrls[0] = mainUrl||'';
+  try{
+    const extras = JSON.parse(extraJson||'[]');
+    extras.forEach((u,i)=>{ if(i<5 && u) galleryUrls[i+1]=u; });
+  }catch(e){}
+  // Mettre à jour zone principale
+  const prev=document.getElementById('imgPrev');
+  const ico=document.getElementById('imgIco');
+  const sm=document.querySelector('#imgMainZone small');
+  if(mainUrl){
+    prev.src=mainUrl; prev.style.display='block';
+    if(ico) ico.style.display='none';
+    if(sm) sm.style.display='none';
+  } else {
+    prev.src=''; prev.style.display='none';
+    if(ico) ico.style.display='';
+    if(sm) sm.style.display='';
+  }
+  document.getElementById('pimg').value = mainUrl||'';
+  initGallery();
+}
+
+// Compat legacy — gardé pour ne pas casser d'autres appels
+function prevImg(url){ if(url) loadGallery(url, '[]'); else clearSlot(0); }
+function switchImg(){}
+function handleImgFile(inp){ if(inp.files[0]) uploadGalleryFile(inp.files[0],0); }
+function imgDrop(e){ galleryDrop(e,0); }
+
+/* ── TOGGLE SHOP ACCESS ──────────────────────────────── */
+async function toggleShopAccess(uid, grant, name){
+  const newRole = grant ? 'shop_manager' : 'user';
+  try{
+    const r = await fetch('/shop/api/access/set',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id: uid, role: newRole})
+    });
+    const res = await r.json();
+    if(res.success){
+      // Mettre à jour visuellement la carte
+      const card = document.getElementById('ucard-'+uid);
+      const badge = document.getElementById('ubadge-'+uid);
+      if(badge){
+        badge.textContent = grant ? '✅ Actif' : 'Inactif';
+        badge.className = 'acc-badge ' + (grant ? 'acc-badge-on' : 'acc-badge-off');
+      }
+      toast(grant ? `✅ ${name} peut maintenant gérer la boutique` : `🚫 Accès retiré à ${name}`);
+    } else {
+      toast('❌ '+res.error, false);
+      // Annuler le toggle visuellement
+      const inp = document.querySelector(`#ucard-${uid} input[type=checkbox]`);
+      if(inp) inp.checked = !grant;
+    }
+  } catch(e){
+    toast('Erreur réseau',false);
+    const inp = document.querySelector(`#ucard-${uid} input[type=checkbox]`);
+    if(inp) inp.checked = !grant;
+  }
+}
 
 /* ── SAVE ── */
 async function saveProd(){
@@ -576,7 +956,8 @@ async function saveProd(){
     name,category:document.getElementById('pcat').value,
     description:document.getElementById('pd').value.trim(),
     features:document.getElementById('pfeats').value.trim(),
-    image_url:document.getElementById('pimg').value.trim(),
+    image_url:galleryUrls[0]||document.getElementById('pimg').value.trim(),
+    extra_images: JSON.stringify(galleryUrls.slice(1).filter(Boolean)),
     price:parseFloat(document.getElementById('pp').value)||0,
     original_price:parseFloat(document.getElementById('pop').value)||0,
     stock:parseInt(document.getElementById('pstock').value)||0,
@@ -628,7 +1009,7 @@ function loadEdit(id){
   document.getElementById('pdel').value=p.delivery_info;
   document.getElementById('pactive').value=p.is_active?'1':'0';
   document.getElementById('previews').value=p.reviews_count;
-  prevImg(p.image_url);switchImg('url');
+  loadGallery(p.image_url, p.extra_images||'[]');
   st(0,document.querySelectorAll('.ftab')[0]);
   document.getElementById('saMain').scrollTo({top:0,behavior:'smooth'});
 }
@@ -642,7 +1023,10 @@ function resetForm(){
   document.getElementById('pdel').value='Livraison 3-7 jours';document.getElementById('pactive').value='1';document.getElementById('previews').value=0;
   document.getElementById('specBody').innerHTML='';
   ['colorTags','sizeTags','tagsP'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='';});
-  prevImg('');st(0,document.querySelectorAll('.ftab')[0]);toast('Formulaire réinitialisé');
+  prevImg('');
+  galleryUrls=['','','','','',''];
+  initGallery();
+  st(0,document.querySelectorAll('.ftab')[0]);toast('Formulaire réinitialisé');
 }
 
 /* ── PRODUCT ACTIONS ── */
@@ -745,5 +1129,7 @@ function waC(phone,ref){const n=phone.replace(/\D/g,'');const p=n.startsWith('23
 
 // Init
 addSpecRow('Bluetooth','5.3');addSpecRow('Couleur','Noir');addSpecRow('Garantie','1 an');
+initGallery();
+
 </script>
 {% endblock %}
