@@ -11,6 +11,10 @@
         .hb{display:flex;align-items:center;gap:.75rem;font-size:1.15rem;font-weight:700;color:var(--accent)}
         .hb span{color:var(--text)}.hr{display:flex;align-items:center;gap:1rem}
         .badge{background:var(--accent2);color:#fff;font-size:.7rem;font-weight:700;padding:.25rem .6rem;border-radius:20px;text-transform:uppercase}
+        .badge-superadmin{background:linear-gradient(135deg,#ffb93a,#ff9500)!important;color:#000!important;font-size:.75rem;box-shadow:0 0 14px rgba(255,185,58,.35)}
+        /* Ligne compte courant dans le tableau */
+        tr.my-row{background:rgba(255,185,58,.04)!important;outline:1px solid rgba(255,185,58,.25)}
+        .my-badge{display:inline-flex;align-items:center;gap:.25rem;background:linear-gradient(135deg,rgba(255,185,58,.18),rgba(255,149,0,.12));border:1px solid rgba(255,185,58,.4);color:#ffb93a;font-size:.63rem;font-weight:800;padding:.15rem .55rem;border-radius:20px;vertical-align:middle;margin-left:.35rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
         .back{background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:.45rem 1rem;border-radius:8px;text-decoration:none;font-size:.85rem;transition:.2s}
         .back:hover{color:var(--text);border-color:var(--accent)}
         .container{max-width:1300px;margin:0 auto;padding:2rem}
@@ -146,7 +150,7 @@
 <div class="header">
     <div class="hb">🛡️ <span>Kengni Finance</span> — Admin</div>
     <div class="hr">
-        <span class="badge">{{ current_role }}</span>
+        <span class="badge{% if current_role == 'superadmin' %} badge-superadmin{% endif %}">{% if current_role == 'superadmin' %}⭐ {% endif %}{{ current_role }}</span>
         <a href="/" class="back">← App</a>
     </div>
 </div>
@@ -262,9 +266,14 @@
             <thead><tr><th>#</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Créé</th><th>Dernière connexion</th><th>Actions</th></tr></thead>
             <tbody>
             {% for u in users %}
-            <tr data-role="{{ u.role }}" data-status="{{ u.status }}">
+            <tr data-role="{{ u.role }}" data-status="{{ u.status }}"{% if u.id == session.get('user_id') %} class="my-row"{% endif %}>
                 <td data-label="#" style="color:var(--muted)">{{ u.id }}</td>
-                <td data-label="Nom"><strong>{{ u.username }}</strong></td>
+                <td data-label="Nom">
+                  <strong>{{ u.username }}</strong>
+                  {% if u.id == session.get('user_id') %}
+                  <span class="my-badge">⭐ Vous — {{ u.role }}</span>
+                  {% endif %}
+                </td>
                 <td data-label="Email" style="color:var(--muted)">{{ u.email }}</td>
                 <td data-label="Rôle"><span class="chip chip-{{ u.role }}">{{ u.role }}</span></td>
                 <td data-label="Statut"><span class="chip chip-{{ u.status }}">{{ u.status }}</span></td>

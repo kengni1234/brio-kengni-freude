@@ -459,6 +459,12 @@ def init_db():
         except Exception:
             pass
 
+        # Migration: permissions granulaires boutique (add/edit/delete par utilisateur)
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN shop_permissions TEXT DEFAULT NULL")
+        except Exception:
+            pass
+
         # Check if default user exists
         cursor.execute("SELECT COUNT(*) as count FROM users WHERE email = ?", ('fabrice.kengni@icloud.com',))
         if cursor.fetchone()[0] == 0:
@@ -567,6 +573,46 @@ def get_user_allowed_pages(user_id):
             except Exception:
                 return None
     return None
+
+
+def get_shop_perms(user_id):
+    """Retourne les permissions boutique d'un utilisateur.
+    {'add': bool, 'edit': bool, 'delete': bool}
+    Les admins/superadmin ont tout par défaut.
+    """
+    role = session.get('role', 'user')
+    if role in ('admin', 'superadmin'):
+        return {'add': True, 'edit': True, 'delete': True}
+    conn = get_db_connection()
+    if conn:
+        try:
+            row = conn.execute(
+                "SELECT shop_permissions FROM users WHERE id=?", (user_id,)
+            ).fetchone()
+            conn.close()
+            if row and row['shop_permissions']:
+                p = json.loads(row['shop_permissions'])
+                return {
+                    'add':    bool(p.get('add',    False)),
+                    'edit':   bool(p.get('edit',   False)),
+                    'delete': bool(p.get('delete', False)),
+                }
+        except Exception:
+            pass
+    return {'add': False, 'edit': False, 'delete': False}
+
+
+def can_shop(perm):
+    """Vérifie si l'utilisateur connecté a la permission boutique donnée.
+    perm : 'add' | 'edit' | 'delete'
+    """
+    role = session.get('role', 'user')
+    if role in ('admin', 'superadmin'):
+        return True
+    uid = session.get('user_id')
+    if not uid:
+        return False
+    return get_shop_perms(uid).get(perm, False)
 
 def page_access_required(page_key):
     """Decorator: if user's allowed_pages is set and page_key not in it, show locked page."""
@@ -7046,8 +7092,13 @@ def shop_create_order():
 @app.route('/shop/admin')
 @login_required
 def shop_admin():
-    if session.get('role') not in ('admin', 'superadmin'):
-        return redirect(url_for('shop'))
+    role = session.get('role')
+    uid  = session.get('user_id')
+    # Admins toujours autorisés ; autres utilisateurs si au moins 1 permission boutique
+    if role not in ('admin', 'superadmin'):
+        perms = get_shop_perms(uid)
+        if not any(perms.values()):
+            return redirect(url_for('shop'))
     conn = get_db_connection()
     products, orders = [], []
     total_revenue = pending_count = active_count = 0
@@ -7075,24 +7126,30 @@ def shop_admin():
         conn2 = get_db_connection()
         if conn2:
             cur2 = conn2.cursor()
-            cur2.execute("SELECT id, username, email, role FROM users ORDER BY username ASC")
+            cur2.execute(
+                "SELECT id, username, email, role, shop_permissions FROM users ORDER BY username ASC"
+            )
             all_users = [dict(r) for r in cur2.fetchall()]
             conn2.close()
     except Exception as e:
         print(f"[ShopAdmin users] {e}")
 
+    # Permissions de l'utilisateur connecté (pour afficher/masquer les boutons dans le template)
+    current_user_perms = get_shop_perms(session.get('user_id'))
+
     return render_template('shop_admin.html',
         products=products, orders=orders,
         total_revenue=total_revenue,
         pending_count=pending_count, active_count=active_count,
-        all_users=all_users)
+        all_users=all_users,
+        user_perms=current_user_perms)
 
 
 @app.route('/shop/api/product', methods=['POST'])
 @login_required
 def shop_create_product():
-    if session.get('role') not in ('admin', 'superadmin'):
-        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    if not can_shop('add'):
+        return jsonify({'success': False, 'error': 'Non autorisé — permission Ajouter requise'}), 403
     d = request.get_json(force=True, silent=True) or {}
     name = (d.get('name') or '').strip()
     if not name:
@@ -7124,8 +7181,8 @@ def shop_create_product():
 @app.route('/shop/api/product/<int:pid>', methods=['PUT'])
 @login_required
 def shop_update_product(pid):
-    if session.get('role') not in ('admin', 'superadmin'):
-        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé — permission Modifier requise'}), 403
     d = request.get_json(force=True, silent=True) or {}
     images_json = json.dumps(d.get('images', []) if isinstance(d.get('images'), list) else [])
     conn = get_db_connection()
@@ -7154,8 +7211,8 @@ def shop_update_product(pid):
 @app.route('/shop/api/product/<int:pid>/toggle', methods=['POST'])
 @login_required
 def shop_toggle_product(pid):
-    if session.get('role') not in ('admin', 'superadmin'):
-        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé — permission Modifier requise'}), 403
     conn = get_db_connection()
     try:
         conn.execute("UPDATE shop_products SET is_active=1-is_active, updated_at=CURRENT_TIMESTAMP WHERE id=?", (pid,))
@@ -7170,8 +7227,8 @@ def shop_toggle_product(pid):
 @app.route('/shop/api/product/<int:pid>', methods=['DELETE'])
 @login_required
 def shop_delete_product(pid):
-    if session.get('role') not in ('admin', 'superadmin'):
-        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    if not can_shop('delete'):
+        return jsonify({'success': False, 'error': 'Non autorisé — permission Supprimer requise'}), 403
     conn = get_db_connection()
     try:
         cur = conn.cursor()
@@ -7201,7 +7258,7 @@ def shop_upload_product_image():
     """Upload une ou plusieurs images pour un produit.
     Form-data : image (fichier), pid (optionnel, int).
     Retourne l'URL et met à jour la galerie si pid fourni."""
-    if session.get('role') not in ('admin', 'superadmin'):
+    if not can_shop('add') and not can_shop('edit'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
     if 'image' not in request.files:
         return jsonify({'success': False, 'error': 'Aucun fichier reçu'})
@@ -7255,7 +7312,7 @@ def shop_upload_product_image():
 @login_required
 def shop_remove_product_image(pid):
     """Supprime une image de la galerie d'un produit (+ fichier local si uploadé)."""
-    if session.get('role') not in ('admin', 'superadmin'):
+    if not can_shop('edit'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
     data = request.get_json(force=True, silent=True) or {}
     url_to_remove = (data.get('url') or '').strip()
@@ -7567,21 +7624,39 @@ def shop_upload_staff_avatar():
 @app.route('/shop/api/access/set', methods=['POST'])
 @login_required
 def shop_set_access():
-    """Donne ou retire le rôle shop_manager à un utilisateur."""
+    """Définit les permissions boutique granulaires d'un utilisateur.
+    Body JSON : { user_id, add, edit, delete }  (booléens)
+    Réservé aux admins/superadmins.
+    """
     if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
-    data = request.get_json(force=True, silent=True) or {}
-    user_id  = data.get('user_id')
-    new_role = data.get('role', 'user')
+
+    data    = request.get_json(force=True, silent=True) or {}
+    user_id = data.get('user_id')
     if not user_id:
         return jsonify({'success': False, 'error': 'user_id manquant'})
-    if new_role not in ('shop_manager', 'user'):
-        return jsonify({'success': False, 'error': 'Rôle invalide'})
+
+    perms = {
+        'add':    bool(data.get('add',    False)),
+        'edit':   bool(data.get('edit',   False)),
+        'delete': bool(data.get('delete', False)),
+    }
+
     conn = get_db_connection()
     try:
-        conn.execute("UPDATE users SET role=? WHERE id=?", (new_role, user_id))
+        # Vérification : on ne modifie pas un admin/superadmin
+        row = conn.execute("SELECT role FROM users WHERE id=?", (user_id,)).fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Utilisateur introuvable'})
+        if row['role'] in ('admin', 'superadmin'):
+            return jsonify({'success': False, 'error': 'Impossible de modifier un administrateur'})
+
+        conn.execute(
+            "UPDATE users SET shop_permissions=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (json.dumps(perms), user_id)
+        )
         conn.commit()
-        return jsonify({'success': True, 'role': new_role})
+        return jsonify({'success': True, 'permissions': perms})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
