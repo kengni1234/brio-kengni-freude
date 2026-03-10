@@ -7100,7 +7100,17 @@ def shop():
         print(f"[Shop] {e}")
     finally:
         if conn: conn.close()
-    return render_template('shop.html', products=products, orders_count=orders_count)
+    # Récupérer les bannières actives
+    banners = []
+    try:
+        conn2 = get_db_connection()
+        cur2 = conn2.cursor()
+        cur2.execute("SELECT id,type,content,image_url,icon,color,bg_color,link_url FROM shop_banners WHERE is_active=1 ORDER BY display_order ASC, id ASC")
+        banners = [dict(r) for r in cur2.fetchall()]
+        conn2.close()
+    except Exception:
+        pass
+    return render_template('shop.html', products=products, orders_count=orders_count, banners=banners)
 
 
 @app.route('/shop/order', methods=['POST'])
@@ -8107,6 +8117,234 @@ def shop_set_access():
         if conn: conn.close()
 
 # ── FIN MODULE STAFF ASSISTANCE ──────────────────────────────────────
+
+
+# ═══════════════════════════════════════════════════════════════════
+# MODULE BANNIÈRES DÉFILANTES — Top Bar Shop (texte + image)
+# ═══════════════════════════════════════════════════════════════════
+
+def init_banner_db():
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        conn.executescript("""
+        CREATE TABLE IF NOT EXISTS shop_banners (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            type         TEXT    NOT NULL DEFAULT 'text',
+            content      TEXT    NOT NULL DEFAULT '',
+            image_url    TEXT    DEFAULT '',
+            icon         TEXT    DEFAULT '',
+            color        TEXT    DEFAULT '#ffffff',
+            bg_color     TEXT    DEFAULT '',
+            link_url     TEXT    DEFAULT '',
+            display_order INTEGER DEFAULT 0,
+            is_active    INTEGER DEFAULT 1,
+            created_at   TEXT    DEFAULT CURRENT_TIMESTAMP,
+            updated_at   TEXT    DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+        conn.commit()
+        # Données de démo si vide
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM shop_banners")
+        if cur.fetchone()[0] == 0:
+            demos = [
+                ('text','🚚 Livraison gratuite pour toute commande > 15 000 XAF','','fas fa-truck','#ffffff','','',0,1),
+                ('text','🟠 Orange Money · 🟡 MTN MoMo · Paiement 100% sécurisé','','fas fa-shield-alt','#ffffff','','',1,1),
+                ('text',"🔥 Jusqu'à -50% sur les produits électroniques cette semaine !",'','fas fa-fire','#fde68a','','',2,1),
+                ('text','📦 Livraison partout au Cameroun en 3-7 jours ouvrables','','fas fa-map-marker-alt','#ffffff','','',3,1),
+                ('text','💬 Support WhatsApp disponible 8h-20h du Lundi au Samedi','','fab fa-whatsapp','#bbf7d0','','',4,1),
+            ]
+            cur.executemany("""
+                INSERT INTO shop_banners
+                (type,content,image_url,icon,color,bg_color,link_url,display_order,is_active)
+                VALUES (?,?,?,?,?,?,?,?,?)
+            """, demos)
+            conn.commit()
+    except Exception as e:
+        print(f"[Banner] init error: {e}")
+    finally:
+        conn.close()
+
+try:
+    init_banner_db()
+except Exception as _e:
+    print(f"[Banner] init skipped: {_e}")
+
+
+@app.route('/shop/api/banners', methods=['GET'])
+def shop_get_banners():
+    """Retourne les bannières actives pour la boutique publique."""
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id,type,content,image_url,icon,color,bg_color,link_url
+            FROM shop_banners WHERE is_active=1
+            ORDER BY display_order ASC, id ASC
+        """)
+        banners = [dict(r) for r in cur.fetchall()]
+        return jsonify({'success': True, 'banners': banners})
+    except Exception as e:
+        return jsonify({'success': False, 'banners': [], 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/all', methods=['GET'])
+@login_required
+def shop_get_banners_all():
+    """Retourne toutes les bannières (admin)."""
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM shop_banners ORDER BY display_order ASC, id ASC")
+        banners = [dict(r) for r in cur.fetchall()]
+        return jsonify({'success': True, 'banners': banners})
+    except Exception as e:
+        return jsonify({'success': False, 'banners': [], 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners', methods=['POST'])
+@login_required
+def shop_create_banner():
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    content = (d.get('content') or '').strip()
+    if not content and not d.get('image_url'):
+        return jsonify({'success':False,'error':'Contenu ou image requis'})
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO shop_banners
+            (type,content,image_url,icon,color,bg_color,link_url,display_order,is_active)
+            VALUES (?,?,?,?,?,?,?,?,?)
+        """, (d.get('type','text'), content, d.get('image_url',''),
+              d.get('icon',''), d.get('color','#ffffff'), d.get('bg_color',''),
+              d.get('link_url',''), int(d.get('display_order',0)),
+              1 if d.get('is_active',True) else 0))
+        conn.commit()
+        return jsonify({'success':True, 'id':cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/<int:bid>', methods=['PUT'])
+@login_required
+def shop_update_banner(bid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        conn.execute("""
+            UPDATE shop_banners SET
+                type=?,content=?,image_url=?,icon=?,color=?,
+                bg_color=?,link_url=?,display_order=?,is_active=?,
+                updated_at=CURRENT_TIMESTAMP
+            WHERE id=?
+        """, (d.get('type','text'), (d.get('content') or '').strip(),
+              d.get('image_url',''), d.get('icon',''), d.get('color','#ffffff'),
+              d.get('bg_color',''), d.get('link_url',''),
+              int(d.get('display_order',0)),
+              1 if d.get('is_active',True) else 0, bid))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/<int:bid>/toggle', methods=['POST'])
+@login_required
+def shop_toggle_banner(bid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE shop_banners SET is_active=1-is_active,updated_at=CURRENT_TIMESTAMP WHERE id=?", (bid,))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/<int:bid>/order', methods=['POST'])
+@login_required
+def shop_reorder_banner(bid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE shop_banners SET display_order=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                     (int(d.get('order',0)), bid))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/<int:bid>', methods=['DELETE'])
+@login_required
+def shop_delete_banner(bid):
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        # Supprimer image locale si uploadée
+        cur = conn.cursor()
+        cur.execute("SELECT image_url FROM shop_banners WHERE id=?", (bid,))
+        row = cur.fetchone()
+        if row and row['image_url'] and '/uploads/banners/' in row['image_url']:
+            local = os.path.join('static', row['image_url'].lstrip('/'))
+            try:
+                if os.path.exists(local): os.remove(local)
+            except Exception: pass
+        conn.execute("DELETE FROM shop_banners WHERE id=?", (bid,))
+        conn.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/upload-image', methods=['POST'])
+@login_required
+def shop_upload_banner_image():
+    if session.get('role') not in ('admin','superadmin'):
+        return jsonify({'success':False,'error':'Non autorisé'}), 403
+    if 'image' not in request.files:
+        return jsonify({'success':False,'error':'Aucun fichier'})
+    f = request.files['image']
+    if not f or not f.filename or not allowed_file(f.filename):
+        return jsonify({'success':False,'error':'Fichier invalide'})
+    try:
+        ext   = f.filename.rsplit('.',1)[1].lower()
+        fname = secure_filename(f'banner_{datetime.now().strftime("%Y%m%d_%H%M%S%f")}.{ext}')
+        dest  = os.path.join(app.config['UPLOAD_FOLDER'], 'banners')
+        os.makedirs(dest, exist_ok=True)
+        f.save(os.path.join(dest, fname))
+        url = f'/static/uploads/banners/{fname}'
+        return jsonify({'success':True, 'url':url})
+    except Exception as e:
+        return jsonify({'success':False,'error':str(e)})
+
+# ── FIN MODULE BANNIÈRES ─────────────────────────────────────────────
 
 # ═══════════════════════════════════════════════════════════════════
 # NOUVELLES ROUTES : accès étendu, inactivité, logs activité, factures
