@@ -242,6 +242,7 @@
     <div class="sh">
         <div class="st">👥 Comptes utilisateurs</div>
         <button class="btn btn-primary" onclick="openModal('create')">+ Nouveau compte</button>
+        <a href="/shop/admin" target="_blank" class="btn" style="background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.3);text-decoration:none">🛍 Panneau Boutique</a>
     </div>
     <div class="tw">
         <div class="tb">
@@ -263,7 +264,7 @@
         </div>
         {% if users %}
         <table id="usersTable">
-            <thead><tr><th>#</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Créé</th><th>Dernière connexion</th><th>Actions</th></tr></thead>
+            <thead><tr><th>#</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Statut</th><th>Boutique</th><th>Créé</th><th>Dernière connexion</th><th>Actions</th></tr></thead>
             <tbody>
             {% for u in users %}
             <tr data-role="{{ u.role }}" data-status="{{ u.status }}"{% if u.id == session.get('user_id') %} class="my-row"{% endif %}>
@@ -277,6 +278,11 @@
                 <td data-label="Email" style="color:var(--muted)">{{ u.email }}</td>
                 <td data-label="Rôle"><span class="chip chip-{{ u.role }}">{{ u.role }}</span></td>
                 <td data-label="Statut"><span class="chip chip-{{ u.status }}">{{ u.status }}</span></td>
+                <td data-label="Boutique" style="text-align:center">
+                    {% if u.role in ('admin','superadmin') %}<span title="Accès total" style="color:#10b981;font-size:.8rem">⭐ Admin</span>
+                    {% elif u.shop_access %}<span title="Accès boutique activé" style="color:#10b981;font-size:.8rem">🛍 Oui</span>
+                    {% else %}<span style="color:var(--muted);font-size:.75rem">—</span>{% endif %}
+                </td>
                 <td data-label="Créé" style="color:var(--muted);font-size:.78rem">{{ u.created_at[:10] if u.created_at else '—' }}</td>
                 <td data-label="Connexion" style="color:var(--muted);font-size:.78rem">{{ u.last_login[:16].replace('T',' ') if u.last_login else 'jamais' }}</td>
                 <td data-label="Actions"><div class="tda">
@@ -320,6 +326,21 @@
             <option value="suspended">⚠️ Suspendu</option>
         </select>
     </div>
+    <div class="fg" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:.8rem">
+        <label style="display:flex;align-items:center;gap:.5rem;font-weight:700;margin-bottom:.6rem">
+            <span style="font-size:1rem">🛍</span> Accès Boutique
+        </label>
+        <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer">
+            <input type="checkbox" id="newShopAccess" style="accent-color:#10b981;width:15px;height:15px">
+            <span style="font-size:.82rem">Activer l'accès au panneau boutique</span>
+        </label>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem" id="newShopPermsBlock" style="display:none">
+            <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="newShopAdd" style="accent-color:#10b981"> ➕ Ajouter produits</label>
+            <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="newShopEdit" style="accent-color:#10b981"> ✏️ Modifier produits</label>
+            <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="newShopDelete" style="accent-color:#10b981"> 🗑️ Supprimer produits</label>
+        </div>
+        <div class="fh">💡 L'utilisateur verra l'onglet "Boutique" dans sa navigation.</div>
+    </div>
     <div class="ma"><button class="btn btn-ghost" onclick="closeModal('create')">Annuler</button><button class="btn btn-primary" onclick="createUser()">Créer</button></div>
 </div></div>
 
@@ -343,6 +364,18 @@
             <option value="inactive">⛔ Inactif</option>
             <option value="suspended">⚠️ Suspendu</option>
         </select>
+    </div>
+    <div class="fg" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:.8rem">
+        <label style="display:flex;align-items:center;gap:.5rem;font-weight:700;margin-bottom:.6rem"><span style="font-size:1rem">🛍</span> Accès Boutique</label>
+        <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer">
+            <input type="checkbox" id="editShopAccess" style="accent-color:#10b981;width:15px;height:15px">
+            <span style="font-size:.82rem">Activer l'accès au panneau boutique</span>
+        </label>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem">
+            <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="editShopAdd" style="accent-color:#10b981"> ➕ Ajouter</label>
+            <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="editShopEdit" style="accent-color:#10b981"> ✏️ Modifier</label>
+            <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="editShopDelete" style="accent-color:#10b981"> 🗑️ Supprimer</label>
+        </div>
     </div>
     <div class="ma"><button class="btn btn-ghost" onclick="closeModal('edit')">Annuler</button><button class="btn btn-primary" onclick="updateUser()">Enregistrer</button></div>
 </div></div>
@@ -538,7 +571,20 @@ function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function openModal(t){document.getElementById('modal'+cap(t)).classList.add('open')}
 function closeModal(t){document.getElementById('modal'+cap(t)).classList.remove('open')}
 document.querySelectorAll('.mb').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
-function openEditModal(id,role,status,name){document.getElementById('editUserId').value=id;document.getElementById('editName').textContent=name;document.getElementById('editRole').value=role;document.getElementById('editStatus').value=status;openModal('edit')}
+function openEditModal(id,role,status,name){
+    document.getElementById('editUserId').value=id;
+    document.getElementById('editName').textContent=name;
+    document.getElementById('editRole').value=role;
+    document.getElementById('editStatus').value=status;
+    // Load shop permissions via API
+    fetch('/admin/get-shop-permissions/'+id).then(r=>r.json()).then(d=>{
+        document.getElementById('editShopAccess').checked = !!(d.access || role==='admin' || role==='superadmin');
+        document.getElementById('editShopAdd').checked    = !!(d.add);
+        document.getElementById('editShopEdit').checked   = !!(d.edit);
+        document.getElementById('editShopDelete').checked = !!(d.delete);
+    }).catch(()=>{});
+    openModal('edit');
+}
 function openResetModal(id,name){document.getElementById('resetUserId').value=id;document.getElementById('resetName').textContent=name;document.getElementById('resetPassword').value='';openModal('reset')}
 function confirmDelete(id,name){document.getElementById('deleteUserId').value=id;document.getElementById('deleteName').textContent=name;openModal('delete')}
 function toast(msg,type='success'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast'+(type==='error'?' error':type==='warning'?' warning':'');t.textContent=(type==='error'?'❌ ':type==='warning'?'⚠️ ':'✅ ')+msg;c.appendChild(t);setTimeout(()=>t.remove(),4000)}
@@ -666,8 +712,27 @@ async function savePerms() {
 }
 
 /* ─── CRUD USERS ─── */
-async function createUser(){const u=document.getElementById('newUsername').value.trim(),e=document.getElementById('newEmail').value.trim(),p=document.getElementById('newPassword').value.trim(),r=document.getElementById('newRole').value,s=document.getElementById('newStatus').value;if(!u||!e||!p){toast('Remplissez tous les champs','warning');return}const res=await api('/admin/create-user',{username:u,email:e,password:p,role:r,status:s});if(res.success){toast(res.message);closeModal('create');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
-async function updateUser(){const id=document.getElementById('editUserId').value,r=document.getElementById('editRole').value,s=document.getElementById('editStatus').value;const res=await api('/admin/update-user/'+id,{role:r,status:s});if(res.success){toast(res.message);closeModal('edit');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
+async function createUser(){
+    const u=document.getElementById('newUsername').value.trim(),
+          e=document.getElementById('newEmail').value.trim(),
+          p=document.getElementById('newPassword').value.trim(),
+          r=document.getElementById('newRole').value,
+          s=document.getElementById('newStatus').value;
+    const shopAccess = document.getElementById('newShopAccess').checked;
+    const shopPerms  = {add: document.getElementById('newShopAdd').checked, edit: document.getElementById('newShopEdit').checked, delete: document.getElementById('newShopDelete').checked};
+    if(!u||!e||!p){toast('Remplissez tous les champs','warning');return}
+    const res=await api('/admin/create-user',{username:u,email:e,password:p,role:r,status:s,shop_access:shopAccess,shop_permissions:shopPerms});
+    if(res.success){toast(res.message);closeModal('create');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')
+}
+async function updateUser(){
+    const id=document.getElementById('editUserId').value,
+          r=document.getElementById('editRole').value,
+          s=document.getElementById('editStatus').value;
+    const shopAccess = document.getElementById('editShopAccess').checked;
+    const shopPerms  = {add: document.getElementById('editShopAdd').checked, edit: document.getElementById('editShopEdit').checked, delete: document.getElementById('editShopDelete').checked};
+    const res=await api('/admin/update-user/'+id,{role:r,status:s,shop_access:shopAccess,shop_permissions:shopPerms});
+    if(res.success){toast(res.message);closeModal('edit');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')
+}
 async function resetPassword(){const id=document.getElementById('resetUserId').value,p=document.getElementById('resetPassword').value.trim();if(p.length<6){toast('Mot de passe trop court','warning');return}const res=await api('/admin/reset-password/'+id,{password:p});if(res.success){toast(res.message);closeModal('reset')}else toast(res.message,'error')}
 async function deleteUser(){const id=document.getElementById('deleteUserId').value;const res=await api('/admin/delete-user/'+id,{});if(res.success){toast(res.message);closeModal('delete');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
 function filterTable(){const q=document.getElementById('searchInput').value.toLowerCase(),r=document.getElementById('filterRole').value,s=document.getElementById('filterStatus').value;document.querySelectorAll('#usersTable tbody tr').forEach(row=>{const m=(!q||row.textContent.toLowerCase().includes(q))&&(!r||row.dataset.role===r)&&(!s||row.dataset.status===s);row.style.display=m?'':'none'})}

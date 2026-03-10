@@ -3951,7 +3951,7 @@ def admin_panel():
     users, stats = [], {}
     if conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id,username,email,role,status,created_at,last_login FROM users ORDER BY created_at DESC")
+        cursor.execute("SELECT id,username,email,role,status,shop_access,shop_permissions,created_at,last_login FROM users ORDER BY created_at DESC")
         users = [dict(r) for r in cursor.fetchall()]
         cursor.execute("SELECT COUNT(*) FROM users");               stats['total_users']      = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM users WHERE status='active'"); stats['active_users'] = cursor.fetchone()[0]
@@ -3996,6 +3996,8 @@ def admin_create_user():
     data = request.get_json(force=True, silent=True)
     username,email,password = data.get('username','').strip(), data.get('email','').strip(), data.get('password','').strip()
     role, status = data.get('role','user'), data.get('status','active')
+    shop_access = 1 if data.get('shop_access', False) else 0
+    shop_perms = data.get('shop_permissions', {'add': False, 'edit': False, 'delete': False})
     allowed = ['viewer','user','editor','admin']
     if session.get('role')=='superadmin': allowed.append('superadmin')
     if not all([username,email,password]): return jsonify({'success':False,'message':'Tous les champs sont requis'}),400
@@ -4005,8 +4007,8 @@ def admin_create_user():
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM users WHERE email=?", (email,))
         if cursor.fetchone(): conn.close(); return jsonify({'success':False,'message':'Email déjà utilisé'}),409
-        cursor.execute("INSERT INTO users (username,email,password,role,status,created_at) VALUES (?,?,?,?,?,?)",
-                       (username,email,generate_password_hash(password),role,status,datetime.now().isoformat()))
+        cursor.execute("INSERT INTO users (username,email,password,role,status,shop_access,shop_permissions,created_at) VALUES (?,?,?,?,?,?,?,?)",
+                       (username,email,generate_password_hash(password),role,status,shop_access,json.dumps(shop_perms),datetime.now().isoformat()))
         conn.commit(); new_id=cursor.lastrowid; conn.close()
         return jsonify({'success':True,'message':f'Compte créé (ID {new_id})','id':new_id})
     return jsonify({'success':False,'message':'Erreur DB'}),500
@@ -4016,6 +4018,8 @@ def admin_create_user():
 def admin_update_user(user_id):
     data = request.get_json(force=True, silent=True)
     role, status = data.get('role'), data.get('status')
+    shop_access = 1 if data.get('shop_access', False) else 0
+    shop_perms = data.get('shop_permissions')
     allowed = ['viewer','user','editor','admin']
     if session.get('role')=='superadmin': allowed.append('superadmin')
     if role and role not in allowed: return jsonify({'success':False,'message':'Rôle non autorisé'}),403
@@ -4024,6 +4028,8 @@ def admin_update_user(user_id):
         cursor = conn.cursor()
         if role:   cursor.execute("UPDATE users SET role=?,updated_at=? WHERE id=?",   (role,   datetime.now().isoformat(), user_id))
         if status: cursor.execute("UPDATE users SET status=?,updated_at=? WHERE id=?", (status, datetime.now().isoformat(), user_id))
+        cursor.execute("UPDATE users SET shop_access=?,shop_permissions=?,updated_at=? WHERE id=?",
+                       (shop_access, json.dumps(shop_perms) if shop_perms else '{}', datetime.now().isoformat(), user_id))
         conn.commit(); conn.close()
         return jsonify({'success':True,'message':'Utilisateur mis à jour'})
     return jsonify({'success':False,'message':'Erreur DB'}),500
@@ -4075,6 +4081,19 @@ def admin_update_permissions(user_id):
         conn.commit(); conn.close()
         return jsonify({'success': True, 'message': 'Permissions mises à jour'})
     return jsonify({'success': False, 'message': 'Erreur DB'}), 500
+
+@app.route('/admin/get-shop-permissions/<int:user_id>')
+@admin_required
+def admin_get_shop_permissions(user_id):
+    conn = get_db_connection()
+    if conn:
+        row = conn.execute("SELECT shop_access, shop_permissions FROM users WHERE id=?", (user_id,)).fetchone()
+        conn.close()
+        if row:
+            perms = json.loads(row['shop_permissions']) if row['shop_permissions'] else {}
+            return jsonify({'access': bool(row['shop_access']), 'add': perms.get('add', False),
+                            'edit': perms.get('edit', False), 'delete': perms.get('delete', False)})
+    return jsonify({'access': False, 'add': False, 'edit': False, 'delete': False})
 
 @app.route('/admin/get-permissions/<int:user_id>')
 @admin_required
