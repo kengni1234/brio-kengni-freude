@@ -8453,7 +8453,7 @@ def shop_stock_value():
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 ANTHROPIC_URL     = 'https://api.anthropic.com/v1/messages'
-CLAUDE_MODEL      = 'claude-sonnet-4-5'
+CLAUDE_MODEL      = 'claude-sonnet-4-6'
 
 # Rate limiting simple en mémoire
 import collections as _collections
