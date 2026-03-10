@@ -6988,6 +6988,22 @@ def init_shop_db():
             delivery_info  TEXT    DEFAULT 'Livraison 3-7 jours',
             reviews_count  INTEGER DEFAULT 0,
             is_active      INTEGER DEFAULT 1,
+            brand          TEXT    DEFAULT '',
+            sku            TEXT    DEFAULT '',
+            colors         TEXT    DEFAULT '',
+            sizes          TEXT    DEFAULT '',
+            materials      TEXT    DEFAULT '',
+            warranty       TEXT    DEFAULT '',
+            origin         TEXT    DEFAULT '',
+            box_contents   TEXT    DEFAULT '',
+            tags           TEXT    DEFAULT '',
+            source_url     TEXT    DEFAULT '',
+            internal_notes TEXT    DEFAULT '',
+            specs          TEXT    DEFAULT '{}',
+            length         TEXT    DEFAULT '',
+            width          TEXT    DEFAULT '',
+            height         TEXT    DEFAULT '',
+            weight         TEXT    DEFAULT '',
             created_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
             updated_at     TEXT    DEFAULT CURRENT_TIMESTAMP
         );
@@ -7013,6 +7029,19 @@ def init_shop_db():
             conn.commit()
         except Exception:
             pass
+        # Migration : ajouter colonnes détails produit si absentes
+        for col, default in [
+            ('brand','""'),('sku','""'),('colors','""'),('sizes','""'),
+            ('materials','""'),('warranty','""'),('origin','""'),
+            ('box_contents','""'),('tags','""'),('source_url','""'),
+            ('internal_notes','""'),('specs','"{}"'),
+            ('length','""'),('width','""'),('height','""'),('weight','""'),
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE shop_products ADD COLUMN {col} TEXT DEFAULT ''")
+                conn.commit()
+            except Exception:
+                pass
         cur = conn.cursor()
         cur.execute("SELECT COUNT(*) FROM shop_products")
         if cur.fetchone()[0] == 0:
@@ -7154,7 +7183,6 @@ def shop_create_order():
                     WHERE id = ? AND stock > 0
                 """, (qty, pid))
         conn.commit()
-        # Notifier boutique + admin du changement de stock
         _sse_broadcast_product_change('stock_updated')
         try:
             cur.execute("""
@@ -7279,19 +7307,26 @@ def shop_create_product():
         cur.execute("""
             INSERT INTO shop_products
             (name,description,features,category,price,original_price,
-             stock,image_url,images,badge,delivery_info,is_active)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+             stock,image_url,images,badge,delivery_info,is_active,reviews_count,
+             brand,sku,colors,sizes,materials,warranty,origin,box_contents,
+             tags,source_url,internal_notes,specs,length,width,height,weight)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (name, d.get('description', ''), d.get('features', ''),
               d.get('category', 'electronique'),
               float(d.get('price', 0) or 0), float(d.get('original_price', 0) or 0),
               int(d.get('stock', 10)), d.get('image_url', ''),
-              images_json,
-              d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
-              1 if d.get('is_active', True) else 0))
+              images_json, d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
+              1 if d.get('is_active', True) else 0,
+              int(d.get('reviews_count', 0) or 0),
+              d.get('brand',''), d.get('sku',''), d.get('colors',''), d.get('sizes',''),
+              d.get('materials',''), d.get('warranty',''), d.get('origin',''),
+              d.get('box_contents',''), d.get('tags',''), d.get('source_url',''),
+              d.get('internal_notes',''), d.get('specs','{}'),
+              d.get('length',''), d.get('width',''), d.get('height',''), d.get('weight','')))
         conn.commit()
-        new_pid = cur.lastrowid
-        _sse_broadcast_product_change('created', new_pid)
-        return jsonify({'success': True, 'id': new_pid})
+        _new_pid = cur.lastrowid
+        _sse_broadcast_product_change('created', _new_pid)
+        return jsonify({'success': True, 'id': _new_pid})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
@@ -7311,15 +7346,25 @@ def shop_update_product(pid):
             UPDATE shop_products SET
                 name=?,description=?,features=?,category=?,price=?,
                 original_price=?,stock=?,image_url=?,images=?,badge=?,
-                delivery_info=?,is_active=?,updated_at=CURRENT_TIMESTAMP
+                delivery_info=?,is_active=?,reviews_count=?,
+                brand=?,sku=?,colors=?,sizes=?,materials=?,warranty=?,
+                origin=?,box_contents=?,tags=?,source_url=?,internal_notes=?,
+                specs=?,length=?,width=?,height=?,weight=?,
+                updated_at=CURRENT_TIMESTAMP
             WHERE id=?
         """, ((d.get('name') or '').strip(), d.get('description', ''),
               d.get('features', ''), d.get('category', 'electronique'),
               float(d.get('price', 0) or 0), float(d.get('original_price', 0) or 0),
               int(d.get('stock', 10)), d.get('image_url', ''),
-              images_json,
-              d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
-              1 if d.get('is_active', True) else 0, pid))
+              images_json, d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
+              1 if d.get('is_active', True) else 0,
+              int(d.get('reviews_count', 0) or 0),
+              d.get('brand',''), d.get('sku',''), d.get('colors',''), d.get('sizes',''),
+              d.get('materials',''), d.get('warranty',''), d.get('origin',''),
+              d.get('box_contents',''), d.get('tags',''), d.get('source_url',''),
+              d.get('internal_notes',''), d.get('specs','{}'),
+              d.get('length',''), d.get('width',''), d.get('height',''), d.get('weight',''),
+              pid))
         conn.commit()
         _sse_broadcast_product_change('updated', pid)
         return jsonify({'success': True})
@@ -7650,10 +7695,10 @@ with app.app_context():
         pass
 
 
-# ── API produits publique (lecture fraîche) ─────────────────────────
+# ── API sync produits/commandes ─────────────────────────────────────
 @app.route('/shop/api/products')
 def shop_api_products():
-    """Retourne les produits actifs en JSON — utilisé pour sync boutique/admin."""
+    """Catalogue actif en JSON pour la boutique publique."""
     conn = get_db_connection()
     try:
         cur = conn.cursor()
@@ -7662,8 +7707,7 @@ def shop_api_products():
                        FROM shop_products WHERE is_active=1
                        ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END,
                                 created_at DESC""")
-        products = [dict(r) for r in cur.fetchall()]
-        return jsonify({'success': True, 'products': products})
+        return jsonify({'success': True, 'products': [dict(r) for r in cur.fetchall()]})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
@@ -7672,15 +7716,12 @@ def shop_api_products():
 @app.route('/shop/api/products/all')
 @login_required
 def shop_api_products_all():
-    """Retourne TOUS les produits (actifs + inactifs) pour le panneau admin."""
+    """Tous les produits pour le panneau admin."""
     conn = get_db_connection()
     try:
         cur = conn.cursor()
-        cur.execute("""SELECT id,name,description,features,category,price,original_price,
-                              stock,image_url,images,badge,delivery_info,is_active,reviews_count
-                       FROM shop_products ORDER BY created_at DESC""")
-        products = [dict(r) for r in cur.fetchall()]
-        return jsonify({'success': True, 'products': products})
+        cur.execute("SELECT * FROM shop_products ORDER BY created_at DESC")
+        return jsonify({'success': True, 'products': [dict(r) for r in cur.fetchall()]})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
@@ -7689,20 +7730,19 @@ def shop_api_products_all():
 @app.route('/shop/api/orders/recent')
 @login_required
 def shop_api_orders_recent():
-    """Retourne les 200 dernières commandes pour refresh admin."""
+    """200 dernières commandes pour l'admin."""
     conn = get_db_connection()
     try:
         cur = conn.cursor()
         cur.execute("SELECT * FROM shop_orders ORDER BY created_at DESC LIMIT 200")
-        orders = [dict(r) for r in cur.fetchall()]
-        return jsonify({'success': True, 'orders': orders})
+        return jsonify({'success': True, 'orders': [dict(r) for r in cur.fetchall()]})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
         if conn: conn.close()
 
-def _sse_broadcast_product_change(action, pid=None):
-    """Diffuse un événement SSE quand un produit est modifié/créé/supprimé."""
+def _sse_broadcast_product_change(action='updated', pid=None):
+    """Diffuse un SSE quand un produit change."""
     try:
         _sse_broadcast({'type': 'product_updated', 'action': action, 'pid': pid})
     except Exception:

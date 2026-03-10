@@ -519,6 +519,12 @@
       <div class="img-gal" id="imgGal"></div>
       <input type="file" id="imgFileGlobal" accept="image/*" style="display:none" onchange="handleGalFiles(this)">
       <div class="upbar" id="galUpbar" style="margin-top:.4rem"><div class="upbar-f" id="galUpbarf"></div></div>
+      <!-- Fallback URL directe -->
+      <div style="margin-top:.7rem;display:flex;gap:.4rem;align-items:center">
+        <input class="fi" id="pimgUrl" placeholder="… ou collez une URL image directement" style="font-size:.75rem;flex:1"
+               oninput="if(this.value.trim()){galleryUrls[0]=this.value.trim();document.getElementById('pimg').value=this.value.trim();const p=document.getElementById('imgPrev');p.src=this.value.trim();p.style.display='block';initGallery();}">
+        <button class="btn-g" style="font-size:.72rem;padding:.35rem .6rem;white-space:nowrap" onclick="if(document.getElementById('pimgUrl').value.trim()){galleryUrls[0]=document.getElementById('pimgUrl').value.trim();document.getElementById('pimg').value=galleryUrls[0];initGallery();toast('Image principale définie ✅');}">✓ Appliquer</button>
+      </div>
     </div></div>
     <div class="fcard"><div class="fcard-hd"><i class="fas fa-link"></i> URL Source</div><div class="fcard-bd">
       <div class="fg"><label class="fl">Lien Alibaba / AliExpress (interne)</label><input class="fi" id="psource" placeholder="https://…"></div>
@@ -1199,32 +1205,50 @@ function galleryDrop(e,slot){
   uploadGalFile(f,slot);
 }
 async function uploadGalFile(f,slot){
-  if(!f||f.size>5*1024*1024){toast('Max 5 Mo',false);return;}
-  // Appliquer le watermark k-Ni avant upload
-  const watermarked = await applyKniWatermark(f);
+  if(!f){toast('Aucun fichier sélectionné',false);return;}
+  if(f.size>5*1024*1024){toast('Max 5 Mo par image',false);return;}
+  if(!f.type.startsWith('image/')){toast('Fichier image requis',false);return;}
+
   const isMain=slot===0;
   const ub=document.getElementById(isMain?'upbar':'galUpbar');
   const ubf=document.getElementById(isMain?'upbarf':'galUpbarf');
   ub.style.display='block'; let p=0;
-  const t=setInterval(()=>{p=Math.min(p+8,82);ubf.style.width=p+'%'},55);
-  const fd=new FormData(); fd.append('image',watermarked,'image.jpg');
+  const t=setInterval(()=>{p=Math.min(p+10,85);ubf.style.width=p+'%'},60);
+
+  // Tenter watermark, fallback direct si échec
+  let fileToSend = f;
+  try { fileToSend = await applyKniWatermark(f); } catch(e){ fileToSend = f; }
+
+  const fd=new FormData();
+  fd.append('image', fileToSend, fileToSend.name || 'image.jpg');
   try{
     const r=await fetch('/shop/api/product/upload-image',{method:'POST',body:fd});
-    const res=await r.json(); clearInterval(t);
+    clearInterval(t);
+    if(!r.ok){ ub.style.display='none'; toast('❌ Erreur serveur '+r.status,false); return; }
+    const res=await r.json();
+    ubf.style.width='100%';
+    setTimeout(()=>{ub.style.display='none';ubf.style.width='0'},420);
     if(res.success){
-      ubf.style.width='100%';
-      setTimeout(()=>{ub.style.display='none';ubf.style.width='0'},420);
       galleryUrls[slot]=res.url;
       if(isMain){
         const prev=document.getElementById('imgPrev');
         prev.src=res.url; prev.style.display='block';
-        document.getElementById('imgIco').style.display='none';
-        document.querySelector('#imgMainZone small').style.display='none';
+        const ico=document.getElementById('imgIco'); if(ico) ico.style.display='none';
+        const sm=document.querySelector('#imgMainZone small'); if(sm) sm.style.display='none';
         document.getElementById('pimg').value=res.url;
       }
-      initGallery(); toast(`Photo ${slot+1} uploadée ✅`);
-    } else {ub.style.display='none';toast('❌ '+res.error,false);}
-  } catch(e){clearInterval(t);ub.style.display='none';toast('Erreur réseau',false);}
+      initGallery();
+      toast(`Photo ${slot+1} ajoutée ✅`);
+    } else {
+      ub.style.display='none';
+      toast('❌ '+(res.error||'Upload échoué'),false);
+    }
+  }catch(e){
+    clearInterval(t); ub.style.display='none';
+    toast('❌ Erreur réseau — vérifiez votre connexion',false);
+    console.error('[Upload]',e);
+  }
+}
 }
 
 async function applyKniWatermark(file){
@@ -1391,15 +1415,7 @@ async function delProd(id,name){
   if(!confirm(`Supprimer "${name}" ?`))return;
   const r=await fetch(`/shop/api/product/${id}`,{method:'DELETE'});
   const res=await r.json();
-  if(res.success){
-    delete PRODS[id];
-    document.getElementById(`pc-${id}`)?.remove();
-    toast('Produit supprimé');
-    // Sync la boutique via un refresh silencieux du compte produit
-    document.querySelectorAll('.pcount-live').forEach(el => {
-      el.textContent = Object.values(PRODS).filter(p=>p.is_active).length;
-    });
-  }
+  if(res.success){document.getElementById(`pc-${id}`)?.remove();toast('Produit supprimé');}
   else toast('❌ '+res.error,false);
 }
 function showProd(id){
@@ -2563,30 +2579,30 @@ document.addEventListener('DOMContentLoaded', ()=>{
 (function(){
   if(!window.EventSource) return;
   let sseRetry = 0;
+  let _prodRefreshTimer = null;
 
-  // ── Refresh produits/commandes depuis l'API ──────────────────────
-  window._refreshProdsTimer = null;
-  async function refreshProds(){
+  // ── Refresh PRODS en mémoire depuis l'API ──────────────────────
+  window.refreshProds = async function(){
     try {
       const r = await fetch('/shop/api/products/all');
       const d = await r.json();
       if(!d.success) return;
-      // Mettre à jour PRODS en mémoire
+      // Vider et reconstruire PRODS
+      Object.keys(PRODS).forEach(k => delete PRODS[k]);
       d.products.forEach(p => { PRODS[p.id] = p; });
-      // Supprimer les produits retirés
-      Object.keys(PRODS).forEach(k => { if(!d.products.find(p=>p.id==k)) delete PRODS[k]; });
+      toast('🔄 Catalogue synchronisé');
     } catch(e) {}
-  }
-  async function refreshOrders(){
+  };
+
+  window.refreshOrders = async function(){
     try {
       const r = await fetch('/shop/api/orders/recent');
       const d = await r.json();
       if(!d.success) return;
+      Object.keys(ORDERS).forEach(k => delete ORDERS[k]);
       d.orders.forEach(o => { ORDERS[o.id] = o; });
     } catch(e) {}
-  }
-  window.refreshProds   = refreshProds;
-  window.refreshOrders  = refreshOrders;
+  };
 
   function connect(){
     const es = new EventSource('/shop/stream');
@@ -2599,25 +2615,20 @@ document.addEventListener('DOMContentLoaded', ()=>{
           refreshOrders();
           // Blink tab title
           let orig = document.title, i=0;
-          const iv = setInterval(()=>{ document.title = i%2===0 ? '🔔 Nouvelle commande !' : orig; if(++i>8){ clearInterval(iv); document.title=orig; }}, 700);
+          const iv = setInterval(()=>{
+            document.title = i%2===0 ? '🔔 Nouvelle commande !' : orig;
+            if(++i>8){ clearInterval(iv); document.title=orig; }
+          }, 700);
           // Update pending badge
           const badge = document.getElementById('pendingBadgeLive');
           if(badge){ badge.style.display='inline'; badge.textContent=parseInt(badge.textContent||0)+1; }
         }
         if(data.type==='product_updated'){
-          // Debounce 600ms pour éviter les refreshs en cascade
-          clearTimeout(window._refreshProdsTimer);
-          window._refreshProdsTimer = setTimeout(()=>{
-            refreshProds().then(()=>{
-              // Toast discret si c'est une action d'un autre utilisateur
-              if(data.action && data.action !== '_self'){
-                toast('🔄 Catalogue mis à jour');
-              }
-            });
-          }, 600);
+          // Debounce 800ms pour éviter cascade
+          clearTimeout(_prodRefreshTimer);
+          _prodRefreshTimer = setTimeout(()=> window.refreshProds(), 800);
         }
       } catch(ex){}
-    };
     };
 
     es.onerror = function(){
