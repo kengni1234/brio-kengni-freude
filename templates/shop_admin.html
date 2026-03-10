@@ -405,7 +405,16 @@
     </div>
   </div>
   <div class="frow">
-    <input class="fsrch" placeholder="🔍 Rechercher…" oninput="filterP(this.value)">
+    <div style="position:relative;flex:1;max-width:320px">
+      <i class="fas fa-search" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:.78rem;pointer-events:none"></i>
+      <input class="fsrch" id="prodSearch" placeholder="Nom, catégorie, prix…" oninput="filterP(this.value)" autocomplete="off" style="padding-left:2.2rem;padding-right:2rem"
+             onfocus="openProdDropdown()" onblur="closeProdDropdownDelay()" onkeydown="prodSearchKbd(event)">
+      <i class="fas fa-times" id="prodSearchClear" onclick="clearProdSearch()" style="position:absolute;right:.7rem;top:50%;transform:translateY(-50%);color:var(--text-secondary);cursor:pointer;font-size:.78rem;display:none"></i>
+      <!-- Autocomplete -->
+      <div id="prodSearchDrop" style="position:absolute;top:calc(100%+5px);left:0;right:0;background:var(--bg-card);border:1.5px solid var(--primary-color);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);z-index:9999;display:none;max-height:300px;overflow-y:auto;overflow-x:hidden" onmousedown="return false">
+        <div id="prodSearchDropContent"></div>
+      </div>
+    </div>
     <button class="fchip on" data-fc="all" onclick="filterCat(this)">Tout</button>
     <button class="fchip" data-fc="electronique" onclick="filterCat(this)">📱</button>
     <button class="fchip" data-fc="mode" onclick="filterCat(this)">👗</button>
@@ -572,7 +581,14 @@
       <span id="pendingBadgeLive" style="background:#ef4444;color:#fff;border-radius:20px;font-size:.58rem;padding:.05rem .38rem;font-weight:800;display:{% if pending_count %}inline{% else %}none{% endif %}">{{ pending_count }}</span>
     </h4>
     <div style="display:flex;gap:.45rem;align-items:center;flex-wrap:wrap">
-      <input class="fsrch" placeholder="🔍 Nom, téléphone…" oninput="filterOrds(this.value)" style="max-width:200px">
+      <div style="position:relative">
+        <i class="fas fa-search" style="position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:.75rem;pointer-events:none"></i>
+        <input class="fsrch" placeholder="Nom, téléphone, #ID…" oninput="filterOrds(this.value)" style="max-width:220px;padding-left:2.1rem"
+               id="ordSearch" autocomplete="off" onfocus="openOrdDropdown()" onblur="closeOrdDropdownDelay()" onkeydown="ordSearchKbd(event)">
+        <div id="ordSearchDrop" style="position:absolute;top:calc(100%+5px);left:0;min-width:290px;background:var(--bg-card);border:1.5px solid var(--primary-color);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);z-index:9999;display:none;max-height:280px;overflow-y:auto" onmousedown="return false">
+          <div id="ordSearchDropContent"></div>
+        </div>
+      </div>
       <button class="btn-g" id="btnTableView" onclick="setOrdView('table')" style="font-size:.75rem"><i class="fas fa-table"></i> Tableau</button>
       <button class="btn-g" id="btnKanbanView" onclick="setOrdView('kanban')" style="font-size:.75rem"><i class="fas fa-columns"></i> Kanban</button>
     </div>
@@ -1498,9 +1514,15 @@ async function delOrd(id){
 /* ══ FILTERS ══ */
 let pCat='all', oStatus='all';
 function filterCat(btn){document.querySelectorAll('#sec-prod .fchip[data-fc]').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pCat=btn.dataset.fc;applyPF();}
-function filterP(q){applyPF(q);}
+function filterP(q){
+  const cl=document.getElementById('prodSearchClear');
+  if(cl) cl.style.display=q?'':'none';
+  buildProdDropdown(q);
+  document.getElementById('prodSearchDrop').style.display='block';
+  applyPF(q);
+}
 function applyPF(q=''){
-  const s=(q||document.querySelector('#sec-prod .fsrch')?.value||'').toLowerCase();
+  const s=(q||document.getElementById('prodSearch')?.value||'').toLowerCase();
   const sf=document.getElementById('stockFilt')?.value||'all';
   document.querySelectorAll('.pcard').forEach(c=>{
     const catOk=pCat==='all'||c.dataset.cat===pCat;
@@ -1510,12 +1532,91 @@ function applyPF(q=''){
     c.style.display=(catOk&&nmOk&&stkOk)?'':'none';
   });
 }
+// ── Product Search Autocomplete ──
+function buildProdDropdown(q){
+  const cont=document.getElementById('prodSearchDropContent'); if(!cont) return;
+  const qq=(q||'').trim().toLowerCase();
+  const prods=Object.values(PRODS||{});
+  let html='';
+  const catMap={electronique:'📱 Électronique',mode:'👗 Mode',maison:'🏠 Maison',sport:'⚽ Sport',beaute:'💄 Beauté'};
+  if(!qq){
+    // Show product count per category
+    html+=`<div style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);padding:.5rem .8rem .3rem;border-bottom:1px solid var(--border-color)">Catégories</div>`;
+    Object.entries(catMap).forEach(([k,v])=>{
+      const cnt=prods.filter(p=>p.category===k).length; if(!cnt)return;
+      html+=`<div style="padding:.5rem .8rem;cursor:pointer;display:flex;align-items:center;gap:.55rem;font-size:.82rem;transition:background .1s" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="document.getElementById('prodSearch').value='';filterP('');document.querySelectorAll('#sec-prod .fchip[data-fc]').forEach(b=>b.dataset.fc===\`${k}\`?b.classList.add('on'):b.classList.remove('on'));pCat='${k}';applyPF();closeProdDropdown()"><span style="font-size:1rem">${v.split(' ')[0]}</span><span style="flex:1;font-weight:600">${v.slice(v.indexOf(' ')+1)}</span><span style="background:rgba(0,212,170,.12);color:var(--primary-color);border-radius:20px;font-size:.68rem;font-weight:700;padding:.1rem .45rem">${cnt}</span></div>`;
+    });
+  } else {
+    const matches=prods.filter(p=>(p.name||'').toLowerCase().includes(qq)||(p.category||'').toLowerCase().includes(qq)).slice(0,8);
+    if(matches.length){
+      html+=`<div style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);padding:.5rem .8rem .3rem;border-bottom:1px solid var(--border-color)">Produits (${matches.length})</div>`;
+      matches.forEach(p=>{
+        const hl=p.name.replace(new RegExp(`(${qq.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'),'<mark style="background:none;color:var(--primary-color);font-weight:800">$1</mark>');
+        html+=`<div style="padding:.5rem .8rem;cursor:pointer;display:flex;align-items:center;gap:.55rem;font-size:.82rem;transition:background .1s" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="applyProdSugg('${(p.name||'').replace(/'/g,"\\'")}')"><div style="width:28px;height:28px;border-radius:6px;background:rgba(0,212,170,.1);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">${p.image_url?`<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:'🛒'}</div><div style="flex:1;min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${hl}</div><div style="font-size:.7rem;color:var(--text-secondary)">${catMap[p.category]||p.category||''} · ${p.stock<0?'Illimité':p.stock+' unités'}</div></div><div style="font-family:var(--font-mono);font-weight:700;color:var(--primary-color);font-size:.78rem;flex-shrink:0">${(p.price||0).toLocaleString('fr-FR')}<span style="font-size:.65rem">XAF</span></div></div>`;
+      });
+    } else {
+      html=`<div style="padding:1.2rem;text-align:center;color:var(--text-secondary);font-size:.82rem"><i class="fas fa-search" style="display:block;font-size:1.3rem;opacity:.2;margin-bottom:.4rem"></i>Aucun résultat pour « ${q} »</div>`;
+    }
+  }
+  cont.innerHTML=html;
+}
+function applyProdSugg(name){
+  const inp=document.getElementById('prodSearch');
+  if(inp){ inp.value=name; document.getElementById('prodSearchClear').style.display=''; }
+  closeProdDropdown(); applyPF(name);
+}
+function clearProdSearch(){
+  const inp=document.getElementById('prodSearch'); if(inp) inp.value='';
+  document.getElementById('prodSearchClear').style.display='none';
+  closeProdDropdown(); applyPF('');
+}
+function openProdDropdown(){ buildProdDropdown(document.getElementById('prodSearch')?.value||''); document.getElementById('prodSearchDrop').style.display='block'; }
+function closeProdDropdown(){ document.getElementById('prodSearchDrop').style.display='none'; }
+function closeProdDropdownDelay(){ setTimeout(closeProdDropdown,200); }
+function prodSearchKbd(e){ if(e.key==='Escape') closeProdDropdown(); else if(e.key==='Enter'){ closeProdDropdown(); applyPF(document.getElementById('prodSearch')?.value||''); } }
+
+// ── Orders Search Autocomplete ──
 function filterOS(btn){document.querySelectorAll('#ordFilts .fchip').forEach(b=>b.classList.remove('on'));btn.classList.add('on');oStatus=btn.dataset.os;applyOF();}
-function filterOrds(q){applyOF(q);}
+function filterOrds(q){
+  openOrdDropdown();
+  applyOF(q);
+}
 function applyOF(q=''){
-  const s=(q||document.querySelector('#sec-ord .fsrch')?.value||'').toLowerCase();
+  const s=(q||document.getElementById('ordSearch')?.value||'').toLowerCase();
   document.querySelectorAll('.ord-row').forEach(r=>{r.style.display=(oStatus==='all'||r.dataset.status===oStatus)&&(!s||r.dataset.q.includes(s))?'':'none';});
 }
+function buildOrdDropdown(q){
+  const cont=document.getElementById('ordSearchDropContent'); if(!cont) return;
+  const qq=(q||'').trim().toLowerCase();
+  const ords=Object.values(ORDERS||{});
+  const stMap={'pending':'⏳ Attente','paid':'✅ Payé','shipped':'🚚 Expédié','delivered':'📬 Livré','cancelled':'❌ Annulé'};
+  let html='';
+  if(!qq){
+    // Show recent + status summary
+    const counts={};
+    ords.forEach(o=>{counts[o.status]=(counts[o.status]||0)+1;});
+    html+=`<div style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);padding:.5rem .8rem .3rem;border-bottom:1px solid var(--border-color)">Filtrer par statut</div>`;
+    Object.entries(stMap).forEach(([k,v])=>{
+      const n=counts[k]||0; if(!n)return;
+      html+=`<div style="padding:.5rem .8rem;cursor:pointer;display:flex;align-items:center;gap:.55rem;font-size:.82rem;transition:background .1s" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="document.querySelectorAll('#ordFilts .fchip').forEach(b=>b.dataset.os===\`${k}\`?b.classList.add('on'):b.classList.remove('on'));oStatus='${k}';applyOF();closeOrdDropdown()">${v}<span style="margin-left:auto;background:rgba(0,212,170,.12);color:var(--primary-color);border-radius:20px;font-size:.68rem;font-weight:700;padding:.1rem .45rem">${n}</span></div>`;
+    });
+  } else {
+    const matches=ords.filter(o=>(o.customer_name||'').toLowerCase().includes(qq)||(o.customer_phone||'').toLowerCase().includes(qq)||String(o.id).includes(qq)||(o.items_summary||'').toLowerCase().includes(qq)).slice(0,7);
+    if(matches.length){
+      html+=`<div style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);padding:.5rem .8rem .3rem;border-bottom:1px solid var(--border-color)">Commandes (${matches.length})</div>`;
+      matches.forEach(o=>{
+        html+=`<div style="padding:.55rem .8rem;cursor:pointer;display:flex;align-items:center;gap:.6rem;font-size:.82rem;transition:background .1s" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="showOrd(${o.id});closeOrdDropdown()"><div style="width:28px;height:28px;border-radius:50%;background:rgba(0,212,170,.1);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:var(--primary-color);flex-shrink:0">#${o.id}</div><div style="flex:1;min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.customer_name||'—'}</div><div style="font-size:.7rem;color:var(--text-secondary)">${o.customer_phone||''} · ${(o.items_summary||'').slice(0,30)}</div></div><div style="flex-shrink:0;text-align:right"><div style="font-family:var(--font-mono);font-size:.78rem;font-weight:700;color:var(--primary-color)">${(o.total||0).toLocaleString('fr-FR')}&nbsp;XAF</div><div style="font-size:.68rem;color:var(--text-secondary)">${stMap[o.status]||o.status}</div></div></div>`;
+      });
+    } else {
+      html=`<div style="padding:1.2rem;text-align:center;color:var(--text-secondary);font-size:.82rem"><i class="fas fa-search" style="display:block;font-size:1.3rem;opacity:.2;margin-bottom:.4rem"></i>Aucune commande pour «&nbsp;${q}&nbsp;»</div>`;
+    }
+  }
+  cont.innerHTML=html;
+}
+function openOrdDropdown(){ buildOrdDropdown(document.getElementById('ordSearch')?.value||''); document.getElementById('ordSearchDrop').style.display='block'; }
+function closeOrdDropdown(){ document.getElementById('ordSearchDrop').style.display='none'; }
+function closeOrdDropdownDelay(){ setTimeout(closeOrdDropdown,200); }
+function ordSearchKbd(e){ if(e.key==='Escape') closeOrdDropdown(); else if(e.key==='Enter'){ closeOrdDropdown(); applyOF(document.getElementById('ordSearch')?.value||''); } }
 function waC(phone,ref){const n=phone.replace(/\D/g,'');const p=n.startsWith('237')?'':'237';window.open(`https://wa.me/${p}${n}?text=Bonjour, concernant votre commande ${ref}…`,'_blank');}
 /* ══ ANALYTICS ══ */
 function buildAnalytics(){

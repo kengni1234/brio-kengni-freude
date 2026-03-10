@@ -1050,12 +1050,35 @@ def analyze_trade_image(image_path, trade_data):
     
     return insights
 
+def _normalize_yf_symbol(symbol: str) -> str:
+    """Normalise un symbole pour Yahoo Finance.
+    - Forex ex: EURUSD   → EURUSD=X
+    - Crypto ex: BTCUSDT → BTC-USD  (yfinance n'accepte pas le format Binance)
+    - Indices, actions : inchangés
+    """
+    s = symbol.upper().strip()
+    # Cryptos Binance (BTCUSDT, ETHUSDT…) → format yfinance (BTC-USD)
+    for stable in ('USDT', 'BUSD', 'USDC'):
+        if s.endswith(stable):
+            base = s[:-len(stable)]
+            return f'{base}-USD'
+    # Paires forex sans suffixe =X (6 car, pas de tiret ni de point)
+    FOREX_BASES = {'EUR','GBP','AUD','NZD','CAD','CHF','JPY','SGD','HKD','NOK','SEK','DKK','MXN','ZAR','TRY','CNY'}
+    FOREX_QUOTES = {'USD','EUR','GBP','JPY','CHF','CAD','AUD','NZD'}
+    if len(s) == 6 and '=' not in s and '-' not in s and '.' not in s:
+        if s[:3] in FOREX_BASES or s[3:] in FOREX_QUOTES:
+            return s + '=X'
+    # Déjà formaté (ex: EURUSD=X, BTC-USD, ^GSPC)
+    return s
+
+
 def trading_recommendation(symbol, timeframe='1mo'):
     """AI trading recommendations based on market data"""
     try:
-        ticker = yf.Ticker(symbol)
+        yf_symbol = _normalize_yf_symbol(symbol)
+        ticker = yf.Ticker(yf_symbol)
         hist = ticker.history(period=timeframe)
-        
+
         if hist.empty:
             return {'error': 'Données non disponibles'}
         
@@ -2204,7 +2227,7 @@ def add_position():
         # Obtenir le prix actuel avec yfinance
         current_price = avg_price
         try:
-            ticker = yf.Ticker(data['symbol'])
+            ticker = yf.Ticker(_normalize_yf_symbol(data['symbol']))
             hist = ticker.history(period='1d')
             if not hist.empty:
                 current_price = float(hist['Close'].iloc[-1])
@@ -5878,6 +5901,17 @@ def init_documents_db():
             cursor.execute(f'ALTER TABLE document_purchases ADD COLUMN {col} {defn}')
         except Exception:
             pass
+
+    # ── Migrations survey_responses (schema legacy → nouveau) ────
+    for col, defn in [
+        ('session_id', 'TEXT'),
+        ('answers',    'TEXT'),
+        ('ip_address', 'TEXT'),
+    ]:
+        try:
+            cursor.execute(f'ALTER TABLE survey_responses ADD COLUMN {col} {defn}')
+        except Exception:
+            pass  # colonne déjà présente
 
     conn.commit()
     conn.close()

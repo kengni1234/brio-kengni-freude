@@ -621,7 +621,33 @@ window.showTab = function(name, btn) {
 
   .tf-btn { padding: .3rem .6rem; border-radius: 6px; font-size: .75rem; font-weight: 700; cursor: pointer; background: none; border: 1px solid var(--border); color: var(--text-muted); transition: all .15s; font-family: var(--font-mono); }
   .tf-btn.active, .tf-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-  .symbol-input-chart { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); padding: .35rem .8rem; border-radius: 6px; font-size: .85rem; font-family: var(--font-mono); width: 120px; outline: none; text-transform: uppercase; }
+  .symbol-input-chart { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); padding: .35rem .8rem; border-radius: 6px; font-size: .85rem; font-family: var(--font-mono); width: 140px; outline: none; text-transform: uppercase; transition: border-color .15s; }
+  .symbol-input-chart:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,170,.15); }
+  /* Symbol Autocomplete */
+  .sym-wrap { position: relative; display: inline-block; }
+  .sym-dropdown {
+    position: absolute; top: calc(100% + 5px); left: 0; min-width: 260px;
+    background: #0f1525; border: 1.5px solid var(--accent); border-radius: 10px;
+    box-shadow: 0 10px 32px rgba(0,0,0,.5); z-index: 99999; display: none;
+    max-height: 300px; overflow-y: auto; overflow-x: hidden;
+  }
+  .sym-dropdown.open { display: block; animation: symFd .13s ease; }
+  @keyframes symFd { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+  .sym-section { font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); padding: .5rem .8rem .25rem; border-top: 1px solid rgba(255,255,255,.06); }
+  .sym-section:first-child { border-top: none; }
+  .sym-item { display: flex; align-items: center; gap: .55rem; padding: .5rem .8rem; cursor: pointer; font-size: .82rem; color: var(--text-primary); transition: background .1s; }
+  .sym-item:hover, .sym-item.active { background: rgba(0,212,170,.08); }
+  .sym-item .si-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(0,212,170,.12); display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; }
+  .sym-item .si-main { flex: 1; min-width: 0; }
+  .sym-item .si-sym { font-family: var(--font-mono); font-weight: 800; font-size: .82rem; color: var(--accent); }
+  .sym-item .si-sym mark { background: none; color: #fff; font-weight: 900; }
+  .sym-item .si-name { font-size: .7rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sym-item .si-badge { font-size: .62rem; font-weight: 700; padding: .1rem .38rem; border-radius: 20px; flex-shrink: 0; }
+  .si-badge.forex { background: rgba(59,130,246,.2); color: #93c5fd; }
+  .si-badge.crypto { background: rgba(245,158,11,.2); color: #fcd34d; }
+  .si-badge.stock { background: rgba(16,185,129,.2); color: #6ee7b7; }
+  .si-badge.index { background: rgba(139,92,246,.2); color: #c4b5fd; }
+  .si-badge.metal { background: rgba(234,179,8,.2); color: #fde68a; }
 
   /* AI Panel */
   .ai-panel { background: var(--bg-card); border: 1px solid rgba(99,102,241,.25); border-radius: 14px; overflow: hidden; height: 100%; display: flex; flex-direction: column; }
@@ -1759,7 +1785,15 @@ window.showTab = function(name, btn) {
         <div class="fs-hint">Appuyez sur <kbd style="background:rgba(255,255,255,.1);padding:.1rem .4rem;border-radius:3px">Échap</kbd> pour quitter le plein écran</div>
 
         <div class="chart-toolbar">
-          <input class="symbol-input-chart" type="text" id="chartSymbol" value="EURUSD" placeholder="Symbole...">
+          <div class="sym-wrap">
+            <input class="symbol-input-chart" type="text" id="chartSymbol" value="BTCUSDT" placeholder="Symbole…"
+                   autocomplete="off" spellcheck="false"
+                   oninput="symDropBuild(this.value)" onfocus="symDropOpen()" onblur="symDropCloseDelay()"
+                   onkeydown="symDropKbd(event)">
+            <div class="sym-dropdown" id="symDrop" onmousedown="return false">
+              <div id="symDropContent"></div>
+            </div>
+          </div>
 
           <!-- Badge outils AT natifs TradingView actifs -->
           <div style="display:flex;align-items:center;gap:.4rem;padding:.2rem .65rem;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:7px;font-size:.65rem;font-weight:800;color:#a5b4fc;white-space:nowrap;flex-shrink:0" title="Indicateurs, Dessins, Templates, Zoom, Compare — outils TradingView natifs activés">
@@ -2616,7 +2650,7 @@ function getChartHeight() {
 }
 
 function loadChart() {
-  const sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+  const sym = (document.getElementById('chartSymbol')?.value || 'BTCUSDT').toUpperCase().trim();
   const widget = document.getElementById('tradingview-widget');
   const wrapper = document.getElementById('tvWrapper');
   if (!widget || !wrapper) return;
@@ -2722,11 +2756,166 @@ function loadChart() {
 
 document.getElementById('chartSymbol').addEventListener('keydown', e => {
   if(e.key === 'Enter') {
-    _ictBars = null; // invalider cache pour nouveau symbole
+    _ictBars = null;
+    symDropClose();
     loadDrawObjectsForTF();
     loadChart();
   }
 });
+
+/* ============================================================
+   SMART SYMBOL AUTOCOMPLETE
+============================================================ */
+const SYM_LIST = [
+  // ── Crypto ────────────────────────────────────────────────
+  {s:'BTCUSDT', n:'Bitcoin / Tether',    t:'crypto', e:'₿'},
+  {s:'ETHUSDT', n:'Ethereum / Tether',   t:'crypto', e:'Ξ'},
+  {s:'BNBUSDT', n:'BNB / Tether',        t:'crypto', e:'🔶'},
+  {s:'SOLUSDT', n:'Solana / Tether',     t:'crypto', e:'◎'},
+  {s:'XRPUSDT', n:'XRP / Tether',        t:'crypto', e:'💧'},
+  {s:'ADAUSDT', n:'Cardano / Tether',    t:'crypto', e:'🌊'},
+  {s:'DOGEUSDT',n:'Dogecoin / Tether',   t:'crypto', e:'🐕'},
+  {s:'AVAXUSDT',n:'Avalanche / Tether',  t:'crypto', e:'🔺'},
+  {s:'DOTUSDT', n:'Polkadot / Tether',   t:'crypto', e:'⬤'},
+  {s:'LINKUSDT',n:'Chainlink / Tether',  t:'crypto', e:'🔗'},
+  {s:'LTCUSDT', n:'Litecoin / Tether',   t:'crypto', e:'Ł'},
+  {s:'MATICUSDT',n:'Polygon / Tether',   t:'crypto', e:'🔷'},
+  {s:'SUIUSDT', n:'SUI / Tether',        t:'crypto', e:'💧'},
+  // ── Forex ─────────────────────────────────────────────────
+  {s:'EURUSD',  n:'Euro / Dollar US',     t:'forex',  e:'💶'},
+  {s:'GBPUSD',  n:'Livre Sterling / USD', t:'forex',  e:'💷'},
+  {s:'USDJPY',  n:'Dollar US / Yen',      t:'forex',  e:'¥'},
+  {s:'USDCHF',  n:'Dollar US / Franc CH', t:'forex',  e:'🇨🇭'},
+  {s:'AUDUSD',  n:'Dollar AUS / USD',     t:'forex',  e:'🇦🇺'},
+  {s:'USDCAD',  n:'Dollar US / CAD',      t:'forex',  e:'🍁'},
+  {s:'NZDUSD',  n:'Dollar NZ / USD',      t:'forex',  e:'🥝'},
+  {s:'EURGBP',  n:'Euro / Livre Sterling',t:'forex',  e:'💱'},
+  {s:'EURJPY',  n:'Euro / Yen',           t:'forex',  e:'💱'},
+  {s:'GBPJPY',  n:'Livre / Yen',          t:'forex',  e:'💱'},
+  // ── Indices ───────────────────────────────────────────────
+  {s:'SPX',     n:'S&P 500',              t:'index',  e:'📈'},
+  {s:'NDX',     n:'Nasdaq 100',           t:'index',  e:'💻'},
+  {s:'DJI',     n:'Dow Jones',            t:'index',  e:'🏛'},
+  {s:'DAX',     n:'DAX Allemagne',        t:'index',  e:'🇩🇪'},
+  {s:'CAC40',   n:'CAC 40 France',        t:'index',  e:'🇫🇷'},
+  {s:'FTSE',    n:'FTSE 100 UK',          t:'index',  e:'🇬🇧'},
+  {s:'NI225',   n:'Nikkei 225 Japon',     t:'index',  e:'🇯🇵'},
+  // ── Métaux/Matières ───────────────────────────────────────
+  {s:'XAUUSD',  n:'Or / Dollar US',       t:'metal',  e:'🥇'},
+  {s:'XAGUSD',  n:'Argent / Dollar US',   t:'metal',  e:'🥈'},
+  {s:'USOIL',   n:'Pétrole WTI (US)',      t:'metal',  e:'🛢'},
+  {s:'UKOIL',   n:'Pétrole Brent (UK)',    t:'metal',  e:'🛢'},
+  // ── Actions ───────────────────────────────────────────────
+  {s:'AAPL',    n:'Apple',                t:'stock',  e:'🍎'},
+  {s:'MSFT',    n:'Microsoft',            t:'stock',  e:'🪟'},
+  {s:'NVDA',    n:'NVIDIA',               t:'stock',  e:'🟢'},
+  {s:'GOOGL',   n:'Alphabet (Google)',    t:'stock',  e:'🔍'},
+  {s:'AMZN',    n:'Amazon',              t:'stock',  e:'📦'},
+  {s:'META',    n:'Meta (Facebook)',      t:'stock',  e:'👤'},
+  {s:'TSLA',    n:'Tesla',                t:'stock',  e:'⚡'},
+];
+
+const SYM_RECENT_KEY = 'kf_sym_recent';
+function symGetRecent(){
+  try{ return JSON.parse(localStorage.getItem(SYM_RECENT_KEY)||'[]'); }catch{ return []; }
+}
+function symSaveRecent(sym){
+  let r=symGetRecent().filter(s=>s!==sym); r.unshift(sym); r=r.slice(0,5);
+  try{ localStorage.setItem(SYM_RECENT_KEY, JSON.stringify(r)); }catch{}
+}
+
+function symHl(text, q){
+  if(!q) return text;
+  const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi');
+  return text.replace(re,'<mark>$1</mark>');
+}
+
+function symDropBuild(q){
+  const cont=document.getElementById('symDropContent'); if(!cont) return;
+  const dd=document.getElementById('symDrop');
+  const rawQ=(q||'').trim().toUpperCase();
+  const lq=rawQ.toLowerCase();
+  let html='';
+
+  const badgeHtml=(t)=>`<span class="si-badge ${t}">${t==='crypto'?'Crypto':t==='forex'?'Forex':t==='stock'?'Action':t==='index'?'Indice':'Métal'}</span>`;
+
+  if(!rawQ){
+    // Recent + top picks by category
+    const recents=symGetRecent();
+    if(recents.length){
+      html+=`<div class="sym-section">🕐 Récents</div>`;
+      recents.forEach(sym=>{
+        const info=SYM_LIST.find(x=>x.s===sym)||{s:sym,n:sym,t:'crypto',e:'📊'};
+        html+=`<div class="sym-item" onclick="symSelect('${sym}')"><div class="si-icon">${info.e}</div><div class="si-main"><div class="si-sym">${sym}</div><div class="si-name">${info.n}</div></div>${badgeHtml(info.t)}</div>`;
+      });
+    }
+    // Top by category
+    const catOrder=['crypto','forex','metal','index','stock'];
+    const catLabel={crypto:'🪙 Crypto populaires',forex:'💱 Forex majeurs',metal:'🥇 Métaux & Matières',index:'📊 Indices',stock:'📈 Actions'};
+    catOrder.forEach(cat=>{
+      const items=SYM_LIST.filter(x=>x.t===cat).slice(0,4);
+      if(!items.length) return;
+      html+=`<div class="sym-section">${catLabel[cat]}</div>`;
+      items.forEach(info=>{
+        html+=`<div class="sym-item" onclick="symSelect('${info.s}')"><div class="si-icon">${info.e}</div><div class="si-main"><div class="si-sym">${info.s}</div><div class="si-name">${info.n}</div></div>${badgeHtml(info.t)}</div>`;
+      });
+    });
+  } else {
+    const matches=SYM_LIST.filter(x=>x.s.includes(rawQ)||x.n.toLowerCase().includes(lq)).slice(0,10);
+    if(matches.length){
+      html+=`<div class="sym-section">Résultats pour « ${rawQ} »</div>`;
+      matches.forEach(info=>{
+        html+=`<div class="sym-item" onclick="symSelect('${info.s}')"><div class="si-icon">${info.e}</div><div class="si-main"><div class="si-sym">${symHl(info.s,rawQ)}</div><div class="si-name">${info.n}</div></div>${badgeHtml(info.t)}</div>`;
+      });
+    }
+    // Always allow entering custom symbol
+    html+=`<div class="sym-section">Symbole personnalisé</div>
+      <div class="sym-item" onclick="symSelect('${rawQ}')">
+        <div class="si-icon">📊</div>
+        <div class="si-main"><div class="si-sym">${rawQ}</div><div class="si-name">Charger ce symbole directement</div></div>
+        <span class="si-badge stock">Perso</span>
+      </div>`;
+    if(!matches.length){
+      html=`<div style="padding:1rem .8rem;color:var(--text-muted);font-size:.8rem;text-align:center"><i class="fas fa-search" style="display:block;font-size:1.2rem;opacity:.2;margin-bottom:.4rem"></i>Aucun symbole connu<br>pour « ${rawQ} »</div>` + html;
+    }
+  }
+  cont.innerHTML=html;
+  dd.classList.add('open');
+}
+
+let _symActiveIdx=-1;
+function symDropKbd(e){
+  const dd=document.getElementById('symDrop');
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    const items=dd.querySelectorAll('.sym-item');
+    if(!items.length)return;
+    _symActiveIdx=e.key==='ArrowDown'?Math.min(_symActiveIdx+1,items.length-1):Math.max(_symActiveIdx-1,-1);
+    items.forEach((it,i)=>it.classList.toggle('active',i===_symActiveIdx));
+    if(_symActiveIdx>=0)items[_symActiveIdx].scrollIntoView({block:'nearest'});
+  } else if(e.key==='Enter'){
+    const act=dd.querySelector('.sym-item.active');
+    if(act){ e.preventDefault(); act.click(); return; }
+    const val=document.getElementById('chartSymbol').value.trim().toUpperCase();
+    if(val){ symSelect(val); }
+  } else if(e.key==='Escape'){
+    symDropClose();
+  }
+}
+function symSelect(sym){
+  const inp=document.getElementById('chartSymbol');
+  if(inp) inp.value=sym;
+  symSaveRecent(sym);
+  symDropClose();
+  _ictBars=null;
+  loadDrawObjectsForTF();
+  loadChart();
+}
+function symDropOpen(){ symDropBuild(document.getElementById('chartSymbol')?.value||''); }
+function symDropClose(){ document.getElementById('symDrop')?.classList.remove('open'); _symActiveIdx=-1; }
+function symDropCloseDelay(){ setTimeout(symDropClose,200); }
+// Close on outside click
+document.addEventListener('click', e=>{ if(!e.target.closest('.sym-wrap')) symDropClose(); });
 
 /* ============================================================
    FULLSCREEN — TRUE FULLSCREEN (covers sidebar & nav)
@@ -2776,7 +2965,7 @@ function toggleFullscreen() {
 // ── STOCKAGE TRACÉS PAR SYMBOLE+TF ────────────────────────────────────────
 // Clé = "chart_draws_EURUSD_15" pour que chaque TF garde ses tracés
 function drawStorageKey() {
-  const sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+  const sym = (document.getElementById('chartSymbol')?.value || 'BTCUSDT').toUpperCase().trim();
   return 'chart_draws_' + sym; // persist sur tous TF
 }
 function saveDrawObjects() {
@@ -3008,7 +3197,7 @@ function _calcBias(bars, ema20, ema50, bos) {
 let _ictBars=null, _ictLastSym='', _ictLastTF='';
 
 function _getICTBars() {
-  const sym=(document.getElementById('chartSymbol')?.value||'EURUSD').toUpperCase();
+  const sym=(document.getElementById('chartSymbol')?.value||'BTCUSDT').toUpperCase();
   const tf=currentInterval||'30';
   if (_ictBars&&_ictLastSym===sym&&_ictLastTF===tf) return _ictBars;
   _ictLastSym=sym; _ictLastTF=tf;
@@ -4427,7 +4616,7 @@ let drawPreview = null;
 var drawObjects = (() => {
   // Lire depuis toutes les clés possibles (compatibilité entre versions)
   try {
-    const sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+    const sym = (document.getElementById('chartSymbol')?.value || 'BTCUSDT').toUpperCase().trim();
     const tf  = (typeof currentInterval !== 'undefined' ? currentInterval : null) || '30';
     const saved =
       localStorage.getItem('kf_draws_' + sym) ||          // clé KF Fix (priorité max)
@@ -4883,7 +5072,7 @@ document.addEventListener('keydown', e => {
 
   /* ═══ CLÉS STORAGE ════════════════════════════════════════ */
   function _key() {
-    var sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+    var sym = (document.getElementById('chartSymbol')?.value || 'BTCUSDT').toUpperCase().trim();
     return 'kf_draws_' + sym;
   }
 
@@ -4899,7 +5088,7 @@ document.addEventListener('keydown', e => {
   /* ═══ LOAD ════════════════════════════════════════════════ */
   function _load() {
     try {
-      var sym = (document.getElementById('chartSymbol')?.value || 'EURUSD').toUpperCase().trim();
+      var sym = (document.getElementById('chartSymbol')?.value || 'BTCUSDT').toUpperCase().trim();
       var raw = localStorage.getItem('kf_draws_' + sym)
              || localStorage.getItem('chart_draws_' + sym)
              || localStorage.getItem('chart_draws');
