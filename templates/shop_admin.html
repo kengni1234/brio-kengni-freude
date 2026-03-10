@@ -332,6 +332,7 @@
     <div class="sa-grp">Équipe</div>
     <button class="sa-nb" id="nb-staff" onclick="go('staff')"><i class="fas fa-headset"></i> Assistance</button>
     <button class="sa-nb" id="nb-banners" onclick="go('banners')"><i class="fas fa-scroll"></i> Bannières top</button>
+    <button class="sa-nb" id="nb-posters" onclick="go('posters')"><i class="fas fa-image"></i> Affiches k-Ni</button>
     <button class="sa-nb" id="nb-perf" onclick="go('perf')"><i class="fas fa-trophy"></i> Performance équipe</button>
     {% if session.get('role') in ('admin','superadmin') %}
     <div class="sa-sep"></div>
@@ -661,6 +662,60 @@
 </div>
 
 <!-- ══ PERFORMANCE ÉQUIPE ══ -->
+<!-- ══ AFFICHES k-Ni ══ -->
+<div class="sec" id="sec-posters">
+  <div class="sh"><h4>🎨 Affiches Promotionnelles k-Ni</h4></div>
+  <div style="background:var(--accent-color);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.85rem;margin-bottom:1rem">
+      <div class="fg"><label class="fl">Catégorie</label>
+        <select class="fi" id="pst-cat">
+          <option value="LAPTOPS NEUFS">💻 Laptops Neufs</option>
+          <option value="DESKTOPS NEUFS">🖥 Desktops Neufs</option>
+          <option value="IMPRIMANTES">🖨 Imprimantes</option>
+          <option value="CAMÉRAS">📷 Caméras</option>
+          <option value="BIOMÉTRIE">🔏 Biométrie</option>
+          <option value="MODEM & RÉSEAU">📡 Modem &amp; Réseau</option>
+          <option value="STOCKAGE">💾 Stockage</option>
+          <option value="ADAPTATEURS">🔌 Adaptateurs</option>
+          <option value="ACCESSOIRES">🎧 Accessoires</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Prix à partir de</label>
+        <input class="fi" id="pst-price" type="number" placeholder="ex: 149000" value="149000">
+        <small style="font-size:.67rem;color:var(--text-secondary)">en XAF</small>
+      </div>
+      <div class="fg"><label class="fl">Slogan</label>
+        <input class="fi" id="pst-slogan" placeholder="Meilleure qualité avec garantie" value="Meilleure qualité avec garantie à partir de">
+      </div>
+      <div class="fg"><label class="fl">Couleur fond</label>
+        <select class="fi" id="pst-theme">
+          <option value="green">Vert k-Ni</option>
+          <option value="dark">Sombre premium</option>
+          <option value="red">Rouge promo</option>
+          <option value="blue">Bleu tech</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:.65rem;flex-wrap:wrap;margin-bottom:1rem">
+      <div class="fg" style="flex:1;min-width:180px">
+        <label class="fl">Image produit (optionnel)</label>
+        <input class="fi" id="pst-imgurl" placeholder="URL image ou laisser vide">
+      </div>
+      <div class="fg" style="align-self:flex-end">
+        <button class="btn-p" onclick="generatePoster()"><i class="fas fa-magic"></i> Générer l'affiche</button>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start">
+    <canvas id="posterCanvas" style="border-radius:12px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2);display:none"></canvas>
+    <div id="posterActions" style="display:none;flex-direction:column;gap:.6rem">
+      <button class="btn-p" onclick="downloadPoster()"><i class="fas fa-download"></i> Télécharger PNG</button>
+      <button class="btn-g" onclick="copyPosterImg()" id="pstCopyBtn"><i class="fas fa-copy"></i> Copier image</button>
+      <small style="color:var(--text-secondary);font-size:.7rem">Taille : 800×800px · Logo k-Ni intégré</small>
+    </div>
+  </div>
+</div>
+
 <div class="sec" id="sec-perf">
   <div class="sh"><h4>🏆 Performance de l'équipe</h4><button class="btn-g" onclick="loadPerf()"><i class="fas fa-sync"></i> Actualiser</button></div>
   <div style="background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.18);border-radius:12px;padding:.85rem 1rem;margin-bottom:1.15rem;font-size:.8rem;color:var(--text-secondary);display:flex;gap:.65rem;align-items:flex-start">
@@ -1057,7 +1112,7 @@ function toast(m, ok=true){
 }
 
 /* ══ NAVIGATION ══ */
-const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','perf','acc'];
+const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc'];
 function go(n){
   SECS.forEach(s=>{
     const el=document.getElementById('sec-'+s);
@@ -1145,12 +1200,14 @@ function galleryDrop(e,slot){
 }
 async function uploadGalFile(f,slot){
   if(!f||f.size>5*1024*1024){toast('Max 5 Mo',false);return;}
+  // Appliquer le watermark k-Ni avant upload
+  const watermarked = await applyKniWatermark(f);
   const isMain=slot===0;
   const ub=document.getElementById(isMain?'upbar':'galUpbar');
   const ubf=document.getElementById(isMain?'upbarf':'galUpbarf');
   ub.style.display='block'; let p=0;
   const t=setInterval(()=>{p=Math.min(p+8,82);ubf.style.width=p+'%'},55);
-  const fd=new FormData(); fd.append('image',f);
+  const fd=new FormData(); fd.append('image',watermarked,'image.jpg');
   try{
     const r=await fetch('/shop/api/product/upload-image',{method:'POST',body:fd});
     const res=await r.json(); clearInterval(t);
@@ -1168,6 +1225,58 @@ async function uploadGalFile(f,slot){
       initGallery(); toast(`Photo ${slot+1} uploadée ✅`);
     } else {ub.style.display='none';toast('❌ '+res.error,false);}
   } catch(e){clearInterval(t);ub.style.display='none';toast('Erreur réseau',false);}
+}
+
+async function applyKniWatermark(file){
+  return new Promise(resolve=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img,0,0);
+
+        // Badge k-Ni en bas à droite
+        const pad = Math.max(10, img.width*0.025);
+        const fsize = Math.max(14, img.width*0.045);
+        const text = 'k-Ni';
+        ctx.font = `900 ${fsize}px Arial, sans-serif`;
+        const tw = ctx.measureText(text).width;
+        const bw = tw + pad*1.4;
+        const bh = fsize*1.5;
+        const bx = img.width - bw - pad;
+        const by = img.height - bh - pad;
+
+        // Fond semi-transparent vert
+        ctx.fillStyle = 'rgba(6,78,59,0.78)';
+        const r = bh*0.35;
+        ctx.beginPath();
+        ctx.moveTo(bx+r,by); ctx.lineTo(bx+bw-r,by);
+        ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
+        ctx.lineTo(bx+bw,by+bh-r);
+        ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
+        ctx.lineTo(bx+r,by+bh);
+        ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
+        ctx.lineTo(bx,by+r);
+        ctx.quadraticCurveTo(bx,by,bx+r,by);
+        ctx.closePath();
+        ctx.fill();
+
+        // Texte blanc
+        ctx.fillStyle = '#ffffff';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, bx + (bw-tw)/2, by + bh/2);
+
+        canvas.toBlob(blob=>resolve(blob||file),'image/jpeg',0.92);
+      };
+      img.onerror = ()=>resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = ()=>resolve(file);
+    reader.readAsDataURL(file);
+  });
 }
 function clearSlot(slot){
   galleryUrls[slot]='';
@@ -2789,6 +2898,181 @@ async function bannerDelete(id) {
       toast('Bannière supprimée');
     } else toast('❌ '+d.error, false);
   } catch(e){ toast('❌ Erreur', false); }
+}
+
+// ══ GÉNÉRATEUR D'AFFICHES k-Ni ══
+const POSTER_THEMES = {
+  green: {bg1:'#064e3b', bg2:'#059669', accent:'#10b981', text:'#ffffff', badge:'#d1fae5', badgeText:'#064e3b'},
+  dark:  {bg1:'#0a0a1a', bg2:'#1a1a3e', accent:'#818cf8', text:'#ffffff', badge:'#1e1b4b', badgeText:'#a5b4fc'},
+  red:   {bg1:'#7f1d1d', bg2:'#dc2626', accent:'#fca5a5', text:'#ffffff', badge:'#fef2f2', badgeText:'#7f1d1d'},
+  blue:  {bg1:'#1e3a5f', bg2:'#2563eb', accent:'#93c5fd', text:'#ffffff', badge:'#eff6ff', badgeText:'#1e3a5f'},
+};
+
+function generatePoster(){
+  const cat    = document.getElementById('pst-cat').value;
+  const price  = parseInt(document.getElementById('pst-price').value)||149000;
+  const slogan = document.getElementById('pst-slogan').value || 'Meilleure qualité avec garantie à partir de';
+  const theme  = POSTER_THEMES[document.getElementById('pst-theme').value]||POSTER_THEMES.green;
+  const imgUrl = document.getElementById('pst-imgurl').value.trim();
+  const canvas = document.getElementById('posterCanvas');
+  const S = 800;
+  canvas.width = S; canvas.height = S;
+  const ctx = canvas.getContext('2d');
+
+  function draw(productImg){
+    ctx.clearRect(0,0,S,S);
+    // Fond dégradé
+    const grad = ctx.createLinearGradient(0,0,S,S);
+    grad.addColorStop(0, theme.bg1);
+    grad.addColorStop(1, theme.bg2);
+    ctx.fillStyle = grad;
+    roundRect(ctx,0,0,S,S,24);
+    ctx.fill();
+
+    // Motif géométrique déco
+    ctx.globalAlpha=0.06;
+    for(let i=0;i<6;i++){
+      ctx.beginPath();
+      ctx.arc(S*0.85, S*0.15+(i*60), 80+i*30, 0, Math.PI*2);
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+
+    // Badge "NOW TECH" remplacé par k-Ni
+    drawKniBadge(ctx, 30, 30, theme);
+
+    // Badge catégorie
+    ctx.fillStyle = '#ef4444';
+    roundRect(ctx, S*0.22, 24, S*0.55, 46, 8);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font = `900 ${22}px Arial`;
+    ctx.textAlign='center';
+    ctx.fillText(cat, S/2, 55);
+
+    // Slogan
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = `600 ${16}px Arial`;
+    ctx.textAlign='center';
+    wrapText(ctx, slogan, S/2, 90, S-100, 20);
+
+    // Image produit si fournie
+    if(productImg){
+      ctx.save();
+      roundRect(ctx, 80, 130, S-160, 380, 16);
+      ctx.clip();
+      const iw=productImg.width, ih=productImg.height;
+      const scale=Math.min((S-160)/iw, 380/ih);
+      const dx=80+(S-160-iw*scale)/2, dy=130+(380-ih*scale)/2;
+      ctx.drawImage(productImg, dx, dy, iw*scale, ih*scale);
+      ctx.restore();
+    } else {
+      // Zone vide stylisée
+      ctx.fillStyle='rgba(255,255,255,0.05)';
+      roundRect(ctx, 80, 130, S-160, 380, 16);
+      ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.15)';
+      ctx.font=`${80}px Arial`;ctx.textAlign='center';
+      ctx.fillText('🏪', S/2, 350);
+    }
+
+    // Bandeau prix
+    const pGrad = ctx.createLinearGradient(0,530,S,580);
+    pGrad.addColorStop(0,'rgba(0,0,0,0)');
+    pGrad.addColorStop(0.3,theme.accent+'33');
+    pGrad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pGrad;
+    ctx.fillRect(0,530,S,60);
+
+    ctx.fillStyle = theme.accent;
+    ctx.font = `900 ${52}px "Courier New", monospace`;
+    ctx.textAlign='center';
+    ctx.fillText(price.toLocaleString('fr-FR')+'F', S/2, 580);
+
+    // Ligne déco
+    ctx.strokeStyle = theme.accent+'66';
+    ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(60,600);ctx.lineTo(S-60,600);ctx.stroke();
+
+    // Caractéristiques (dots)
+    const feats = ['✅ Garantie incluse','🚚 Livraison rapide','💳 Paiement facile','🔧 SAV disponible'];
+    ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.font=`500 ${15}px Arial`; ctx.textAlign='left';
+    feats.forEach((f,i)=>{ ctx.fillText(f, 80+Math.floor(i/2)*320, 635+(i%2)*30); });
+
+    // Logo k-Ni bas de page
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    roundRect(ctx, S/2-60, S-56, 120, 36, 10);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font='900 20px Arial'; ctx.textAlign='center';
+    ctx.fillText('k-Ni', S/2-18, S-32);
+    ctx.fillStyle=theme.accent;
+    ctx.font='500 11px Arial';
+    ctx.fillText('STORE', S/2+16, S-32);
+
+    canvas.style.display='block';
+    document.getElementById('posterActions').style.display='flex';
+  }
+
+  if(imgUrl){
+    const img=new Image(); img.crossOrigin='anonymous';
+    img.onload=()=>draw(img);
+    img.onerror=()=>draw(null);
+    img.src=imgUrl;
+  } else { draw(null); }
+}
+
+function drawKniBadge(ctx,x,y,theme){
+  // Fond rond vert
+  ctx.fillStyle='rgba(0,0,0,0.45)';
+  ctx.beginPath();ctx.arc(x+28,y+28,28,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=theme.accent;
+  ctx.beginPath();ctx.arc(x+28,y+28,24,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.font='900 14px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('k-Ni',x+28,y+28);
+  ctx.textBaseline='alphabetic';
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+function wrapText(ctx,text,x,y,maxW,lh){
+  const words=text.split(' ');let line='';
+  for(const w of words){
+    const test=line?line+' '+w:w;
+    if(ctx.measureText(test).width>maxW&&line){ctx.fillText(line,x,y);line=w;y+=lh;}
+    else line=test;
+  }
+  if(line)ctx.fillText(line,x,y);
+}
+
+function downloadPoster(){
+  const c=document.getElementById('posterCanvas');
+  const a=document.createElement('a');
+  a.download=`affiche_kni_${Date.now()}.png`;
+  a.href=c.toDataURL('image/png');a.click();
+  toast('Affiche téléchargée ✅');
+}
+async function copyPosterImg(){
+  try{
+    const c=document.getElementById('posterCanvas');
+    c.toBlob(async blob=>{
+      await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      toast('Image copiée ✅');
+    });
+  }catch(e){toast('Copie non supportée ici',false);}
 }
 </script>
 

@@ -500,9 +500,22 @@ input[type=range]{
 /* ══ TRUST STRIP ═══════════════════════════════════════════════════ */
 /* ══ PROMO CAROUSEL ════════════════════════════════════════════════ */
 .promo-carousel{
-  background:var(--white);border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,#0a1628 0%,#0f2040 50%,#0a1628 100%);
+  border-bottom:1px solid rgba(255,255,255,.07);
   padding:1.25rem 2rem;overflow:hidden;
+  position:relative;
 }
+.promo-carousel::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(16,185,129,.08) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 50%,rgba(59,130,246,.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+.promo-nav-title{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.65)!important}
+.promo-arrow{background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.15)!important;color:rgba(255,255,255,.7)!important}
+.promo-arrow:hover{border-color:var(--green)!important;color:var(--green)!important}
+.promo-dot{background:rgba(255,255,255,.2)!important}
+.promo-dot.active{background:var(--green)!important;width:20px!important}
 .promo-carousel-inner{
   max-width:1400px;margin:0 auto;
 }
@@ -911,6 +924,132 @@ footer{background:var(--ink);padding:3rem 2rem 1.5rem;border-top:1px solid #1f29
   transition:.2s;font-family:'Outfit',sans-serif;
 }
 .ai-reco-add:hover{opacity:.9;transform:translateY(-1px)}
+/* ══ AI MENU PRINCIPAL ══ */
+.ai-main-menu{
+  padding:.65rem .75rem;display:flex;flex-direction:column;gap:.4rem;
+  background:#fafffe;flex-shrink:0;
+}
+.ai-menu-btn{
+  display:flex;align-items:center;gap:.65rem;
+  width:100%;padding:.65rem .85rem;border-radius:12px;
+  border:1.5px solid rgba(16,185,129,.18);
+  background:linear-gradient(135deg,rgba(240,253,244,.8),#fff);
+  color:#064e3b;font-size:.82rem;font-weight:700;
+  cursor:pointer;text-align:left;transition:.18s;
+  font-family:'Outfit',sans-serif;
+}
+.ai-menu-btn:hover{background:linear-gradient(135deg,#d1fae5,#f0fdf4);border-color:#10b981;transform:translateX(3px)}
+.ai-menu-ico{font-size:1.1rem;flex-shrink:0;width:26px;text-align:center}
+.ai-agent-list{
+  padding:.65rem .75rem;display:flex;flex-direction:column;gap:.5rem;
+  background:#fafffe;flex-shrink:0;max-height:300px;overflow-y:auto;
+}
+.ai-agent-card{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.65rem .85rem;border-radius:12px;
+  border:1.5px solid rgba(16,185,129,.15);background:#fff;
+}
+.ai-agent-av{
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#064e3b,#10b981);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:1rem;overflow:hidden;
+}
+.ai-agent-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ai-agent-info{flex:1;min-width:0}
+.ai-agent-name{font-size:.82rem;font-weight:800;color:#111827}
+.ai-agent-spec{font-size:.68rem;color:#6b7280;margin-bottom:.3rem}
+.ai-agent-wa{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.32rem .75rem;border-radius:20px;
+  background:#25d366;color:#fff;border:none;
+  font-size:.72rem;font-weight:700;cursor:pointer;
+  font-family:'Outfit',sans-serif;transition:.15s;text-decoration:none;
+  white-space:nowrap;
+}
+.ai-agent-wa:hover{background:#1fba58;transform:scale(1.04)}
+.ai-back-btn{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:#f3f4f6;border:none;color:#6b7280;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:.8rem;transition:.15s;
+}
+.ai-back-btn:hover{background:#e5e7eb;color:#111827}
+
+/* ══ BANNIÈRE FLOTTANTE NÉON ══ */
+.neon-banner-container{
+  position:fixed;bottom:10rem;right:1.5rem;z-index:780;
+  display:flex;flex-direction:column;gap:.6rem;
+  pointer-events:none;
+}
+.neon-banner{
+  pointer-events:all;
+  width:230px;border-radius:16px;overflow:hidden;
+  background:linear-gradient(135deg,#0a0a1a,#0d1b2a);
+  border:1.5px solid rgba(0,255,150,.25);
+  box-shadow:0 0 20px rgba(0,255,150,.15),0 8px 32px rgba(0,0,0,.4);
+  animation:neonFloat 4s ease-in-out infinite;
+  position:relative;
+}
+.neon-banner:nth-child(2){animation-delay:-1.3s;border-color:rgba(99,102,241,.35);box-shadow:0 0 20px rgba(99,102,241,.2),0 8px 32px rgba(0,0,0,.4)}
+.neon-banner:nth-child(3){animation-delay:-2.6s;border-color:rgba(236,72,153,.3);box-shadow:0 0 20px rgba(236,72,153,.15),0 8px 32px rgba(0,0,0,.4)}
+@keyframes neonFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.neon-banner-close{
+  position:absolute;top:.35rem;right:.4rem;z-index:2;
+  width:20px;height:20px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);
+  font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:.15s;
+}
+.neon-banner-close:hover{background:rgba(255,255,255,.2);color:#fff}
+.neon-banner-img{
+  height:90px;width:100%;object-fit:cover;display:block;
+  opacity:.85;
+}
+.neon-banner-body{padding:.6rem .75rem .65rem}
+.neon-banner-brand{
+  font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
+  margin-bottom:.25rem;
+}
+.neon-banner-title{
+  font-size:.82rem;font-weight:900;line-height:1.25;margin-bottom:.3rem;
+  animation:neonTextColor 3s ease-in-out infinite;
+}
+@keyframes neonTextColor{
+  0%{color:#00ff96;text-shadow:0 0 8px rgba(0,255,150,.7)}
+  33%{color:#818cf8;text-shadow:0 0 8px rgba(129,140,248,.7)}
+  66%{color:#f472b6;text-shadow:0 0 8px rgba(244,114,182,.7)}
+  100%{color:#00ff96;text-shadow:0 0 8px rgba(0,255,150,.7)}
+}
+.neon-banner:nth-child(2) .neon-banner-title{animation-delay:-1s}
+.neon-banner:nth-child(3) .neon-banner-title{animation-delay:-2s}
+.neon-banner-feat{font-size:.68rem;color:rgba(255,255,255,.65);margin-bottom:.4rem;line-height:1.4}
+.neon-banner-price{
+  font-size:1rem;font-weight:900;font-family:'Space Mono',monospace;
+  animation:neonPriceColor 2.5s ease-in-out infinite;
+}
+@keyframes neonPriceColor{
+  0%{color:#4ade80;text-shadow:0 0 6px rgba(74,222,128,.6)}
+  50%{color:#fbbf24;text-shadow:0 0 6px rgba(251,191,36,.6)}
+  100%{color:#4ade80;text-shadow:0 0 6px rgba(74,222,128,.6)}
+}
+.neon-banner-cta{
+  display:block;width:100%;margin-top:.45rem;padding:.35rem;
+  border-radius:8px;border:none;
+  background:linear-gradient(135deg,rgba(0,255,150,.2),rgba(99,102,241,.2));
+  border:1px solid rgba(255,255,255,.15);
+  color:#fff;font-size:.72rem;font-weight:700;cursor:pointer;
+  font-family:'Outfit',sans-serif;transition:.15s;
+  animation:neonBorderGlow 2s ease-in-out infinite;
+}
+@keyframes neonBorderGlow{
+  0%,100%{border-color:rgba(0,255,150,.4);box-shadow:0 0 6px rgba(0,255,150,.2)}
+  50%{border-color:rgba(99,102,241,.5);box-shadow:0 0 6px rgba(99,102,241,.25)}
+}
+.neon-banner-cta:hover{background:rgba(255,255,255,.15);transform:translateY(-1px)}
+@media(max-width:600px){
+  .neon-banner-container{right:.75rem;bottom:8.5rem}
+  .neon-banner{width:190px}
+}
 @media(max-width:900px){
   .ai-reco-grid{grid-template-columns:repeat(2,1fr)}
   .ai-chat-panel{left:.75rem;right:.75rem;width:auto}
@@ -1664,7 +1803,7 @@ footer{background:var(--ink);padding:3rem 2rem 1.5rem;border-top:1px solid #1f29
     <div class="foot-col">
       <h5>Contact</h5>
       <a href="https://wa.me/237695072759" target="_blank"><i class="fab fa-whatsapp" style="color:#25d366"></i> +237 695 072 759</a>
-      <a href="mailto:fabrice.kengni@icloud.com">✉ fabrice.kengni@icloud.com</a>
+      <a href="/cdn-cgi/l/email-protection#b9dfd8dbcbd0dadc97d2dcd7ded7d0f9d0dad5d6ccdd97dad6d4">✉ <span class="__cf_email__" data-cfemail="f2949390809b9197dc99979c959c9bb29b919e9d8796dc919d9f">[email&#160;protected]</span></a>
       <a href="/login">Espace admin</a>
     </div>
   </div>
@@ -1784,8 +1923,11 @@ footer{background:var(--ink);padding:3rem 2rem 1.5rem;border-top:1px solid #1f29
   </a>
 </div>
 
+<!-- ══ BANNIÈRES FLOTTANTES NÉON ══ -->
+<div class="neon-banner-container" id="neonBannerContainer"></div>
+
 <!-- ══ AI CHAT WIDGET ══ -->
-<div class="ai-chat-launcher" id="aiChatLauncher" onclick="toggleAIChat()" title="Assistant IA k-ni">
+<div class="ai-chat-launcher" id="aiChatLauncher" onclick="toggleAIChat()" title="Assistant k-Ni">
   <div class="ai-chat-pulse"></div>
   <div class="ai-chat-launcher-ico">
     <i class="fas fa-headset" id="aiLauncherIco"></i>
@@ -1802,11 +1944,12 @@ footer{background:var(--ink);padding:3rem 2rem 1.5rem;border-top:1px solid #1f29
         <div class="ai-online-dot"></div>
       </div>
       <div>
-        <div class="ai-chat-name">Keni</div>
+        <div class="ai-chat-name">Ton Assistant k-Ni</div>
         <div class="ai-chat-status" id="aiStatus">En ligne · répond en quelques secondes</div>
       </div>
     </div>
     <div class="ai-chat-header-right">
+      <button class="ai-hbtn" onclick="showAIMenu()" title="Menu principal"><i class="fas fa-home"></i></button>
       <button class="ai-hbtn" onclick="resetAIChat()" title="Nouvelle conversation"><i class="fas fa-redo-alt"></i></button>
       <button class="ai-hbtn" onclick="toggleAIChat()" title="Fermer"><i class="fas fa-times"></i></button>
     </div>
@@ -1815,8 +1958,30 @@ footer{background:var(--ink);padding:3rem 2rem 1.5rem;border-top:1px solid #1f29
   <!-- Messages -->
   <div class="ai-messages" id="aiMessages"></div>
 
+  <!-- Menu principal (affiché en premier) -->
+  <div class="ai-main-menu" id="aiMainMenu">
+    <button class="ai-menu-btn" onclick="aiMenuAction('localisation')">
+      <span class="ai-menu-ico">📍</span><span>Besoin localisation / Contact</span>
+    </button>
+    <button class="ai-menu-btn" onclick="aiMenuAction('agent')">
+      <span class="ai-menu-ico">💬</span><span>Discuter avec un Agent k-Ni</span>
+    </button>
+    <button class="ai-menu-btn" onclick="aiMenuAction('faq')">
+      <span class="ai-menu-ico">❓</span><span>FAQ (Questions – Réponses) / Aide</span>
+    </button>
+    <button class="ai-menu-btn" onclick="aiMenuAction('search')">
+      <span class="ai-menu-ico">🔍</span><span>Assistant Recherche Rapide</span>
+    </button>
+    <button class="ai-menu-btn" onclick="aiMenuAction('probleme')">
+      <span class="ai-menu-ico">🛠</span><span>Problèmes et Solutions</span>
+    </button>
+  </div>
+
+  <!-- Sélection agent WhatsApp -->
+  <div class="ai-agent-list" id="aiAgentList" style="display:none"></div>
+
   <!-- Suggestions rapides -->
-  <div class="ai-quick-replies" id="aiQuickReplies">
+  <div class="ai-quick-replies" id="aiQuickReplies" style="display:none">
     <button class="ai-qr" onclick="sendAI('Quels sont vos délais de livraison ?')">🚚 Livraison</button>
     <button class="ai-qr" onclick="sendAI('Comment payer par Orange Money ?')">🟠 Paiement</button>
     <button class="ai-qr" onclick="sendAI('Avez-vous des écouteurs Bluetooth ?')">🎧 Produit</button>
@@ -1829,8 +1994,9 @@ footer{background:var(--ink);padding:3rem 2rem 1.5rem;border-top:1px solid #1f29
     <span>Keni rédige…</span>
   </div>
 
-  <!-- Input -->
-  <div class="ai-input-row">
+  <!-- Input (caché pendant le menu) -->
+  <div class="ai-input-row" id="aiInputRow" style="display:none">
+    <button class="ai-back-btn" onclick="showAIMenu()" title="Retour au menu"><i class="fas fa-arrow-left"></i></button>
     <input class="ai-input" id="aiInput" placeholder="Posez votre question…"
            onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendAI();event.preventDefault()}">
     <button class="ai-send" id="aiSendBtn" onclick="sendAI()">
@@ -1860,7 +2026,7 @@ footer{background:var(--ink);padding:3rem 2rem 1.5rem;border-top:1px solid #1f29
 <div class="toasts" id="toastBox"></div>
 
 <!-- ══ JINJA DATA ══ -->
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const PRODS = {
   {% for p in products %}
   {{ p.id }}: {
@@ -2394,25 +2560,101 @@ window.addEventListener('scroll',()=>{
   }
 
   // ─── Chat ───────────────────────────────────────────────
+  // ─── Agents WhatsApp (chargés depuis l'API staff) ──────────────────
+  let _agents = [];
+  async function loadAgents(){
+    try{
+      const r = await fetch('/shop/api/staff/all');
+      const d = await r.json();
+      if(d.success) _agents = (d.staff||[]).filter(s=>s.phone);
+    }catch(e){}
+  }
+  loadAgents();
+
+  // ─── Menu principal ──────────────────────────────────────────────────
+  window.showAIMenu = function(){
+    document.getElementById('aiMainMenu').style.display='flex';
+    document.getElementById('aiAgentList').style.display='none';
+    document.getElementById('aiInputRow').style.display='none';
+    document.getElementById('aiQuickReplies').style.display='none';
+    document.getElementById('aiMessages').innerHTML='';
+    aiHistory=[];
+  };
+
+  window.aiMenuAction = function(action){
+    document.getElementById('aiMainMenu').style.display='none';
+    if(action==='agent'){
+      showAgentList();
+    } else if(action==='localisation'){
+      document.getElementById('aiInputRow').style.display='flex';
+      appendBotMsg('📍 **Localisation & Contact k-Ni Store**\n\n🏪 **Adresse :** Yaoundé, Cameroun\n📱 **WhatsApp :** +237 695 072 759\n⏰ **Horaires :** Lun–Sam 8h–20h\n📧 **Email :** kni-store@gmail.com\n\nBesoin d\'autre chose ?');
+    } else if(action==='faq'){
+      document.getElementById('aiInputRow').style.display='flex';
+      document.getElementById('aiQuickReplies').style.display='flex';
+      appendBotMsg('❓ **FAQ — Questions fréquentes**\n\nChoisissez un sujet ou posez votre question directement 👇');
+    } else if(action==='search'){
+      document.getElementById('aiInputRow').style.display='flex';
+      appendBotMsg('🔍 **Assistant Recherche Rapide**\n\nDites-moi ce que vous cherchez (nom, catégorie, budget…)\nEx : *"Écouteurs Bluetooth moins de 15 000 XAF"*');
+    } else if(action==='probleme'){
+      document.getElementById('aiInputRow').style.display='flex';
+      appendBotMsg('🛠 **Problèmes & Solutions**\n\nDécrivez votre problème (commande, paiement, livraison, produit défectueux…)\nJe vais vous aider à le résoudre rapidement.');
+    }
+    setTimeout(()=>scrollMessages(), 100);
+  };
+
+  function showAgentList(){
+    const el = document.getElementById('aiAgentList');
+    el.style.display='flex';
+    if(!_agents.length){
+      el.innerHTML=`<div style="text-align:center;padding:1.5rem;color:#6b7280;font-size:.8rem">
+        <i class="fas fa-headset" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>
+        Aucun agent disponible pour le moment.<br>
+        <a href="https://wa.me/237695072759" target="_blank" style="color:#059669;font-weight:700">Contacter le support général →</a>
+      </div>`;
+      return;
+    }
+    el.innerHTML = _agents.map(s=>{
+      const num = (s.phone||'').replace(/\D/g,'');
+      const waNum = num.startsWith('237') ? num : '237'+num;
+      const waMsg = encodeURIComponent(`Bonjour ${s.name||''}, je viens de la boutique k-Ni. J'ai besoin d'aide.`);
+      const av = s.avatar_url
+        ? `<img src="${s.avatar_url}" alt="${s.name}">`
+        : `<i class="fas fa-user"></i>`;
+      return `<div class="ai-agent-card">
+        <div class="ai-agent-av">${av}</div>
+        <div class="ai-agent-info">
+          <div class="ai-agent-name">${s.name||'Agent'}</div>
+          <div class="ai-agent-spec">${s.speciality||s.role||'Support client'}</div>
+          <a href="https://wa.me/${waNum}?text=${waMsg}" target="_blank" class="ai-agent-wa">
+            <i class="fab fa-whatsapp"></i> Continuer sur WhatsApp
+          </a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
   window.toggleAIChat = function(){
     aiOpen = !aiOpen;
     const panel = document.getElementById('aiChatPanel');
     panel.classList.toggle('open', aiOpen);
     if(aiOpen){
-      if(!aiHistory.length) appendBotMsg(
-        'Bonjour ! Je suis Keni, votre assistante k-ni Store. 😊
-Comment puis-je vous aider aujourd'hui ?
-*(Produit, livraison, paiement, réclamation…)*'
-      );
-      setTimeout(()=>document.getElementById('aiInput').focus(), 300);
+      // Afficher le menu principal + message de bienvenue
+      if(!aiHistory.length){
+        showAIMenu();
+        document.getElementById('aiMainMenu').style.display='flex';
+        // Message de bienvenue dans la zone messages
+        const msgs = document.getElementById('aiMessages');
+        msgs.innerHTML=`<div class="ai-msg bot">
+          <div class="ai-msg-ico"><i class="fas fa-headset"></i></div>
+          <div class="ai-msg-bubble">🙌 <strong>Salut ! Bienvenue sur k-Ni Store</strong><br><br>Je suis heureux de vous assister. Comment puis-je vous aider ?</div>
+        </div>`;
+      }
     }
   };
 
   window.resetAIChat = function(){
     aiHistory = [];
-    document.getElementById('aiMessages').innerHTML = '';
-    document.getElementById('aiQuickReplies').style.display = 'flex';
-    appendBotMsg('Conversation réinitialisée. 🔄 Comment puis-je vous aider ?');
+    showAIMenu();
   };
 
   window.sendAI = async function(preset){
@@ -2421,15 +2663,11 @@ Comment puis-je vous aider aujourd'hui ?
     if(!msg || aiThinking) return;
     inp.value = '';
 
-    // Hide quick replies after first message
     document.getElementById('aiQuickReplies').style.display = 'none';
-
     appendUserMsg(msg);
     aiHistory.push({role:'user', content:msg});
-
     setThinking(true);
 
-    // Catalog snapshot for context
     const catalog = Object.values(window.PRODS||{}).map(p=>({
       id: p.id, name: p.name, category: p.category,
       price: p.price, stock: p.stock, badge: p.badge
@@ -2449,7 +2687,7 @@ Comment puis-je vous aider aujourd'hui ?
       setThinking(false);
 
       if(data.error){
-        appendBotMsg('⚠ ' + data.error + '\n\nVous pouvez nous contacter sur WhatsApp : +237 695 072 759');
+        appendBotMsg('⚠ ' + data.error + '\n\nContactez-nous sur WhatsApp : +237 695 072 759');
         return;
       }
 
@@ -2463,7 +2701,7 @@ Comment puis-je vous aider aujourd'hui ?
 
     } catch(e){
       setThinking(false);
-      appendBotMsg('Désolée, je rencontre un problème technique. Contactez-nous sur WhatsApp : +237 695 072 759 💬');
+      appendBotMsg('Problème technique. Contactez-nous sur WhatsApp : +237 695 072 759 💬');
     }
   };
 
@@ -2619,16 +2857,61 @@ Comment puis-je vous aider aujourd'hui ?
   const _origOpenDetail = window.openDetail;
   window.openDetail = function(id){
     const p = (window.PRODS||{})[id];
-    if(p) window.trackView(p.id, p.name, p.category, p.price);
-    if(_origOpenDetail) _origOpenDetail(id);
-  };
+    if(p) wi
 
-  // Restore behavior from previous session
-  if(_behavior.viewed.length || _behavior.searches.length){
-    scheduleReco();
+<!-- ══ BANNIÈRES NÉON — LOGIQUE ══ -->
+<script>
+(function(){
+  // Les bannières sont chargées depuis les produits en promo
+  // + données admin (configurable via /shop/api/banners si dispo)
+  let _neonDismissed = JSON.parse(sessionStorage.getItem('kni_ban_dismissed')||'[]');
+
+  function buildNeonBanners(){
+    const container = document.getElementById('neonBannerContainer');
+    if(!container) return;
+
+    // Récupérer les produits avec promo
+    const prods = Object.values(window.PRODS||{})
+      .filter(p => p.badge==='promo' && p.price && !_neonDismissed.includes(p.id))
+      .slice(0,3);
+
+    if(!prods.length){ container.style.display='none'; return; }
+
+    const themes = [
+      {border:'rgba(0,255,150,.3)',glow:'rgba(0,255,150,.15)'},
+      {border:'rgba(99,102,241,.4)',glow:'rgba(99,102,241,.2)'},
+      {border:'rgba(236,72,153,.35)',glow:'rgba(236,72,153,.18)'},
+    ];
+
+    container.innerHTML = prods.map((p,i)=>{
+      const t = themes[i%themes.length];
+      const disc = p.original_price>0 ? Math.round((1-p.price/p.original_price)*100) : 0;
+      const img = p.image_url ? `<img class="neon-banner-img" src="${p.image_url}" alt="${p.name}" onerror="this.style.display='none'">` : '';
+      return `<div class="neon-banner" id="nban-${p.id}" style="border-color:${t.border};box-shadow:0 0 20px ${t.glow},0 8px 32px rgba(0,0,0,.4)">
+        <button class="neon-banner-close" onclick="dismissNeonBanner(${p.id})" title="Fermer">×</button>
+        ${img}
+        <div class="neon-banner-body">
+          <div class="neon-banner-brand" style="color:${['#00ff96','#818cf8','#f472b6'][i%3]}">${p.category?.toUpperCase()||'K-NI STORE'}${disc?` · -${disc}%`:''}</div>
+          <div class="neon-banner-title">${p.name}</div>
+          <div class="neon-banner-feat">${(p.features||p.description||'').slice(0,60)}${(p.features||p.description||'').length>60?'…':''}</div>
+          <div class="neon-banner-price">${p.price.toLocaleString('fr-FR')} XAF${p.original_price>0?`<span style="font-size:.6rem;color:rgba(255,255,255,.4);text-decoration:line-through;margin-left:.35rem;font-family:'Outfit',sans-serif">${p.original_price.toLocaleString('fr-FR')}</span>`:''}</div>
+          <button class="neon-banner-cta" onclick="openDetail(${p.id});dismissNeonBanner(${p.id})">
+            <i class="fas fa-cart-plus"></i> Voir l'offre
+          </button>
+        </div>
+      </div>`;
+    }).join('');
   }
 
-})();
+  window.dismissNeonBanner = function(id){
+    const el = document.getElementById('nban-'+id);
+    if(el){ el.style.transition='all .3s ease'; el.style.opacity='0'; el.style.transform='translateX(120%)'; setTimeout(()=>el.remove(),320); }
+    _neonDismissed.push(id);
+    sessionStorage.setItem('kni_ban_dismissed', JSON.stringify(_neonDismissed));
+  };
 
+  // Construire après chargement des PRODS
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', buildNeonBanners);
+  else setTimeout(buildNeonBanners, 500);
+})();
 </script>
-</html>
