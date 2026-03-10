@@ -1391,7 +1391,15 @@ async function delProd(id,name){
   if(!confirm(`Supprimer "${name}" ?`))return;
   const r=await fetch(`/shop/api/product/${id}`,{method:'DELETE'});
   const res=await r.json();
-  if(res.success){document.getElementById(`pc-${id}`)?.remove();toast('Produit supprimé');}
+  if(res.success){
+    delete PRODS[id];
+    document.getElementById(`pc-${id}`)?.remove();
+    toast('Produit supprimé');
+    // Sync la boutique via un refresh silencieux du compte produit
+    document.querySelectorAll('.pcount-live').forEach(el => {
+      el.textContent = Object.values(PRODS).filter(p=>p.is_active).length;
+    });
+  }
   else toast('❌ '+res.error,false);
 }
 function showProd(id){
@@ -2556,6 +2564,30 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(!window.EventSource) return;
   let sseRetry = 0;
 
+  // ── Refresh produits/commandes depuis l'API ──────────────────────
+  window._refreshProdsTimer = null;
+  async function refreshProds(){
+    try {
+      const r = await fetch('/shop/api/products/all');
+      const d = await r.json();
+      if(!d.success) return;
+      // Mettre à jour PRODS en mémoire
+      d.products.forEach(p => { PRODS[p.id] = p; });
+      // Supprimer les produits retirés
+      Object.keys(PRODS).forEach(k => { if(!d.products.find(p=>p.id==k)) delete PRODS[k]; });
+    } catch(e) {}
+  }
+  async function refreshOrders(){
+    try {
+      const r = await fetch('/shop/api/orders/recent');
+      const d = await r.json();
+      if(!d.success) return;
+      d.orders.forEach(o => { ORDERS[o.id] = o; });
+    } catch(e) {}
+  }
+  window.refreshProds   = refreshProds;
+  window.refreshOrders  = refreshOrders;
+
   function connect(){
     const es = new EventSource('/shop/stream');
 
@@ -2564,17 +2596,28 @@ document.addEventListener('DOMContentLoaded', ()=>{
         const data = JSON.parse(e.data);
         if(data.type==='new_order'){
           showSSENotif(data);
+          refreshOrders();
           // Blink tab title
           let orig = document.title, i=0;
-          const iv = setInterval(()=>{
-            document.title = i%2===0 ? '🔔 Nouvelle commande !' : orig;
-            if(++i>8){ clearInterval(iv); document.title=orig; }
-          }, 700);
+          const iv = setInterval(()=>{ document.title = i%2===0 ? '🔔 Nouvelle commande !' : orig; if(++i>8){ clearInterval(iv); document.title=orig; }}, 700);
           // Update pending badge
           const badge = document.getElementById('pendingBadgeLive');
           if(badge){ badge.style.display='inline'; badge.textContent=parseInt(badge.textContent||0)+1; }
         }
+        if(data.type==='product_updated'){
+          // Debounce 600ms pour éviter les refreshs en cascade
+          clearTimeout(window._refreshProdsTimer);
+          window._refreshProdsTimer = setTimeout(()=>{
+            refreshProds().then(()=>{
+              // Toast discret si c'est une action d'un autre utilisateur
+              if(data.action && data.action !== '_self'){
+                toast('🔄 Catalogue mis à jour');
+              }
+            });
+          }, 600);
+        }
       } catch(ex){}
+    };
     };
 
     es.onerror = function(){

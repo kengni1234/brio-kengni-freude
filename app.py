@@ -3951,7 +3951,7 @@ def admin_panel():
     users, stats = [], {}
     if conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id,username,email,role,status,shop_access,shop_permissions,created_at,last_login FROM users ORDER BY created_at DESC")
+        cursor.execute("SELECT id,username,email,role,status,created_at,last_login FROM users ORDER BY created_at DESC")
         users = [dict(r) for r in cursor.fetchall()]
         cursor.execute("SELECT COUNT(*) FROM users");               stats['total_users']      = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM users WHERE status='active'"); stats['active_users'] = cursor.fetchone()[0]
@@ -3996,8 +3996,6 @@ def admin_create_user():
     data = request.get_json(force=True, silent=True)
     username,email,password = data.get('username','').strip(), data.get('email','').strip(), data.get('password','').strip()
     role, status = data.get('role','user'), data.get('status','active')
-    shop_access = 1 if data.get('shop_access', False) else 0
-    shop_perms = data.get('shop_permissions', {'add': False, 'edit': False, 'delete': False})
     allowed = ['viewer','user','editor','admin']
     if session.get('role')=='superadmin': allowed.append('superadmin')
     if not all([username,email,password]): return jsonify({'success':False,'message':'Tous les champs sont requis'}),400
@@ -4007,8 +4005,8 @@ def admin_create_user():
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM users WHERE email=?", (email,))
         if cursor.fetchone(): conn.close(); return jsonify({'success':False,'message':'Email déjà utilisé'}),409
-        cursor.execute("INSERT INTO users (username,email,password,role,status,shop_access,shop_permissions,created_at) VALUES (?,?,?,?,?,?,?,?)",
-                       (username,email,generate_password_hash(password),role,status,shop_access,json.dumps(shop_perms),datetime.now().isoformat()))
+        cursor.execute("INSERT INTO users (username,email,password,role,status,created_at) VALUES (?,?,?,?,?,?)",
+                       (username,email,generate_password_hash(password),role,status,datetime.now().isoformat()))
         conn.commit(); new_id=cursor.lastrowid; conn.close()
         return jsonify({'success':True,'message':f'Compte créé (ID {new_id})','id':new_id})
     return jsonify({'success':False,'message':'Erreur DB'}),500
@@ -4018,8 +4016,6 @@ def admin_create_user():
 def admin_update_user(user_id):
     data = request.get_json(force=True, silent=True)
     role, status = data.get('role'), data.get('status')
-    shop_access = 1 if data.get('shop_access', False) else 0
-    shop_perms = data.get('shop_permissions')
     allowed = ['viewer','user','editor','admin']
     if session.get('role')=='superadmin': allowed.append('superadmin')
     if role and role not in allowed: return jsonify({'success':False,'message':'Rôle non autorisé'}),403
@@ -4028,8 +4024,6 @@ def admin_update_user(user_id):
         cursor = conn.cursor()
         if role:   cursor.execute("UPDATE users SET role=?,updated_at=? WHERE id=?",   (role,   datetime.now().isoformat(), user_id))
         if status: cursor.execute("UPDATE users SET status=?,updated_at=? WHERE id=?", (status, datetime.now().isoformat(), user_id))
-        cursor.execute("UPDATE users SET shop_access=?,shop_permissions=?,updated_at=? WHERE id=?",
-                       (shop_access, json.dumps(shop_perms) if shop_perms else '{}', datetime.now().isoformat(), user_id))
         conn.commit(); conn.close()
         return jsonify({'success':True,'message':'Utilisateur mis à jour'})
     return jsonify({'success':False,'message':'Erreur DB'}),500
@@ -4081,19 +4075,6 @@ def admin_update_permissions(user_id):
         conn.commit(); conn.close()
         return jsonify({'success': True, 'message': 'Permissions mises à jour'})
     return jsonify({'success': False, 'message': 'Erreur DB'}), 500
-
-@app.route('/admin/get-shop-permissions/<int:user_id>')
-@admin_required
-def admin_get_shop_permissions(user_id):
-    conn = get_db_connection()
-    if conn:
-        row = conn.execute("SELECT shop_access, shop_permissions FROM users WHERE id=?", (user_id,)).fetchone()
-        conn.close()
-        if row:
-            perms = json.loads(row['shop_permissions']) if row['shop_permissions'] else {}
-            return jsonify({'access': bool(row['shop_access']), 'add': perms.get('add', False),
-                            'edit': perms.get('edit', False), 'delete': perms.get('delete', False)})
-    return jsonify({'access': False, 'add': False, 'edit': False, 'delete': False})
 
 @app.route('/admin/get-permissions/<int:user_id>')
 @admin_required
@@ -7173,6 +7154,8 @@ def shop_create_order():
                     WHERE id = ? AND stock > 0
                 """, (qty, pid))
         conn.commit()
+        # Notifier boutique + admin du changement de stock
+        _sse_broadcast_product_change('stock_updated')
         try:
             cur.execute("""
                 INSERT INTO notifications (user_id,type,title,message,is_read,created_at)
@@ -7306,7 +7289,9 @@ def shop_create_product():
               d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
               1 if d.get('is_active', True) else 0))
         conn.commit()
-        return jsonify({'success': True, 'id': cur.lastrowid})
+        new_pid = cur.lastrowid
+        _sse_broadcast_product_change('created', new_pid)
+        return jsonify({'success': True, 'id': new_pid})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
@@ -7336,6 +7321,7 @@ def shop_update_product(pid):
               d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
               1 if d.get('is_active', True) else 0, pid))
         conn.commit()
+        _sse_broadcast_product_change('updated', pid)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -7352,6 +7338,7 @@ def shop_toggle_product(pid):
     try:
         conn.execute("UPDATE shop_products SET is_active=1-is_active, updated_at=CURRENT_TIMESTAMP WHERE id=?", (pid,))
         conn.commit()
+        _sse_broadcast_product_change('toggled', pid)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -7380,6 +7367,7 @@ def shop_delete_product(pid):
                         pass
         conn.execute("DELETE FROM shop_products WHERE id=?", (pid,))
         conn.commit()
+        _sse_broadcast_product_change('deleted', pid)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -7661,6 +7649,64 @@ with app.app_context():
     except Exception:
         pass
 
+
+# ── API produits publique (lecture fraîche) ─────────────────────────
+@app.route('/shop/api/products')
+def shop_api_products():
+    """Retourne les produits actifs en JSON — utilisé pour sync boutique/admin."""
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""SELECT id,name,description,features,category,price,original_price,
+                              stock,image_url,images,badge,delivery_info,is_active,reviews_count
+                       FROM shop_products WHERE is_active=1
+                       ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END,
+                                created_at DESC""")
+        products = [dict(r) for r in cur.fetchall()]
+        return jsonify({'success': True, 'products': products})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/products/all')
+@login_required
+def shop_api_products_all():
+    """Retourne TOUS les produits (actifs + inactifs) pour le panneau admin."""
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""SELECT id,name,description,features,category,price,original_price,
+                              stock,image_url,images,badge,delivery_info,is_active,reviews_count
+                       FROM shop_products ORDER BY created_at DESC""")
+        products = [dict(r) for r in cur.fetchall()]
+        return jsonify({'success': True, 'products': products})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/orders/recent')
+@login_required
+def shop_api_orders_recent():
+    """Retourne les 200 dernières commandes pour refresh admin."""
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM shop_orders ORDER BY created_at DESC LIMIT 200")
+        orders = [dict(r) for r in cur.fetchall()]
+        return jsonify({'success': True, 'orders': orders})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+def _sse_broadcast_product_change(action, pid=None):
+    """Diffuse un événement SSE quand un produit est modifié/créé/supprimé."""
+    try:
+        _sse_broadcast({'type': 'product_updated', 'action': action, 'pid': pid})
+    except Exception:
+        pass
 
 # ── Export CSV ──────────────────────────────────────────────────────
 @app.route('/shop/api/products/export')

@@ -2914,6 +2914,74 @@ window.addEventListener('scroll',()=>{
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', buildNeonBanners);
   else setTimeout(buildNeonBanners, 500);
 })();
+
+// ═══════════════════════════════════════════════════════════════════
+//  SYNC TEMPS RÉEL — écoute les changements produits via SSE
+// ═══════════════════════════════════════════════════════════════════
+(function(){
+  if(!window.EventSource) return;
+  let _syncTimer = null;
+
+  async function syncProds(){
+    try {
+      const r = await fetch('/shop/api/products');
+      const d = await r.json();
+      if(!d.success || !d.products) return;
+
+      // Mettre à jour PRODS en mémoire
+      const freshIds = new Set();
+      d.products.forEach(p => {
+        window.PRODS[p.id] = p;
+        freshIds.add(p.id);
+      });
+
+      // Masquer les produits retirés / désactivés
+      document.querySelectorAll('.pcard[data-id]').forEach(card => {
+        const pid = parseInt(card.dataset.id);
+        if(!freshIds.has(pid)){
+          card.style.transition = 'opacity .4s';
+          card.style.opacity = '0';
+          setTimeout(() => card.style.display = 'none', 420);
+        }
+      });
+
+      // Mettre à jour le stock affiché sur chaque carte
+      d.products.forEach(p => {
+        const card = document.querySelector(`.pcard[data-id="${p.id}"]`);
+        if(card){
+          card.dataset.stock = p.stock;
+          card.dataset.price = p.price;
+          // Si stock=0, désactiver le bouton ajouter
+          const btn = card.querySelector('.btn-add');
+          if(btn){
+            if(p.stock === 0){
+              btn.disabled = true;
+              btn.textContent = 'Épuisé';
+            } else if(btn.disabled && btn.textContent === 'Épuisé'){
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fas fa-cart-plus"></i> Ajouter';
+            }
+          }
+        }
+      });
+
+      // Ré-appliquer les filtres actifs
+      if(typeof applyFilters === 'function') applyFilters();
+    } catch(e) {}
+  }
+
+  const es = new EventSource('/shop/stream');
+  es.onmessage = function(ev){
+    try {
+      const data = JSON.parse(ev.data);
+      if(data.type === 'product_updated'){
+        clearTimeout(_syncTimer);
+        _syncTimer = setTimeout(syncProds, 800);
+      }
+    } catch(e){}
+  };
+  es.onerror = function(){ es.close(); };
+})();
 </script>
 
 </body>
