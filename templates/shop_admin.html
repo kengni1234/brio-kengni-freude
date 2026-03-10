@@ -241,6 +241,71 @@
 /* ══ RESPONSIVE ══ */
 @media(max-width:960px){.sa-nav{display:none}.dp{display:none}.kpis{grid-template-columns:1fr 1fr}.sa-root{height:calc(100vh - 80px);border-radius:0;border:none}.bnav{display:flex}.sa-main{padding-bottom:70px}}
 @media(max-width:600px){.kpis{grid-template-columns:1fr 1fr}.fg3,.fg4{grid-template-columns:1fr 1fr}.sh{flex-direction:column;align-items:flex-start}.pg{grid-template-columns:1fr 1fr;gap:.75rem}.pcard-img{height:120px}.stats3{grid-template-columns:1fr 1fr}}
+
+/* ══ BOUTON IA ══ */
+.ab-ai{background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(99,102,241,.14));color:#a78bfa;border:1px solid rgba(124,58,237,.3)!important}
+.ab-ai:hover{background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(99,102,241,.28));box-shadow:0 0 16px rgba(124,58,237,.25)}
+.btn-ai{background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;color:#fff;padding:.55rem 1.15rem;border-radius:10px;font-weight:800;font-size:.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:.42rem;transition:.2s;font-family:inherit}
+.btn-ai:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,.35)}
+.btn-ai:disabled{opacity:.55;transform:none;cursor:not-allowed}
+
+/* ══ PANNEAU RÉSULTAT IA (dans le formulaire) ══ */
+.ai-result-panel{background:linear-gradient(135deg,rgba(124,58,237,.07),rgba(15,20,25,.6));border:1px solid rgba(124,58,237,.25);border-radius:14px;padding:1.25rem;margin-top:1rem;display:none}
+.ai-result-panel.visible{display:block}
+.ai-rp-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid rgba(124,58,237,.2)}
+.ai-rp-title{font-size:.88rem;font-weight:800;background:linear-gradient(135deg,#a78bfa,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:.45rem}
+.ai-rp-title i{-webkit-text-fill-color:#a78bfa}
+.ai-sec{margin-bottom:.9rem}
+.ai-sec-lbl{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#a78bfa;margin-bottom:.35rem;display:flex;align-items:center;gap:.3rem}
+.ai-box{background:rgba(0,0,0,.25);border:1px solid rgba(124,58,237,.15);border-radius:9px;padding:.7rem .9rem;font-size:.8rem;line-height:1.65;color:var(--text-primary)}
+.ai-chips-wrap{display:flex;flex-wrap:wrap;gap:.3rem}
+.ai-chip{font-size:.68rem;padding:.2rem .55rem;border-radius:6px;background:rgba(124,58,237,.14);color:#c4b5fd;border:1px solid rgba(124,58,237,.22);font-weight:600}
+.ai-price-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.55rem}
+.ai-price-box{background:rgba(0,0,0,.22);border:1px solid rgba(124,58,237,.15);border-radius:9px;padding:.65rem;text-align:center}
+.ai-price-val{font-size:.95rem;font-weight:900;color:#a78bfa;font-family:var(--font-mono)}
+.ai-price-val.good{color:#34d399}
+.ai-price-lbl{font-size:.62rem;color:var(--text-secondary);margin-top:.1rem}
+.ai-spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:.2rem .85rem}
+.ai-spec-key{font-size:.72rem;color:var(--text-secondary)}
+.ai-spec-val{font-size:.72rem;font-weight:700}
+.ai-advice{font-size:.78rem;color:var(--text-secondary);font-style:italic;line-height:1.6;padding:.6rem .85rem;background:rgba(0,0,0,.18);border-left:3px solid rgba(124,58,237,.4);border-radius:0 8px 8px 0}
+.ai-loader{display:flex;align-items:center;gap:.75rem;padding:.65rem 0;color:#a78bfa;font-size:.82rem}
+.ai-dots{display:flex;gap:.35rem}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:#a78bfa;animation:dotPulse 1.3s infinite ease-in-out}
+.ai-dot:nth-child(2){animation-delay:.18s}
+.ai-dot:nth-child(3){animation-delay:.36s}
+@keyframes dotPulse{0%,80%,100%{transform:scale(.65);opacity:.4}40%{transform:scale(1.1);opacity:1}}
+
+/* ══ MODAL CRÉER UTILISATEUR ══ */
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.85rem}
+.role-card{background:var(--accent-color);border:2px solid var(--border-color);border-radius:11px;padding:.7rem .9rem;cursor:pointer;transition:.2s;user-select:none}
+.role-card:hover{border-color:rgba(0,212,170,.3)}
+.role-card.active{border-color:var(--primary-color);background:rgba(0,212,170,.07)}
+.role-card .rc-ico{font-size:1.2rem;margin-bottom:.2rem}
+.role-card .rc-nm{font-size:.8rem;font-weight:800}
+.role-card .rc-ds{font-size:.65rem;color:var(--text-secondary);margin-top:.1rem;line-height:1.35}
+.pck-row{display:flex;align-items:flex-start;gap:.6rem;padding:.5rem .65rem;border-radius:9px;background:var(--accent-color);margin-bottom:.35rem;cursor:pointer;transition:.15s}
+.pck-row:hover{background:rgba(0,212,170,.06)}
+.pck-row input{accent-color:var(--primary-color);width:15px;height:15px;margin-top:.1rem;flex-shrink:0;cursor:pointer}
+.pck-lbl{font-size:.8rem;font-weight:700}
+.pck-ds{font-size:.65rem;color:var(--text-secondary)}
+/* ══ KANBAN ══ */
+.kb-col{flex:0 0 230px;background:var(--secondary-color);border:1px solid var(--border-color);border-radius:13px;overflow:hidden;display:flex;flex-direction:column;max-height:72vh}
+.kb-col-hd{padding:.65rem .85rem;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--secondary-color);z-index:1}
+.kb-col-body{flex:1;overflow-y:auto;padding:.5rem;display:flex;flex-direction:column;gap:.5rem}
+.kb-card{background:var(--accent-color);border:1px solid var(--border-color);border-radius:10px;padding:.7rem;cursor:pointer;transition:.15s;font-size:.78rem}
+.kb-card:hover{border-color:var(--primary-color);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,212,170,.1)}
+.kb-card-ref{font-size:.65rem;color:var(--primary-color);font-family:var(--font-mono);font-weight:700;margin-bottom:.2rem}
+.kb-card-name{font-weight:700;color:var(--text-primary);margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kb-card-total{font-family:var(--font-mono);font-weight:800;color:var(--primary-color);font-size:.82rem}
+.kb-card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:.45rem;gap:.3rem}
+.kb-card-pay{font-size:.62rem;background:rgba(255,255,255,.06);border-radius:4px;padding:.1rem .4rem;color:var(--text-secondary)}
+.kb-card-time{font-size:.62rem;color:var(--text-secondary)}
+.kb-drag-over{background:rgba(0,212,170,.06)!important;border-color:var(--primary-color)!important}
+.kb-empty{text-align:center;padding:1.5rem .5rem;color:var(--text-secondary);font-size:.72rem;opacity:.5}
+/* SSE notification */
+.sse-dot{width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;animation:ssePulse 1s ease-in-out infinite}
+@keyframes ssePulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.7}}
 </style>
 
 <div class="sa-root">
@@ -321,7 +386,21 @@
 <!-- ══ PRODUITS ══ -->
 <div class="sec" id="sec-prod">
   <div class="sh"><h4>📦 Catalogue</h4>
-    {% if user_perms.add %}<button class="btn-p" onclick="go('new')"><i class="fas fa-plus"></i> Nouveau produit</button>{% endif %}
+    <div style="display:flex;gap:.45rem;flex-wrap:wrap;align-items:center">
+      <button class="btn-g" onclick="exportCatalogue('csv')" title="Exporter CSV"><i class="fas fa-download"></i> CSV</button>
+      <button class="btn-g" onclick="exportCatalogue('xlsx')" title="Exporter Excel"><i class="fas fa-file-excel" style="color:#10b981"></i> Excel</button>
+      <label class="btn-g" style="cursor:pointer;margin:0" title="Importer CSV/Excel">
+        <i class="fas fa-upload"></i> Importer
+        <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="importCatalogue(this)">
+      </label>
+      {% if user_perms.add %}<button class="btn-p" onclick="go('new')"><i class="fas fa-plus"></i> Nouveau produit</button>{% endif %}
+    </div>
+  </div>
+  <!-- Import progress bar -->
+  <div id="importProgress" style="display:none;background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.8rem">
+    <div style="display:flex;align-items:center;gap:.6rem;color:var(--primary-color)">
+      <i class="fas fa-spinner fa-spin"></i> <span id="importProgressText">Import en cours…</span>
+    </div>
   </div>
   <div class="frow">
     <input class="fsrch" placeholder="🔍 Rechercher…" oninput="filterP(this.value)">
@@ -355,6 +434,7 @@
           <button class="ab ab-inv" onclick="genInvFromProduct({{ p.id }})" title="Facture rapide"><i class="fas fa-file-invoice"></i></button>
           {% if user_perms.edit %}<button class="ab ab-tg" onclick="toggleP({{ p.id }})"><i class="fas fa-{{ 'eye-slash' if p.is_active else 'eye' }}"></i></button>{% endif %}
           {% if user_perms.delete %}<button class="ab ab-dl" onclick="delProd({{ p.id }},'{{ p.name|replace("'","\\'") }}')"><i class="fas fa-trash"></i></button>{% endif %}
+          <button class="ab ab-ai" onclick="openAIModal({{ p.id }})" title="Analyser avec l'IA"><i class="fas fa-robot"></i></button>
         </div>
       </div>
     </div>
@@ -455,11 +535,40 @@
       <div class="fg"><label class="fl">Notes internes</label><textarea class="fi" id="pnotes" rows="2" style="resize:vertical" placeholder="Notes fournisseur, prix achat…"></textarea></div>
     </div></div>
   </div>
-  <button class="btn-p" id="saveBtn" onclick="saveProd()" style="width:100%;justify-content:center;padding:.78rem;font-size:.9rem;margin-top:.85rem"><i class="fas fa-save"></i> Enregistrer le produit</button>
+  <div style="display:flex;gap:.6rem;margin-top:.85rem">
+    <button class="btn-p" id="saveBtn" onclick="saveProd()" style="flex:1;justify-content:center;padding:.78rem;font-size:.9rem"><i class="fas fa-save"></i> Enregistrer</button>
+    <button class="btn-ai" onclick="openAIModal(null,'form')" title="L'IA analyse et optimise votre fiche produit"><i class="fas fa-robot"></i> Analyser avec l'IA</button>
+  </div>
+  <!-- Panneau résultat IA intégré au formulaire -->
+  <div class="ai-result-panel" id="aiFormPanel"></div>
 </div>
 <!-- ══ COMMANDES ══ -->
 <div class="sec" id="sec-ord">
-  <div class="sh"><h4>📋 Commandes</h4><input class="fsrch" placeholder="🔍 Nom, téléphone…" oninput="filterOrds(this.value)" style="max-width:200px"></div>
+  <!-- SSE notification banner -->
+  <div id="sseNotifBanner" style="display:none;background:linear-gradient(135deg,rgba(0,212,170,.15),rgba(0,212,170,.05));border:1px solid rgba(0,212,170,.3);border-radius:10px;padding:.7rem 1rem;margin-bottom:.85rem;display:none;align-items:center;gap:.75rem">
+    <div style="width:36px;height:36px;background:var(--primary-color);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="fas fa-bell" style="color:#0f1419;font-size:.85rem"></i>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div id="sseNotifText" style="font-size:.82rem;font-weight:700;color:var(--text-primary)">Nouvelle commande reçue !</div>
+      <div id="sseNotifSub" style="font-size:.72rem;color:var(--text-secondary)">Chargement…</div>
+    </div>
+    <button class="btn-p" style="font-size:.72rem;padding:.35rem .7rem" onclick="location.reload()">
+      <i class="fas fa-sync"></i> Actualiser
+    </button>
+    <button onclick="document.getElementById('sseNotifBanner').style.display='none'" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:.9rem"><i class="fas fa-times"></i></button>
+  </div>
+
+  <div class="sh">
+    <h4>📋 Commandes
+      <span id="pendingBadgeLive" style="background:#ef4444;color:#fff;border-radius:20px;font-size:.58rem;padding:.05rem .38rem;font-weight:800;display:{% if pending_count %}inline{% else %}none{% endif %}">{{ pending_count }}</span>
+    </h4>
+    <div style="display:flex;gap:.45rem;align-items:center;flex-wrap:wrap">
+      <input class="fsrch" placeholder="🔍 Nom, téléphone…" oninput="filterOrds(this.value)" style="max-width:200px">
+      <button class="btn-g" id="btnTableView" onclick="setOrdView('table')" style="font-size:.75rem"><i class="fas fa-table"></i> Tableau</button>
+      <button class="btn-g" id="btnKanbanView" onclick="setOrdView('kanban')" style="font-size:.75rem"><i class="fas fa-columns"></i> Kanban</button>
+    </div>
+  </div>
   <div class="frow" id="ordFilts">
     <button class="fchip on" data-os="all" onclick="filterOS(this)">Tout ({{ orders|length }})</button>
     <button class="fchip" data-os="pending" onclick="filterOS(this)">⏳ Attente ({{ orders|selectattr('status','equalto','pending')|list|length }})</button>
@@ -504,6 +613,13 @@
     </tbody>
   </table></div>
   {% else %}<div style="text-align:center;padding:3rem;color:var(--text-secondary)"><i class="fas fa-receipt" style="font-size:2rem;opacity:.15;display:block;margin-bottom:.6rem"></i>Aucune commande.</div>{% endif %}
+
+  <!-- KANBAN VIEW -->
+  <div id="kanbanView" style="display:none">
+    <div id="kanbanBoard" style="display:flex;gap:.75rem;overflow-x:auto;padding-bottom:1rem;min-height:300px">
+      <div style="text-align:center;padding:3rem;color:var(--text-secondary);width:100%"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem"></i></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ FACTURES ══ -->
@@ -574,7 +690,10 @@
 {% if session.get('role') in ('admin','superadmin') %}
 <div class="sec" id="sec-acc">
   <div class="sh"><h4>🔐 Accès & Permissions boutique</h4>
-    <button class="btn-g" onclick="checkInactivity()"><i class="fas fa-user-clock"></i> Vérifier inactivité</button>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn-g" onclick="checkInactivity()"><i class="fas fa-user-clock"></i> Inactivité</button>
+      <button class="btn-p" onclick="openCreateUser()"><i class="fas fa-user-plus"></i> Créer un compte</button>
+    </div>
   </div>
   <div style="background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.18);border-radius:12px;padding:.85rem 1rem;margin-bottom:1.15rem;font-size:.8rem;color:var(--text-secondary);line-height:1.65">
     <i class="fas fa-shield-halved" style="color:var(--primary-color)"></i>
@@ -1463,10 +1582,679 @@ async function loadStockValue(){
   }catch(e){toast('Erreur réseau',false);}
 }
 
+
+/* ═══════════════════════════════════════════════════
+   CRÉER UN COMPTE BOUTIQUE
+═══════════════════════════════════════════════════ */
+const CU_PROFILES = {
+  gestionnaire: { acc:true, add:true,  edit:true,  del:false },
+  commercial:   { acc:true, add:false, edit:false, del:false },
+  catalogue:    { acc:true, add:true,  edit:true,  del:false },
+  custom:       { acc:true, add:false, edit:false, del:false },
+};
+
+function openCreateUser(){
+  document.getElementById('createUserModal').classList.add('open');
+  ['cu-name','cu-email','cu-pwd','cu-pwd2'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  // reset to gestionnaire
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('active'));
+  document.querySelector('.role-card[data-profile="gestionnaire"]').classList.add('active');
+  applyCuProfile('gestionnaire');
+}
+
+function closeCreateUser(){
+  document.getElementById('createUserModal').classList.remove('open');
+}
+document.getElementById('createUserModal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('createUserModal')) closeCreateUser();
+});
+
+function setCuProfile(card){
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('active'));
+  card.classList.add('active');
+  applyCuProfile(card.dataset.profile);
+}
+
+function applyCuProfile(profile){
+  const p = CU_PROFILES[profile] || CU_PROFILES.gestionnaire;
+  document.getElementById('cu-acc').checked  = p.acc;
+  document.getElementById('cu-add').checked  = p.add;
+  document.getElementById('cu-edit').checked = p.edit;
+  document.getElementById('cu-del').checked  = p.del;
+}
+
+async function submitCreateUser(){
+  const name  = document.getElementById('cu-name').value.trim();
+  const email = document.getElementById('cu-email').value.trim();
+  const pwd   = document.getElementById('cu-pwd').value;
+  const pwd2  = document.getElementById('cu-pwd2').value;
+
+  if(!name || !email || !pwd){ toast('❌ Remplissez tous les champs obligatoires', false); return; }
+  if(pwd !== pwd2){ toast('❌ Les mots de passe ne correspondent pas', false); return; }
+  if(pwd.length < 6){ toast('❌ Mot de passe trop court (min. 6 caractères)', false); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('❌ Email invalide', false); return; }
+
+  const perms = {
+    add:    document.getElementById('cu-add').checked,
+    edit:   document.getElementById('cu-edit').checked,
+    delete: document.getElementById('cu-del').checked,
+  };
+  const shop_access = document.getElementById('cu-acc').checked;
+
+  const btn = document.getElementById('cuSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Création…';
+
+  try{
+    // Étape 1 : créer le compte (rôle "user" — pas admin)
+    const r1 = await fetch('/admin/create-user',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username:name, email, password:pwd, role:'user', status:'active' })
+    });
+    const d1 = await r1.json();
+    if(!d1.success){
+      toast('❌ ' + (d1.message || d1.error || 'Erreur création'), false);
+      btn.disabled=false; btn.innerHTML='<i class="fas fa-user-plus"></i> Créer le compte';
+      return;
+    }
+
+    // Étape 2 : attribuer les permissions boutique
+    const userId = d1.user_id || d1.id;
+    if(userId){
+      await fetch('/shop/api/access/set-v2',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ user_id:userId, access:shop_access, ...perms })
+      });
+    }
+
+    toast(`✅ Compte « ${name} » créé avec succès !`);
+    closeCreateUser();
+    setTimeout(()=>location.reload(), 1200);
+
+  } catch(e){
+    toast('❌ Erreur réseau', false);
+    btn.disabled=false; btn.innerHTML='<i class="fas fa-user-plus"></i> Créer le compte';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   AGENT IA — ANALYSE & OPTIMISATION PRODUIT
+═══════════════════════════════════════════════════ */
+let _aiProdId = null;   // produit analysé (null = depuis formulaire)
+let _aiResult = null;   // dernier résultat
+let _aiSource = null;   // 'card' ou 'form'
+
+const AI_LOAD_MSGS = [
+  'Analyse des caractéristiques…',
+  'Optimisation du nom commercial…',
+  'Rédaction de la description…',
+  'Calcul du positionnement prix…',
+  'Génération des mots-clés SEO…',
+  'Construction de la fiche technique…',
+  'Finalisation des recommandations…',
+];
+
+function openAIModal(prodId, source='card'){
+  _aiProdId = prodId;
+  _aiSource = source;
+  _aiResult = null;
+
+  // Reset UI
+  document.getElementById('aiModal').classList.add('open');
+  document.getElementById('aiInputZone').style.display  = 'block';
+  document.getElementById('aiResultZone').style.display = 'none';
+
+  // Pré-remplir avec les données existantes
+  let raw = '';
+  if(prodId && PRODS[prodId]){
+    const p = PRODS[prodId];
+    raw = [p.name, p.description, p.features].filter(Boolean).join('\n');
+    const cat = document.getElementById('aiCatSel');
+    if(cat && p.category) cat.value = p.category;
+  } else if(source === 'form'){
+    const pn    = document.getElementById('pn')?.value    || '';
+    const pd    = document.getElementById('pd')?.value    || '';
+    const pf    = document.getElementById('pfeats')?.value|| '';
+    raw = [pn, pd, pf].filter(Boolean).join('\n');
+    const cat  = document.getElementById('pcat')?.value;
+    const catSel = document.getElementById('aiCatSel');
+    if(catSel && cat) catSel.value = cat;
+  }
+  document.getElementById('aiRawText').value = raw;
+  document.getElementById('aiRunBtn').disabled = false;
+  document.getElementById('aiRunBtn').innerHTML = '<i class="fas fa-magic"></i> Analyser avec l\'IA';
+}
+
+function closeAIModal(){
+  document.getElementById('aiModal').classList.remove('open');
+}
+document.getElementById('aiModal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('aiModal')) closeAIModal();
+});
+
+function reRunAI(){
+  document.getElementById('aiInputZone').style.display  = 'block';
+  document.getElementById('aiResultZone').style.display = 'none';
+}
+
+async function launchAI(){
+  const raw    = document.getElementById('aiRawText').value.trim();
+  const cat    = document.getElementById('aiCatSel').value;
+  const market = document.getElementById('aiMarketSel').value;
+  const lang   = document.getElementById('aiLangSel').value;
+
+  if(!raw){ toast('❌ Entrez une description produit', false); return; }
+
+  // Basculer vers zone résultat
+  document.getElementById('aiInputZone').style.display  = 'none';
+  document.getElementById('aiResultZone').style.display = 'block';
+  document.getElementById('aiLoader').style.display     = 'flex';
+  document.getElementById('aiResultContent').style.display = 'none';
+  document.getElementById('aiErrZone').style.display    = 'none';
+
+  // Messages animés
+  let mi = 0;
+  const msgEl = document.getElementById('aiLoaderMsg');
+  const msgTimer = setInterval(()=>{ msgEl.textContent = AI_LOAD_MSGS[mi++ % AI_LOAD_MSGS.length]; }, 1900);
+
+  const catMap   = { electronique:'Électronique / Informatique', mode:'Mode & Accessoires', maison:'Maison & Décoration', sport:'Sport & Loisirs', beaute:'Beauté & Soin' };
+  const mkMap    = { cameroun:'Cameroun (prix en FCFA, marché Yaoundé/Douala)', afrique:'Afrique Centrale (FCFA)', france:'France (EUR)' };
+  const currency = market==='france' ? 'EUR' : 'FCFA';
+  const langTxt  = lang==='fr' ? 'en français' : 'in English';
+
+  const sysPrompt = `Tu es un expert e-commerce spécialisé pour le marché ${mkMap[market]}.
+Tu analyses des fiches produits brutes et génères du contenu professionnel optimisé ${langTxt}.
+Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans balises markdown.
+Format JSON obligatoire :
+{
+  "name": "Nom commercial court et accrocheur",
+  "description": "2-3 phrases naturelles et persuasives",
+  "features": "✔ Point 1\\n✔ Point 2\\n✔ Point 3\\n✔ Point 4\\n✔ Point 5",
+  "tags": ["tag1","tag2","tag3","tag4","tag5","tag6"],
+  "price_min": 0,
+  "price_max": 0,
+  "price_suggested": 0,
+  "price_promo": 0,
+  "specs": [{"key":"Processeur","value":"Intel Core i5"},{"key":"RAM","value":"16 Go DDR4"}],
+  "badge": "hot",
+  "advice": "Conseil de positionnement et de vente concret pour ce marché"
+}
+badge : "new", "hot", "promo" ou "".
+Prix en ${currency}.`;
+
+  const userPrompt = `Catégorie : ${catMap[cat]}\nMarché : ${mkMap[market]}\n\nDonnées brutes :\n${raw}`;
+
+  try{
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: sysPrompt,
+        messages:[{ role:'user', content:userPrompt }]
+      })
+    });
+
+    clearInterval(msgTimer);
+    const data = await resp.json();
+
+    if(!resp.ok || data.error){
+      throw new Error(data.error?.message || `Erreur API ${resp.status}`);
+    }
+
+    const rawTxt = (data.content||[]).map(c=>c.text||'').join('');
+    let result;
+    try{
+      result = JSON.parse(rawTxt.replace(/```json|```/g,'').trim());
+    } catch(e){
+      throw new Error('Réponse IA non parsable. Réessayez.');
+    }
+
+    _aiResult = result;
+    renderAIResult(result, currency);
+    document.getElementById('aiLoader').style.display        = 'none';
+    document.getElementById('aiResultContent').style.display = 'block';
+
+  } catch(err){
+    clearInterval(msgTimer);
+    document.getElementById('aiLoader').style.display = 'none';
+    const errEl = document.getElementById('aiErrZone');
+    errEl.style.display = 'block';
+    errEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Erreur :</strong> ${err.message}
+      <br><button onclick="reRunAI()" class="btn-g" style="margin-top:.65rem;font-size:.75rem"><i class="fas fa-redo"></i> Réessayer</button>`;
+  }
+}
+
+function renderAIResult(r, currency){
+  document.getElementById('res-name').textContent  = r.name  || '—';
+  document.getElementById('res-desc').textContent  = r.description || '—';
+  document.getElementById('res-feats').textContent = r.features || '—';
+
+  // Tags
+  document.getElementById('res-tags').innerHTML =
+    (r.tags||[]).map(t=>`<span class="ai-chip">${t}</span>`).join('');
+
+  // Prix
+  const fmt = n => (n||0).toLocaleString('fr-FR');
+  document.getElementById('res-price').innerHTML = `
+    <div class="ai-price-box"><div class="ai-price-val">${fmt(r.price_min)} <small style="font-size:.55rem">${currency}</small></div><div class="ai-price-lbl">Plancher marché</div></div>
+    <div class="ai-price-box"><div class="ai-price-val good">${fmt(r.price_suggested)} <small style="font-size:.55rem">${currency}</small></div><div class="ai-price-lbl">✅ Conseillé</div></div>
+    <div class="ai-price-box"><div class="ai-price-val">${fmt(r.price_max)} <small style="font-size:.55rem">${currency}</small></div><div class="ai-price-lbl">Plafond marché</div></div>
+    <div class="ai-price-box"><div class="ai-price-val" style="color:#f87171">${fmt(r.price_promo)} <small style="font-size:.55rem">${currency}</small></div><div class="ai-price-lbl">🏷 Prix barré</div></div>`;
+
+  // Specs
+  const specsEl = document.getElementById('res-specs');
+  if(r.specs && r.specs.length){
+    specsEl.innerHTML = r.specs.map(s=>
+      `<span class="ai-spec-key">${s.key}</span><span class="ai-spec-val">${s.value}</span>`
+    ).join('');
+    document.getElementById('res-specs-wrap').style.display = 'block';
+  } else {
+    document.getElementById('res-specs-wrap').style.display = 'none';
+  }
+
+  document.getElementById('res-advice').textContent = r.advice || '';
+}
+
+function applyAIToForm(){
+  const r = _aiResult;
+  if(!r){ toast('Aucun résultat IA à appliquer', false); return; }
+
+  closeAIModal();
+  go('new');
+
+  // Si on vient d'une carte produit, charger d'abord l'édition
+  if(_aiProdId && _aiSource==='card') loadEdit(_aiProdId);
+
+  setTimeout(()=>{
+    if(r.name)        setVal('pn',       r.name);
+    if(r.description) setVal('pd',       r.description);
+    if(r.features)    setVal('pfeats',   r.features);
+    if(r.tags)       { setVal('ptags', r.tags.join(', ')); renderTags('ptags','tagsP'); }
+    if(r.price_suggested) setVal('pp',  r.price_suggested);
+    if(r.price_promo)     setVal('pop', r.price_promo);
+    if(r.badge){ const el=document.getElementById('pbadge'); if(el) el.value=r.badge; }
+    // Specs
+    if(r.specs && r.specs.length){
+      const tb = document.getElementById('specBody');
+      if(tb){ tb.innerHTML=''; r.specs.forEach(s=>addSpecRow(s.key, s.value)); }
+    }
+    st(0);
+    toast('✅ Données IA appliquées ! Vérifiez avant d\'enregistrer.');
+
+    // Afficher aussi le résumé dans le panneau intégré au formulaire
+    const panel = document.getElementById('aiFormPanel');
+    if(panel){
+      panel.classList.add('visible');
+      panel.innerHTML = `
+        <div class="ai-rp-hd">
+          <div class="ai-rp-title"><i class="fas fa-robot"></i> Résultat IA appliqué</div>
+          <button onclick="document.getElementById('aiFormPanel').classList.remove('visible')" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8rem"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ai-sec"><div class="ai-sec-lbl"><i class="fas fa-lightbulb"></i> Conseil de vente</div>
+          <div class="ai-advice">${r.advice||'—'}</div></div>
+        <div class="ai-sec"><div class="ai-sec-lbl"><i class="fas fa-money-bill-wave"></i> Fourchette prix</div>
+          <div style="font-size:.8rem;color:var(--text-secondary)">Conseillé : <strong style="color:#a78bfa">${(r.price_suggested||0).toLocaleString('fr-FR')} FCFA</strong> — Marché : ${(r.price_min||0).toLocaleString('fr-FR')} → ${(r.price_max||0).toLocaleString('fr-FR')} FCFA</div></div>`;
+    }
+  }, 350);
+}
+
+function setVal(id, val){
+  const el = document.getElementById(id);
+  if(el) el.value = val;
+}
+
 /* ══ INIT ══ */
 addSpecRow('Bluetooth','5.3'); addSpecRow('Couleur','Noir'); addSpecRow('Garantie','1 an');
 initGallery();
-// Pré-charger perf data pour le classement
 setTimeout(()=>{ if(Object.keys(ACT_DATA).length>0){ /* already have server data */ } },300);
 </script>
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL — CRÉER UN COMPTE BOUTIQUE
+══════════════════════════════════════════════════════ -->
+<div class="modal-ov" id="createUserModal">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-hd">
+      <h4>👤 Créer un compte boutique</h4>
+      <button class="modal-x" onclick="closeCreateUser()">&times;</button>
+    </div>
+    <div class="modal-bd">
+      <div style="background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.2);border-radius:10px;padding:.75rem .95rem;margin-bottom:1.1rem;font-size:.78rem;color:var(--text-secondary);line-height:1.6">
+        <i class="fas fa-info-circle" style="color:var(--primary-color)"></i>
+        Créez un collaborateur qui gèrera la boutique <strong style="color:var(--text-primary)">sans être administrateur</strong> de l'application principale. Il accède uniquement aux sections autorisées.
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Nom d'utilisateur *</label><input class="fi" id="cu-name" placeholder="Ex : Marie" autocomplete="off"></div>
+        <div class="fg"><label class="fl">Email *</label><input class="fi" id="cu-email" type="email" placeholder="marie@boutique.cm"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Mot de passe *</label><input class="fi" id="cu-pwd" type="password" placeholder="Min. 6 caractères"></div>
+        <div class="fg"><label class="fl">Confirmer *</label><input class="fi" id="cu-pwd2" type="password" placeholder="Répéter"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Profil d'accès rapide</label>
+        <div class="role-grid">
+          <div class="role-card active" data-profile="gestionnaire" onclick="setCuProfile(this)">
+            <div class="rc-ico">🛍</div><div class="rc-nm">Gestionnaire</div>
+            <div class="rc-ds">Ajouter, modifier produits · gérer commandes</div>
+          </div>
+          <div class="role-card" data-profile="commercial" onclick="setCuProfile(this)">
+            <div class="rc-ico">💼</div><div class="rc-nm">Commercial</div>
+            <div class="rc-ds">Voir produits · traiter les commandes</div>
+          </div>
+          <div class="role-card" data-profile="catalogue" onclick="setCuProfile(this)">
+            <div class="rc-ico">📦</div><div class="rc-nm">Catalogue</div>
+            <div class="rc-ds">Ajouter et modifier des produits uniquement</div>
+          </div>
+          <div class="role-card" data-profile="custom" onclick="setCuProfile(this)">
+            <div class="rc-ico">⚙️</div><div class="rc-nm">Personnalisé</div>
+            <div class="rc-ds">Choisir les permissions manuellement</div>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Permissions détaillées</label>
+        <label class="pck-row"><input type="checkbox" id="cu-acc" checked>
+          <div><div class="pck-lbl">✅ Accès boutique</div><div class="pck-ds">Peut se connecter au panneau admin boutique</div></div>
+        </label>
+        <label class="pck-row"><input type="checkbox" id="cu-add" checked>
+          <div><div class="pck-lbl">➕ Ajouter des produits</div><div class="pck-ds">Créer de nouvelles fiches produits</div></div>
+        </label>
+        <label class="pck-row"><input type="checkbox" id="cu-edit" checked>
+          <div><div class="pck-lbl">✏️ Modifier des produits</div><div class="pck-ds">Éditer les fiches existantes</div></div>
+        </label>
+        <label class="pck-row"><input type="checkbox" id="cu-del">
+          <div><div class="pck-lbl">🗑 Supprimer des produits</div><div class="pck-ds">Effacer définitivement des articles</div></div>
+        </label>
+      </div>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end;margin-top:.35rem">
+        <button onclick="closeCreateUser()" class="btn-g">Annuler</button>
+        <button onclick="submitCreateUser()" class="btn-p" id="cuSubmitBtn">
+          <i class="fas fa-user-plus"></i> Créer le compte
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL — AGENT IA ANALYSE PRODUIT
+══════════════════════════════════════════════════════ -->
+<div class="modal-ov" id="aiModal">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-hd" style="background:linear-gradient(135deg,rgba(124,58,237,.1),transparent);border-bottom-color:rgba(124,58,237,.25)">
+      <h4 style="display:flex;align-items:center;gap:.5rem">
+        <i class="fas fa-robot" style="color:#a78bfa"></i>
+        <span style="background:linear-gradient(135deg,#a78bfa,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Agent IA — Analyse produit</span>
+      </h4>
+      <button class="modal-x" onclick="closeAIModal()">&times;</button>
+    </div>
+    <div class="modal-bd">
+      <!-- Zone saisie -->
+      <div id="aiInputZone">
+        <div class="fg">
+          <label class="fl">Description brute du produit</label>
+          <textarea class="fi" id="aiRawText" rows="5" style="resize:vertical" placeholder="Collez ici n'importe quel texte : specs fournisseur, fiche AliExpress/Amazon, description partielle…&#10;&#10;Ex : HP EliteBook 840 G8 Core i5 11th Gen 16GB DDR4 512GB SSD 13.3 FHD Display"></textarea>
+          <div class="fhint">L'IA va extraire, reformuler et optimiser ce contenu pour votre boutique.</div>
+        </div>
+        <div class="fg3">
+          <div class="fg"><label class="fl">Catégorie</label>
+            <select class="fi" id="aiCatSel">
+              <option value="electronique">📱 Électronique</option>
+              <option value="mode">👗 Mode</option>
+              <option value="maison">🏠 Maison</option>
+              <option value="sport">⚽ Sport</option>
+              <option value="beaute">💄 Beauté</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl">Marché cible</label>
+            <select class="fi" id="aiMarketSel">
+              <option value="cameroun">🇨🇲 Cameroun (FCFA)</option>
+              <option value="afrique">🌍 Afrique Centrale</option>
+              <option value="france">🇫🇷 France (EUR)</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl">Langue</label>
+            <select class="fi" id="aiLangSel">
+              <option value="fr">🇫🇷 Français</option>
+              <option value="en">🇬🇧 English</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:.55rem;justify-content:flex-end">
+          <button onclick="closeAIModal()" class="btn-g">Annuler</button>
+          <button onclick="launchAI()" id="aiRunBtn" class="btn-ai">
+            <i class="fas fa-magic"></i> Analyser avec l'IA
+          </button>
+        </div>
+      </div>
+      <!-- Zone résultat -->
+      <div id="aiResultZone" style="display:none">
+        <div class="ai-loader" id="aiLoader">
+          <div class="ai-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>
+          <span id="aiLoaderMsg">Analyse en cours…</span>
+        </div>
+        <div id="aiResultContent" style="display:none">
+          <div class="ai-sec"><div class="ai-sec-lbl"><i class="fas fa-tag"></i> Nom optimisé</div><div class="ai-box" id="res-name"></div></div>
+          <div class="ai-sec"><div class="ai-sec-lbl"><i class="fas fa-align-left"></i> Description boutique</div><div class="ai-box" id="res-desc"></div></div>
+          <div class="ai-sec"><div class="ai-sec-lbl"><i class="fas fa-list-check"></i> Points forts</div><div class="ai-box" id="res-feats" style="white-space:pre-line;font-family:var(--font-mono);font-size:.77rem"></div></div>
+          <div class="ai-sec"><div class="ai-sec-lbl"><i class="fas fa-tags"></i> Mots-clés SEO</div><div class="ai-chips-wrap" id="res-tags"></div></div>
+          <div class="ai-sec"><div class="ai-sec-lbl"><i class="fas fa-money-bill-wave"></i> Estimation prix</div><div class="ai-price-grid" id="res-price"></div></div>
+          <div class="ai-sec" id="res-specs-wrap"><div class="ai-sec-lbl"><i class="fas fa-table"></i> Fiche technique</div><div class="ai-spec-grid" id="res-specs"></div></div>
+          <div class="ai-sec"><div class="ai-sec-lbl"><i class="fas fa-lightbulb"></i> Conseil de vente</div><div class="ai-advice" id="res-advice"></div></div>
+          <div style="display:flex;gap:.55rem;justify-content:flex-end;flex-wrap:wrap;padding-top:.9rem;border-top:1px solid rgba(124,58,237,.2);margin-top:.5rem">
+            <button onclick="closeAIModal()" class="btn-g"><i class="fas fa-times"></i> Fermer</button>
+            <button onclick="reRunAI()" class="btn-g"><i class="fas fa-redo"></i> Relancer</button>
+            <button onclick="applyAIToForm()" class="btn-ai"><i class="fas fa-magic"></i> Appliquer au formulaire</button>
+          </div>
+        </div>
+        <div id="aiErrZone" style="display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:.85rem 1rem;font-size:.81rem;color:#f87171"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  IMPORT / EXPORT CATALOGUE
+// ════════════════════════════════════════════════════════
+function exportCatalogue(fmt){
+  const cat = document.querySelector('.fchip.on')?.dataset.cat || '';
+  const url = `/shop/api/products/export?format=${fmt}${cat?'&category='+encodeURIComponent(cat):''}`;
+  const a = document.createElement('a'); a.href=url; a.click();
+  toast('📥 Export en cours…', true);
+}
+
+async function importCatalogue(input){
+  const file = input.files[0]; if(!file) return;
+  const bar  = document.getElementById('importProgress');
+  const txt  = document.getElementById('importProgressText');
+  bar.style.display='flex'; txt.textContent='Import en cours… 0%';
+
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const r = await fetch('/shop/api/products/import', {method:'POST', body:fd});
+    const d = await r.json();
+    bar.style.display='none';
+    if(d.success){
+      toast(`✅ Import terminé — ${d.created} créés, ${d.updated} mis à jour${d.errors.length?' · '+d.errors.length+' erreur(s)':''}`, true);
+      if(d.errors.length){
+        console.warn('Import errors:', d.errors);
+        toast(`⚠ ${d.errors.length} ligne(s) ignorée(s) — voir console`, false);
+      }
+      setTimeout(()=>location.reload(), 1800);
+    } else {
+      toast('❌ ' + (d.error||'Erreur import'), false);
+    }
+  } catch(e){
+    bar.style.display='none'; toast('❌ Erreur réseau', false);
+  }
+  input.value='';
+}
+
+// ════════════════════════════════════════════════════════
+//  KANBAN
+// ════════════════════════════════════════════════════════
+const KB_COLS = [
+  {key:'pending',   label:'⏳ En attente',  color:'#fbbf24'},
+  {key:'paid',      label:'✅ Confirmé',     color:'#34d399'},
+  {key:'shipped',   label:'🚚 Expédié',      color:'#60a5fa'},
+  {key:'delivered', label:'📦 Livré',        color:'var(--primary-color)'},
+  {key:'cancelled', label:'❌ Annulé',       color:'#f87171'},
+];
+const PAY_LABELS = {orange_money:'🟠 OM', mtn_momo:'🟡 MTN', whatsapp:'💬 WA', delivery:'🤝 Livraison'};
+
+let _kbPref = localStorage.getItem('kni_ord_view')||'table';
+
+function setOrdView(v){
+  _kbPref = v;
+  localStorage.setItem('kni_ord_view', v);
+  const tbl  = document.querySelector('#sec-ord .tw');
+  const none = document.querySelector('#sec-ord > div:not(.sh):not([id])'); // empty msg
+  const kb   = document.getElementById('kanbanView');
+  const btnT = document.getElementById('btnTableView');
+  const btnK = document.getElementById('btnKanbanView');
+  if(v==='kanban'){
+    if(tbl) tbl.style.display='none';
+    if(none) none.style.display='none';
+    kb.style.display='block';
+    btnT.classList.remove('on'); btnK.classList.add('on');
+    loadKanban();
+  } else {
+    if(tbl) tbl.style.display='';
+    if(none) none.style.display='';
+    kb.style.display='none';
+    btnT.classList.add('on'); btnK.classList.remove('on');
+  }
+}
+
+async function loadKanban(){
+  const board = document.getElementById('kanbanBoard');
+  board.innerHTML='<div style="text-align:center;padding:3rem;width:100%;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem"></i></div>';
+  try {
+    const d = await (await fetch('/shop/api/orders/kanban')).json();
+    if(!d.success){ board.innerHTML='<div style="color:#f87171;padding:1rem">Erreur chargement Kanban</div>'; return; }
+    board.innerHTML = KB_COLS.map(col=>{
+      const cards = (d.kanban[col.key]||[]);
+      const cardsHtml = cards.length
+        ? cards.map(o=>`
+          <div class="kb-card" draggable="true"
+               ondragstart="kbDragStart(event,${o.id})"
+               onclick="showOrd(${o.id})">
+            <div class="kb-card-ref">#${o.id}</div>
+            <div class="kb-card-name">${o.customer_name||'—'}</div>
+            <div class="kb-card-total">${(+o.total).toLocaleString('fr-FR')} XAF</div>
+            <div class="kb-card-foot">
+              <span class="kb-card-pay">${PAY_LABELS[o.payment_method]||o.payment_method||'—'}</span>
+              <span class="kb-card-time">${o.created_at?o.created_at.slice(11,16):''}</span>
+            </div>
+          </div>`).join('')
+        : '<div class="kb-empty"><i class="fas fa-inbox" style="font-size:1.2rem;display:block;margin-bottom:.35rem;opacity:.35"></i>Vide</div>';
+      return `
+        <div class="kb-col"
+             ondragover="event.preventDefault();this.classList.add('kb-drag-over')"
+             ondragleave="this.classList.remove('kb-drag-over')"
+             ondrop="kbDrop(event,'${col.key}',this)">
+          <div class="kb-col-hd">
+            <span style="color:${col.color}">${col.label}</span>
+            <span style="background:rgba(255,255,255,.07);border-radius:20px;padding:.08rem .4rem;font-size:.62rem">${cards.length}</span>
+          </div>
+          <div class="kb-col-body">${cardsHtml}</div>
+        </div>`;
+    }).join('');
+  } catch(e){ board.innerHTML='<div style="color:#f87171;padding:1rem">Erreur réseau</div>'; }
+}
+
+let _kbDragId = null;
+function kbDragStart(e, id){ _kbDragId=id; e.dataTransfer.effectAllowed='move'; }
+
+async function kbDrop(e, status, col){
+  e.preventDefault(); col.classList.remove('kb-drag-over');
+  if(!_kbDragId) return;
+  try {
+    const r = await fetch(`/shop/api/order/${_kbDragId}/status`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({status})
+    });
+    const d = await r.json();
+    if(d.success){ toast(`✅ Commande #${_kbDragId} → ${status}`); loadKanban(); }
+    else toast('❌ '+d.error, false);
+  } catch{ toast('❌ Erreur réseau', false); }
+  _kbDragId=null;
+}
+
+// Init order view pref
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(_kbPref==='kanban' && document.getElementById('sec-ord')?.classList.contains('on')){
+    setOrdView('kanban');
+  }
+  // mark active btn
+  if(_kbPref==='kanban') document.getElementById('btnKanbanView')?.classList.add('on');
+  else document.getElementById('btnTableView')?.classList.add('on');
+});
+
+// ════════════════════════════════════════════════════════
+//  SSE — Notifications temps réel
+// ════════════════════════════════════════════════════════
+(function(){
+  if(!window.EventSource) return;
+  let sseRetry = 0;
+
+  function connect(){
+    const es = new EventSource('/shop/stream');
+
+    es.onmessage = function(e){
+      try {
+        const data = JSON.parse(e.data);
+        if(data.type==='new_order'){
+          showSSENotif(data);
+          // Blink tab title
+          let orig = document.title, i=0;
+          const iv = setInterval(()=>{
+            document.title = i%2===0 ? '🔔 Nouvelle commande !' : orig;
+            if(++i>8){ clearInterval(iv); document.title=orig; }
+          }, 700);
+          // Update pending badge
+          const badge = document.getElementById('pendingBadgeLive');
+          if(badge){ badge.style.display='inline'; badge.textContent=parseInt(badge.textContent||0)+1; }
+        }
+      } catch(ex){}
+    };
+
+    es.onerror = function(){
+      es.close();
+      sseRetry = Math.min(sseRetry+1, 5);
+      setTimeout(connect, sseRetry * 8000);
+    };
+  }
+
+  connect();
+})();
+
+function showSSENotif(data){
+  const banner = document.getElementById('sseNotifBanner');
+  const text   = document.getElementById('sseNotifText');
+  const sub    = document.getElementById('sseNotifSub');
+  if(!banner) return;
+  text.innerHTML = `🔔 Nouvelle commande — <strong>${data.customer||'Client'}</strong>`;
+  sub.textContent = `${(+data.total).toLocaleString('fr-FR')} XAF · ${data.ts||''}`;
+  banner.style.display='flex';
+  // Also play a soft beep via AudioContext
+  try {
+    const ac = new (window.AudioContext||window.webkitAudioContext)();
+    const osc=ac.createOscillator(); const g=ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.frequency.value=880; g.gain.setValueAtTime(.18,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.4);
+    osc.start(ac.currentTime); osc.stop(ac.currentTime+.4);
+  } catch{}
+}
+</script>
+
 {% endblock %}

@@ -7536,6 +7536,330 @@ def shop_delete_order(oid):
 
 
 # ═══════════════════════════════════════════════════════════════════
+# MODULE BOUTIQUE — EXTENSIONS SPRINT 1
+# Import/Export CSV · Notifications SSE · Kanban
+# ═══════════════════════════════════════════════════════════════════
+
+import io as _io
+import csv as _csv
+
+# ── SSE : clients connectés ─────────────────────────────────────────
+_sse_clients = []   # list of queue.Queue()
+import queue as _queue
+
+def _sse_broadcast(data: dict):
+    """Diffuse un événement JSON à tous les clients SSE connectés."""
+    import json as _j
+    msg = f"data: {_j.dumps(data, ensure_ascii=False)}\n\n"
+    dead = []
+    for q in _sse_clients:
+        try:
+            q.put_nowait(msg)
+        except Exception:
+            dead.append(q)
+    for q in dead:
+        try: _sse_clients.remove(q)
+        except ValueError: pass
+
+
+@app.route('/shop/stream')
+def shop_sse_stream():
+    """SSE endpoint — nouvelles commandes en temps réel."""
+    from flask import Response, stream_with_context
+    if not session.get('user_id'):
+        return jsonify({'error': 'Non autorisé'}), 403
+
+    q = _queue.Queue(maxsize=20)
+    _sse_clients.append(q)
+
+    def generate():
+        yield "data: {\"type\":\"connected\"}\n\n"
+        try:
+            while True:
+                try:
+                    msg = q.get(timeout=25)
+                    yield msg
+                except _queue.Empty:
+                    yield ": keepalive\n\n"
+        except GeneratorExit:
+            pass
+        finally:
+            try: _sse_clients.remove(q)
+            except ValueError: pass
+
+    resp = Response(stream_with_context(generate()),
+                    mimetype='text/event-stream',
+                    headers={
+                        'Cache-Control': 'no-cache',
+                        'X-Accel-Buffering': 'no',
+                        'Connection': 'keep-alive',
+                    })
+    return resp
+
+
+# Patch shop_create_order pour broadcaster via SSE ──────────────────
+_orig_shop_create_order = None
+
+def _patch_shop_create_order():
+    global _orig_shop_create_order
+    orig = app.view_functions.get('shop_create_order')
+    if orig is None or _orig_shop_create_order is not None:
+        return
+
+    @wraps(orig)
+    def patched(*a, **kw):
+        resp = orig(*a, **kw)
+        try:
+            import json as _j
+            data = request.get_json(force=True, silent=True) or {}
+            _sse_broadcast({
+                'type': 'new_order',
+                'customer': data.get('name', ''),
+                'total': data.get('total', 0),
+                'items': data.get('items', []),
+                'ts': datetime.utcnow().strftime('%H:%M'),
+            })
+        except Exception:
+            pass
+        return resp
+
+    _orig_shop_create_order = orig
+    app.view_functions['shop_create_order'] = patched
+
+with app.app_context():
+    try:
+        _patch_shop_create_order()
+    except Exception:
+        pass
+
+
+# ── Export CSV ──────────────────────────────────────────────────────
+@app.route('/shop/api/products/export')
+@login_required
+def shop_export_products():
+    """Exporte le catalogue produits en CSV ou Excel."""
+    perms = get_shop_perms(session.get('user_id'))
+    if not perms.get('access'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+
+    fmt = request.args.get('format', 'csv').lower()
+    cat = request.args.get('category', '')
+
+    conn = get_db_connection()
+    try:
+        q = "SELECT * FROM shop_products"
+        params = []
+        if cat:
+            q += " WHERE category=?"
+            params.append(cat)
+        q += " ORDER BY category, name"
+        rows = conn.execute(q, params).fetchall()
+
+        COLS = ['id','name','category','brand','price','original_price',
+                'stock','sku','description','features','badge','is_active',
+                'image_url','delivery_info','created_at']
+
+        if fmt == 'xlsx':
+            try:
+                import openpyxl
+                from openpyxl.styles import Font, PatternFill, Alignment
+                wb = openpyxl.Workbook()
+                ws = wb.active
+                ws.title = 'Catalogue'
+                hdr_font  = Font(bold=True, color='FFFFFF')
+                hdr_fill  = PatternFill(fill_type='solid', fgColor='059669')
+                ws.append(COLS)
+                for cell in ws[1]:
+                    cell.font = hdr_font
+                    cell.fill = hdr_fill
+                    cell.alignment = Alignment(horizontal='center')
+                for row in rows:
+                    ws.append([row[c] if c in row.keys() else '' for c in COLS])
+                for col in ws.columns:
+                    ws.column_dimensions[col[0].column_letter].width = max(
+                        len(str(col[0].value or '')), 12)
+                buf = _io.BytesIO()
+                wb.save(buf)
+                buf.seek(0)
+                return send_file(buf,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    as_attachment=True,
+                    download_name=f'kni_catalogue_{datetime.now().strftime("%Y%m%d")}.xlsx')
+            except ImportError:
+                pass  # fall back to CSV
+
+        # CSV
+        buf = _io.StringIO()
+        writer = _csv.DictWriter(buf, fieldnames=COLS, extrasaction='ignore')
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({c: (row[c] if c in row.keys() else '') for c in COLS})
+
+        output = _io.BytesIO(buf.getvalue().encode('utf-8-sig'))
+        return send_file(output, mimetype='text/csv', as_attachment=True,
+                         download_name=f'kni_catalogue_{datetime.now().strftime("%Y%m%d")}.csv')
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+# ── Import CSV ──────────────────────────────────────────────────────
+@app.route('/shop/api/products/import', methods=['POST'])
+@login_required
+def shop_import_products():
+    """Importe des produits depuis un fichier CSV (mode upsert par SKU)."""
+    if not can_shop('add'):
+        return jsonify({'success': False, 'error': 'Permission refusée'}), 403
+
+    f = request.files.get('file')
+    if not f:
+        return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+
+    ext = f.filename.rsplit('.', 1)[-1].lower()
+    if ext not in ('csv', 'xlsx', 'xls'):
+        return jsonify({'success': False, 'error': 'Format non supporté (CSV ou Excel)'}), 400
+
+    results = {'created': 0, 'updated': 0, 'errors': [], 'total': 0}
+    REQUIRED = {'name'}
+    FLOAT_FIELDS  = {'price', 'original_price'}
+    INT_FIELDS    = {'stock', 'is_active'}
+
+    def parse_rows(content_bytes):
+        """Parse CSV ou Excel, retourne liste de dicts."""
+        if ext == 'csv':
+            text = content_bytes.decode('utf-8-sig', errors='replace')
+            reader = _csv.DictReader(_io.StringIO(text))
+            return list(reader)
+        else:
+            import openpyxl
+            wb = openpyxl.load_workbook(_io.BytesIO(content_bytes), data_only=True)
+            ws = wb.active
+            rows = list(ws.iter_rows(values_only=True))
+            if not rows: return []
+            headers = [str(h).strip() if h else '' for h in rows[0]]
+            return [dict(zip(headers, r)) for r in rows[1:]]
+
+    try:
+        raw_rows = parse_rows(f.read())
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Lecture fichier échouée : {e}'}), 400
+
+    conn = get_db_connection()
+    try:
+        for i, row in enumerate(raw_rows, 1):
+            row = {k.strip().lower(): str(v).strip() if v is not None else '' for k, v in row.items()}
+            results['total'] += 1
+
+            # Validation
+            if not row.get('name'):
+                results['errors'].append({'line': i, 'error': 'Champ name manquant', 'data': row})
+                continue
+
+            # Nettoyage des types
+            for ff in FLOAT_FIELDS:
+                if row.get(ff):
+                    try: row[ff] = float(str(row[ff]).replace(' ', '').replace(',', '.'))
+                    except: row[ff] = 0.0
+                else:
+                    row[ff] = 0.0
+            for fi in INT_FIELDS:
+                if row.get(fi):
+                    try: row[fi] = int(float(row[fi]))
+                    except: row[fi] = 0
+                else:
+                    row[fi] = 0 if fi == 'is_active' else 0
+
+            sku = row.get('sku', '').strip() or None
+
+            try:
+                existing = None
+                if sku:
+                    existing = conn.execute(
+                        "SELECT id FROM shop_products WHERE sku=?", (sku,)
+                    ).fetchone()
+
+                if existing:
+                    conn.execute("""
+                        UPDATE shop_products SET
+                          name=?, category=?, brand=?, price=?, original_price=?,
+                          stock=?, description=?, features=?, badge=?, is_active=?,
+                          delivery_info=?, updated_at=CURRENT_TIMESTAMP
+                        WHERE id=?""",
+                        (row.get('name'), row.get('category',''), row.get('brand',''),
+                         row['price'], row['original_price'], row['stock'],
+                         row.get('description',''), row.get('features',''),
+                         row.get('badge',''), row.get('is_active', 1),
+                         row.get('delivery_info',''), existing['id']))
+                    results['updated'] += 1
+                else:
+                    conn.execute("""
+                        INSERT INTO shop_products
+                          (name, category, brand, price, original_price, stock, sku,
+                           description, features, badge, is_active, delivery_info,
+                           created_at, updated_at)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)""",
+                        (row.get('name'), row.get('category',''), row.get('brand',''),
+                         row['price'], row['original_price'], row['stock'],
+                         sku, row.get('description',''), row.get('features',''),
+                         row.get('badge',''), row.get('is_active', 1),
+                         row.get('delivery_info','')))
+                    results['created'] += 1
+
+            except Exception as e:
+                results['errors'].append({'line': i, 'error': str(e), 'name': row.get('name','')})
+
+        conn.commit()
+        return jsonify({'success': True, **results})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+# ── Kanban : ordre drag & drop ──────────────────────────────────────
+@app.route('/shop/api/orders/kanban', methods=['GET'])
+@login_required
+def shop_kanban_orders():
+    """Retourne les commandes groupées par statut pour la vue Kanban."""
+    perms = get_shop_perms(session.get('user_id'))
+    if not perms.get('access'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+
+    STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT o.*, u.username as handler_name
+            FROM shop_orders o
+            LEFT JOIN users u ON u.id = o.handled_by
+            ORDER BY o.created_at DESC
+            LIMIT 300
+        """).fetchall()
+        grouped = {s: [] for s in STATUSES}
+        for r in rows:
+            s = r['status'] if r['status'] in STATUSES else 'pending'
+            try:
+                items = json.loads(r['items'] or '[]')
+            except Exception:
+                items = []
+            grouped[s].append({
+                'id': r['id'], 'customer_name': r['customer_name'],
+                'customer_phone': r['customer_phone'],
+                'total': r['total'], 'payment_method': r['payment_method'],
+                'items': items, 'created_at': r['created_at'],
+                'handler': r['handler_name'] or '',
+            })
+        return jsonify({'success': True, 'kanban': grouped})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+
+
+# ═══════════════════════════════════════════════════════════════════
 # MODULE STAFF ASSISTANCE — Techniciens & Commerciaux
 # ═══════════════════════════════════════════════════════════════════
 
@@ -8122,10 +8446,299 @@ def shop_stock_value():
 # ── FIN NOUVELLES ROUTES ──────────────────────────────────────────────
 
 
-if __name__ == '__main__':
+# ═══════════════════════════════════════════════════════════════════
+# MODULE IA BOUTIQUE — Agent Client & Recommandations Personnalisées
+# Proxy sécurisé vers l'API Anthropic — clé jamais exposée côté client
+# ═══════════════════════════════════════════════════════════════════
 
-    # Initialize database on startup
-    init_db()
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+ANTHROPIC_URL     = 'https://api.anthropic.com/v1/messages'
+CLAUDE_MODEL      = 'claude-sonnet-4-5'
+
+# Rate limiting simple en mémoire
+import collections as _collections
+_ai_rate  = _collections.defaultdict(list)
+AI_MAX_RPM = 20  # requêtes par minute par IP
+
+def _ai_rate_ok(ip: str) -> bool:
+    now = time.time()
+    window = [t for t in _ai_rate[ip] if now - t < 60]
+    _ai_rate[ip] = window
+    if len(window) >= AI_MAX_RPM:
+        return False
+    _ai_rate[ip].append(now)
+    return True
+
+
+def _call_anthropic(system: str, messages: list, max_tokens: int = 800) -> dict:
+    """Appelle l'API Anthropic et retourne la réponse parsée."""
+    import json as _j
+    import urllib.request as _ur
+    import urllib.error as _ue
+
+    if not ANTHROPIC_API_KEY:
+        return {'error': 'Clé API Anthropic non configurée (variable ANTHROPIC_API_KEY)'}
+
+    payload = _j.dumps({
+        'model': CLAUDE_MODEL,
+        'max_tokens': max_tokens,
+        'system': system,
+        'messages': messages,
+    }).encode('utf-8')
+
+    req = _ur.Request(ANTHROPIC_URL, data=payload, method='POST')
+    req.add_header('Content-Type', 'application/json')
+    req.add_header('x-api-key', ANTHROPIC_API_KEY)
+    req.add_header('anthropic-version', '2023-06-01')
+
+    try:
+        with _ur.urlopen(req, timeout=30) as resp:
+            data = _j.loads(resp.read().decode('utf-8'))
+            text = ''.join(b.get('text', '') for b in data.get('content', []) if b.get('type') == 'text')
+            return {'text': text}
+    except _ue.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        return {'error': f'Anthropic HTTP {e.code}: {body[:300]}'}
+    except Exception as ex:
+        return {'error': str(ex)}
+
+
+# ── Route : Agent Chat Client ────────────────────────────────────────
+@app.route('/shop/api/ai/chat', methods=['POST'])
+def shop_ai_chat():
+    """
+    Agent conversationnel Claude pour les clients de k-ni Store.
+    Répond aux questions produits, livraison, paiement.
+    Escalade intelligente vers WhatsApp / support humain.
+    Aucune authentification requise (public).
+    """
+    ip = request.remote_addr or '0.0.0.0'
+    if not _ai_rate_ok(ip):
+        return jsonify({'error': 'Trop de requêtes. Attendez une minute.'}), 429
+
+    data    = request.get_json(force=True, silent=True) or {}
+    history = data.get('history', [])   # [{role, content}, ...]
+    message = data.get('message', '').strip()
+    catalog = data.get('catalog', [])   # [{id, name, category, price, stock, badge}, ...]
+
+    if not message:
+        return jsonify({'error': 'Message vide'}), 400
+
+    # Limite de sécurité : max 20 messages dans l'historique
+    history = history[-20:]
+
+    # Résumé catalogue (max 40 produits pour ne pas dépasser le contexte)
+    cat_lines = '\n'.join(
+        f"- [{p.get('id','')}] {p.get('name','')} | {p.get('category','')} | "
+        f"{p.get('price',0):,} XAF | stock:{p.get('stock',0)} | badge:{p.get('badge','')}"
+        for p in catalog[:40]
+    ) or '(catalogue non chargé)'
+
+    SYSTEM = f"""Tu es Keni, l'assistante IA de k-ni Store — boutique en ligne de qualité basée à Yaoundé, Cameroun.
+Tu parles français. Tu es chaleureuse, efficace et professionnelle.
+
+CATALOGUE ACTUEL (produits disponibles) :
+{cat_lines}
+
+INFORMATIONS BOUTIQUE :
+- Paiements : Orange Money 695 072 759 | MTN MoMo 670 695 946 (nom : Fabrice Kengni)
+- Livraison : 3-7 jours ouvrés partout au Cameroun. Offerte sur toute commande.
+- Retours : 7 jours si produit défectueux, avec preuve d'achat.
+- Support WhatsApp : +237 695 072 759 (réponse en moins d'1h)
+- Garantie constructeur sur tous les produits électroniques.
+
+TES RÈGLES :
+1. Réponds toujours en français, sois concise (max 3 phrases par réponse sauf si on demande des détails).
+2. Si un client demande un produit, vérifie dans le catalogue et propose le(s) meilleur(s) choix avec le prix.
+3. Pour les questions de paiement/livraison, donne les infos directement.
+4. Si le client a un problème (retour, réclamation, article manquant, défectueux), collecte :
+   - Nom du produit concerné
+   - Numéro de commande si disponible
+   - Description du problème
+   Puis indique qu'un conseiller va le contacter.
+5. Après avoir collecté les infos d'un problème, génère un résumé WhatsApp avec le préfixe [ESCALADE].
+6. Si le client dit "parler à quelqu'un", "agent", "humain", "support" → génère directement [ESCALADE].
+7. N'invente jamais de prix ou de produits absents du catalogue.
+
+FORMAT ESCALADE (quand nécessaire) :
+[ESCALADE]
+CLIENT: [nom si connu, sinon "Client"]
+SUJET: [en 1 ligne]
+DÉTAILS: [résumé en 2-3 lignes]
+[FIN ESCALADE]
+
+Réponds UNIQUEMENT avec le texte de ta réponse (sans préfixe ni balise sauf [ESCALADE])."""
+
+    messages = [*history, {'role': 'user', 'content': message}]
+
+    result = _call_anthropic(SYSTEM, messages, max_tokens=600)
+
+    if 'error' in result:
+        # Fallback si API non configurée : réponse statique utile
+        fb = _ai_chat_fallback(message, catalog)
+        return jsonify({'reply': fb, 'escalade': False, 'fallback': True})
+
+    reply = result['text'].strip()
+    escalade = '[ESCALADE]' in reply
+
+    # Extraire le bloc escalade pour construire le lien WhatsApp
+    wa_text = None
+    if escalade:
+        try:
+            bloc = reply.split('[ESCALADE]')[1].split('[FIN ESCALADE]')[0].strip()
+            wa_text = f"Bonjour k-ni Store ! Je suis transféré(e) depuis le chat.\n\n{bloc}"
+        except Exception:
+            wa_text = "Bonjour, j'ai besoin d'une assistance humaine depuis le chat k-ni."
+        # Nettoyer la réponse affichée
+        reply = reply.replace('[ESCALADE]', '').split('[FIN ESCALADE]')[0].strip()
+        if not reply:
+            reply = "Je vais vous mettre en contact avec un conseiller k-ni qui pourra vous aider directement. 😊"
+
+    return jsonify({
+        'reply': reply,
+        'escalade': escalade,
+        'wa_text': wa_text,
+    })
+
+
+def _ai_chat_fallback(message: str, catalog: list) -> str:
+    """Réponses de fallback si l'API Claude n'est pas configurée."""
+    msg = message.lower()
+    if any(w in msg for w in ['livraison', 'délai', 'délais']):
+        return "Nous livrons partout au Cameroun en 3 à 7 jours ouvrés. La livraison est offerte sur toute commande. 🚚"
+    if any(w in msg for w in ['paiement', 'payer', 'orange', 'mtn']):
+        return "Vous pouvez payer par Orange Money (695 072 759) ou MTN MoMo (670 695 946) au nom de Fabrice Kengni. 💳"
+    if any(w in msg for w in ['retour', 'remboursement', 'défectueux', 'problème']):
+        return "Pour tout retour ou problème, contactez-nous sur WhatsApp +237 695 072 759. Retours acceptés sous 7 jours. 🔄"
+    if any(w in msg for w in ['prix', 'combien', 'coût']):
+        return "Les prix varient selon le produit. Consultez notre catalogue ou posez-moi une question sur un article précis ! 💰"
+    # Chercher un produit par mot-clé
+    for p in catalog[:20]:
+        name = (p.get('name') or '').lower()
+        if any(w in name for w in msg.split() if len(w) > 3):
+            price = p.get('price', 0)
+            return f"Nous avons **{p['name']}** à {price:,} XAF. Stock disponible. Souhaitez-vous commander ?"
+    return "Bonjour ! Je suis Keni, votre assistante k-ni Store. Posez-moi vos questions sur nos produits, livraisons ou paiements ! 😊"
+
+
+# ── Route : Recommandations IA ───────────────────────────────────────
+@app.route('/shop/api/ai/recommend', methods=['POST'])
+def shop_ai_recommend():
+    """
+    Génère des recommandations produits personnalisées basées sur le
+    comportement de navigation (recherches, produits vus, panier).
+    """
+    ip = request.remote_addr or '0.0.0.0'
+    if not _ai_rate_ok(ip):
+        return jsonify({'error': 'Trop de requêtes.'}), 429
+
+    data     = request.get_json(force=True, silent=True) or {}
+    viewed   = data.get('viewed', [])      # [{id, name, category, price}, ...]
+    searches = data.get('searches', [])    # ['écouteurs', 'sport', ...]
+    cart     = data.get('cart', [])        # [{id, name, price}, ...]
+    catalog  = data.get('catalog', [])     # catalogue complet
+
+    if not catalog:
+        return jsonify({'recommendations': [], 'reason': 'Catalogue vide'})
+
+    # Si pas assez de signaux, retourner les produits hot/new
+    if not viewed and not searches and not cart:
+        popular = [p for p in catalog if p.get('badge') in ('hot', 'new')][:4]
+        return jsonify({
+            'recommendations': popular,
+            'reason': 'Produits populaires du moment',
+            'fallback': True
+        })
+
+    # Construire le profil d'intérêt
+    profile_lines = []
+    if searches:
+        profile_lines.append(f"Recherches : {', '.join(searches[-6:])}")
+    if viewed:
+        viewed_desc = ', '.join(f"{p.get('name','')} ({p.get('price',0):,} XAF)" for p in viewed[-5:])
+        profile_lines.append(f"Produits consultés : {viewed_desc}")
+    if cart:
+        cart_desc = ', '.join(f"{p.get('name','')}" for p in cart[:3])
+        profile_lines.append(f"Dans le panier : {cart_desc}")
+
+    profile = '\n'.join(profile_lines)
+
+    # Catalogue pour l'IA (max 50 produits)
+    cat_json = json.dumps([{
+        'id': p.get('id'), 'name': p.get('name'),
+        'category': p.get('category'), 'price': p.get('price'),
+        'stock': p.get('stock'), 'badge': p.get('badge')
+    } for p in catalog[:50] if p.get('stock', 0) > 0], ensure_ascii=False)
+
+    SYSTEM = """Tu es un moteur de recommandations pour k-ni Store (boutique Cameroun).
+Tu analyses le comportement d'un visiteur et tu sélectionnes les produits les plus pertinents.
+Tu réponds UNIQUEMENT en JSON valide, sans aucun texte autour."""
+
+    prompt = f"""Profil du visiteur :
+{profile}
+
+Catalogue disponible (JSON) :
+{cat_json}
+
+Sélectionne exactement 4 produits parmi le catalogue qui correspondent au mieux à ce visiteur.
+Réponds en JSON pur (aucun texte autour) :
+{{
+  "reason": "phrase courte expliquant la sélection (ex: Vous semblez intéressé par...)",
+  "ids": [id1, id2, id3, id4],
+  "explanations": {{
+    "id1": "pourquoi ce produit en 1 phrase max",
+    "id2": "...",
+    "id3": "...",
+    "id4": "..."
+  }}
+}}"""
+
+    result = _call_anthropic(SYSTEM, [{'role': 'user', 'content': prompt}], max_tokens=400)
+
+    if 'error' in result:
+        # Fallback : produits de la même catégorie la plus vue
+        cats = [p.get('category') for p in viewed if p.get('category')]
+        fav_cat = max(set(cats), key=cats.count) if cats else None
+        recs = [p for p in catalog if p.get('stock', 0) > 0 and
+                (not fav_cat or p.get('category') == fav_cat)][:4]
+        return jsonify({
+            'recommendations': recs,
+            'reason': f'Basé sur votre intérêt pour {fav_cat or "nos produits"}',
+            'fallback': True
+        })
+
+    # Parser le JSON retourné par Claude
+    try:
+        import re as _re
+        raw = result['text'].strip()
+        # Extraire uniquement le bloc JSON
+        m = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        if not m:
+            raise ValueError('Pas de JSON trouvé')
+        parsed = json.loads(m.group(0))
+        ids = [int(i) for i in parsed.get('ids', [])]
+        reason = parsed.get('reason', 'Sélectionné pour vous')
+        explanations = parsed.get('explanations', {})
+
+        # Récupérer les produits correspondants
+        prod_map = {p['id']: p for p in catalog if 'id' in p}
+        recs = []
+        for pid in ids:
+            p = prod_map.get(pid)
+            if p:
+                p2 = dict(p)
+                p2['ai_reason'] = explanations.get(str(pid), '')
+                recs.append(p2)
+
+        return jsonify({'recommendations': recs, 'reason': reason})
+
+    except Exception as ex:
+        # Fallback
+        recs = [p for p in catalog if p.get('badge') == 'hot' and p.get('stock', 0) > 0][:4]
+        return jsonify({'recommendations': recs, 'reason': 'Produits populaires', 'fallback': True})
+
+
+if __name__ == '__main__':
 
     # Démarrer le scheduler d'agenda (rappels email Gmail)
     start_agenda_scheduler()
