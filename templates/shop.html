@@ -15,10 +15,17 @@
   --white:#fff;--card:#fff;
   --radius:14px;--shadow:0 2px 16px rgba(0,0,0,.07);--shadow-lg:0 8px 40px rgba(0,0,0,.13);
   --font:'Outfit',sans-serif;
+  --font-emoji:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Twemoji Mozilla',system-ui;
+}
+/* ── Rendu emoji cross-platform uniforme ── */
+.em, .cat-pill .em, .hero-badge i.em, .hstar, .gb-star,
+[class*='emoji'], span[data-emoji]{
+  font-family: var(--font-emoji)!important;
+  font-style: normal;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;overflow-x:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:16px;overflow-x:hidden}
 
 /* ─── ANIMATIONS ─── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -84,7 +91,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15p
 .hero-eyebrow i{font-size:.85rem;color:#7dffc3}
 .hero-title{font-size:clamp(2rem,4.5vw,3.6rem);font-weight:900;color:#fff;line-height:1.08;margin-bottom:.85rem;letter-spacing:-.02em}
 .hero-title em{font-style:normal;color:#7dffc3}
-.hero-sub{font-size:1rem;color:rgba(255,255,255,.82);margin-bottom:1.4rem;max-width:600px;line-height:1.6}
+.hero-sub{font-size:1.05rem;color:rgba(255,255,255,.82);margin-bottom:1.4rem;max-width:600px;line-height:1.65}
 .hero-badges{display:flex;flex-wrap:wrap;gap:.55rem;margin-bottom:1.5rem}
 .hero-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:.32rem .8rem;font-size:.78rem;font-weight:700;color:#fff;backdrop-filter:blur(4px)}
 .hero-badge i{color:#7dffc3;font-size:.8rem}
@@ -105,8 +112,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15p
 .trust-item{display:flex;align-items:center;gap:.65rem;padding:.3rem 0}
 .trust-icon{width:38px;height:38px;border-radius:10px;background:var(--primary3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .trust-icon i{font-size:1rem;color:var(--primary)}
-.trust-txt .t1{font-size:.84rem;font-weight:800;color:var(--ink)}
-.trust-txt .t2{font-size:.72rem;color:var(--muted)}
+.trust-txt .t1{font-size:.9rem;font-weight:800;color:var(--ink)}
+.trust-txt .t2{font-size:.78rem;color:var(--muted)}
+.cat-pill .em{
+  font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Twemoji Mozilla',system-ui!important;
+  font-style:normal;
+  font-size:1.05rem;
+}
+.sort-btn, .promo-sidebar, .filter-card h4{
+  font-family:var(--font),'Apple Color Emoji','Segoe UI Emoji',system-ui;
+}
 @media(max-width:960px){
   .hero-inner{grid-template-columns:1fr}
   .hero-right{flex-direction:row;flex-wrap:wrap}
@@ -219,7 +234,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .prod-count{font-size:.84rem;color:var(--muted);font-weight:500}
 .prod-count span{color:var(--primary);font-weight:700}
 .view-btns{display:flex;gap:.3rem}
-#prodGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.4rem;transition:.3s}
+#prodGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.6rem;transition:.3s}
 #prodGrid.list-view{grid-template-columns:1fr}
 .pcard{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:.22s;position:relative;animation:fadeUp .4s ease both}
 .pcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px)}
@@ -235,16 +250,16 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .pcard-wish:hover,.pcard-wish.wished{color:var(--red);animation:heartBeat .4s ease}
 .pcard-wish.wished{background:#fef2f2}
 .stock-warn{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(239,68,68,.9));color:#fff;font-size:.68rem;font-weight:700;padding:.4rem .6rem;text-align:center}
-.pcard-body{padding:1.1rem}
-.pcard-cat{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);font-weight:700;margin-bottom:.25rem}
-.pcard-name{font-size:1rem;font-weight:700;line-height:1.3;color:var(--ink);margin-bottom:.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.pcard-stars{font-size:.75rem;color:var(--gold);margin-bottom:.5rem}
+.pcard-body{padding:1.3rem}
+.pcard-cat{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);font-weight:700;margin-bottom:.3rem}
+.pcard-name{font-size:1.1rem;font-weight:700;line-height:1.35;color:var(--ink);margin-bottom:.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-stars{font-size:.85rem;color:var(--gold);margin-bottom:.55rem}
 .pcard-stars span{color:var(--muted);font-size:.7rem}
 .pcard-price{display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem;flex-wrap:wrap}
-.pcard-price .price{font-size:1.18rem;font-weight:800;color:var(--primary)}
+.pcard-price .price{font-size:1.3rem;font-weight:800;color:var(--primary)}
 .pcard-price .old-price{font-size:.8rem;color:var(--muted);text-decoration:line-through}
 .pcard-price .disc{font-size:.7rem;background:#fef2f2;color:var(--red);font-weight:700;padding:.1rem .35rem;border-radius:5px}
-.btn-add{width:100%;padding:.65rem;background:var(--primary);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:.92rem;font-weight:700;font-family:var(--font);transition:.18s;display:flex;align-items:center;justify-content:center;gap:.4rem}
+.btn-add{width:100%;padding:.78rem;background:var(--primary);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:1rem;font-weight:700;font-family:var(--font);transition:.18s;display:flex;align-items:center;justify-content:center;gap:.4rem}
 .btn-add:hover{background:var(--primary2);transform:scale(1.02)}
 .btn-add:disabled{background:#d1d5db;color:#9ca3af;cursor:not-allowed;transform:none}
 /* List view */
@@ -637,7 +652,7 @@ html,body{width:100%;min-height:100vh}
   .detail-imgs{border-radius:20px 20px 0 0;position:static}
   .footer-grid{grid-template-columns:1fr}
   .mobile-search-bar.open{display:block}
-  #prodGrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  #prodGrid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
   .main-wrap{padding:1rem .75rem}
   .offres-section{margin:0 -.75rem 1.2rem!important;border-radius:0!important}
 }
@@ -651,8 +666,8 @@ html,body{width:100%;min-height:100vh}
   .form-2col{grid-template-columns:1fr}
   .pay-options{grid-template-columns:1fr}
   .main-wrap{padding:.75rem .6rem}
-  .pcard-body{padding:.65rem}
-  .pcard-name{font-size:.83rem}
+  .pcard-body{padding:.75rem}
+  .pcard-name{font-size:.9rem}
   .trust-bar-inner{gap:.5rem}
   .offres-section{margin:0 -.6rem 1rem!important}
 }
@@ -707,10 +722,16 @@ html,body{width:100%;min-height:100vh}
 </div>
 
 <!-- FLASH BAR -->
-<div class="flash-bar" onclick="filterCat('promo')">
-  <i class="fas fa-bolt"></i> VENTE FLASH — Offres limitées !
-  <span class="flash-timer" id="flashTimer">--:--:--</span>
-  <i class="fas fa-chevron-right"></i>
+<!-- BANDE VERTE BANNIÈRE AVEC ÉTOILES -->
+<div class="flash-bar" onclick="filterCat('promo')" style="position:relative;overflow:hidden">
+  <div id="flashBarStars" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1"></div>
+  <span style="position:relative;z-index:2;display:flex;align-items:center;gap:.65rem;width:100%;justify-content:center;">
+    <i class="fas fa-bolt"></i>
+    <span>&#11088; VENTE FLASH — Offres limitées !</span>
+    <span class="flash-timer" id="flashTimer">--:--:--</span>
+    <i class="fas fa-chevron-right"></i>
+    <span style="font-family:var(--font-emoji)">&#11088;</span>
+  </span>
 </div>
 
 <!-- HEADER -->
@@ -2533,12 +2554,35 @@ document.addEventListener('DOMContentLoaded',()=>{
   applyFilters();
   updateAccountBtn();
   initHeroStars();
+  initFlashBarStars();
   initAdPopup();
 });
 
 /* ═══════════════════════════════════════════════════════════════
    ÉTOILES FLOTTANTES HERO
 ═══════════════════════════════════════════════════════════════ */
+function initFlashBarStars(){
+  const c = document.getElementById('flashBarStars');
+  if(!c) return;
+  const shapes = ['★','✦','✸','✺','☆','✮','✧','⭐'];
+  for(let i=0;i<20;i++){
+    const s = document.createElement('span');
+    s.style.cssText = [
+      'position:absolute',
+      `left:${Math.random()*100}%`,
+      `top:${Math.random()*100}%`,
+      `font-size:${(8+Math.random()*10).toFixed(1)}px`,
+      `opacity:${(0.2+Math.random()*0.5).toFixed(2)}`,
+      'color:#fff',
+      'font-style:normal',
+      `font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif`,
+      `animation:starTwinkle ${(1.5+Math.random()*3).toFixed(1)}s ease-in-out infinite`,
+      `animation-delay:-${(Math.random()*4).toFixed(1)}s`
+    ].join(';');
+    s.textContent = shapes[Math.floor(Math.random()*shapes.length)];
+    c.appendChild(s);
+  }
+}
 function initHeroStars(){
   const container = document.getElementById('heroStars');
   if(!container) return;

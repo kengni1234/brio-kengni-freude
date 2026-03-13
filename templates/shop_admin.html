@@ -6,6 +6,12 @@
 <style>
 /* ══ SYNCHRONISATION k-Ni — Police & couleurs ══ */
 body,*{font-family:'Outfit',system-ui,sans-serif!important}
+/* ══ EMOJI — rendu uniforme cross-platform ══ */
+.emoji-font,.sa-nb i.emoji,.kpi-ico.emoji-ico,
+button .emoji, span.emoji, [data-emoji]{
+  font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Twemoji Mozilla',system-ui,sans-serif!important;
+  font-style:normal;
+}
 :root{
   --sa-nav-w:220px;
   --primary-color:#00b074;
@@ -18,6 +24,23 @@ body,*{font-family:'Outfit',system-ui,sans-serif!important}
 .sa-nav-logo{padding:1rem 1.1rem .6rem;border-bottom:1px solid var(--border-color)}
 .sa-nav-logo span{font-weight:800;font-size:.9rem;color:var(--primary-color)}
 .sa-nav-logo small{display:block;font-size:.65rem;color:var(--text-secondary);margin-top:.12rem}
+/* Bannière verte admin avec étoiles */
+.sa-green-banner{
+  background:linear-gradient(130deg,#001a0e,#002e1b,#004d32,#00785a,#00b074);
+  background-size:300% 300%;
+  animation:heroBgShift 10s ease infinite;
+  padding:.55rem 1.1rem .5rem;
+  border-bottom:1px solid rgba(0,176,116,.2);
+  position:relative;overflow:hidden;
+}
+@keyframes heroBgShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.sa-green-banner .gb-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1;}
+.gb-star{position:absolute;font-style:normal;color:#fff;opacity:.6;animation:gbStarFloat var(--dur,3s) ease-in-out infinite, gbTwinkle var(--td,2s) ease-in-out infinite;}
+@keyframes gbStarFloat{0%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(90deg)}100%{transform:translateY(0) rotate(180deg)}}
+@keyframes gbTwinkle{0%,100%{opacity:.7}50%{opacity:.1}}
+.sa-green-banner .gb-content{position:relative;z-index:2;}
+.sa-green-banner span{font-weight:800;font-size:.9rem;color:#fff!important}
+.sa-green-banner small{display:block;font-size:.65rem;color:rgba(255,255,255,.75)!important;margin-top:.12rem}
 .sa-grp{padding:.4rem 1rem .15rem;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--text-secondary);opacity:.55}
 .sa-sep{height:1px;background:var(--border-color);margin:.4rem .8rem}
 .sa-nb{display:flex;align-items:center;gap:.6rem;padding:.62rem 1.1rem;font-size:.82rem;font-weight:600;color:var(--text-secondary);background:none;border:none;cursor:pointer;transition:.15s;text-align:left;width:100%;border-left:3px solid transparent;text-decoration:none;font-family:inherit}
@@ -455,12 +478,16 @@ body,*{font-family:'Outfit',system-ui,sans-serif!important}
 <div class="sa-root">
 <!-- ══ SIDEBAR ══ -->
 <nav class="sa-nav">
-  <div class="sa-nav-logo">
-    <span style="display:flex;align-items:center;gap:.45rem">
-      <span style="width:28px;height:28px;border-radius:7px;background:rgba(0,176,116,.2);border:1px solid rgba(0,176,116,.4);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;color:var(--primary-color);flex-shrink:0">k</span>
-      <span>k<span style="color:var(--text-secondary)">-Ni</span> Store</span>
-    </span>
-    <small>{{ session.get('username', 'Administrateur') }} — {{ session.get('role', '') }}</small>
+  <!-- ══ BANNIÈRE VERTE AVEC ÉTOILES ══ -->
+  <div class="sa-green-banner" id="saGreenBanner">
+    <div class="gb-stars" id="gbStars"></div>
+    <div class="gb-content">
+      <span style="display:flex;align-items:center;gap:.45rem">
+        <span style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;color:#fff;flex-shrink:0">k</span>
+        <span style="color:#fff;font-weight:800">k-Ni Store</span>
+      </span>
+      <small>{{ session.get('username', 'Administrateur') }} — {{ session.get('role', '') }}</small>
+    </div>
   </div>
   <div style="padding:.6rem 0">
     <div class="sa-grp">Principal</div>
@@ -1450,7 +1477,7 @@ async function uploadGalFile(f,slot){
   const fd=new FormData();
   fd.append('image', fileToSend, fileToSend.name || 'image.jpg');
   try{
-    const r=await fetch('/shop/api/product/upload-image',{method:'POST',body:fd});
+    const r=await fetch('/shop/api/product/upload-image',{method:'POST',body:fd,credentials:'same-origin'});
     clearInterval(t);
     if(!r.ok){ ub.style.display='none'; toast('❌ Erreur serveur '+r.status,false); return; }
     const res=await r.json();
@@ -3822,26 +3849,54 @@ function qimgHandleDrop(e){
   if(file) qimgUploadFile(file);
 }
 async function qimgUploadFile(file){
-  if(!file || !file.type.startsWith('image/')){ toast('Fichier image requis', false); return; }
+  if(!file){ toast('❌ Aucun fichier sélectionné', false); return; }
+  if(!file.type.startsWith('image/')){ toast('❌ Fichier image requis (jpg, png, webp…)', false); return; }
+  if(file.size > 8*1024*1024){ toast('❌ Fichier trop volumineux (max 8 Mo)', false); return; }
   const bar = document.getElementById('qimgProgress');
   const barFill = document.getElementById('qimgProgressBar');
-  bar.style.display = 'block'; barFill.style.width = '30%';
-  const fd = new FormData(); fd.append('image', file);
+  bar.style.display = 'block'; barFill.style.width = '15%';
+  // Appliquer le watermark k-Ni avant envoi (fallback silencieux)
+  let fileToSend = file;
+  try { fileToSend = await applyKniWatermark(file); } catch(e){ fileToSend = file; }
+  const fd = new FormData();
+  fd.append('image', fileToSend, fileToSend.name || ('kni_' + Date.now() + '.jpg'));
+  barFill.style.width = '40%';
   try {
-    const r = await fetch('/shop/api/product/upload-image', {method:'POST', body:fd});
+    const r = await fetch('/shop/api/product/upload-image', {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin'
+    });
     barFill.style.width = '80%';
+    // Vérification statut HTTP avant parsing JSON
+    if(!r.ok){
+      bar.style.display = 'none';
+      let errMsg = 'Erreur serveur ' + r.status;
+      if(r.status === 401) errMsg = 'Session expirée — rechargez la page et reconnectez-vous';
+      else if(r.status === 403) errMsg = 'Non autorisé — permissions insuffisantes';
+      else if(r.status === 413) errMsg = 'Image trop volumineuse (max 16 Mo côté serveur)';
+      toast('❌ ' + errMsg, false);
+      return;
+    }
     const res = await r.json();
-    if(res.url){
+    if(res.url || res.success){
       _qimgNewUrl = res.url;
       barFill.style.width = '100%';
-      setTimeout(()=>bar.style.display='none', 500);
+      setTimeout(()=>{ bar.style.display='none'; barFill.style.width='0'; }, 500);
       const img = document.getElementById('qimgNewPreview');
       img.src = res.url; img.style.display = 'block';
       document.getElementById('qimgNewPlaceholder').style.display = 'none';
       document.getElementById('qimgSaveBtn').disabled = false;
-      toast('Image uploadee');
-    } else { bar.style.display='none'; toast('Erreur upload', false); }
-  } catch(e){ bar.style.display='none'; toast('Erreur reseau', false); }
+      toast('✅ Image chargée — cliquez sur "Appliquer"');
+    } else {
+      bar.style.display = 'none';
+      toast('❌ ' + (res.error || 'Upload échoué — réessayez'), false);
+    }
+  } catch(e){
+    bar.style.display = 'none';
+    toast('❌ Erreur réseau — vérifiez votre connexion', false);
+    console.error('[QuickImg Upload]', e);
+  }
 }
 async function qimgSave(){
   if(!_qimgId || !_qimgNewUrl){ toast('Aucune image', false); return; }
@@ -3857,7 +3912,18 @@ async function qimgSave(){
       is_active:p.is_active, delivery_info:p.delivery_info, reviews_count:p.reviews_count,
       image_url:_qimgNewUrl
     };
-    const r = await fetch(`/shop/api/product/${_qimgId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r = await fetch(`/shop/api/product/${_qimgId}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body),
+      credentials:'same-origin'
+    });
+    if(!r.ok){
+      let errMsg = r.status===401 ? 'Session expirée — rechargez la page' : 'Erreur serveur '+r.status;
+      toast('❌ '+errMsg, false);
+      btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> Appliquer l'image';
+      return;
+    }
     const res = await r.json();
     if(res.success || res.id){
       if(PRODS[_qimgId]) PRODS[_qimgId].image_url = _qimgNewUrl;
@@ -3867,17 +3933,49 @@ async function qimgSave(){
         if(!img){ img = document.createElement('img'); card.querySelector('.pcard-img').prepend(img); }
         img.src = _qimgNewUrl; img.style.display='block';
         const ico = card.querySelector('.pcard-img i'); if(ico) ico.style.display='none';
+        // Mettre à jour la miniature de la carte produit
+        const mask = card.querySelector('.pcard-mask');
+        if(mask) mask.style.display='none';
       }
-      toast('Image mise a jour !');
+      toast('✅ Image mise à jour avec succès !');
       closeQuickImg();
-    } else { toast('Erreur: '+(res.error||'inconnue'), false); }
-  } catch(e){ toast('Erreur reseau', false); }
+    } else { toast('❌ '+(res.error||'Erreur inconnue'), false); }
+  } catch(e){ toast('❌ Erreur réseau', false); console.error('[QuickImg Save]', e); }
   btn.disabled=false;
-  btn.innerHTML='<i class="fas fa-check"></i> Appliquer l image';
+  btn.innerHTML='<i class="fas fa-check"></i> Appliquer l'image';
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('qimgOverlay')?.addEventListener('click', e=>{ if(e.target.id==='qimgOverlay') closeQuickImg(); });
+  // Initialiser les étoiles dans la bannière verte du nav
+  initGbStars();
 });
+
+/* ══ ÉTOILES BANNIÈRE VERTE ADMIN ══ */
+function initGbStars(){
+  const c = document.getElementById('gbStars');
+  if(!c) return;
+  const shapes = ['★','✦','✶','✸','✺','☆','✮','·','⋆','✧'];
+  for(let i=0;i<18;i++){
+    const s = document.createElement('span');
+    s.className = 'gb-star';
+    s.textContent = shapes[Math.floor(Math.random()*shapes.length)];
+    const size = 7 + Math.random()*10;
+    const dur  = (2 + Math.random()*4).toFixed(1);
+    const td   = (1.5 + Math.random()*3).toFixed(1);
+    const delay= -(Math.random()*5).toFixed(1);
+    s.style.cssText = [
+      `left:${Math.random()*98}%`,
+      `top:${Math.random()*90}%`,
+      `font-size:${size.toFixed(1)}px`,
+      `opacity:${(0.3+Math.random()*0.5).toFixed(2)}`,
+      `--dur:${dur}s`,
+      `--td:${td}s`,
+      `animation-delay:${delay}s`,
+      `font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif`
+    ].join(';');
+    c.appendChild(s);
+  }
+}
 
 </script>
 

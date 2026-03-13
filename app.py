@@ -7548,13 +7548,15 @@ def shop_delete_product(pid):
 
 
 @app.route('/shop/api/product/upload-image', methods=['POST'])
-@login_required
 def shop_upload_product_image():
     """Upload une ou plusieurs images pour un produit.
     Form-data : image (fichier), pid (optionnel, int).
     Retourne l'URL et met à jour la galerie si pid fourni."""
+    # Retourne JSON 401 au lieu de redirection HTML pour les appels AJAX
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Session expirée — reconnectez-vous', 'code': 401}), 401
     if not can_shop('add') and not can_shop('edit'):
-        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+        return jsonify({'success': False, 'error': 'Non autorisé — permissions insuffisantes', 'code': 403}), 403
     if 'image' not in request.files:
         return jsonify({'success': False, 'error': 'Aucun fichier reçu'})
     f = request.files['image']
@@ -7567,7 +7569,11 @@ def shop_upload_product_image():
         fname = secure_filename(f'shop_{datetime.now().strftime("%Y%m%d_%H%M%S%f")}.{ext}')
         dest  = os.path.join(app.config['UPLOAD_FOLDER'], 'shop')
         os.makedirs(dest, exist_ok=True)
-        f.save(os.path.join(dest, fname))
+        filepath = os.path.join(dest, fname)
+        f.save(filepath)
+        # Vérification que le fichier a bien été sauvegardé
+        if not os.path.exists(filepath):
+            return jsonify({'success': False, 'error': 'Sauvegarde échouée — vérifiez les permissions du dossier uploads'})
         url = f'/static/uploads/shop/{fname}'
 
         # Si pid fourni → ajouter à la galerie du produit
@@ -7604,8 +7610,9 @@ def shop_upload_product_image():
 
 
 @app.route('/shop/api/product/<int:pid>/remove-image', methods=['POST'])
-@login_required
 def shop_remove_product_image(pid):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Session expirée', 'code': 401}), 401
     """Supprime une image de la galerie d'un produit (+ fichier local si uploadé)."""
     if not can_shop('edit'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -8242,8 +8249,9 @@ def shop_banner_order(bid):
 
 
 @app.route('/shop/api/banners/upload-image', methods=['POST'])
-@login_required
 def shop_banner_upload_image():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Session expirée — reconnectez-vous', 'code': 401}), 401
     """Upload une image pour une bannière promotionnelle."""
     if not can_shop('add') and not can_shop('edit'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
