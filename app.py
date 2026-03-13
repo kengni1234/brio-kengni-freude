@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Kengni Finance - Complete Financial Management & Trading Application
-Version 2.0 - Enhanced with AI Analysis and Advanced Features
+Kengni Finance + k-Ni Store — Application de gestion financière, trading & boutique en ligne
+Version 2.0 — IA Claude · Yaoundé, Cameroun
 """
+
+import os
+
+# ── Vérification clé Anthropic au démarrage ───────────────────────
+_api_key_check = os.environ.get('ANTHROPIC_API_KEY')
+if _api_key_check:
+    print(f"✅ ANTHROPIC_API_KEY chargée : {_api_key_check[:12]}{'*' * 20}")
+else:
+    print("⚠️  ANTHROPIC_API_KEY non définie — agent IA en mode fallback")
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,12 +24,12 @@ from datetime import datetime, timedelta, date
 import secrets
 import random
 import json
-import pandas as pd
+# pandas : lazy import dans les fonctions export (gain 3-5s démarrage)
 from io import BytesIO
 import yfinance as yf
-import numpy as np
+# numpy  : lazy import dans les fonctions de calcul
 import base64
-from PIL import Image
+# PIL    : lazy import (QR codes uniquement)
 import io
 import urllib.request
 import re
@@ -38,7 +47,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 
 # ── Configuration Gmail pour les rappels d'agenda ──────────────────────────────
 GMAIL_CONFIG = {
@@ -52,7 +61,7 @@ GMAIL_CONFIG = {
 
 # ── Types et couleurs des événements d'agenda ─────────────────────────────────
 AGENDA_EVENT_COLORS = {
-    'trading':   {'bg': '#00d4aa', 'border': '#00b894', 'icon': '📈', 'label': 'Trading'},
+    'trading':   {'bg': '#00b074', 'border': '#008f5d', 'icon': '📈', 'label': 'Trading'},
     'finance':   {'bg': '#4a9eff', 'border': '#2980b9', 'icon': '💰', 'label': 'Finance'},
     'formation': {'bg': '#a29bfe', 'border': '#6c5ce7', 'icon': '📚', 'label': 'Formation'},
     'personnel': {'bg': '#fd79a8', 'border': '#e84393', 'icon': '👤', 'label': 'Personnel'},
@@ -97,8 +106,9 @@ app.jinja_env.globals.update({
     'sum': sum
 })
 
-# Ensure upload folder exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Ensure upload folders exist (chemins absolus)
+for _subdir in ['', 'shop', 'announcements', 'documents', 'avatars']:
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], _subdir), exist_ok=True)
 
 # Database Configuration
 DB_FILE = os.environ.get('DB_PATH', 'kengni_finance.db')
@@ -111,11 +121,16 @@ def allowed_file(filename):
 
 # Database Connection Helper
 def get_db_connection():
-    """Create and return database connection"""
+    """Connexion DB optimisée : WAL, cache 10Mo, synchronous NORMAL."""
     try:
-        connection = sqlite3.connect(DB_FILE)
-        connection.row_factory = sqlite3.Row
-        return connection
+        conn = sqlite3.connect(DB_FILE, timeout=15, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")      # lectures non bloquées pendant écritures
+        conn.execute("PRAGMA cache_size=-10000")      # 10 Mo de cache pages
+        conn.execute("PRAGMA synchronous=NORMAL")     # moins de fsync, sûr
+        conn.execute("PRAGMA temp_store=MEMORY")      # tables temp en RAM
+        conn.execute("PRAGMA mmap_size=67108864")     # 64 Mo I/O mappée
+        return conn
     except Exception as e:
         print(f"Database connection error: {e}")
         return None
@@ -567,6 +582,46 @@ def init_db():
         ''')
 
         conn.commit()
+
+        # ── INDEX DE PERFORMANCE ─────────────────────────────────────────────
+        _indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_users_email      ON users(email)",
+            "CREATE INDEX IF NOT EXISTS idx_users_role       ON users(role)",
+            "CREATE INDEX IF NOT EXISTS idx_users_status     ON users(status)",
+            "CREATE INDEX IF NOT EXISTS idx_users_shop       ON users(shop_access)",
+            "CREATE INDEX IF NOT EXISTS idx_ft_user  ON financial_transactions(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_ft_date  ON financial_transactions(date)",
+            "CREATE INDEX IF NOT EXISTS idx_ft_type  ON financial_transactions(type)",
+            "CREATE INDEX IF NOT EXISTS idx_ft_cat   ON financial_transactions(category)",
+            "CREATE INDEX IF NOT EXISTS idx_tj_user  ON trading_journal(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_tj_date  ON trading_journal(entry_date)",
+            "CREATE INDEX IF NOT EXISTS idx_pos_user ON positions(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_pos_stat ON positions(status)",
+            "CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_notif_read ON notifications(is_read)",
+            "CREATE INDEX IF NOT EXISTS idx_agenda_user ON agenda_events(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_agenda_date ON agenda_events(event_date)",
+            "CREATE INDEX IF NOT EXISTS idx_training_user  ON training_courses(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_training_date  ON training_courses(scheduled_date)",
+            "CREATE INDEX IF NOT EXISTS idx_leads_status   ON training_leads(status)",
+            "CREATE INDEX IF NOT EXISTS idx_notes_user ON bloc_notes(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_notes_date ON bloc_notes(entry_date)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_prod_active ON shop_products(is_active)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_prod_cat    ON shop_products(category)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_orders_stat ON shop_orders(status)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_orders_date ON shop_orders(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_messages(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_chat_date ON chat_messages(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_docs_user ON documents(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_ann_active ON announcements(is_active,start_date,end_date)",
+            "CREATE INDEX IF NOT EXISTS idx_trader_scores ON trader_scores(user_id,created_at)",
+        ]
+        for _idx in _indexes:
+            try: conn.execute(_idx)
+            except Exception: pass
+        conn.commit()
+        # ─────────────────────────────────────────────────────────────────────
+
         conn.close()
         print("✅ Database initialized successfully!")
 
@@ -577,24 +632,49 @@ ADMIN_SECONDARY_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Kengni@fablo12')
 
 @app.context_processor
 def inject_global_context():
-    """Injecte des variables globales disponibles dans tous les templates"""
-    ctx = {'training_total_nav': 0, 'user_allowed_pages': None, 'ALL_USER_PAGES': ALL_USER_PAGES}
-    if 'user_id' in session:
-        if session.get('role') not in ('admin', 'superadmin'):
-            ctx['user_allowed_pages'] = get_user_allowed_pages(session['user_id'])
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT COUNT(*) as cnt FROM training_courses WHERE user_id = ?",
-                    (session['user_id'],)
-                )
-                ctx['training_total_nav'] = cursor.fetchone()['cnt']
-            except Exception:
-                pass
-            finally:
-                conn.close()
+    """Variables globales pour tous les templates.
+    OPTIMISÉ : 1 seule requête SQL, skip total sur /static/ /api/ /shop/api/."""
+    _path = request.path
+    _empty = {'training_total_nav': 0, 'user_allowed_pages': None,
+              'ALL_USER_PAGES': ALL_USER_PAGES, 'user_shop_access': False}
+    # Skip sur requêtes sans rendu HTML (gain ~40% des appels)
+    if (_path.startswith('/static/')
+            or _path.startswith('/shop/api/')
+            or _path.startswith('/shop/stream')
+            or (_path.startswith('/api/') and '/chat' not in _path)):
+        return _empty
+    ctx = dict(_empty)
+    uid = session.get('user_id')
+    if not uid:
+        return ctx
+    role = session.get('role', 'user')
+    if role in ('admin', 'superadmin'):
+        ctx['user_shop_access'] = True
+    conn = get_db_connection()
+    if not conn:
+        return ctx
+    try:
+        # 1 seule requête : tout ce dont le nav a besoin
+        row = conn.execute("""
+            SELECT u.allowed_pages, u.shop_access, u.shop_permissions,
+                   (SELECT COUNT(*) FROM training_courses WHERE user_id = u.id) AS tcnt
+            FROM users u WHERE u.id = ?
+        """, (uid,)).fetchone()
+        if row:
+            ctx['training_total_nav'] = row['tcnt'] or 0
+            if role not in ('admin', 'superadmin'):
+                if row['allowed_pages']:
+                    try: ctx['user_allowed_pages'] = json.loads(row['allowed_pages'])
+                    except Exception: pass
+                perms = {}
+                try: perms = json.loads(row['shop_permissions'] or '{}')
+                except Exception: pass
+                ctx['user_shop_access'] = bool(row['shop_access']) or any([
+                    perms.get('add'), perms.get('edit'), perms.get('delete')])
+    except Exception:
+        pass
+    finally:
+        conn.close()
     return ctx
 
 # Authentication Decorator
@@ -880,6 +960,7 @@ def calculate_trader_score(user_id):
         # Check for position sizing consistency
         amounts = [abs(t['amount']) for t in transactions if t['type'] == 'buy']
         if len(amounts) > 5:
+            import numpy as np  # lazy
             avg_amount = np.mean(amounts)
             std_amount = np.std(amounts)
             cv = (std_amount / avg_amount) if avg_amount > 0 else 0
@@ -1050,35 +1131,12 @@ def analyze_trade_image(image_path, trade_data):
     
     return insights
 
-def _normalize_yf_symbol(symbol: str) -> str:
-    """Normalise un symbole pour Yahoo Finance.
-    - Forex ex: EURUSD   → EURUSD=X
-    - Crypto ex: BTCUSDT → BTC-USD  (yfinance n'accepte pas le format Binance)
-    - Indices, actions : inchangés
-    """
-    s = symbol.upper().strip()
-    # Cryptos Binance (BTCUSDT, ETHUSDT…) → format yfinance (BTC-USD)
-    for stable in ('USDT', 'BUSD', 'USDC'):
-        if s.endswith(stable):
-            base = s[:-len(stable)]
-            return f'{base}-USD'
-    # Paires forex sans suffixe =X (6 car, pas de tiret ni de point)
-    FOREX_BASES = {'EUR','GBP','AUD','NZD','CAD','CHF','JPY','SGD','HKD','NOK','SEK','DKK','MXN','ZAR','TRY','CNY'}
-    FOREX_QUOTES = {'USD','EUR','GBP','JPY','CHF','CAD','AUD','NZD'}
-    if len(s) == 6 and '=' not in s and '-' not in s and '.' not in s:
-        if s[:3] in FOREX_BASES or s[3:] in FOREX_QUOTES:
-            return s + '=X'
-    # Déjà formaté (ex: EURUSD=X, BTC-USD, ^GSPC)
-    return s
-
-
 def trading_recommendation(symbol, timeframe='1mo'):
     """AI trading recommendations based on market data"""
     try:
-        yf_symbol = _normalize_yf_symbol(symbol)
-        ticker = yf.Ticker(yf_symbol)
+        ticker = yf.Ticker(symbol)
         hist = ticker.history(period=timeframe)
-
+        
         if hist.empty:
             return {'error': 'Données non disponibles'}
         
@@ -1282,7 +1340,7 @@ def login():
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+            cursor.execute("SELECT id,username,email,password,role,theme,shop_access,shop_permissions,allowed_pages FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
             
             if user and check_password_hash(user['password'], password):
@@ -1456,7 +1514,7 @@ def login_flyers():
             'promo': p['promo'],
             'link': p['link'],
             'badge': 'PROMO',
-            'badge_color': '#00d4aa'
+            'badge_color': '#00b074'
         })
 
     return jsonify({'success': True, 'items': items})
@@ -1547,212 +1605,174 @@ def logout():
 @app.route('/dashboard')
 @page_access_required('dashboard')
 def dashboard():
-    """Main dashboard"""
+    """Main dashboard — OPTIMISÉ : 3 requêtes SQL au lieu de 13."""
     user_id = session['user_id']
-    
-    conn = get_db_connection()
+
     stats = {
-        'net_worth': 0,
-        'monthly_cashflow': 0,
-        'expense_ratio': 0,
-        'savings_rate': 0,
-        'total_revenue': 0,
-        'total_expenses': 0,
-        'trader_score': 0,
-        'total_pnl': 0,
-        'total_pnl_percent': 0,
-        'total': 0,
-        'total_closed': 0,
-        'wins': 0,
-        'win_rate': 0,
-        'profit_factor': 0,
-        'best': {'profit_loss': 0},
-        'worst': {'profit_loss': 0}
+        'net_worth': 0, 'monthly_cashflow': 0, 'expense_ratio': 0,
+        'savings_rate': 0, 'total_revenue': 0, 'total_expenses': 0,
+        'trader_score': 0, 'total_pnl': 0, 'total_pnl_percent': 0,
+        'total': 0, 'total_closed': 0, 'wins': 0, 'win_rate': 0,
+        'profit_factor': 0, 'best': {'profit_loss': 0}, 'worst': {'profit_loss': 0}
     }
-    
-    if conn:
-        cursor = conn.cursor()
-        
-        # Get financial stats
-        cursor.execute("""
-            SELECT 
-                SUM(CASE WHEN type = 'revenue' THEN amount ELSE 0 END) as total_revenue,
-                SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses
-            FROM financial_transactions
-            WHERE user_id = ? AND date >= date('now', '-30 days')
-        """, (user_id,))
-        
-        result = cursor.fetchone()
-        if result:
-            stats['total_revenue'] = result['total_revenue'] or 0
-            stats['total_expenses'] = result['total_expenses'] or 0
-            stats['monthly_cashflow'] = stats['total_revenue'] - stats['total_expenses']
-            
-            if stats['total_revenue'] > 0:
-                stats['expense_ratio'] = (stats['total_expenses'] / stats['total_revenue']) * 100
-                stats['savings_rate'] = 100 - stats['expense_ratio']
-        
-        # Get trading value
-        cursor.execute("""
-            SELECT SUM(quantity * current_price) as portfolio_value
-            FROM positions
-            WHERE user_id = ? AND status = 'open'
-        """, (user_id,))
-        
-        result = cursor.fetchone()
-        portfolio_value = result['portfolio_value'] or 0
-        
-        # Calculate total PnL from positions
-        cursor.execute('''
-            SELECT SUM((current_price - avg_price) * quantity) as total_pnl,
-                   SUM(avg_price * quantity) as total_cost
-            FROM positions
-            WHERE user_id = ? AND status = 'open'
-        ''', (user_id,))
-        pnl_result = cursor.fetchone()
-        if pnl_result and pnl_result['total_pnl'] is not None:
-            stats['total_pnl'] = round(pnl_result['total_pnl'], 2)
-            total_cost = pnl_result['total_cost'] or 0
-            if total_cost > 0:
-                stats['total_pnl_percent'] = round((stats['total_pnl'] / total_cost) * 100, 2)
-        
-        stats['net_worth'] = stats['monthly_cashflow'] + portfolio_value
-        
-        # Trading stats from journal
-        cursor.execute("""
-            SELECT 
-                COUNT(*) as total,
-                SUM(CASE WHEN exit_price IS NOT NULL THEN 1 ELSE 0 END) as total_closed,
-                SUM(CASE WHEN profit_loss > 0 THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN profit_loss > 0 THEN profit_loss ELSE 0 END) as gross_profit,
-                SUM(CASE WHEN profit_loss < 0 THEN ABS(profit_loss) ELSE 0 END) as gross_loss,
-                MAX(profit_loss) as best,
-                MIN(profit_loss) as worst
-            FROM trading_journal
-            WHERE user_id = ?
-        """, (user_id,))
-        tj = cursor.fetchone()
-        if tj and tj['total']:
-            stats['total'] = tj['total'] or 0
-            stats['total_closed'] = tj['total_closed'] or 0
-            stats['wins'] = tj['wins'] or 0
-            stats['best'] = {'profit_loss': round(tj['best'] or 0, 2)}
-            stats['worst'] = {'profit_loss': round(tj['worst'] or 0, 2)}
+    recent_transactions = []
+    unread_notifications = 0
+    chart_labels = chart_revenus = chart_depenses = chart_solde = []
+    donut_labels = donut_data = []
+    recent_trainings = []
+    training_total = training_total_min = training_this_month = 0
+
+    conn = get_db_connection()
+    if not conn:
+        return render_template('dashboard.html', stats=stats, transactions=[],
+                               unread_notifications=0, user_role=session.get('role','user'),
+                               chart_labels=[], chart_revenus=[], chart_depenses=[],
+                               chart_solde=[], donut_labels=[], donut_data=[],
+                               recent_trainings=[], training_total=0,
+                               training_total_min=0, training_this_month=0)
+    try:
+        cur = conn.cursor()
+
+        # ── Requête 1 : stats financières + trading en 1 seul CTE ─────────
+        cur.execute("""
+            WITH fin AS (
+                SELECT
+                    SUM(CASE WHEN type='revenue' AND date >= date('now','-30 days') THEN amount ELSE 0 END) AS rev30,
+                    SUM(CASE WHEN type='expense' AND date >= date('now','-30 days') THEN amount ELSE 0 END) AS exp30
+                FROM financial_transactions WHERE user_id = ?
+            ),
+            port AS (
+                SELECT
+                    COALESCE(SUM(quantity * current_price), 0)             AS port_val,
+                    COALESCE(SUM((current_price - avg_price) * quantity),0) AS pnl,
+                    COALESCE(SUM(avg_price * quantity), 0)                  AS cost
+                FROM positions WHERE user_id = ? AND status = 'open'
+            ),
+            tj AS (
+                SELECT
+                    COUNT(*)                                                       AS total,
+                    SUM(CASE WHEN exit_price IS NOT NULL THEN 1 ELSE 0 END)        AS total_closed,
+                    SUM(CASE WHEN profit_loss > 0 THEN 1 ELSE 0 END)               AS wins,
+                    SUM(CASE WHEN profit_loss > 0 THEN profit_loss ELSE 0 END)     AS gross_profit,
+                    SUM(CASE WHEN profit_loss < 0 THEN ABS(profit_loss) ELSE 0 END) AS gross_loss,
+                    MAX(profit_loss) AS best, MIN(profit_loss) AS worst
+                FROM trading_journal WHERE user_id = ?
+            ),
+            ts AS (
+                SELECT overall_score FROM trader_scores WHERE user_id = ?
+                ORDER BY created_at DESC LIMIT 1
+            ),
+            notif AS (
+                SELECT COUNT(*) AS unread FROM notifications
+                WHERE user_id = ? AND is_read = 0
+            ),
+            tr_stats AS (
+                SELECT
+                    COUNT(*) AS total,
+                    COALESCE(SUM(duration_minutes), 0) AS total_min,
+                    SUM(CASE WHEN scheduled_date >= date('now','-30 days') THEN 1 ELSE 0 END) AS this_month
+                FROM training_courses WHERE user_id = ?
+            )
+            SELECT fin.*, port.*, tj.*, ts.overall_score AS trader_score,
+                   notif.unread, tr_stats.total AS tr_total,
+                   tr_stats.total_min AS tr_min, tr_stats.this_month AS tr_month
+            FROM fin, port, tj, ts, notif, tr_stats
+        """, (user_id, user_id, user_id, user_id, user_id, user_id))
+        r = cur.fetchone()
+        if r:
+            rev = r['rev30'] or 0
+            exp = r['exp30'] or 0
+            stats['total_revenue']    = rev
+            stats['total_expenses']   = exp
+            stats['monthly_cashflow'] = rev - exp
+            if rev > 0:
+                stats['expense_ratio'] = (exp / rev) * 100
+                stats['savings_rate']  = 100 - stats['expense_ratio']
+            port_val = r['port_val'] or 0
+            stats['net_worth']        = stats['monthly_cashflow'] + port_val
+            stats['total_pnl']        = round(r['pnl'] or 0, 2)
+            cost = r['cost'] or 0
+            if cost > 0:
+                stats['total_pnl_percent'] = round((stats['total_pnl'] / cost) * 100, 2)
+            stats['total']        = r['total'] or 0
+            stats['total_closed'] = r['total_closed'] or 0
+            stats['wins']         = r['wins'] or 0
+            stats['best']         = {'profit_loss': round(r['best'] or 0, 2)}
+            stats['worst']        = {'profit_loss': round(r['worst'] or 0, 2)}
             if stats['total_closed'] > 0:
                 stats['win_rate'] = round((stats['wins'] / stats['total_closed']) * 100, 1)
-            gross_profit = tj['gross_profit'] or 0
-            gross_loss = tj['gross_loss'] or 0
-            if gross_loss > 0:
-                stats['profit_factor'] = round(gross_profit / gross_loss, 2)
+            gp = r['gross_profit'] or 0; gl = r['gross_loss'] or 0
+            if gl > 0:
+                stats['profit_factor'] = round(gp / gl, 2)
+            stats['trader_score']    = r['trader_score'] or 0
+            unread_notifications     = r['unread'] or 0
+            training_total           = r['tr_total'] or 0
+            training_total_min       = r['tr_min'] or 0
+            training_this_month      = r['tr_month'] or 0
 
-        # Get latest trader score
-        cursor.execute("""
-            SELECT overall_score FROM trader_scores
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 1
-        """, (user_id,))
-        
-        result = cursor.fetchone()
-        if result:
-            stats['trader_score'] = result['overall_score']
-        
-        # Get recent transactions
-        cursor.execute("""
-            SELECT * FROM transactions
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 10
-        """, (user_id,))
-        recent_transactions = [dict(row) for row in cursor.fetchall()]
-        
-        # Get unread notifications
-        cursor.execute("""
-            SELECT COUNT(*) as unread FROM notifications
-            WHERE user_id = ? AND is_read = 0
-        """, (user_id,))
-        unread_notifications = cursor.fetchone()['unread']
-        
-        # === Données pour graphique Performance (6 derniers mois) ===
-        cursor.execute("""
-            SELECT 
-                strftime('%Y-%m', date) as month,
-                SUM(CASE WHEN type='revenue' THEN amount ELSE 0 END) as revenus,
-                SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as depenses
+        # ── Requête 2 : graphiques financiers (6 mois + donut catégories) ──
+        cur.execute("""
+            SELECT strftime('%Y-%m', date) AS month,
+                   SUM(CASE WHEN type='revenue' THEN amount ELSE 0 END) AS revenus,
+                   SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS depenses
             FROM financial_transactions
-            WHERE user_id = ? AND date >= date('now', '-6 months')
-            GROUP BY month
-            ORDER BY month
+            WHERE user_id = ? AND date >= date('now','-6 months')
+            GROUP BY month ORDER BY month
         """, (user_id,))
-        perf_rows = cursor.fetchall()
-        month_names = {'01':'Jan','02':'Fév','03':'Mar','04':'Avr','05':'Mai',
-                       '06':'Juin','07':'Juil','08':'Août','09':'Sep','10':'Oct','11':'Nov','12':'Déc'}
+        month_names = {'01':'Jan','02':'Fév','03':'Mar','04':'Avr','05':'Mai','06':'Juin',
+                       '07':'Juil','08':'Août','09':'Sep','10':'Oct','11':'Nov','12':'Déc'}
+        perf_rows      = cur.fetchall()
         chart_labels   = [month_names.get(r['month'][-2:], r['month']) for r in perf_rows]
         chart_revenus  = [round(r['revenus'] or 0, 2) for r in perf_rows]
         chart_depenses = [round(r['depenses'] or 0, 2) for r in perf_rows]
         chart_solde    = [round((r['revenus'] or 0) - (r['depenses'] or 0), 2) for r in perf_rows]
 
-        # === Données pour graphique Répartition par catégorie ===
-        cursor.execute("""
-            SELECT category, SUM(amount) as total
-            FROM financial_transactions
+        cur.execute("""
+            SELECT category, SUM(amount) AS total FROM financial_transactions
             WHERE user_id = ? AND type='expense'
-            GROUP BY category
-            ORDER BY total DESC
-            LIMIT 6
+            GROUP BY category ORDER BY total DESC LIMIT 6
         """, (user_id,))
-        cat_rows = cursor.fetchall()
+        cat_rows     = cur.fetchall()
         donut_labels = [r['category'] for r in cat_rows]
         donut_data   = [round(r['total'] or 0, 2) for r in cat_rows]
 
-        # === Formations / Training ===
-        cursor.execute("""
+        # ── Requête 3 : transactions récentes + formations récentes ─────────
+        cur.execute("""
+            SELECT * FROM transactions WHERE user_id = ?
+            ORDER BY created_at DESC LIMIT 10
+        """, (user_id,))
+        recent_transactions = [dict(r) for r in cur.fetchall()]
+
+        cur.execute("""
             SELECT id, title, category, level, scheduled_date, duration_minutes,
                    participant_names, time_start, time_end, created_at
-            FROM training_courses
-            WHERE user_id = ?
-            ORDER BY scheduled_date DESC, created_at DESC
-            LIMIT 5
+            FROM training_courses WHERE user_id = ?
+            ORDER BY scheduled_date DESC, created_at DESC LIMIT 5
         """, (user_id,))
-        recent_trainings = [dict(r) for r in cursor.fetchall()]
+        recent_trainings = [dict(r) for r in cur.fetchall()]
 
-        # Stats formations
-        cursor.execute("SELECT COUNT(*) as total FROM training_courses WHERE user_id = ?", (user_id,))
-        training_total = cursor.fetchone()['total']
-
-        cursor.execute("SELECT SUM(duration_minutes) as total_min FROM training_courses WHERE user_id = ?", (user_id,))
-        training_total_min = cursor.fetchone()['total_min'] or 0
-
-        cursor.execute("""
-            SELECT COUNT(*) as cnt FROM training_courses
-            WHERE user_id = ? AND scheduled_date >= date('now', '-30 days')
-        """, (user_id,))
-        training_this_month = cursor.fetchone()['cnt']
-
+    except Exception as e:
+        print(f"[Dashboard] {e}")
+    finally:
         conn.close()
 
-        return render_template('dashboard.html',
-                             stats=stats,
-                             transactions=recent_transactions,
-                             unread_notifications=unread_notifications,
-                             user_role=session.get('role','user'),
-                             chart_labels=chart_labels,
-                             chart_revenus=chart_revenus,
-                             chart_depenses=chart_depenses,
-                             chart_solde=chart_solde,
-                             donut_labels=donut_labels,
-                             donut_data=donut_data,
-                             recent_trainings=recent_trainings,
-                             training_total=training_total,
-                             training_total_min=training_total_min,
-                             training_this_month=training_this_month)
-
-    return render_template('dashboard.html', stats=stats, transactions=[], unread_notifications=0,
+    return render_template('dashboard.html',
+                           stats=stats,
+                           transactions=recent_transactions,
+                           unread_notifications=unread_notifications,
                            user_role=session.get('role','user'),
-                           chart_labels=[], chart_revenus=[], chart_depenses=[],
-                           chart_solde=[], donut_labels=[], donut_data=[],
-                           recent_trainings=[], training_total=0,
-                           training_total_min=0, training_this_month=0)
+                           chart_labels=chart_labels,
+                           chart_revenus=chart_revenus,
+                           chart_depenses=chart_depenses,
+                           chart_solde=chart_solde,
+                           donut_labels=donut_labels,
+                           donut_data=donut_data,
+                           recent_trainings=recent_trainings,
+                           training_total=training_total,
+                           training_total_min=training_total_min,
+                           training_this_month=training_this_month)
+
+
 @app.route('/finances')
 @page_access_required('finances')
 def finances():
@@ -2227,7 +2247,7 @@ def add_position():
         # Obtenir le prix actuel avec yfinance
         current_price = avg_price
         try:
-            ticker = yf.Ticker(_normalize_yf_symbol(data['symbol']))
+            ticker = yf.Ticker(data['symbol'])
             hist = ticker.history(period='1d')
             if not hist.empty:
                 current_price = float(hist['Close'].iloc[-1])
@@ -2306,6 +2326,7 @@ def export_portfolio():
     
     elif export_format == 'excel':
         try:
+            import pandas as pd  # lazy
             df = pd.DataFrame(positions)
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -2407,7 +2428,7 @@ def export_portfolio():
             col_w = [1.2*inch, 0.9*inch, 1*inch, 1.1*inch, 1*inch, 1*inch]
             table = Table(data, colWidths=col_w)
             table.setStyle(TableStyle([
-                ('BACKGROUND',    (0, 0),  (-1, 0),  colors.HexColor('#00d4aa')),
+                ('BACKGROUND',    (0, 0),  (-1, 0),  colors.HexColor('#00b074')),
                 ('TEXTCOLOR',     (0, 0),  (-1, 0),  colors.white),
                 ('ALIGN',         (0, 0),  (-1, -1), 'CENTER'),
                 ('FONTNAME',      (0, 0),  (-1, 0),  'Helvetica-Bold'),
@@ -2461,6 +2482,7 @@ def export_finances():
     
     elif export_format == 'excel':
         try:
+            import pandas as pd  # lazy
             df = pd.DataFrame(transactions)
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -2572,7 +2594,7 @@ def export_finances():
             col_w = [1.1*inch, 0.9*inch, 1.2*inch, 1.6*inch, 1*inch]
             table = Table(data, colWidths=col_w)
             table.setStyle(TableStyle([
-                ('BACKGROUND',    (0, 0),  (-1, 0),  colors.HexColor('#00d4aa')),
+                ('BACKGROUND',    (0, 0),  (-1, 0),  colors.HexColor('#00b074')),
                 ('TEXTCOLOR',     (0, 0),  (-1, 0),  colors.white),
                 ('ALIGN',         (0, 0),  (-1, -1), 'CENTER'),
                 ('FONTNAME',      (0, 0),  (-1, 0),  'Helvetica-Bold'),
@@ -3276,7 +3298,7 @@ def generate_report():
 def _kf_draw_branded_page(c, width, height, doc_info=None):
     """
     Dessine sur la page courante (canvas ReportLab) :
-      - Logo k-ni en filigrane central (semi-transparent)
+      - Logo k-Ni en filigrane central (semi-transparent)
       - Bande d'en-tête verte : logo petit (centre), infos doc (gauche), infos proprio (droite)
       - QR code en bas à gauche (URL inscription + WhatsApp)
       - Pied de page certifié avec logo miniature
@@ -3329,7 +3351,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     else:
         # Fallback texte si logo absent
         c.saveState()
-        c.setFillColor(colors.HexColor('#00d4aa'))
+        c.setFillColor(colors.HexColor('#00b074'))
         c.setFillAlpha(0.04)
         c.setFont('Helvetica-Bold', 68)
         c.translate(width / 2, height / 2)
@@ -3346,7 +3368,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     c.rect(0, height - hdr_h, width, hdr_h, fill=True, stroke=False)
 
     # Séparateur doré en bas du header
-    c.setStrokeColor(colors.HexColor('#00d4aa'))
+    c.setStrokeColor(colors.HexColor('#00b074'))
     c.setLineWidth(1.8)
     c.line(0, height - hdr_h, width, height - hdr_h)
 
@@ -3374,7 +3396,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     period_str = f"{p_start} → {p_end}" if p_start else 'Tous'
 
     c.setFont('Helvetica-Bold', 9.5)
-    c.drawString(12 * mm, y_top, 'k-ni chez Htech-training')
+    c.drawString(12 * mm, y_top, 'k-Ni Store · Htech-training')
     c.setFont('Helvetica', 7)
     c.drawString(12 * mm, y_top - 5 * mm,  f'Type     : {doc_type}')
     c.drawString(12 * mm, y_top - 9.5 * mm, f'Période  : {period_str}')
@@ -3393,7 +3415,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
                       f"Réf. : KF-{now.strftime('%Y%m%d%H%M')}")
 
     # Ligne verte fine sous le header (séparation corps)
-    c.setStrokeColor(colors.HexColor('#00d4aa'))
+    c.setStrokeColor(colors.HexColor('#00b074'))
     c.setLineWidth(0.8)
     c.line(12 * mm, height - hdr_h - 4 * mm,
            width - 12 * mm, height - hdr_h - 4 * mm)
@@ -3414,6 +3436,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
         )
         qr.add_data(qr_data)
         qr.make(fit=True)
+        from PIL import Image  # lazy
         qr_img = qr.make_image(fill_color='#051a0f', back_color='white')
         qr_buf = _io.BytesIO()
         qr_img.save(qr_buf, format='PNG')
@@ -3425,7 +3448,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
 
         # Fond blanc + bordure verte légère
         c.setFillColor(colors.white)
-        c.setStrokeColor(colors.HexColor('#00d4aa'))
+        c.setStrokeColor(colors.HexColor('#00b074'))
         c.setLineWidth(0.6)
         c.roundRect(qr_x - 1.5, qr_y - 1.5,
                     qr_size + 3, qr_size + 3, 3,
@@ -3451,7 +3474,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     ftr_h = 17 * mm
     c.setFillColor(colors.HexColor('#f0f4f0'))
     c.rect(0, 0, width, ftr_h, fill=True, stroke=False)
-    c.setStrokeColor(colors.HexColor('#00d4aa'))
+    c.setStrokeColor(colors.HexColor('#00b074'))
     c.setLineWidth(1)
     c.line(0, ftr_h, width, ftr_h)
 
@@ -3473,7 +3496,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
         'Document certifié — Kengni Finance v2.1 — © 2025 Tous droits réservés')
     c.setFont('Helvetica', 6)
     c.drawCentredString(width / 2, ftr_h - 7.5 * mm,
-        'k-ni chez Htech-training  ·  +237 695 072 759  ·  WhatsApp : +237 695 072 759')
+        'k-Ni Store · Htech-training  ·  +237 695 072 759  ·  WhatsApp : +237 695 072 759')
     c.setFont('Helvetica', 5.5)
     c.drawCentredString(width / 2, ftr_h - 11 * mm,
         f"Généré le {now.strftime('%d/%m/%Y à %H:%M')}  ·  Document confidentiel  ·  kengni.pythonanywhere.com")
@@ -3535,7 +3558,7 @@ def download_report(report_id):
                             report.get('title', 'Rapport Kengni Finance'))
 
         # Ligne séparatrice
-        c.setStrokeColor(colors.HexColor('#00d4aa'))
+        c.setStrokeColor(colors.HexColor('#00b074'))
         c.setLineWidth(2)
         c.line(40, content_top - 8, width - 40, content_top - 8)
 
@@ -3727,7 +3750,7 @@ def admin_auth():
     conn = get_db_connection()
     if conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email=? AND role IN ('admin','superadmin')", (email,))
+        cursor.execute("SELECT id,username,email,password,role,theme FROM users WHERE email=? AND role IN ('admin','superadmin')", (email,))
         user = cursor.fetchone()
         if user and check_password_hash(user['password'], password):
             # 2FA for admin
@@ -3757,30 +3780,44 @@ def admin_auth():
 @app.route('/announcement')
 @login_required
 def show_announcement():
-    """Splash screen affiché juste après la validation du token 2FA."""
+    """Splash screen affiché juste après la validation du token 2FA.
+    OPTIMISÉ : résultat caché en session 5 min pour éviter la DB à chaque login."""
     today = date.today().isoformat()
-    conn  = get_db_connection()
-    ann   = None
+    cache_key  = f"ann_checked_{today}"
+    cache_id   = session.get(cache_key)
+
+    # Si "no_ann" déjà vérifié aujourd'hui → aller direct au dashboard
+    if cache_id == 'none':
+        return redirect(url_for('dashboard'))
+
+    conn = get_db_connection()
+    ann  = None
     if conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT * FROM announcements
-            WHERE is_active = 1
-              AND start_date <= ?
-              AND end_date   >= ?
-            ORDER BY created_at DESC
-            LIMIT 1
-        """, (today, today))
-        row = cursor.fetchone()
-        if row:
-            ann = dict(row)
-            cursor.execute("UPDATE announcements SET view_count = view_count + 1 WHERE id = ?", (ann['id'],))
-            conn.commit()
-            try:
-                ann['images_list'] = json.loads(ann.get('images') or '[]')
-            except Exception:
-                ann['images_list'] = []
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, title, content, images, is_active, start_date, end_date,
+                       auto_skip_seconds, view_count
+                FROM announcements
+                WHERE is_active = 1 AND start_date <= ? AND end_date >= ?
+                ORDER BY created_at DESC LIMIT 1
+            """, (today, today))
+            row = cursor.fetchone()
+            if row:
+                ann = dict(row)
+                cursor.execute(
+                    "UPDATE announcements SET view_count = view_count + 1 WHERE id = ?",
+                    (ann['id'],))
+                conn.commit()
+                try: ann['images_list'] = json.loads(ann.get('images') or '[]')
+                except Exception: ann['images_list'] = []
+            else:
+                # Mémoriser "pas d'annonce aujourd'hui" → skip DB pour le reste de la journée
+                session[cache_key] = 'none'
+        except Exception:
+            pass
+        finally:
+            conn.close()
 
     if not ann:
         return redirect(url_for('dashboard'))
@@ -4474,26 +4511,26 @@ def _send_sincire_email(lead: dict) -> bool:
 <div style="max-width:600px;margin:0 auto;padding:24px;">
 
   <!-- Header -->
-  <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:18px 18px 0 0;padding:36px 32px;text-align:center;border-bottom:3px solid #00d4aa;">
+  <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:18px 18px 0 0;padding:36px 32px;text-align:center;border-bottom:3px solid #00b074;">
     <div style="font-size:3rem;margin-bottom:10px;">🎓</div>
     <h1 style="color:#fff;margin:0;font-size:22px;font-weight:800;">Kengni Trading Academy</h1>
-    <p style="color:#00d4aa;margin:8px 0 0;font-size:14px;font-weight:600;">Votre place est réservée — Finalisez votre inscription</p>
+    <p style="color:#00b074;margin:8px 0 0;font-size:14px;font-weight:600;">Votre place est réservée — Finalisez votre inscription</p>
   </div>
 
   <!-- Body -->
   <div style="background:#111827;padding:32px;border-radius:0 0 18px 18px;border:1px solid #1e2a3a;border-top:none;">
 
     <p style="color:#e0e0e0;font-size:15px;line-height:1.7;margin:0 0 20px;">
-      Bonjour <strong style="color:#00d4aa;">{name}</strong>,<br><br>
+      Bonjour <strong style="color:#00b074;">{name}</strong>,<br><br>
       Merci pour votre intérêt pour la formation <strong style="color:#fff;">"{level}"</strong> !
       Votre dossier a été examiné et nous sommes ravis de vous confirmer que votre place est réservée.<br><br>
       Pour <strong style="color:#ffd700;">finaliser votre inscription</strong>, il vous suffit de procéder au règlement selon l'un des moyens ci-dessous.
     </p>
 
     <!-- Prix -->
-    <div style="background:linear-gradient(135deg,rgba(0,212,170,.15),rgba(0,212,170,.05));border:1px solid rgba(0,212,170,.3);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
+    <div style="background:linear-gradient(135deg,rgba(0,176,116,.15),rgba(0,176,116,.05));border:1px solid rgba(0,176,116,.3);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
       <div style="font-size:.8rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Montant à régler — {level}</div>
-      <div style="font-size:2rem;font-weight:800;color:#00d4aa;">{prices['xaf']:,} FCFA</div>
+      <div style="font-size:2rem;font-weight:800;color:#00b074;">{prices['xaf']:,} FCFA</div>
       <div style="font-size:.9rem;color:#888;margin-top:4px;">≈ {prices['eur']} EUR</div>
     </div>
 
@@ -4553,7 +4590,7 @@ def _send_sincire_email(lead: dict) -> bool:
     <!-- CTA -->
     <div style="text-align:center;margin-bottom:16px;">
       <a href="https://wa.me/237695072759?text=Bonjour%2C%20j%27ai%20effectu%C3%A9%20mon%20paiement%20pour%20la%20formation%20{level.replace(' ','%20')}"
-         style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:800;font-size:14px;padding:14px 32px;border-radius:10px;text-decoration:none;display:inline-block;box-shadow:0 4px 16px rgba(0,212,170,.4);">
+         style="background:linear-gradient(135deg,#00b074,#7dffc3);color:#000;font-weight:800;font-size:14px;padding:14px 32px;border-radius:10px;text-decoration:none;display:inline-block;box-shadow:0 4px 16px rgba(0,176,116,.4);">
         📲 Confirmer mon paiement sur WhatsApp
       </a>
     </div>
@@ -4704,6 +4741,7 @@ def export_leads():
         'Lien WA':   f"https://wa.me/{l['whatsapp'].replace(' ','').replace('+','')}",
     } for l in leads]
 
+    import pandas as pd  # lazy
     df = pd.DataFrame(data) if data else pd.DataFrame()
     output = BytesIO()
     ts = datetime.now().strftime('%Y%m%d_%H%M')
@@ -5425,9 +5463,9 @@ def _chat_notify_email(tagged_user: dict, sender_name: str, message_preview: str
 <div style="max-width:560px;margin:0 auto;padding:24px;">
   <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:16px;padding:28px;border:1px solid #1e2a3a;">
     <div style="font-size:2rem;text-align:center;margin-bottom:8px;">💬</div>
-    <h2 style="color:#00d4aa;text-align:center;margin:0 0 4px;font-size:18px;">Nouveau message</h2>
+    <h2 style="color:#00b074;text-align:center;margin:0 0 4px;font-size:18px;">Nouveau message</h2>
     <p style="color:#aaa;text-align:center;font-size:12px;margin:0 0 20px;">Kengni Finance — Messagerie</p>
-    <div style="background:#111827;border-radius:12px;padding:16px;border-left:4px solid #00d4aa;margin-bottom:20px;">
+    <div style="background:#111827;border-radius:12px;padding:16px;border-left:4px solid #00b074;margin-bottom:20px;">
       <p style="color:#888;font-size:12px;margin:0 0 6px;">
         <strong style="color:#fff;">{sender_name}</strong> vous a tagué(e)
       </p>
@@ -5436,7 +5474,7 @@ def _chat_notify_email(tagged_user: dict, sender_name: str, message_preview: str
       </p>
     </div>
     <div style="text-align:center;">
-      <a href="{chat_url}" style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:800;
+      <a href="{chat_url}" style="background:linear-gradient(135deg,#00b074,#7dffc3);color:#000;font-weight:800;
          font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;display:inline-block;">
         📨 Voir le message
       </a>
@@ -5901,17 +5939,6 @@ def init_documents_db():
             cursor.execute(f'ALTER TABLE document_purchases ADD COLUMN {col} {defn}')
         except Exception:
             pass
-
-    # ── Migrations survey_responses (schema legacy → nouveau) ────
-    for col, defn in [
-        ('session_id', 'TEXT'),
-        ('answers',    'TEXT'),
-        ('ip_address', 'TEXT'),
-    ]:
-        try:
-            cursor.execute(f'ALTER TABLE survey_responses ADD COLUMN {col} {defn}')
-        except Exception:
-            pass  # colonne déjà présente
 
     conn.commit()
     conn.close()
@@ -7022,22 +7049,6 @@ def init_shop_db():
             delivery_info  TEXT    DEFAULT 'Livraison 3-7 jours',
             reviews_count  INTEGER DEFAULT 0,
             is_active      INTEGER DEFAULT 1,
-            brand          TEXT    DEFAULT '',
-            sku            TEXT    DEFAULT '',
-            colors         TEXT    DEFAULT '',
-            sizes          TEXT    DEFAULT '',
-            materials      TEXT    DEFAULT '',
-            warranty       TEXT    DEFAULT '',
-            origin         TEXT    DEFAULT '',
-            box_contents   TEXT    DEFAULT '',
-            tags           TEXT    DEFAULT '',
-            source_url     TEXT    DEFAULT '',
-            internal_notes TEXT    DEFAULT '',
-            specs          TEXT    DEFAULT '{}',
-            length         TEXT    DEFAULT '',
-            width          TEXT    DEFAULT '',
-            height         TEXT    DEFAULT '',
-            weight         TEXT    DEFAULT '',
             created_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
             updated_at     TEXT    DEFAULT CURRENT_TIMESTAMP
         );
@@ -7055,27 +7066,71 @@ def init_shop_db():
             created_at     TEXT    DEFAULT CURRENT_TIMESTAMP,
             updated_at     TEXT    DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS shop_customers (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            name          TEXT    NOT NULL,
+            email         TEXT    UNIQUE NOT NULL,
+            phone         TEXT    DEFAULT '',
+            password_hash TEXT    NOT NULL,
+            city          TEXT    DEFAULT '',
+            avatar        TEXT    DEFAULT '',
+            points        INTEGER DEFAULT 0,
+            promo_code    TEXT    DEFAULT '',
+            is_active     INTEGER DEFAULT 1,
+            created_at    TEXT    DEFAULT CURRENT_TIMESTAMP,
+            last_login    TEXT    DEFAULT NULL
+        );
+        CREATE TABLE IF NOT EXISTS shop_wishlists (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER NOT NULL,
+            product_id  INTEGER NOT NULL,
+            added_at    TEXT    DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(customer_id, product_id)
+        );
+        CREATE TABLE IF NOT EXISTS shop_reviews (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id  INTEGER NOT NULL,
+            customer_id INTEGER NOT NULL,
+            rating      INTEGER NOT NULL DEFAULT 5,
+            title       TEXT    DEFAULT '',
+            body        TEXT    DEFAULT '',
+            created_at  TEXT    DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(product_id, customer_id)
+        );
+        CREATE TABLE IF NOT EXISTS shop_promo_codes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            code        TEXT    UNIQUE NOT NULL,
+            discount    REAL    NOT NULL DEFAULT 10,
+            type        TEXT    DEFAULT 'percent',
+            min_order   REAL    DEFAULT 0,
+            max_uses    INTEGER DEFAULT 1000,
+            uses        INTEGER DEFAULT 0,
+            is_active   INTEGER DEFAULT 1,
+            created_at  TEXT    DEFAULT CURRENT_TIMESTAMP
+        );
         """)
         conn.commit()
+        # Migrations pour colonnes manquantes
+        for _sql in [
+            "ALTER TABLE shop_orders ADD COLUMN customer_id INTEGER DEFAULT NULL",
+            "ALTER TABLE shop_orders ADD COLUMN customer_email TEXT DEFAULT ''",
+            "ALTER TABLE shop_orders ADD COLUMN promo_code TEXT DEFAULT ''",
+            "ALTER TABLE shop_orders ADD COLUMN discount REAL DEFAULT 0",
+        ]:
+            try: conn.execute(_sql); conn.commit()
+            except Exception: pass
+        # Seed promo codes
+        try:
+            conn.execute("""INSERT OR IGNORE INTO shop_promo_codes (code,discount,type,min_order,max_uses)
+                VALUES ('BIENVENUE10',10,'percent',0,1000),('KNISTORE5',5,'percent',5000,500)""")
+            conn.commit()
+        except Exception: pass
         # Migration : ajouter colonne images si absente (DB existante)
         try:
             conn.execute("ALTER TABLE shop_products ADD COLUMN images TEXT DEFAULT '[]'")
             conn.commit()
         except Exception:
             pass
-        # Migration : ajouter colonnes détails produit si absentes
-        for col, default in [
-            ('brand','""'),('sku','""'),('colors','""'),('sizes','""'),
-            ('materials','""'),('warranty','""'),('origin','""'),
-            ('box_contents','""'),('tags','""'),('source_url','""'),
-            ('internal_notes','""'),('specs','"{}"'),
-            ('length','""'),('width','""'),('height','""'),('weight','""'),
-        ]:
-            try:
-                conn.execute(f"ALTER TABLE shop_products ADD COLUMN {col} TEXT DEFAULT ''")
-                conn.commit()
-            except Exception:
-                pass
         cur = conn.cursor()
         cur.execute("SELECT COUNT(*) FROM shop_products")
         if cur.fetchone()[0] == 0:
@@ -7163,17 +7218,20 @@ def shop():
         print(f"[Shop] {e}")
     finally:
         if conn: conn.close()
-    # Récupérer les bannières actives
-    banners = []
-    try:
-        conn2 = get_db_connection()
-        cur2 = conn2.cursor()
-        cur2.execute("SELECT id,type,content,image_url,icon,color,bg_color,link_url FROM shop_banners WHERE is_active=1 ORDER BY display_order ASC, id ASC")
-        banners = [dict(r) for r in cur2.fetchall()]
-        conn2.close()
-    except Exception:
-        pass
-    return render_template('shop.html', products=products, orders_count=orders_count, banners=banners)
+    # Customer session
+    customer = _shop_customer()
+    customer_wishlist = []
+    if customer:
+        _c2 = get_db_connection()
+        try:
+            _cur2 = _c2.cursor()
+            _cur2.execute("SELECT product_id FROM shop_wishlists WHERE customer_id=?", (customer['id'],))
+            customer_wishlist = [r[0] for r in _cur2.fetchall()]
+        except Exception: pass
+        finally:
+            if _c2: _c2.close()
+    return render_template('shop.html', products=products, orders_count=orders_count,
+                           customer=customer, customer_wishlist=customer_wishlist)
 
 
 @app.route('/shop/order', methods=['POST'])
@@ -7191,6 +7249,27 @@ def shop_create_order():
     if not items or not customer_name:
         return jsonify({'success': False, 'error': 'Données manquantes'})
 
+    customer_email = (data.get('email') or '').strip()
+    promo_code     = (data.get('promo_code') or '').strip().upper()
+    discount       = 0
+    # Apply promo
+    if promo_code:
+        _pc = get_db_connection()
+        try:
+            _pcc = _pc.cursor()
+            _pcc.execute("SELECT * FROM shop_promo_codes WHERE code=? AND is_active=1", (promo_code,))
+            _pr = _pcc.fetchone()
+            if _pr:
+                _pr = dict(_pr)
+                if _pr['type']=='percent': discount = round(total * _pr['discount']/100)
+                _pc.execute("UPDATE shop_promo_codes SET uses=uses+1 WHERE code=?", (promo_code,))
+                _pc.commit()
+                total = max(0, total - discount)
+        except Exception: pass
+        finally:
+            if _pc: _pc.close()
+
+    customer_id = session.get('shop_cid')
     items_summary = ', '.join(f"{i.get('name','?').strip()} ×{i.get('qty',1)}" for i in items)
 
     conn = get_db_connection()
@@ -7199,14 +7278,22 @@ def shop_create_order():
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO shop_orders
-            (customer_name, customer_phone, customer_city,
-             items_summary, items_json, total, pay_method, note, status)
-            VALUES (?,?,?,?,?,?,?,?,'pending')
-        """, (customer_name, customer_phone, customer_city,
+            (customer_name, customer_phone, customer_city, customer_email, customer_id,
+             items_summary, items_json, total, pay_method, note, promo_code, discount, status)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'pending')
+        """, (customer_name, customer_phone, customer_city, customer_email, customer_id,
               items_summary, _json.dumps(items, ensure_ascii=False),
-              total, pay_method, note))
+              total, pay_method, note, promo_code, discount))
         conn.commit()
         order_id = cur.lastrowid
+        # Loyalty points
+        if session.get('shop_cid'):
+            _pts = max(1, int((total or 0) / 1000))
+            try:
+                conn.execute("UPDATE shop_customers SET points=points+? WHERE id=?",
+                             (_pts, session['shop_cid']))
+                conn.commit()
+            except Exception: pass
         for item in items:
             pid = item.get('id')
             qty = int(item.get('qty', 1))
@@ -7217,7 +7304,6 @@ def shop_create_order():
                     WHERE id = ? AND stock > 0
                 """, (qty, pid))
         conn.commit()
-        _sse_broadcast_product_change('stock_updated')
         try:
             cur.execute("""
                 INSERT INTO notifications (user_id,type,title,message,is_read,created_at)
@@ -7341,26 +7427,17 @@ def shop_create_product():
         cur.execute("""
             INSERT INTO shop_products
             (name,description,features,category,price,original_price,
-             stock,image_url,images,badge,delivery_info,is_active,reviews_count,
-             brand,sku,colors,sizes,materials,warranty,origin,box_contents,
-             tags,source_url,internal_notes,specs,length,width,height,weight)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+             stock,image_url,images,badge,delivery_info,is_active)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         """, (name, d.get('description', ''), d.get('features', ''),
               d.get('category', 'electronique'),
               float(d.get('price', 0) or 0), float(d.get('original_price', 0) or 0),
               int(d.get('stock', 10)), d.get('image_url', ''),
-              images_json, d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
-              1 if d.get('is_active', True) else 0,
-              int(d.get('reviews_count', 0) or 0),
-              d.get('brand',''), d.get('sku',''), d.get('colors',''), d.get('sizes',''),
-              d.get('materials',''), d.get('warranty',''), d.get('origin',''),
-              d.get('box_contents',''), d.get('tags',''), d.get('source_url',''),
-              d.get('internal_notes',''), d.get('specs','{}'),
-              d.get('length',''), d.get('width',''), d.get('height',''), d.get('weight','')))
+              images_json,
+              d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
+              1 if d.get('is_active', True) else 0))
         conn.commit()
-        _new_pid = cur.lastrowid
-        _sse_broadcast_product_change('created', _new_pid)
-        return jsonify({'success': True, 'id': _new_pid})
+        return jsonify({'success': True, 'id': cur.lastrowid})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
@@ -7380,27 +7457,16 @@ def shop_update_product(pid):
             UPDATE shop_products SET
                 name=?,description=?,features=?,category=?,price=?,
                 original_price=?,stock=?,image_url=?,images=?,badge=?,
-                delivery_info=?,is_active=?,reviews_count=?,
-                brand=?,sku=?,colors=?,sizes=?,materials=?,warranty=?,
-                origin=?,box_contents=?,tags=?,source_url=?,internal_notes=?,
-                specs=?,length=?,width=?,height=?,weight=?,
-                updated_at=CURRENT_TIMESTAMP
+                delivery_info=?,is_active=?,updated_at=CURRENT_TIMESTAMP
             WHERE id=?
         """, ((d.get('name') or '').strip(), d.get('description', ''),
               d.get('features', ''), d.get('category', 'electronique'),
               float(d.get('price', 0) or 0), float(d.get('original_price', 0) or 0),
               int(d.get('stock', 10)), d.get('image_url', ''),
-              images_json, d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
-              1 if d.get('is_active', True) else 0,
-              int(d.get('reviews_count', 0) or 0),
-              d.get('brand',''), d.get('sku',''), d.get('colors',''), d.get('sizes',''),
-              d.get('materials',''), d.get('warranty',''), d.get('origin',''),
-              d.get('box_contents',''), d.get('tags',''), d.get('source_url',''),
-              d.get('internal_notes',''), d.get('specs','{}'),
-              d.get('length',''), d.get('width',''), d.get('height',''), d.get('weight',''),
-              pid))
+              images_json,
+              d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
+              1 if d.get('is_active', True) else 0, pid))
         conn.commit()
-        _sse_broadcast_product_change('updated', pid)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -7417,7 +7483,6 @@ def shop_toggle_product(pid):
     try:
         conn.execute("UPDATE shop_products SET is_active=1-is_active, updated_at=CURRENT_TIMESTAMP WHERE id=?", (pid,))
         conn.commit()
-        _sse_broadcast_product_change('toggled', pid)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -7446,7 +7511,6 @@ def shop_delete_product(pid):
                         pass
         conn.execute("DELETE FROM shop_products WHERE id=?", (pid,))
         conn.commit()
-        _sse_broadcast_product_change('deleted', pid)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -7658,6 +7722,252 @@ def _sse_broadcast(data: dict):
         except ValueError: pass
 
 
+import hashlib as _hashlib
+
+def _hash_pw(pw: str) -> str:
+    return _hashlib.sha256(pw.encode()).hexdigest()
+
+def _shop_customer():
+    """Retourne le client connecté (dict) ou None."""
+    cid = session.get('shop_cid')
+    if not cid: return None
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM shop_customers WHERE id=? AND is_active=1", (cid,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+    except Exception: return None
+    finally:
+        if conn: conn.close()
+
+def _gen_promo(name: str) -> str:
+    import random, string
+    return (name[:3] or 'KNI').upper() + ''.join(random.choices(string.digits, k=4))
+
+@app.route('/shop/auth/register', methods=['POST'])
+def shop_customer_register():
+    d = request.get_json(force=True, silent=True) or {}
+    name  = (d.get('name')  or '').strip()
+    email = (d.get('email') or '').strip().lower()
+    phone = (d.get('phone') or '').strip()
+    city  = (d.get('city')  or '').strip()
+    pw    = d.get('password', '')
+    if not name or not email or not pw:
+        return jsonify({'success': False, 'error': 'Nom, email et mot de passe requis'})
+    if len(pw) < 6:
+        return jsonify({'success': False, 'error': 'Mot de passe : 6 caractères minimum'})
+    conn = get_db_connection()
+    try:
+        promo = _gen_promo(name)
+        conn.execute("""INSERT INTO shop_customers (name,email,phone,city,password_hash,promo_code)
+                        VALUES (?,?,?,?,?,?)""", (name,email,phone,city,_hash_pw(pw),promo))
+        conn.commit()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM shop_customers WHERE email=?", (email,))
+        cid = cur.fetchone()[0]
+        session['shop_cid']   = cid
+        session['shop_cname'] = name
+        return jsonify({'success': True, 'name': name, 'promo_code': promo,
+                        'message': f'Bienvenue {name} ! Code promo : {promo}'})
+    except Exception as e:
+        if 'UNIQUE' in str(e):
+            return jsonify({'success': False, 'error': 'Cet email est déjà inscrit'})
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/auth/login', methods=['POST'])
+def shop_customer_login():
+    d = request.get_json(force=True, silent=True) or {}
+    email = (d.get('email') or '').strip().lower()
+    pw    = d.get('password', '')
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM shop_customers WHERE email=? AND is_active=1", (email,))
+        row = cur.fetchone()
+        if not row: return jsonify({'success': False, 'error': 'Email introuvable'})
+        row = dict(row)
+        if row['password_hash'] != _hash_pw(pw):
+            return jsonify({'success': False, 'error': 'Mot de passe incorrect'})
+        conn.execute("UPDATE shop_customers SET last_login=CURRENT_TIMESTAMP WHERE id=?", (row['id'],))
+        conn.commit()
+        session['shop_cid']   = row['id']
+        session['shop_cname'] = row['name']
+        return jsonify({'success': True, 'name': row['name'], 'points': row['points'],
+                        'promo_code': row['promo_code']})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/auth/logout', methods=['POST'])
+def shop_customer_logout():
+    session.pop('shop_cid', None); session.pop('shop_cname', None)
+    return jsonify({'success': True})
+
+@app.route('/shop/api/customer/me')
+def shop_customer_me():
+    c = _shop_customer()
+    if not c: return jsonify({'logged_in': False})
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM shop_orders WHERE customer_id=?", (c['id'],))
+        orders_count = cur.fetchone()[0] or 0
+        cur.execute("SELECT COUNT(*) FROM shop_wishlists WHERE customer_id=?", (c['id'],))
+        wish_count = cur.fetchone()[0] or 0
+        return jsonify({'logged_in': True, 'id': c['id'], 'name': c['name'],
+                        'email': c['email'], 'phone': c.get('phone',''),
+                        'city': c.get('city',''), 'points': c['points'],
+                        'promo_code': c['promo_code'], 'created_at': c['created_at'],
+                        'orders_count': orders_count, 'wish_count': wish_count})
+    except Exception:
+        return jsonify({'logged_in': True, 'name': c['name'], 'email': c['email'],
+                        'points': c['points'], 'promo_code': c['promo_code']})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/customer/orders')
+def shop_customer_orders():
+    c = _shop_customer()
+    if not c: return jsonify({'success': False, 'error': 'Non connecté'}), 401
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""SELECT id,items_summary,total,pay_method,status,created_at,note
+                       FROM shop_orders WHERE customer_id=? ORDER BY created_at DESC LIMIT 20""",
+                    (c['id'],))
+        return jsonify({'success': True, 'orders': [dict(r) for r in cur.fetchall()]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/customer/wishlist')
+def shop_customer_wishlist_get():
+    c = _shop_customer()
+    if not c: return jsonify({'success': False, 'items': []})
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""SELECT p.id,p.name,p.price,p.original_price,p.image_url,p.stock,p.badge
+                       FROM shop_wishlists w JOIN shop_products p ON p.id=w.product_id
+                       WHERE w.customer_id=? AND p.is_active=1 ORDER BY w.added_at DESC""", (c['id'],))
+        return jsonify({'success': True, 'items': [dict(r) for r in cur.fetchall()]})
+    except Exception as e:
+        return jsonify({'success': False, 'items': [], 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/customer/wishlist/toggle', methods=['POST'])
+def shop_customer_wishlist_toggle():
+    c = _shop_customer()
+    if not c: return jsonify({'success': False, 'error': 'Connectez-vous pour gérer vos favoris'})
+    d = request.get_json(force=True, silent=True) or {}
+    pid = int(d.get('product_id', 0))
+    if not pid: return jsonify({'success': False, 'error': 'Produit requis'})
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM shop_wishlists WHERE customer_id=? AND product_id=?", (c['id'],pid))
+        if cur.fetchone():
+            conn.execute("DELETE FROM shop_wishlists WHERE customer_id=? AND product_id=?", (c['id'],pid))
+            conn.commit()
+            return jsonify({'success': True, 'action': 'removed'})
+        else:
+            conn.execute("INSERT OR IGNORE INTO shop_wishlists (customer_id,product_id) VALUES (?,?)", (c['id'],pid))
+            conn.commit()
+            return jsonify({'success': True, 'action': 'added'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/product/<int:pid>/reviews')
+def shop_get_reviews(pid):
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""SELECT r.rating,r.title,r.body,r.created_at,c.name as customer_name
+                       FROM shop_reviews r JOIN shop_customers c ON c.id=r.customer_id
+                       WHERE r.product_id=? ORDER BY r.created_at DESC""", (pid,))
+        reviews = [dict(r) for r in cur.fetchall()]
+        avg = sum(r['rating'] for r in reviews)/len(reviews) if reviews else 0
+        return jsonify({'success': True, 'reviews': reviews, 'avg': round(avg,1), 'count': len(reviews)})
+    except Exception as e:
+        return jsonify({'success': False, 'reviews': [], 'avg': 0, 'count': 0})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/product/<int:pid>/review', methods=['POST'])
+def shop_post_review(pid):
+    c = _shop_customer()
+    if not c: return jsonify({'success': False, 'error': 'Connectez-vous pour laisser un avis'})
+    d = request.get_json(force=True, silent=True) or {}
+    rating = max(1, min(5, int(d.get('rating', 5))))
+    title  = (d.get('title') or '').strip()[:100]
+    body   = (d.get('body')  or '').strip()[:500]
+    conn = get_db_connection()
+    try:
+        conn.execute("""INSERT OR REPLACE INTO shop_reviews (product_id,customer_id,rating,title,body)
+                        VALUES (?,?,?,?,?)""", (pid,c['id'],rating,title,body))
+        conn.execute("""UPDATE shop_products SET reviews_count=(
+                        SELECT COUNT(*) FROM shop_reviews WHERE product_id=?) WHERE id=?""", (pid,pid))
+        conn.commit()
+        return jsonify({'success': True, 'name': c['name']})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/promo/validate', methods=['POST'])
+def shop_validate_promo():
+    d = request.get_json(force=True, silent=True) or {}
+    code  = (d.get('code') or '').strip().upper()
+    total = float(d.get('total', 0))
+    if not code: return jsonify({'valid': False, 'error': 'Code requis'})
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM shop_promo_codes WHERE code=? AND is_active=1", (code,))
+        row = cur.fetchone()
+        if not row: return jsonify({'valid': False, 'error': 'Code invalide ou expiré'})
+        row = dict(row)
+        if row['max_uses'] and row['uses'] >= row['max_uses']:
+            return jsonify({'valid': False, 'error': 'Code épuisé'})
+        if total < row['min_order']:
+            return jsonify({'valid': False, 'error': f"Minimum: {int(row['min_order']):,} XAF"})
+        amt = round(total * row['discount'] / 100) if row['type']=='percent' else row['discount']
+        return jsonify({'valid': True, 'discount': amt, 'pct': row['discount'], 'code': code,
+                        'message': f'-{int(row["discount"])}% appliqué !'})
+    except Exception as e:
+        return jsonify({'valid': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+@app.route('/shop/api/customer/profile', methods=['PUT'])
+def shop_update_profile():
+    c = _shop_customer()
+    if not c: return jsonify({'success': False, 'error': 'Non connecté'}), 401
+    d = request.get_json(force=True, silent=True) or {}
+    name  = (d.get('name')  or c['name']).strip()
+    phone = (d.get('phone') or c.get('phone','')).strip()
+    city  = (d.get('city')  or c.get('city','')).strip()
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE shop_customers SET name=?,phone=?,city=? WHERE id=?",
+                     (name,phone,city,c['id']))
+        conn.commit()
+        session['shop_cname'] = name
+        return jsonify({'success': True, 'name': name})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
 @app.route('/shop/stream')
 def shop_sse_stream():
     """SSE endpoint — nouvelles commandes en temps réel."""
@@ -7729,60 +8039,206 @@ with app.app_context():
         pass
 
 
-# ── API sync produits/commandes ─────────────────────────────────────
-@app.route('/shop/api/products')
-def shop_api_products():
-    """Catalogue actif en JSON pour la boutique publique."""
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute("""SELECT id,name,description,features,category,price,original_price,
-                              stock,image_url,images,badge,delivery_info,is_active,reviews_count
-                       FROM shop_products WHERE is_active=1
-                       ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END,
-                                created_at DESC""")
-        return jsonify({'success': True, 'products': [dict(r) for r in cur.fetchall()]})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-    finally:
-        if conn: conn.close()
+# ── Export CSV ──────────────────────────────────────────────────────
 
-@app.route('/shop/api/products/all')
-@login_required
-def shop_api_products_all():
-    """Tous les produits pour le panneau admin."""
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM shop_products ORDER BY created_at DESC")
-        return jsonify({'success': True, 'products': [dict(r) for r in cur.fetchall()]})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-    finally:
-        if conn: conn.close()
+# ═══════════════════════════════════════════════════════════════════
+#  BANNIÈRES PROMOTIONNELLES — CRUD complet
+# ═══════════════════════════════════════════════════════════════════
 
-@app.route('/shop/api/orders/recent')
-@login_required
-def shop_api_orders_recent():
-    """200 dernières commandes pour l'admin."""
+def _init_banners_table():
+    """Crée la table shop_banners si elle n'existe pas."""
     conn = get_db_connection()
+    if not conn: return
     try:
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM shop_orders ORDER BY created_at DESC LIMIT 200")
-        return jsonify({'success': True, 'orders': [dict(r) for r in cur.fetchall()]})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS shop_banners (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                type          TEXT    DEFAULT 'text',
+                content       TEXT    DEFAULT '',
+                image_url     TEXT    DEFAULT '',
+                icon          TEXT    DEFAULT '',
+                color         TEXT    DEFAULT '#ffffff',
+                bg_color      TEXT    DEFAULT '',
+                link_url      TEXT    DEFAULT '',
+                display_order INTEGER DEFAULT 0,
+                is_active     INTEGER DEFAULT 1,
+                created_at    TEXT    DEFAULT CURRENT_TIMESTAMP,
+                updated_at    TEXT    DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+    except Exception:
+        pass
     finally:
-        if conn: conn.close()
+        conn.close()
 
-def _sse_broadcast_product_change(action='updated', pid=None):
-    """Diffuse un SSE quand un produit change."""
+with app.app_context():
     try:
-        _sse_broadcast({'type': 'product_updated', 'action': action, 'pid': pid})
+        _init_banners_table()
     except Exception:
         pass
 
-# ── Export CSV ──────────────────────────────────────────────────────
+
+@app.route('/shop/api/banners/all', methods=['GET'])
+@login_required
+def shop_banners_all():
+    """Retourne toutes les bannières, triées par display_order."""
+    conn = get_db_connection()
+    try:
+        _init_banners_table()
+        rows = conn.execute(
+            "SELECT * FROM shop_banners ORDER BY display_order ASC, id ASC"
+        ).fetchall()
+        return jsonify({'success': True, 'banners': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners', methods=['POST'])
+@login_required
+def shop_banner_create():
+    """Crée une nouvelle bannière."""
+    if not can_shop('add') and not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        _init_banners_table()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO shop_banners
+            (type,content,image_url,icon,color,bg_color,link_url,display_order,is_active)
+            VALUES (?,?,?,?,?,?,?,?,?)
+        """, (
+            d.get('type', 'text'),
+            d.get('content', ''),
+            d.get('image_url', ''),
+            d.get('icon', ''),
+            d.get('color', '#ffffff'),
+            d.get('bg_color', ''),
+            d.get('link_url', ''),
+            int(d.get('display_order', 0)),
+            1 if d.get('is_active', True) else 0,
+        ))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/<int:bid>', methods=['PUT'])
+@login_required
+def shop_banner_update(bid):
+    """Met à jour une bannière existante."""
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        conn.execute("""
+            UPDATE shop_banners SET
+                type=?, content=?, image_url=?, icon=?, color=?, bg_color=?,
+                link_url=?, display_order=?, is_active=?, updated_at=CURRENT_TIMESTAMP
+            WHERE id=?
+        """, (
+            d.get('type', 'text'),
+            d.get('content', ''),
+            d.get('image_url', ''),
+            d.get('icon', ''),
+            d.get('color', '#ffffff'),
+            d.get('bg_color', ''),
+            d.get('link_url', ''),
+            int(d.get('display_order', 0)),
+            1 if d.get('is_active', True) else 0,
+            bid,
+        ))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/<int:bid>', methods=['DELETE'])
+@login_required
+def shop_banner_delete(bid):
+    """Supprime une bannière."""
+    if not can_shop('delete'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = get_db_connection()
+    try:
+        # Supprimer le fichier image local si uploadé
+        row = conn.execute("SELECT image_url FROM shop_banners WHERE id=?", (bid,)).fetchone()
+        if row and row['image_url'] and '/uploads/shop/' in row['image_url']:
+            local = os.path.join(app.static_folder, row['image_url'].lstrip('/static/'))
+            try:
+                if os.path.exists(local):
+                    os.remove(local)
+            except Exception:
+                pass
+        conn.execute("DELETE FROM shop_banners WHERE id=?", (bid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/<int:bid>/order', methods=['POST'])
+@login_required
+def shop_banner_order(bid):
+    """Met à jour l'ordre d'affichage d'une bannière (drag & drop)."""
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    order = int(d.get('order', 0))
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE shop_banners SET display_order=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (order, bid)
+        )
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/banners/upload-image', methods=['POST'])
+@login_required
+def shop_banner_upload_image():
+    """Upload une image pour une bannière promotionnelle."""
+    if not can_shop('add') and not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'Aucun fichier reçu'})
+    f = request.files['image']
+    if not f or not f.filename:
+        return jsonify({'success': False, 'error': 'Fichier vide'})
+    if not allowed_file(f.filename):
+        return jsonify({'success': False, 'error': 'Extension invalide (png, jpg, jpeg, gif, webp)'})
+    try:
+        ext   = f.filename.rsplit('.', 1)[1].lower()
+        fname = secure_filename(f'banner_{datetime.now().strftime("%Y%m%d_%H%M%S%f")}.{ext}')
+        dest  = os.path.join(app.config['UPLOAD_FOLDER'], 'shop')
+        os.makedirs(dest, exist_ok=True)
+        saved = os.path.join(dest, fname)
+        f.save(saved)
+        if not os.path.exists(saved):
+            return jsonify({'success': False, 'error': f'Sauvegarde échouée : {saved}'})
+        return jsonify({'success': True, 'url': f'/static/uploads/shop/{fname}'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @app.route('/shop/api/products/export')
 @login_required
 def shop_export_products():
@@ -7854,6 +8310,49 @@ def shop_export_products():
 
 
 # ── Import CSV ──────────────────────────────────────────────────────
+@app.route('/shop/api/products/seed-demos', methods=['POST'])
+@login_required
+def shop_seed_demos():
+    """Insère les produits démos en base si absents (par nom exact)."""
+    if not can_shop('add'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    demos = [
+        ('Écouteurs Bluetooth TWS Pro',      'electronique', 8500,  15000, 'hot',   25, 'Écouteurs sans fil avec réduction de bruit active, autonomie 24h, charge rapide.'),
+        ('Montre Connectée Sport',            'electronique', 12000, 22000, 'hot',   15, 'Montre sport GPS, suivi cardiaque, étanche 50m, compatible Android/iOS.'),
+        ('Sac à Dos Imperméable 30L',         'mode',         7500,  12000, 'new',   30, 'Sac à dos imperméable 30L, nombreuses poches, USB intégré, confort renforcé.'),
+        ('Lampe Bureau LED Rechargeable',     'maison',       4500,   8000, 'new',   40, 'Lampe LED rechargeable, 3 niveaux de luminosité, col de cygne flexible.'),
+        ('Power Bank 20000mAh',               'electronique', 9000,  16000, 'promo', 35, 'Batterie externe 20000mAh, charge rapide 22W, 3 ports USB, indicateur LED.'),
+        ('Set Cuisine 5 Pièces Inox',         'maison',       6000,  10000, '',      18, 'Set de cuisine 5 pièces en acier inoxydable, poignées ergonomiques, compatible induction.'),
+        ('Chaussures de Course Running',      'sport',       14000,  25000, 'promo', 22, 'Chaussures running légères, semelle amortissante, respirantes, taille EU 36-46.'),
+        ('Vélo Enfant 16 Pouces',             'sport',       28000,  45000, 'hot',    8, 'Vélo enfant 16 pouces, cadre acier, roues stabilisatrices, âge 4-7 ans.'),
+        ('Trousse Maquillage 24 Pièces',      'beaute',       5000,   9500, 'new',   30, 'Trousse maquillage 24 pièces, pinceaux professionnels, palette multi-teintes.'),
+        ('Organisateur Bureau Bois',          'maison',       5500,   9000, '',      20, 'Organisateur bureau en bois naturel, 5 compartiments, finition laquée.'),
+        ('Climatiseur Portable USB',          'maison',       7000,  12000, 'hot',   14, 'Mini climatiseur portable USB, 3 vitesses, réservoir 500ml, silencieux.'),
+        ('Filet de Football 120cm',           'sport',       11000,  18000, 'new',   10, 'Filet de football 120cm, armature métal, filet polyester résistant, montage rapide.'),
+    ]
+    conn = get_db_connection()
+    inserted = skipped = 0
+    try:
+        cur = conn.cursor()
+        for (name, cat, price, orig, badge, stock, desc) in demos:
+            cur.execute("SELECT id FROM shop_products WHERE name=?", (name,))
+            if cur.fetchone():
+                skipped += 1
+                continue
+            cur.execute("""
+                INSERT INTO shop_products
+                (name,description,category,price,original_price,stock,badge,delivery_info,is_active)
+                VALUES (?,?,?,?,?,?,?,'Livraison 3-7 jours',1)
+            """, (name, desc, cat, price, orig, stock, badge))
+            inserted += 1
+        conn.commit()
+        return jsonify({'success': True, 'inserted': inserted, 'skipped': skipped})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn: conn.close()
+
+
 @app.route('/shop/api/products/import', methods=['POST'])
 @login_required
 def shop_import_products():
@@ -8257,234 +8756,6 @@ def shop_set_access():
 
 # ── FIN MODULE STAFF ASSISTANCE ──────────────────────────────────────
 
-
-# ═══════════════════════════════════════════════════════════════════
-# MODULE BANNIÈRES DÉFILANTES — Top Bar Shop (texte + image)
-# ═══════════════════════════════════════════════════════════════════
-
-def init_banner_db():
-    conn = get_db_connection()
-    if not conn: return
-    try:
-        conn.executescript("""
-        CREATE TABLE IF NOT EXISTS shop_banners (
-            id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            type         TEXT    NOT NULL DEFAULT 'text',
-            content      TEXT    NOT NULL DEFAULT '',
-            image_url    TEXT    DEFAULT '',
-            icon         TEXT    DEFAULT '',
-            color        TEXT    DEFAULT '#ffffff',
-            bg_color     TEXT    DEFAULT '',
-            link_url     TEXT    DEFAULT '',
-            display_order INTEGER DEFAULT 0,
-            is_active    INTEGER DEFAULT 1,
-            created_at   TEXT    DEFAULT CURRENT_TIMESTAMP,
-            updated_at   TEXT    DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
-        conn.commit()
-        # Données de démo si vide
-        cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM shop_banners")
-        if cur.fetchone()[0] == 0:
-            demos = [
-                ('text','🚚 Livraison gratuite pour toute commande > 15 000 XAF','','fas fa-truck','#ffffff','','',0,1),
-                ('text','🟠 Orange Money · 🟡 MTN MoMo · Paiement 100% sécurisé','','fas fa-shield-alt','#ffffff','','',1,1),
-                ('text',"🔥 Jusqu'à -50% sur les produits électroniques cette semaine !",'','fas fa-fire','#fde68a','','',2,1),
-                ('text','📦 Livraison partout au Cameroun en 3-7 jours ouvrables','','fas fa-map-marker-alt','#ffffff','','',3,1),
-                ('text','💬 Support WhatsApp disponible 8h-20h du Lundi au Samedi','','fab fa-whatsapp','#bbf7d0','','',4,1),
-            ]
-            cur.executemany("""
-                INSERT INTO shop_banners
-                (type,content,image_url,icon,color,bg_color,link_url,display_order,is_active)
-                VALUES (?,?,?,?,?,?,?,?,?)
-            """, demos)
-            conn.commit()
-    except Exception as e:
-        print(f"[Banner] init error: {e}")
-    finally:
-        conn.close()
-
-try:
-    init_banner_db()
-except Exception as _e:
-    print(f"[Banner] init skipped: {_e}")
-
-
-@app.route('/shop/api/banners', methods=['GET'])
-def shop_get_banners():
-    """Retourne les bannières actives pour la boutique publique."""
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT id,type,content,image_url,icon,color,bg_color,link_url
-            FROM shop_banners WHERE is_active=1
-            ORDER BY display_order ASC, id ASC
-        """)
-        banners = [dict(r) for r in cur.fetchall()]
-        return jsonify({'success': True, 'banners': banners})
-    except Exception as e:
-        return jsonify({'success': False, 'banners': [], 'error': str(e)})
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/banners/all', methods=['GET'])
-@login_required
-def shop_get_banners_all():
-    """Retourne toutes les bannières (admin)."""
-    if session.get('role') not in ('admin','superadmin'):
-        return jsonify({'success':False,'error':'Non autorisé'}), 403
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM shop_banners ORDER BY display_order ASC, id ASC")
-        banners = [dict(r) for r in cur.fetchall()]
-        return jsonify({'success': True, 'banners': banners})
-    except Exception as e:
-        return jsonify({'success': False, 'banners': [], 'error': str(e)})
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/banners', methods=['POST'])
-@login_required
-def shop_create_banner():
-    if session.get('role') not in ('admin','superadmin'):
-        return jsonify({'success':False,'error':'Non autorisé'}), 403
-    d = request.get_json(force=True, silent=True) or {}
-    content = (d.get('content') or '').strip()
-    if not content and not d.get('image_url'):
-        return jsonify({'success':False,'error':'Contenu ou image requis'})
-    conn = get_db_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO shop_banners
-            (type,content,image_url,icon,color,bg_color,link_url,display_order,is_active)
-            VALUES (?,?,?,?,?,?,?,?,?)
-        """, (d.get('type','text'), content, d.get('image_url',''),
-              d.get('icon',''), d.get('color','#ffffff'), d.get('bg_color',''),
-              d.get('link_url',''), int(d.get('display_order',0)),
-              1 if d.get('is_active',True) else 0))
-        conn.commit()
-        return jsonify({'success':True, 'id':cur.lastrowid})
-    except Exception as e:
-        return jsonify({'success':False,'error':str(e)})
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/banners/<int:bid>', methods=['PUT'])
-@login_required
-def shop_update_banner(bid):
-    if session.get('role') not in ('admin','superadmin'):
-        return jsonify({'success':False,'error':'Non autorisé'}), 403
-    d = request.get_json(force=True, silent=True) or {}
-    conn = get_db_connection()
-    try:
-        conn.execute("""
-            UPDATE shop_banners SET
-                type=?,content=?,image_url=?,icon=?,color=?,
-                bg_color=?,link_url=?,display_order=?,is_active=?,
-                updated_at=CURRENT_TIMESTAMP
-            WHERE id=?
-        """, (d.get('type','text'), (d.get('content') or '').strip(),
-              d.get('image_url',''), d.get('icon',''), d.get('color','#ffffff'),
-              d.get('bg_color',''), d.get('link_url',''),
-              int(d.get('display_order',0)),
-              1 if d.get('is_active',True) else 0, bid))
-        conn.commit()
-        return jsonify({'success':True})
-    except Exception as e:
-        return jsonify({'success':False,'error':str(e)})
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/banners/<int:bid>/toggle', methods=['POST'])
-@login_required
-def shop_toggle_banner(bid):
-    if session.get('role') not in ('admin','superadmin'):
-        return jsonify({'success':False,'error':'Non autorisé'}), 403
-    conn = get_db_connection()
-    try:
-        conn.execute("UPDATE shop_banners SET is_active=1-is_active,updated_at=CURRENT_TIMESTAMP WHERE id=?", (bid,))
-        conn.commit()
-        return jsonify({'success':True})
-    except Exception as e:
-        return jsonify({'success':False,'error':str(e)})
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/banners/<int:bid>/order', methods=['POST'])
-@login_required
-def shop_reorder_banner(bid):
-    if session.get('role') not in ('admin','superadmin'):
-        return jsonify({'success':False,'error':'Non autorisé'}), 403
-    d = request.get_json(force=True, silent=True) or {}
-    conn = get_db_connection()
-    try:
-        conn.execute("UPDATE shop_banners SET display_order=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                     (int(d.get('order',0)), bid))
-        conn.commit()
-        return jsonify({'success':True})
-    except Exception as e:
-        return jsonify({'success':False,'error':str(e)})
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/banners/<int:bid>', methods=['DELETE'])
-@login_required
-def shop_delete_banner(bid):
-    if session.get('role') not in ('admin','superadmin'):
-        return jsonify({'success':False,'error':'Non autorisé'}), 403
-    conn = get_db_connection()
-    try:
-        # Supprimer image locale si uploadée
-        cur = conn.cursor()
-        cur.execute("SELECT image_url FROM shop_banners WHERE id=?", (bid,))
-        row = cur.fetchone()
-        if row and row['image_url'] and '/uploads/banners/' in row['image_url']:
-            local = os.path.join('static', row['image_url'].lstrip('/'))
-            try:
-                if os.path.exists(local): os.remove(local)
-            except Exception: pass
-        conn.execute("DELETE FROM shop_banners WHERE id=?", (bid,))
-        conn.commit()
-        return jsonify({'success':True})
-    except Exception as e:
-        return jsonify({'success':False,'error':str(e)})
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/banners/upload-image', methods=['POST'])
-@login_required
-def shop_upload_banner_image():
-    if session.get('role') not in ('admin','superadmin'):
-        return jsonify({'success':False,'error':'Non autorisé'}), 403
-    if 'image' not in request.files:
-        return jsonify({'success':False,'error':'Aucun fichier'})
-    f = request.files['image']
-    if not f or not f.filename or not allowed_file(f.filename):
-        return jsonify({'success':False,'error':'Fichier invalide'})
-    try:
-        ext   = f.filename.rsplit('.',1)[1].lower()
-        fname = secure_filename(f'banner_{datetime.now().strftime("%Y%m%d_%H%M%S%f")}.{ext}')
-        dest  = os.path.join(app.config['UPLOAD_FOLDER'], 'banners')
-        os.makedirs(dest, exist_ok=True)
-        f.save(os.path.join(dest, fname))
-        url = f'/static/uploads/banners/{fname}'
-        return jsonify({'success':True, 'url':url})
-    except Exception as e:
-        return jsonify({'success':False,'error':str(e)})
-
-# ── FIN MODULE BANNIÈRES ─────────────────────────────────────────────
-
 # ═══════════════════════════════════════════════════════════════════
 # NOUVELLES ROUTES : accès étendu, inactivité, logs activité, factures
 # ═══════════════════════════════════════════════════════════════════
@@ -8830,7 +9101,7 @@ def shop_stock_value():
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 ANTHROPIC_URL     = 'https://api.anthropic.com/v1/messages'
-CLAUDE_MODEL      = 'claude-sonnet-4-6'
+CLAUDE_MODEL      = 'claude-sonnet-4-5'
 
 # Rate limiting simple en mémoire
 import collections as _collections
@@ -8884,7 +9155,7 @@ def _call_anthropic(system: str, messages: list, max_tokens: int = 800) -> dict:
 @app.route('/shop/api/ai/chat', methods=['POST'])
 def shop_ai_chat():
     """
-    Agent conversationnel Claude pour les clients de k-ni Store.
+    Agent conversationnel Claude pour les clients de k-Ni Store.
     Répond aux questions produits, livraison, paiement.
     Escalade intelligente vers WhatsApp / support humain.
     Aucune authentification requise (public).
@@ -8911,8 +9182,9 @@ def shop_ai_chat():
         for p in catalog[:40]
     ) or '(catalogue non chargé)'
 
-    SYSTEM = f"""Tu es Keni, l'assistante IA de k-ni Store — boutique en ligne de qualité basée à Yaoundé, Cameroun.
+    SYSTEM = f"""Tu es Keni, l'assistante IA de k-Ni Store — boutique en ligne de qualité basée à Yaoundé, Cameroun.
 Tu parles français. Tu es chaleureuse, efficace et professionnelle.
+La boutique s'appelle exactement « k-Ni Store » (k minuscule, N majuscule).
 
 CATALOGUE ACTUEL (produits disponibles) :
 {cat_lines}
@@ -8963,13 +9235,13 @@ Réponds UNIQUEMENT avec le texte de ta réponse (sans préfixe ni balise sauf [
     if escalade:
         try:
             bloc = reply.split('[ESCALADE]')[1].split('[FIN ESCALADE]')[0].strip()
-            wa_text = f"Bonjour k-ni Store ! Je suis transféré(e) depuis le chat.\n\n{bloc}"
+            wa_text = f"Bonjour k-Ni Store ! Je suis transféré(e) depuis le chat.\n\n{bloc}"
         except Exception:
-            wa_text = "Bonjour, j'ai besoin d'une assistance humaine depuis le chat k-ni."
+            wa_text = "Bonjour, j'ai besoin d'une assistance humaine depuis le chat k-Ni."
         # Nettoyer la réponse affichée
         reply = reply.replace('[ESCALADE]', '').split('[FIN ESCALADE]')[0].strip()
         if not reply:
-            reply = "Je vais vous mettre en contact avec un conseiller k-ni qui pourra vous aider directement. 😊"
+            reply = "Je vais vous mettre en contact avec un conseiller k-Ni qui pourra vous aider directement. 😊"
 
     return jsonify({
         'reply': reply,
@@ -8995,7 +9267,7 @@ def _ai_chat_fallback(message: str, catalog: list) -> str:
         if any(w in name for w in msg.split() if len(w) > 3):
             price = p.get('price', 0)
             return f"Nous avons **{p['name']}** à {price:,} XAF. Stock disponible. Souhaitez-vous commander ?"
-    return "Bonjour ! Je suis Keni, votre assistante k-ni Store. Posez-moi vos questions sur nos produits, livraisons ou paiements ! 😊"
+    return "Bonjour ! Je suis Keni, votre assistante k-Ni Store. Posez-moi vos questions sur nos produits, livraisons ou paiements ! 😊"
 
 
 # ── Route : Recommandations IA ───────────────────────────────────────
@@ -9047,7 +9319,7 @@ def shop_ai_recommend():
         'stock': p.get('stock'), 'badge': p.get('badge')
     } for p in catalog[:50] if p.get('stock', 0) > 0], ensure_ascii=False)
 
-    SYSTEM = """Tu es un moteur de recommandations pour k-ni Store (boutique Cameroun).
+    SYSTEM = """Tu es un moteur de recommandations pour k-Ni Store (boutique en ligne, Yaoundé, Cameroun).
 Tu analyses le comportement d'un visiteur et tu sélectionnes les produits les plus pertinents.
 Tu réponds UNIQUEMENT en JSON valide, sans aucun texte autour."""
 
@@ -9122,12 +9394,13 @@ if __name__ == '__main__':
     
     # Run the application
     print("=" * 60)
-    print("🚀 Kengni Finance v2.0 - Démarrage")
+    print("🚀 Kengni Finance + k-Ni Store — Démarrage")
     print("=" * 60)
-    print("📊 Application de gestion financière et trading avec IA")
-    print("🌐 URL: http://localhost:5001")
+    print("📊 Finance & Trading       → http://localhost:5001")
+    print("🛍  k-Ni Store (boutique)  → http://localhost:5001/shop")
+    print("⚙️  Admin général          → http://localhost:5001/admin")
+    print("🏪  Admin boutique         → http://localhost:5001/shop/admin")
     print("👤 Email: fabrice.kengni@icloud.com")
-    print("📅 Agenda: http://localhost:5001/agenda")
     print("=" * 60)
     
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))

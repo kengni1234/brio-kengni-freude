@@ -2,14 +2,33 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administration — Kengni Finance</title>
+    <title>Administration — k-Ni Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
-        :root{--bg:#0f1117;--surface:#1a1d27;--card:#21263a;--border:#2e3448;--accent:#00d4aa;--accent2:#7c6aff;--danger:#ff4d6a;--warning:#ffb93a;--success:#00c878;--text:#e8ecf1;--muted:#6b7280}
-        body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-        .header{background:linear-gradient(135deg,#0a0e1a,#1a1d27);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
-        .hb{display:flex;align-items:center;gap:.75rem;font-size:1.15rem;font-weight:700;color:var(--accent)}
-        .hb span{color:var(--text)}.hr{display:flex;align-items:center;gap:1rem}
+        :root{
+          --bg:#0f1117;--surface:#1a1d27;--card:#21263a;--border:#2e3448;
+          --accent:#00b074;--accent2:#7c6aff;
+          --danger:#ff4d6a;--warning:#ffb93a;--success:#00c878;
+          --text:#e8ecf1;--muted:#6b7280;
+          --font:'Outfit',system-ui,sans-serif;
+          --primary:#00b074;--primary2:#008f5d;--primary-glow:rgba(0,176,116,.18);
+        }
+        body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+        /* ─── ANIMATIONS ─── */
+        @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        @keyframes starTwinkle{0%,100%{opacity:.9;transform:scale(1)}50%{opacity:.2;transform:scale(.5)}}
+        @keyframes starFloat{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-12px) rotate(90deg)}100%{transform:translateY(0) rotate(180deg)}}
+        /* ─── HEADER ─── */
+        .header{background:linear-gradient(135deg,#0a0e1a 0%,#003d27 60%,#005c3b 100%);border-bottom:1px solid rgba(0,176,116,.25);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;overflow:hidden}
+        .header-stars{position:absolute;inset:0;pointer-events:none}
+        .hstar-mini{position:absolute;color:rgba(125,255,195,.25);font-style:normal;animation:starTwinkle var(--dur,3s) ease-in-out infinite}
+        .hb{display:flex;align-items:center;gap:.75rem;font-size:1.15rem;font-weight:800;color:#7dffc3;position:relative;z-index:1;text-decoration:none}
+        .hb-logo{width:36px;height:36px;border-radius:9px;background:rgba(0,176,116,.2);border:1px solid rgba(0,176,116,.4);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;color:#7dffc3;flex-shrink:0}
+        .hb span{color:var(--text)}
+        .hr{display:flex;align-items:center;gap:1rem;position:relative;z-index:1}
         .badge{background:var(--accent2);color:#fff;font-size:.7rem;font-weight:700;padding:.25rem .6rem;border-radius:20px;text-transform:uppercase}
         .badge-superadmin{background:linear-gradient(135deg,#ffb93a,#ff9500)!important;color:#000!important;font-size:.75rem;box-shadow:0 0 14px rgba(255,185,58,.35)}
         /* Ligne compte courant dans le tableau */
@@ -31,7 +50,7 @@
         .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
         .st{font-size:1.1rem;font-weight:700}
         .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:.2s}
-        .btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00bfa3}
+        .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#00bfa3}
         .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#e0364f}
         .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
         .btn-sm{padding:.35rem .7rem;font-size:.78rem}
@@ -133,7 +152,7 @@
         .perm-item{display:flex;align-items:center;gap:.45rem;padding:.48rem .6rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:.15s;user-select:none}
         .perm-item:hover{border-color:var(--accent)}
         .perm-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
-        .perm-item.checked{border-color:var(--accent);background:rgba(0,212,170,.07)}
+        .perm-item.checked{border-color:var(--accent);background:rgba(0,176,116,.07)}
         .perm-item.checked .pi{color:var(--accent)}
         .pi{font-size:.79rem;font-weight:600;line-height:1.3}
         .pi-icon{font-size:.88rem;flex-shrink:0}
@@ -148,10 +167,18 @@
 </head>
 <body>
 <div class="header">
-    <div class="hb">🛡️ <span>Kengni Finance</span> — Admin</div>
-    <div class="hr">
+    <!-- Étoiles header -->
+    <div class="header-stars" id="adminHeaderStars"></div>
+    <a href="/shop" class="hb" title="k-Ni Store">
+      <div class="hb-logo">k</div>
+      <span style="color:#7dffc3">k<span style="color:rgba(255,255,255,.6)">-Ni</span></span>
+      <span style="font-size:.75rem;font-weight:600;color:rgba(255,255,255,.4);margin-left:.2rem">Administration</span>
+    </a>
+    <div class="hr" style="gap:.6rem">
         <span class="badge{% if current_role == 'superadmin' %} badge-superadmin{% endif %}">{% if current_role == 'superadmin' %}⭐ {% endif %}{{ current_role }}</span>
-        <a href="/" class="back">← App</a>
+        <a href="/shop" class="back" style="color:#7dffc3;border-color:rgba(0,176,116,.3)" target="_blank"><i class="fas fa-store"></i> <span>Boutique</span></a>
+        <a href="/shop/admin" class="back" style="color:#7c6aff;border-color:rgba(124,106,255,.3)"><i class="fas fa-boxes"></i> <span>Shop Admin</span></a>
+        <a href="/" class="back"><i class="fas fa-home"></i> <span>App</span></a>
     </div>
 </div>
 <div class="container">
@@ -271,7 +298,9 @@
                 <td data-label="#" style="color:var(--muted)">{{ u.id }}</td>
                 <td data-label="Nom">
                   <strong>{{ u.username }}</strong>
-                  {% if u.id == session.get('user_id') %}
+                  {% if u.email == '<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="46202724342f2523682d232821282f062f252a2933226825292b">[email&#160;protected]</a>' %}
+                  <span style="font-size:.6rem;background:rgba(251,146,60,.15);color:#fb923c;padding:.1rem .4rem;border-radius:5px;font-weight:700;vertical-align:middle">🔒 Propriétaire</span>
+                  {% elif u.id == session.get('user_id') %}
                   <span class="my-badge">⭐ Vous — {{ u.role }}</span>
                   {% endif %}
                 </td>
@@ -286,7 +315,7 @@
                 <td data-label="Créé" style="color:var(--muted);font-size:.78rem">{{ u.created_at[:10] if u.created_at else '—' }}</td>
                 <td data-label="Connexion" style="color:var(--muted);font-size:.78rem">{{ u.last_login[:16].replace('T',' ') if u.last_login else 'jamais' }}</td>
                 <td data-label="Actions"><div class="tda">
-                    <button class="btn btn-ghost btn-sm" title="Modifier" onclick="openEditModal({{ u.id }},'{{ u.role }}','{{ u.status }}','{{ u.username }}')">✏️</button>
+                    <button class="btn btn-ghost btn-sm" title="Modifier" onclick="openEditModal({{ u.id }},'{{ u.role }}','{{ u.status }}','{{ u.username }}','{{ u.email }}')">{% if u.email=='<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="395f585b4b505a5c17525c575e575079505a55564c5d175a5654">[email&#160;protected]</a>' %}🔒{% else %}✏️{% endif %}</button>
                     <button class="btn btn-ghost btn-sm" title="Réinitialiser MDP" onclick="openResetModal({{ u.id }},'{{ u.username }}')">🔑</button>
                     <button class="btn btn-ghost btn-sm" title="Permissions pages & actions" onclick="openPermsModal({{ u.id }},'{{ u.username }}')">🔓</button>
                     <button class="btn btn-danger btn-sm" title="Supprimer" onclick="confirmDelete({{ u.id }},'{{ u.username }}')">🗑️</button>
@@ -331,10 +360,11 @@
             <span style="font-size:1rem">🛍</span> Accès Boutique
         </label>
         <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer">
-            <input type="checkbox" id="newShopAccess" style="accent-color:#10b981;width:15px;height:15px">
+            <input type="checkbox" id="newShopAccess" style="accent-color:#10b981;width:15px;height:15px"
+                   onchange="document.getElementById('newShopPermsBlock').style.display=this.checked?'flex':'none'">
             <span style="font-size:.82rem">Activer l'accès au panneau boutique</span>
         </label>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem" id="newShopPermsBlock" style="display:none">
+        <div style="display:none;gap:.5rem;flex-wrap:wrap;margin-top:.3rem;padding:.55rem;background:rgba(16,185,129,.06);border-radius:8px" id="newShopPermsBlock">
             <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="newShopAdd" style="accent-color:#10b981"> ➕ Ajouter produits</label>
             <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="newShopEdit" style="accent-color:#10b981"> ✏️ Modifier produits</label>
             <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="newShopDelete" style="accent-color:#10b981"> 🗑️ Supprimer produits</label>
@@ -368,10 +398,11 @@
     <div class="fg" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:.8rem">
         <label style="display:flex;align-items:center;gap:.5rem;font-weight:700;margin-bottom:.6rem"><span style="font-size:1rem">🛍</span> Accès Boutique</label>
         <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;cursor:pointer">
-            <input type="checkbox" id="editShopAccess" style="accent-color:#10b981;width:15px;height:15px">
+            <input type="checkbox" id="editShopAccess" style="accent-color:#10b981;width:15px;height:15px"
+                   onchange="document.getElementById('editShopPermsBlock').style.display=this.checked?'flex':'none'">
             <span style="font-size:.82rem">Activer l'accès au panneau boutique</span>
         </label>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.3rem">
+        <div style="display:none;gap:.5rem;flex-wrap:wrap;margin-top:.3rem;padding:.55rem;background:rgba(16,185,129,.06);border-radius:8px" id="editShopPermsBlock">
             <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="editShopAdd" style="accent-color:#10b981"> ➕ Ajouter</label>
             <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="editShopEdit" style="accent-color:#10b981"> ✏️ Modifier</label>
             <label style="display:flex;align-items:center;gap:.3rem;font-size:.78rem;cursor:pointer"><input type="checkbox" id="editShopDelete" style="accent-color:#10b981"> 🗑️ Supprimer</label>
@@ -481,7 +512,7 @@
 
 <div class="tc" id="toasts"></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ─── DATA ─── */
 const PAGE_GROUPS = {
     finance: [
@@ -571,18 +602,52 @@ function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function openModal(t){document.getElementById('modal'+cap(t)).classList.add('open')}
 function closeModal(t){document.getElementById('modal'+cap(t)).classList.remove('open')}
 document.querySelectorAll('.mb').forEach(b=>b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open')}));
-function openEditModal(id,role,status,name){
-    document.getElementById('editUserId').value=id;
-    document.getElementById('editName').textContent=name;
-    document.getElementById('editRole').value=role;
-    document.getElementById('editStatus').value=status;
-    // Load shop permissions via API
-    fetch('/admin/get-shop-permissions/'+id).then(r=>r.json()).then(d=>{
-        document.getElementById('editShopAccess').checked = !!(d.access || role==='admin' || role==='superadmin');
-        document.getElementById('editShopAdd').checked    = !!(d.add);
-        document.getElementById('editShopEdit').checked   = !!(d.edit);
-        document.getElementById('editShopDelete').checked = !!(d.delete);
-    }).catch(()=>{});
+function openEditModal(id, role, status, name, email){
+    document.getElementById('editUserId').value = id;
+    document.getElementById('editName').textContent = name;
+    document.getElementById('editRole').value = role;
+    document.getElementById('editStatus').value = status;
+
+    const OWNER = 'fabrice.kengni@icloud.com';
+    const isOwner = (email === OWNER);
+    const isAdmin = role === 'admin' || role === 'superadmin';
+
+    // Bannière de protection si compte propriétaire
+    let ownerBanner = document.getElementById('ownerProtectBanner');
+    if (!ownerBanner) {
+        ownerBanner = document.createElement('div');
+        ownerBanner.id = 'ownerProtectBanner';
+        ownerBanner.style.cssText = 'background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:#fb923c;font-weight:600;margin-bottom:.85rem;display:none';
+        ownerBanner.innerHTML = '🔒 Compte propriétaire — Rôle et accès protégés. Seul ce compte peut se modifier lui-même.';
+        const editForm = document.getElementById('editRole')?.closest('.fg');
+        if (editForm) editForm.parentElement.insertBefore(ownerBanner, editForm);
+    }
+    ownerBanner.style.display = isOwner ? 'block' : 'none';
+
+    // Bloquer toute modification si compte propriétaire ET pas le propriétaire lui-même
+    const myId = parseInt('{{ session.get("user_id", 0) }}');
+    const isMe = parseInt(id) === myId;
+    const lockAll = isOwner && !isMe;
+    ['editRole','editStatus'].forEach(fid => {
+        const el = document.getElementById(fid);
+        if (el) el.disabled = lockAll;
+    });
+
+    // Charger les permissions boutique (tous les rôles peuvent en avoir)
+    fetch('/admin/get-shop-permissions/' + id).then(r => r.json()).then(d => {
+        const hasAccess = !!(d.access || isAdmin);
+        document.getElementById('editShopAccess').checked = hasAccess;
+        document.getElementById('editShopAdd').checked    = !!(d.add || isAdmin);
+        document.getElementById('editShopEdit').checked   = !!(d.edit || isAdmin);
+        document.getElementById('editShopDelete').checked = !!(d.delete || isAdmin);
+        document.getElementById('editShopPermsBlock').style.display = hasAccess ? 'flex' : 'none';
+        // Désactiver les cases si admin/superadmin (tout déjà inclus) ou si compte protégé
+        const lockShop = isAdmin || lockAll;
+        ['editShopAccess','editShopAdd','editShopEdit','editShopDelete'].forEach(id2 => {
+            const el = document.getElementById(id2);
+            if (el) el.disabled = lockShop;
+        });
+    }).catch(() => {});
     openModal('edit');
 }
 function openResetModal(id,name){document.getElementById('resetUserId').value=id;document.getElementById('resetName').textContent=name;document.getElementById('resetPassword').value='';openModal('reset')}
@@ -735,8 +800,23 @@ async function updateUser(){
 }
 async function resetPassword(){const id=document.getElementById('resetUserId').value,p=document.getElementById('resetPassword').value.trim();if(p.length<6){toast('Mot de passe trop court','warning');return}const res=await api('/admin/reset-password/'+id,{password:p});if(res.success){toast(res.message);closeModal('reset')}else toast(res.message,'error')}
 async function deleteUser(){const id=document.getElementById('deleteUserId').value;const res=await api('/admin/delete-user/'+id,{});if(res.success){toast(res.message);closeModal('delete');setTimeout(()=>location.reload(),800)}else toast(res.message,'error')}
-function filterTable(){const q=document.getElementById('searchInput').value.toLowerCase(),r=document.getElementById('filterRole').value,s=document.getElementById('filterStatus').value;document.querySelectorAll('#usersTable tbody tr').forEach(row=>{const m=(!q||row.textContent.toLowerCase().includes(q))&&(!r||row.dataset.role===r)&&(!s||row.dataset.status===s);row.style.display=m?'':'none'})}
-function copyToken(){navigator.clipboard.writeText('http://localhost:5001/{{ token }}');toast('URL secrète copiée !')}
+function filterTable(){const q=document.getElementById('searchInput').value.toLowerCase(),r=document.getElementById('filterRole').value,s=document.getElementById('filterStatus')function filterTable(){const q=document.getElementById('searchInput').value.toLowerCase(),r=document.getElementById('filterRole').value,s=document.getElementById('filterStatus').value;document.querySelectorAll('tbody tr').forEach(tr=>{const txt=tr.textContent.toLowerCase();const role=tr.dataset.role||'';const stat=tr.dataset.status||'';tr.style.display=((!q||txt.includes(q))&&(!r||role===r)&&(!s||stat===s))?'':'none'})}
+
+/* ═══ ÉTOILES HEADER ═══ */
+function initAdminStars(){
+  const c=document.getElementById('adminHeaderStars');
+  if(!c)return;
+  const sh=['★','✦','✧','·','⋆'];
+  for(let i=0;i<28;i++){
+    const s=document.createElement('span');
+    s.className='hstar-mini';
+    s.textContent=sh[Math.floor(Math.random()*sh.length)];
+    const dur=(1.8+Math.random()*3).toFixed(1);
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${6+Math.random()*12}px;opacity:${(.1+Math.random()*.35).toFixed(2)};--dur:${dur}s;animation-delay:-${(Math.random()*3).toFixed(1)}s`;
+    c.appendChild(s);
+  }
+}
+document.addEventListener('DOMContentLoaded', initAdminStars);
 </script>
 </body>
 </html>
