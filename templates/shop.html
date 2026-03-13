@@ -73,7 +73,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15p
   pointer-events:none;z-index:1;
 }
 /* Étoiles confinées dans le hero, couleur animée */
-.hero-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;contain:layout style}
+.hero-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2;contain:layout style}
 .hstar{position:absolute;font-style:normal;will-change:transform,color}
 .hstar.s1{animation:starFloat1 var(--dur,4s) ease-in-out infinite,starColorCycle var(--cdur,7s) ease-in-out infinite var(--cdelay,0s)}
 .hstar.s2{animation:starFloat2 var(--dur,5s) ease-in-out infinite,starColorCycle var(--cdur,9s) ease-in-out infinite var(--cdelay,0s)}
@@ -219,32 +219,32 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .prod-count{font-size:.84rem;color:var(--muted);font-weight:500}
 .prod-count span{color:var(--primary);font-weight:700}
 .view-btns{display:flex;gap:.3rem}
-#prodGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.1rem;transition:.3s}
+#prodGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.4rem;transition:.3s}
 #prodGrid.list-view{grid-template-columns:1fr}
 .pcard{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:.22s;position:relative;animation:fadeUp .4s ease both}
 .pcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px)}
 .pcard:hover .pcard-img{transform:scale(1.05)}
-.pcard-imgwrap{overflow:hidden;aspect-ratio:1;background:#f9fafb;position:relative}
+.pcard-imgwrap{overflow:hidden;aspect-ratio:4/3;background:#f9fafb;position:relative}
 .pcard-img{width:100%;height:100%;object-fit:cover;transition:.35s}
 .pcard-no-img{display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);height:100%}
 .pbadge{position:absolute;top:.5rem;left:.5rem;font-size:.68rem;font-weight:800;padding:.22rem .5rem;border-radius:6px;letter-spacing:.03em;z-index:2}
 .pb-hot{background:#fef2f2;color:var(--red);border:1px solid #fca5a5}
 .pb-new{background:#f0fdf4;color:var(--green2);border:1px solid #86efac}
 .pb-promo{background:#e8f8f2;color:var(--primary2);border:1px solid #6ee7c4}
-.pcard-wish{position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.85rem;transition:.18s;z-index:2;backdrop-filter:blur(4px)}
+.pcard-wish{position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.85rem;transition:.18s;z-index:2;backdrop-filter:blur(4px)}
 .pcard-wish:hover,.pcard-wish.wished{color:var(--red);animation:heartBeat .4s ease}
 .pcard-wish.wished{background:#fef2f2}
 .stock-warn{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(239,68,68,.9));color:#fff;font-size:.68rem;font-weight:700;padding:.4rem .6rem;text-align:center}
-.pcard-body{padding:.85rem}
+.pcard-body{padding:1.1rem}
 .pcard-cat{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);font-weight:700;margin-bottom:.25rem}
-.pcard-name{font-size:.9rem;font-weight:700;line-height:1.3;color:var(--ink);margin-bottom:.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-name{font-size:1rem;font-weight:700;line-height:1.3;color:var(--ink);margin-bottom:.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pcard-stars{font-size:.75rem;color:var(--gold);margin-bottom:.5rem}
 .pcard-stars span{color:var(--muted);font-size:.7rem}
 .pcard-price{display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem;flex-wrap:wrap}
-.pcard-price .price{font-size:1.05rem;font-weight:800;color:var(--primary)}
+.pcard-price .price{font-size:1.18rem;font-weight:800;color:var(--primary)}
 .pcard-price .old-price{font-size:.8rem;color:var(--muted);text-decoration:line-through}
 .pcard-price .disc{font-size:.7rem;background:#fef2f2;color:var(--red);font-weight:700;padding:.1rem .35rem;border-radius:5px}
-.btn-add{width:100%;padding:.5rem;background:var(--primary);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:.83rem;font-weight:700;font-family:var(--font);transition:.18s;display:flex;align-items:center;justify-content:center;gap:.4rem}
+.btn-add{width:100%;padding:.65rem;background:var(--primary);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:.92rem;font-weight:700;font-family:var(--font);transition:.18s;display:flex;align-items:center;justify-content:center;gap:.4rem}
 .btn-add:hover{background:var(--primary2);transform:scale(1.02)}
 .btn-add:disabled{background:#d1d5db;color:#9ca3af;cursor:not-allowed;transform:none}
 /* List view */
@@ -262,7 +262,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .no-results h3{font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:.4rem}
 
 /* ─── OFFRES & PROMOTIONS ─── */
-.offres-section{background:linear-gradient(180deg,#0d1b2a 0%,#111827 100%);padding:2rem 1.5rem 2.2rem;position:relative;overflow:hidden}
+.offres-section{background:linear-gradient(180deg,#0d1b2a 0%,#111827 100%);padding:2.5rem 1.5rem 2.8rem;position:relative;overflow:hidden}
 .offres-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(0,176,116,.08),transparent 70%);pointer-events:none}
 .offres-header{max-width:1400px;margin:0 auto 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
 .offres-title{display:flex;align-items:center;gap:.5rem;font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--primary)}
@@ -272,80 +272,60 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .offres-nav-btn:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3)}
 .offres-track-wrap{max-width:1400px;margin:0 auto;overflow:hidden}
 .offres-track{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;transition:transform .45s cubic-bezier(.25,.46,.45,.94)}
-.ocard{border-radius:16px;overflow:hidden;position:relative;aspect-ratio:16/9;cursor:pointer;transition:.22s;min-height:160px}
+.ocard{border-radius:20px;overflow:hidden;position:relative;cursor:pointer;transition:.22s;min-height:260px}
 .ocard:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.5)}
-.ocard-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .35s ease}
+.ocard-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .35s ease;z-index:0}
 .ocard:hover .ocard-bg{transform:scale(1.05)}
-.ocard-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:1.3rem 1.4rem}
+.ocard-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:1.6rem 1.8rem;z-index:2}
 
 /* ── Card 1 : ÉLECTRONIQUE — bleu tech avec silhouette casque ── */
 .ocard-elec .ocard-bg{
   background:
-    /* Reflet brillant haut-droite simulant une surface chromée */
-    radial-gradient(ellipse 55% 45% at 78% 22%, rgba(147,210,255,.55) 0%, transparent 60%),
-    /* Ombre douce côté gauche */
-    radial-gradient(ellipse 40% 70% at 10% 60%, rgba(10,30,90,.8) 0%, transparent 65%),
-    /* Cercle lumineux central — lentille/écouteur */
-    radial-gradient(circle 90px at 70% 48%, rgba(200,230,255,.22) 0%, transparent 55%),
-    /* Anneau sombre — casque silhouette */
-    radial-gradient(circle 130px at 70% 50%, rgba(30,80,180,.0) 0%, rgba(15,50,150,.55) 75%, transparent 100%),
-    /* Fond dégradé bleu profond → bleu électrique */
-    linear-gradient(135deg, #0a1a4a 0%, #0e2a7d 30%, #1b4fc2 60%, #2d78ea 85%, #5ca0ff 100%);
+    radial-gradient(ellipse 55% 45% at 78% 22%, rgba(147,210,255,.45) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 70% at 10% 60%, rgba(10,30,90,.75) 0%, transparent 65%),
+    linear-gradient(135deg, rgba(10,26,74,.82) 0%, rgba(14,42,125,.78) 40%, rgba(27,79,194,.72) 70%, rgba(45,120,234,.65) 100%),
+    url('https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80&auto=format&fit=crop') center/cover no-repeat;
 }
 .ocard-elec .ocard-overlay{
-  background:linear-gradient(180deg,transparent 0%,transparent 30%,rgba(8,25,90,.55) 65%,rgba(5,15,70,.9) 100%);
+  background:linear-gradient(180deg,transparent 0%,transparent 25%,rgba(8,25,90,.65) 60%,rgba(5,15,70,.95) 100%);
+  z-index:2;
 }
 
 /* ── Card 2 : PAIEMENT — amber chaud avec silhouette personne ── */
 .ocard-pay .ocard-bg{
   background:
-    /* Lumière chaude arrière-plan droite */
-    radial-gradient(ellipse 50% 60% at 82% 35%, rgba(255,220,100,.6) 0%, transparent 55%),
-    /* Zone sombre gauche — profondeur */
-    radial-gradient(ellipse 45% 80% at 8% 55%, rgba(80,30,5,.75) 0%, transparent 60%),
-    /* Halo central chaud — chaleur humaine */
-    radial-gradient(ellipse 60% 55% at 52% 42%, rgba(255,170,50,.18) 0%, transparent 65%),
-    /* Silhouette diffuse d'une personne — blob vertical */
-    radial-gradient(ellipse 28% 68% at 50% 40%, rgba(200,100,0,.35) 0%, rgba(160,70,0,.2) 60%, transparent 100%),
-    /* Fond dégradé ambre → brun doré */
-    linear-gradient(135deg, #3d1a00 0%, #7a3500 25%, #b85c00 50%, #d97c10 72%, #f5a623 88%, #ffc247 100%);
+    radial-gradient(ellipse 50% 60% at 82% 35%, rgba(255,220,100,.5) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 80% at 8% 55%, rgba(80,30,5,.7) 0%, transparent 60%),
+    linear-gradient(135deg, rgba(61,26,0,.80) 0%, rgba(122,53,0,.75) 30%, rgba(184,92,0,.70) 55%, rgba(245,166,35,.65) 100%),
+    url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80&auto=format&fit=crop') center/cover no-repeat;
 }
 .ocard-pay .ocard-overlay{
-  background:linear-gradient(180deg,transparent 0%,transparent 25%,rgba(80,30,0,.5) 62%,rgba(55,18,0,.92) 100%);
+  background:linear-gradient(180deg,transparent 0%,transparent 20%,rgba(80,30,0,.60) 58%,rgba(55,18,0,.95) 100%);
+  z-index:2;
 }
 
 /* ── Card 3 : MODE — violet → rose avec silhouette vêtements ── */
 .ocard-mode .ocard-bg{
   background:
-    /* Reflets roses pastel haut */
-    radial-gradient(ellipse 55% 40% at 75% 18%, rgba(255,180,220,.55) 0%, transparent 58%),
-    /* Ombre profonde violet gauche */
-    radial-gradient(ellipse 40% 75% at 8% 62%, rgba(50,5,70,.8) 0%, transparent 62%),
-    /* Raies verticales diffuses — penderie/cintres */
-    repeating-linear-gradient(90deg,
-      transparent 0px,
-      transparent 14px,
-      rgba(255,255,255,.04) 14px,
-      rgba(255,255,255,.04) 16px
-    ),
-    /* Halo rose centrale — vêtement mis en valeur */
-    radial-gradient(ellipse 55% 60% at 55% 45%, rgba(230,80,160,.22) 0%, transparent 65%),
-    /* Fond dégradé violet profond → rose vif */
-    linear-gradient(135deg, #2d0645 0%, #5b0f8a 25%, #8b1fae 48%, #c2266e 72%, #e83e8c 88%, #ff6bb5 100%);
+    radial-gradient(ellipse 55% 40% at 75% 18%, rgba(255,180,220,.45) 0%, transparent 58%),
+    radial-gradient(ellipse 40% 75% at 8% 62%, rgba(50,5,70,.75) 0%, transparent 62%),
+    linear-gradient(135deg, rgba(45,6,69,.82) 0%, rgba(91,15,138,.78) 28%, rgba(139,31,174,.72) 52%, rgba(194,38,110,.65) 78%, rgba(232,62,140,.60) 100%),
+    url('https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&q=80&auto=format&fit=crop') center/cover no-repeat;
 }
 .ocard-mode .ocard-overlay{
-  background:linear-gradient(180deg,transparent 0%,transparent 25%,rgba(60,5,80,.52) 62%,rgba(35,2,52,.92) 100%);
+  background:linear-gradient(180deg,transparent 0%,transparent 20%,rgba(60,5,80,.62) 58%,rgba(35,2,52,.95) 100%);
+  z-index:2;
 }
 
 .ocard-eyebrow{display:inline-flex;align-items:center;gap:.35rem;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.85);margin-bottom:.4rem}
 .ocard-eyebrow i{font-size:.7rem}
-.ocard-title{font-size:1.05rem;font-weight:900;color:#fff;line-height:1.25;margin-bottom:.3rem;text-shadow:0 2px 8px rgba(0,0,0,.4)}
-.ocard-sub{font-size:.75rem;color:rgba(255,255,255,.78);margin-bottom:.75rem;line-height:1.45}
+.ocard-title{font-size:1.28rem;font-weight:900;color:#fff;line-height:1.25;margin-bottom:.3rem;text-shadow:0 2px 8px rgba(0,0,0,.4)}
+.ocard-sub{font-size:.85rem;color:rgba(255,255,255,.85);margin-bottom:.85rem;line-height:1.45}
 .ocard-footer{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
 .ocard-btn{display:inline-flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:.38rem .85rem;border-radius:20px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:.15s;white-space:nowrap;text-decoration:none;backdrop-filter:blur(6px)}
 .ocard-btn:hover{background:rgba(255,255,255,.3)}
 .ocard-price{text-align:right}
-.ocard-price .op-val{font-size:1rem;font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.ocard-price .op-val{font-size:1.15rem;font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5)}
 .ocard-price .op-old{font-size:.72rem;color:rgba(255,255,255,.5);text-decoration:line-through;display:block}
 @media(max-width:960px){
   .offres-track{grid-template-columns:repeat(2,1fr)}
@@ -355,7 +335,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
   .offres-section{padding:1.5rem .9rem 1.8rem}
   .offres-track{grid-template-columns:1fr}
   .ocard:last-child{display:block}
-  .ocard{aspect-ratio:16/7}
+  .ocard{min-height:200px}
 }
 /* ─── PRODUCT DETAIL MODAL ─── */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem}
