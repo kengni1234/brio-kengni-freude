@@ -8009,7 +8009,11 @@ def shop_sse_stream():
     """SSE endpoint — nouvelles commandes en temps réel."""
     from flask import Response, stream_with_context
     if not session.get('user_id'):
-        return jsonify({'error': 'Non autorisé'}), 403
+        # Retourner un stream vide pour éviter erreur CORS/403 côté client
+        def empty_gen():
+            yield ": stream désactivé pour visiteurs\n\n"
+        return Response(empty_gen(), mimetype='text/event-stream',
+                       headers={'Cache-Control':'no-cache','X-Accel-Buffering':'no'})
 
     q = _queue.Queue(maxsize=20)
     _sse_clients.append(q)
@@ -8276,15 +8280,45 @@ def shop_banner_upload_image():
         return jsonify({'success': False, 'error': str(e)})
 
 
+
+@app.route('/shop/api/stocks', methods=['GET'])
+def shop_public_stocks():
+    """Stocks publics — utilisé par syncProds() client sans auth."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, stock, is_active FROM shop_products WHERE is_active=1"
+        ).fetchall()
+        return jsonify({'stocks': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'stocks': [], 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
 @app.route('/shop/api/products/export')
-@login_required
 def shop_export_products():
     """Exporte le catalogue produits en CSV ou Excel."""
+    fmt = request.args.get('format', 'csv').lower()
+    # Accès JSON public pour syncProds côté client (stocks seulement)
+    if fmt == 'json':
+        conn = get_db_connection()
+        try:
+            rows = conn.execute(
+                "SELECT id, name, price, stock, badge, image_url FROM shop_products WHERE is_active=1"
+            ).fetchall()
+            return jsonify({'products': [dict(r) for r in rows]})
+        except Exception as e:
+            return jsonify({'products': [], 'error': str(e)}), 500
+        finally:
+            if conn: conn.close()
+    # CSV/XLSX : accès admin requis
+    if not session.get('user_id'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
     perms = get_shop_perms(session.get('user_id'))
     if not perms.get('access'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
 
-    fmt = request.args.get('format', 'csv').lower()
+    fmt = request.args.get('format', 'csv').lower()  # (déjà géré)
     cat = request.args.get('category', '')
 
     conn = get_db_connection()
