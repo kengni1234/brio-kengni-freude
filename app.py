@@ -1134,7 +1134,16 @@ def analyze_trade_image(image_path, trade_data):
 def trading_recommendation(symbol, timeframe='1mo'):
     """AI trading recommendations based on market data"""
     try:
-        ticker = yf.Ticker(symbol)
+        # Auto-convert forex pairs: EURUSD → EURUSD=X (Yahoo Finance format)
+        _s = symbol.upper()
+        _forex_pairs = {'EURUSD','GBPUSD','USDJPY','USDCHF','AUDUSD','NZDUSD',
+                        'USDCAD','EURGBP','EURJPY','GBPJPY','XAUUSD','XAGUSD','BTCUSD'}
+        if _s in _forex_pairs and not _s.endswith('=X'):
+            _s = _s + '=X'
+        elif len(_s) == 6 and _s.isalpha() and not _s.endswith('=X'):
+            # Likely a forex pair (6 alpha chars like EURUSD)
+            _s = _s + '=X'
+        ticker = yf.Ticker(_s)
         hist = ticker.history(period=timeframe)
         
         if hist.empty:
@@ -6730,6 +6739,22 @@ import xml.etree.ElementTree as _ET
 
 # Cache mémoire pour éviter trop d'appels externes
 _news_cache = {'articles': [], 'btc': {}, 'fear_greed': {}, 'ts': 0}
+
+# ── Cache boutique (TTL 60 s) ─────────────────────────────────────
+_shop_cache: dict = {}
+_SHOP_TTL = 60  # secondes
+
+def _shop_cache_get(key: str):
+    entry = _shop_cache.get(key)
+    if entry and (time.time() - entry['ts']) < _SHOP_TTL:
+        return entry['val']
+    return None
+
+def _shop_cache_set(key: str, val):
+    _shop_cache[key] = {'val': val, 'ts': time.time()}
+
+def _shop_cache_clear():
+    _shop_cache.clear()
 _NEWS_TTL   = 5 * 60  # 5 minutes
 
 _SOURCES = [
@@ -7197,39 +7222,47 @@ def _shop_parse_images(product: dict) -> list:
 
 @app.route('/shop')
 def shop():
-    conn = get_db_connection()
-    products, orders_count = [], 0
-    try:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT * FROM shop_products WHERE is_active=1
-            ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END,
-                     created_at DESC
-        """)
-        raw = cur.fetchall()
-        for r in raw:
-            p = dict(r)
-            p['all_images'] = _shop_parse_images(p)
-            p['main_image'] = p['all_images'][0] if p['all_images'] else ''
-            products.append(p)
-        cur.execute("SELECT COUNT(*) FROM shop_orders")
-        orders_count = cur.fetchone()[0] or 0
-    except Exception as e:
-        print(f"[Shop] {e}")
-    finally:
-        if conn: conn.close()
-    # Customer session
+    # Try cache first (produits actifs — TTL 60 s)
+    _cached = _shop_cache_get('shop_products')
+    products = _cached['products'] if _cached else None
+    orders_count = _cached['orders_count'] if _cached else 0
+
+    if products is None:
+        conn = get_db_connection()
+        products = []
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT * FROM shop_products WHERE is_active=1
+                ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END,
+                         created_at DESC
+            """)
+            for r in cur.fetchall():
+                p = dict(r)
+                p['all_images'] = _shop_parse_images(p)
+                p['main_image'] = p['all_images'][0] if p['all_images'] else ''
+                products.append(p)
+            cur.execute("SELECT COUNT(*) FROM shop_orders")
+            orders_count = cur.fetchone()[0] or 0
+            _shop_cache_set('shop_products', {'products': products, 'orders_count': orders_count})
+        except Exception as e:
+            print(f"[Shop] {e}")
+        finally:
+            if conn: conn.close()
+
+    # Customer session + wishlist (1 seule connexion)
     customer = _shop_customer()
     customer_wishlist = []
     if customer:
-        _c2 = get_db_connection()
+        conn2 = get_db_connection()
         try:
-            _cur2 = _c2.cursor()
-            _cur2.execute("SELECT product_id FROM shop_wishlists WHERE customer_id=?", (customer['id'],))
-            customer_wishlist = [r[0] for r in _cur2.fetchall()]
-        except Exception: pass
+            customer_wishlist = [r[0] for r in conn2.execute(
+                "SELECT product_id FROM shop_wishlists WHERE customer_id=?", (customer['id'],)
+            ).fetchall()]
+        except Exception:
+            pass
         finally:
-            if _c2: _c2.close()
+            if conn2: conn2.close()
     return render_template('shop.html', products=products, orders_count=orders_count,
                            customer=customer, customer_wishlist=customer_wishlist)
 
@@ -7325,81 +7358,76 @@ def shop_create_order():
 def shop_admin():
     role = session.get('role')
     uid  = session.get('user_id')
-    # Admins toujours autorisés ; autres utilisateurs si au moins 1 permission boutique
     if role not in ('admin', 'superadmin'):
         perms = get_shop_perms(uid)
         if not any(perms.values()):
             return redirect(url_for('shop'))
-    conn = get_db_connection()
-    products, orders = [], []
+
+    products, orders, all_users, activity_data = [], [], [], {}
     total_revenue = pending_count = active_count = 0
+    from datetime import datetime as _dt
+
+    # ── UNE seule connexion pour toutes les requêtes ──────────────
+    conn = get_db_connection()
     try:
         cur = conn.cursor()
+
+        # Produits
         cur.execute("SELECT * FROM shop_products ORDER BY created_at DESC")
         for r in cur.fetchall():
             p = dict(r)
             p['all_images'] = _shop_parse_images(p)
             p['main_image'] = p['all_images'][0] if p['all_images'] else ''
             products.append(p)
+
+        # Commandes (200 dernières)
         cur.execute("SELECT * FROM shop_orders ORDER BY created_at DESC LIMIT 200")
         orders = [dict(r) for r in cur.fetchall()]
+
+        # Stats rapides
         cur.execute("SELECT COALESCE(SUM(total),0) FROM shop_orders WHERE status='paid'")
         total_revenue = cur.fetchone()[0] or 0
         pending_count = sum(1 for o in orders if o['status'] == 'pending')
         active_count  = sum(1 for p in products if p['is_active'])
+
+        # Utilisateurs
+        cur.execute(
+            "SELECT id, username, email, role, shop_permissions, shop_access, last_login, status FROM users ORDER BY username ASC"
+        )
+        for r in cur.fetchall():
+            u = dict(r)
+            ll = u.get('last_login')
+            if ll:
+                try:
+                    delta = (_dt.now() - _dt.fromisoformat(ll[:19])).days
+                    u['days_inactive'] = delta
+                    u['auto_inactive'] = delta > 8
+                except Exception:
+                    u['days_inactive'] = None
+                    u['auto_inactive'] = False
+            else:
+                u['days_inactive'] = None
+                u['auto_inactive'] = True
+            all_users.append(u)
+
+        # Activité 30 jours
+        cur.execute("""
+            SELECT handled_by, DATE(COALESCE(handled_at,updated_at)) as day, COUNT(*) as cnt
+            FROM shop_orders
+            WHERE handled_by IS NOT NULL
+              AND DATE(COALESCE(handled_at,updated_at)) >= DATE('now','-30 days')
+            GROUP BY handled_by, day ORDER BY day ASC
+        """)
+        for row in cur.fetchall():
+            uid2 = row["handled_by"]
+            if uid2 not in activity_data:
+                activity_data[uid2] = {}
+            activity_data[uid2][row["day"]] = row["cnt"]
+
     except Exception as e:
         print(f"[ShopAdmin] {e}")
     finally:
         if conn: conn.close()
-    # Récupérer tous les utilisateurs pour la section Accès (tous les rôles sauf admin/superadmin)
-    all_users = []
-    try:
-        conn2 = get_db_connection()
-        if conn2:
-            cur2 = conn2.cursor()
-            cur2.execute(
-                "SELECT id, username, email, role, shop_permissions, shop_access, last_login, status FROM users ORDER BY username ASC"
-            )
-            all_users = [dict(r) for r in cur2.fetchall()]
-            # Calculer inactivité : > 8 jours = inactif automatiquement
-            from datetime import datetime as _dt
-            for u in all_users:
-                ll = u.get('last_login')
-                if ll:
-                    try:
-                        delta = (_dt.now() - _dt.fromisoformat(ll[:19])).days
-                        u['days_inactive'] = delta
-                        u['auto_inactive'] = delta > 8
-                    except Exception:
-                        u['days_inactive'] = None
-                        u['auto_inactive'] = False
-                else:
-                    u['days_inactive'] = None
-                    u['auto_inactive'] = True  # Jamais connecté
-            conn2.close()
-    except Exception as e:
-        print(f"[ShopAdmin users] {e}")
-
-    # Données activité (courbes évolution 30 jours)
-    activity_data = {}
-    try:
-        conn3 = get_db_connection()
-        if conn3:
-            cur3 = conn3.cursor()
-            cur3.execute("""
-                SELECT handled_by, DATE(COALESCE(handled_at,updated_at)) as day, COUNT(*) as cnt
-                FROM shop_orders
-                WHERE handled_by IS NOT NULL AND DATE(COALESCE(handled_at,updated_at)) >= DATE('now','-30 days')
-                GROUP BY handled_by, day ORDER BY day ASC
-            """)
-            for row in cur3.fetchall():
-                uid2 = row["handled_by"]
-                if uid2 not in activity_data:
-                    activity_data[uid2] = {}
-                activity_data[uid2][row["day"]] = row["cnt"]
-            conn3.close()
-    except Exception as e:
-        print(f"[ShopAdmin activity] {e}")
 
     current_user_perms = get_shop_perms(session.get("user_id"))
     return render_template("shop_admin.html",
@@ -7467,6 +7495,7 @@ def shop_update_product(pid):
               d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
               1 if d.get('is_active', True) else 0, pid))
         conn.commit()
+        _shop_cache_clear()
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})

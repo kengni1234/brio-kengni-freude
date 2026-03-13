@@ -37,7 +37,7 @@
             pointer-events: none;
             will-change: transform;
             filter:
-                drop-shadow(0 0 60px rgba(0,212,170,0.18))
+                drop-shadow(0 0 60px rgba(0,176,116,0.18))
                 drop-shadow(-20px 0 40px rgba(0,0,0,1))
                 drop-shadow(20px  0 40px rgba(0,0,0,1));
             transform-origin: bottom center;
@@ -57,16 +57,16 @@
             padding: 1.5rem 2.2rem 2.2rem;
             margin-top: 78px;
             border-radius: 22px;
-            border: 1.5px solid rgba(0,212,170,0.45);
+            border: 1.5px solid rgba(0,176,116,0.45);
             text-align: center;
             position: relative;
             overflow: visible;
             box-shadow:
                 0 30px 80px rgba(0,0,0,0.95),
-                0  0  50px rgba(0,212,170,0.22),
-                0  0  100px rgba(0,212,170,0.08),
+                0  0  50px rgba(0,176,116,0.22),
+                0  0  100px rgba(0,176,116,0.08),
                 inset 0 1px 0 rgba(255,255,255,0.06),
-                inset 0 0 30px rgba(0,212,170,0.04);
+                inset 0 0 30px rgba(0,176,116,0.04);
             will-change: transform;
             transform-style: preserve-3d;
         }
@@ -75,7 +75,7 @@
             position: absolute;
             top: 0; left: 10%; right: 10%;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0,212,170,0.7), transparent);
+            background: linear-gradient(90deg, transparent, rgba(0,176,116,0.7), transparent);
             border-radius: 50%;
         }
         #shineLayer {
@@ -96,18 +96,18 @@
         .logo-box img {
             width: 100%; height: 100%;
             border-radius: 50%;
-            border: 3px solid #00d4aa;
-            box-shadow: 0 0 20px rgba(0,212,170,0.7), 0 0 60px rgba(0,212,170,0.2);
+            border: 3px solid #00b074;
+            box-shadow: 0 0 20px rgba(0,176,116,0.7), 0 0 60px rgba(0,176,116,0.2);
             background: #0a0e14;
             display: block;
         }
         .card-title {
-            color: #00d4aa;
+            color: #00b074;
             font-size: 1.5rem;
             font-weight: 900;
             letter-spacing: 2px;
             margin-bottom: 3px;
-            text-shadow: 0 0 20px rgba(0,212,170,0.4);
+            text-shadow: 0 0 20px rgba(0,176,116,0.4);
         }
         .card-subtitle {
             color: rgba(255,255,255,0.55);
@@ -139,9 +139,9 @@
             font-size: 0.95rem;
         }
         .form-control:focus {
-            background: rgba(0,212,170,0.05);
-            border-color: rgba(0,212,170,0.7);
-            box-shadow: 0 0 0 3px rgba(0,212,170,0.14);
+            background: rgba(0,176,116,0.05);
+            border-color: rgba(0,176,116,0.7);
+            box-shadow: 0 0 0 3px rgba(0,176,116,0.14);
             color: white;
             outline: none;
         }
@@ -169,7 +169,7 @@
             transition: color 0.2s;
             line-height: 1;
         }
-        .pwd-toggle:hover { color: #00d4aa; }
+        .pwd-toggle:hover { color: #00b074; }
         .btn-login {
             background: linear-gradient(135deg, #00c49a, #00ff88);
             color: #07120d;
@@ -187,7 +187,7 @@
         }
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0,212,170,0.45);
+            box-shadow: 0 10px 30px rgba(0,176,116,0.45);
             filter: brightness(1.08);
         }
         .btn-login:active { transform: translateY(0); }
@@ -219,7 +219,7 @@
             width: 100%; height: 100%;
             background: rgba(5,10,15,0.90);
             border-radius: 18px;
-            border: 2px solid rgba(0,212,170,0.65);
+            border: 2px solid rgba(0,176,116,0.65);
             position: relative;
             overflow: hidden;
             cursor: pointer;
@@ -227,9 +227,9 @@
             text-decoration: none;
             transition: border-color 0.3s, box-shadow 0.3s, transform 0.4s cubic-bezier(0.23,1,0.32,1);
             box-shadow:
-                0 0 18px rgba(0,212,170,0.25),
-                0 0 40px rgba(0,212,170,0.08),
-                inset 0 0 20px rgba(0,212,170,0.04);
+                0 0 18px rgba(0,176,116,0.25),
+                0 0 40px rgba(0,176,116,0.08),
+                inset 0 0 20px rgba(0,176,116,0.04);
         }
         #col-left .flyer-mini:hover {
             transform: perspective(900px) rotateY(14deg) rotateX(-4deg) translateZ(10px) scale(1.02);
@@ -237,7 +237,7 @@
             box-shadow:
                 -16px 10px 45px rgba(0,0,0,0.85),
                 0 0 35px rgba(0,255,136,0.45),
-                0 0 70px rgba(0,212,170,0.15),
+                0 0 70px rgba(0,176,116,0.15),
                 inset 2px 0 0 rgba(0,255,136,0.2);
         }
         #col-right .flyer-mini:hover {
@@ -246,7 +246,7 @@
             box-shadow:
                 16px 10px 45px rgba(0,0,0,0.85),
                 0 0 35px rgba(0,255,136,0.45),
-                0 0 70px rgba(0,212,170,0.15),
+                0 0 70px rgba(0,176,116,0.15),
                 inset -2px 0 0 rgba(0,255,136,0.2);
         }
         .flyer-mini.held {
@@ -289,11 +289,11 @@
         .flyer-mini:hover .product-img-box img { transform: scale(1.07) translateY(-3px); }
         .product-info {
             position: absolute; bottom: 0; width: 100%;
-            background: rgba(0,212,170,0.10);
+            background: rgba(0,176,116,0.10);
             backdrop-filter: blur(8px);
             padding: 11px 14px;
             text-align: center;
-            border-top: 1px solid rgba(0,212,170,0.3);
+            border-top: 1px solid rgba(0,176,116,0.3);
         }
         .product-name  { color: white; font-size: 0.95rem; font-weight: 900; display: block; }
         .product-spec  { font-size: 0.75rem; font-weight: 800; color: #00ff88; margin-top: 2px; display: block; }
@@ -305,7 +305,7 @@
         .particle {
             position: absolute;
             border-radius: 50%;
-            background: rgba(0,212,170,0.55);
+            background: rgba(0,176,116,0.55);
             animation: floatUp linear infinite;
             opacity: 0;
         }
@@ -318,15 +318,15 @@
         @keyframes glowPulse {
             0%, 100% {
                 box-shadow:
-                    0 0 18px rgba(0,212,170,0.25),
-                    0 0 40px rgba(0,212,170,0.08),
-                    inset 0 0 20px rgba(0,212,170,0.04);
+                    0 0 18px rgba(0,176,116,0.25),
+                    0 0 40px rgba(0,176,116,0.08),
+                    inset 0 0 20px rgba(0,176,116,0.04);
             }
             50% {
                 box-shadow:
-                    0 0 28px rgba(0,212,170,0.40),
-                    0 0 60px rgba(0,212,170,0.14),
-                    inset 0 0 25px rgba(0,212,170,0.07);
+                    0 0 28px rgba(0,176,116,0.40),
+                    0 0 60px rgba(0,176,116,0.14),
+                    inset 0 0 25px rgba(0,176,116,0.07);
             }
         }
         .flyer-mini:not(:hover) {
@@ -341,18 +341,18 @@
             0%, 100% {
                 box-shadow:
                     0 30px 80px rgba(0,0,0,0.95),
-                    0  0  50px rgba(0,212,170,0.22),
-                    0  0  100px rgba(0,212,170,0.08),
+                    0  0  50px rgba(0,176,116,0.22),
+                    0  0  100px rgba(0,176,116,0.08),
                     inset 0 1px 0 rgba(255,255,255,0.06),
-                    inset 0 0 30px rgba(0,212,170,0.04);
+                    inset 0 0 30px rgba(0,176,116,0.04);
             }
             50% {
                 box-shadow:
                     0 30px 80px rgba(0,0,0,0.95),
-                    0  0  65px rgba(0,212,170,0.35),
-                    0  0  130px rgba(0,212,170,0.14),
+                    0  0  65px rgba(0,176,116,0.35),
+                    0  0  130px rgba(0,176,116,0.14),
                     inset 0 1px 0 rgba(255,255,255,0.08),
-                    inset 0 0 40px rgba(0,212,170,0.07);
+                    inset 0 0 40px rgba(0,176,116,0.07);
             }
         }
         .login-card {
@@ -364,7 +364,7 @@
             bottom: 0; left: 50%;
             transform: translateX(-50%);
             width: 280px; height: 28px;
-            background: radial-gradient(ellipse, rgba(0,212,170,0.22) 0%, transparent 70%);
+            background: radial-gradient(ellipse, rgba(0,176,116,0.22) 0%, transparent 70%);
             filter: blur(8px);
             z-index: 2;
             pointer-events: none;
@@ -381,7 +381,7 @@
             .character-bg {
                 opacity: 0.15;
                 height: 75vh;
-                filter: drop-shadow(0 0 30px rgba(0,212,170,0.1));
+                filter: drop-shadow(0 0 30px rgba(0,176,116,0.1));
             }
         }
 
@@ -560,7 +560,7 @@ function animateAll(){
     shineLayer.style.background =
         `radial-gradient(ellipse 80% 70% at ${lX}% ${lY}%,
             rgba(255,255,255,0.09) 0%,
-            rgba(0,212,170,0.04) 35%,
+            rgba(0,176,116,0.04) 35%,
             transparent 70%)`;
 
     requestAnimationFrame(animateAll);
@@ -584,35 +584,35 @@ async function loadItems(){
         // ════════════════════════════════════════════════════════════
         allItems=[
             {type:'product',img_url:'/static/flyers/trade15h.png',
-             name:'Formation Trading 15H',spec:'Stratégies Avancées · Live',price:'150k',promo:'120k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+             name:'Formation Trading 15H',spec:'Stratégies Avancées · Live',price:'150k',promo:'120k',link:null,badge:'PROMO',badge_color:'#00b074'},
             {type:'product',img_url:'/static/flyers/scalping.png',
              name:'Scalping Pro',spec:'Setup M5 · Indicateurs',price:'85k',promo:'65k',link:null,badge:'HOT 🔥',badge_color:'#ff4757'},
             {type:'product',img_url:'/static/flyers/FVG.png',
              name:'Analyse FVG',spec:'Fair Value Gaps · ICT',price:'95k',promo:'75k',link:null,badge:'NOUVEAU',badge_color:'#667eea'},
             {type:'product',img_url:'/static/flyers/rapport.png',
-             name:'Rapport Trading',spec:'Analyse Mensuelle',price:'45k',promo:'35k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+             name:'Rapport Trading',spec:'Analyse Mensuelle',price:'45k',promo:'35k',link:null,badge:'PROMO',badge_color:'#00b074'},
             {type:'product',img_url:'/static/flyers/ma position2.png',
              name:'Gestion Position',spec:'Risk Management · SL/TP',price:'120k',promo:'95k',link:null,badge:'PRO',badge_color:'#ffd700'},
             {type:'product',img_url:'/static/flyers/trai13.png',
-             name:'Trading Journal',spec:'Suivi · Statistiques',price:'55k',promo:'42k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+             name:'Trading Journal',spec:'Suivi · Statistiques',price:'55k',promo:'42k',link:null,badge:'PROMO',badge_color:'#00b074'},
             {type:'product',img_url:'/static/flyers/volum fixe.png',
-             name:'Volume Profile',spec:'POC · VAH/VAL',price:'75k',promo:'58k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+             name:'Volume Profile',spec:'POC · VAH/VAL',price:'75k',promo:'58k',link:null,badge:'PROMO',badge_color:'#00b074'},
             {type:'product',img_url:'/static/flyers/tra22.png',
              name:'Stratégie Breakout',spec:'Price Action · S/R',price:'65k',promo:'50k',link:null,badge:'TRENDING',badge_color:'#ff6b81'},
             {type:'product',img_url:'/static/flyers/trad2.png',
-             name:'Setup Intraday',spec:'Scalping · Day Trading',price:'80k',promo:'62k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+             name:'Setup Intraday',spec:'Scalping · Day Trading',price:'80k',promo:'62k',link:null,badge:'PROMO',badge_color:'#00b074'},
             {type:'product',img_url:'/static/flyers/12.png',
-             name:'Timeframe 12H',spec:'Swing Trading · Long',price:'90k',promo:'70k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+             name:'Timeframe 12H',spec:'Swing Trading · Long',price:'90k',promo:'70k',link:null,badge:'PROMO',badge_color:'#00b074'},
             {type:'product',img_url:'/static/flyers/15H.png',
              name:'Analyse 15H Chart',spec:'Multi-TF · Confluence',price:'95k',promo:'75k',link:null,badge:'EXPERT',badge_color:'#9b59b6'},
             {type:'product',img_url:'/static/flyers/baisse.png',
-             name:'Trade Baissier',spec:'Short · Bear Market',price:'70k',promo:'55k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+             name:'Trade Baissier',spec:'Short · Bear Market',price:'70k',promo:'55k',link:null,badge:'PROMO',badge_color:'#00b074'},
             {type:'product',img_url:'/static/flyers/conf.png',
              name:'Configuration Pro',spec:'Setup · Indicateurs',price:'110k',promo:'85k',link:null,badge:'CONFIG',badge_color:'#3498db'},
             {type:'product',img_url:'/static/flyers/mmm.png',
              name:'Money Management',spec:'Capital · Risk Reward',price:'100k',promo:'78k',link:null,badge:'ESSENTIEL',badge_color:'#e74c3c'},
             {type:'product',img_url:'/static/flyers/sR.png',
-             name:'Support & Résistance',spec:'Zones Clés · PA',price:'60k',promo:'48k',link:null,badge:'PROMO',badge_color:'#00d4aa'},
+             name:'Support & Résistance',spec:'Zones Clés · PA',price:'60k',promo:'48k',link:null,badge:'PROMO',badge_color:'#00b074'},
         ];
     }
     ['slot-0','slot-1','slot-2','slot-3'].forEach((id,i)=>{

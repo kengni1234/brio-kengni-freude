@@ -766,7 +766,7 @@
                     ">NEW</span>
                 </a>
             </li>
-            {% if session.get('role') in ('admin', 'superadmin') %}
+            {% if session.get('role') in ('admin', 'superadmin') or user_shop_access %}
             <li>
                 <a href="/shop/admin" class="{% if request.endpoint == 'shop_admin' %}active{% endif %}">
                     <i class="fas fa-boxes"></i>

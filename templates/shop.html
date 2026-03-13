@@ -32,15 +32,59 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15p
 @keyframes heartBeat{0%,100%{transform:scale(1)}25%{transform:scale(1.25)}75%{transform:scale(.92)}}
 
 /* ══ HERO BANNER ══════════════════════════════════════════════ */
-.hero{background:linear-gradient(130deg,#003d27 0%,#005c3b 35%,#00875a 65%,#00b074 100%);position:relative;overflow:hidden;padding:3.5rem 1.5rem 2.8rem;width:100%}
-.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 90% at 80% 50%,rgba(0,200,130,.18) 0%,transparent 70%);pointer-events:none;z-index:1}
-.hero::after{content:'';position:absolute;top:-60px;right:-80px;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.04);pointer-events:none;z-index:1}
-.hero-inner{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr auto;align-items:center;gap:2rem;position:relative;z-index:2}
+@keyframes heroBgShift{0%{background-position:0% 50%}33%{background-position:80% 20%}66%{background-position:20% 80%}100%{background-position:0% 50%}}
+@keyframes auroraA{0%{transform:translate(0,0) scale(1);opacity:.3}40%{transform:translate(7%,-8%) scale(1.15);opacity:.45}100%{transform:translate(0,0) scale(1);opacity:.3}}
+@keyframes auroraB{0%{transform:translate(0,0) scale(1);opacity:.2}50%{transform:translate(-9%,7%) scale(1.2);opacity:.32}100%{transform:translate(0,0) scale(1);opacity:.2}}
+@keyframes starFloat1{0%{transform:translateY(0) rotate(0deg);opacity:.95}50%{transform:translateY(-16px) rotate(180deg);opacity:.4}100%{transform:translateY(0) rotate(360deg);opacity:.95}}
+@keyframes starFloat2{0%{transform:translateY(0) scale(1);opacity:.85}45%{transform:translateY(-20px) scale(1.3);opacity:1}85%{transform:translateY(-6px) scale(.8);opacity:.38}100%{transform:translateY(0) scale(1);opacity:.85}}
+@keyframes starFloat3{0%{transform:translateY(0) translateX(0) rotate(0);opacity:.9}50%{transform:translateY(-14px) translateX(9px) rotate(90deg);opacity:.3}100%{transform:translateY(0) translateX(0) rotate(180deg);opacity:.9}}
+@keyframes starTwinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.08;transform:scale(.35)}}
+@keyframes starColorCycle{
+  0%  {color:#fff;       text-shadow:0 0 8px rgba(255,255,255,.9),0 0 16px rgba(255,255,255,.4)}
+  18% {color:#7dffc3;    text-shadow:0 0 12px rgba(125,255,195,1),0 0 28px rgba(0,200,130,.6)}
+  38% {color:#b8ffdf;    text-shadow:0 0 10px rgba(184,255,223,.95)}
+  58% {color:#fff;       text-shadow:0 0 18px rgba(255,255,255,.8),0 0 34px rgba(125,255,195,.35)}
+  78% {color:#5cffc8;    text-shadow:0 0 14px rgba(92,255,200,1),0 0 26px rgba(0,160,100,.55)}
+  100%{color:#fff;       text-shadow:0 0 8px rgba(255,255,255,.9),0 0 16px rgba(255,255,255,.4)}
+}
+/* Bannière compacte — hauteur réduite */
+.hero{
+  background:linear-gradient(130deg,#001a0e,#002e1b,#004d32,#00785a,#00b074,#009060,#003d27,#001a0e);
+  background-size:400% 400%;
+  animation:heroBgShift 12s ease infinite;
+  position:relative;overflow:hidden;
+  padding:1.5rem 2.5rem 1.4rem;
+  width:100%;box-sizing:border-box;
+}
+.hero::before{
+  content:'';position:absolute;
+  width:480px;height:320px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,230,145,.35) 0%,rgba(0,176,116,.14) 42%,transparent 68%);
+  top:-70px;right:-40px;
+  animation:auroraA 8s ease-in-out infinite;
+  pointer-events:none;z-index:1;
+}
+.hero::after{
+  content:'';position:absolute;
+  width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(125,255,195,.18) 0%,rgba(0,143,93,.1) 42%,transparent 68%);
+  bottom:-110px;left:-60px;
+  animation:auroraB 10s ease-in-out infinite;
+  pointer-events:none;z-index:1;
+}
+/* Étoiles confinées dans le hero, couleur animée */
+.hero-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;contain:layout style}
+.hstar{position:absolute;font-style:normal;will-change:transform,color}
+.hstar.s1{animation:starFloat1 var(--dur,4s) ease-in-out infinite,starColorCycle var(--cdur,7s) ease-in-out infinite var(--cdelay,0s)}
+.hstar.s2{animation:starFloat2 var(--dur,5s) ease-in-out infinite,starColorCycle var(--cdur,9s) ease-in-out infinite var(--cdelay,0s)}
+.hstar.s3{animation:starFloat3 var(--dur,6s) ease-in-out infinite,starColorCycle var(--cdur,6s) ease-in-out infinite var(--cdelay,0s)}
+.hstar.st{animation:starTwinkle var(--dur,2.5s) ease-in-out infinite,starColorCycle var(--cdur,5s) ease-in-out infinite var(--cdelay,0s)}
+.hero-inner{width:100%;max-width:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:3rem;position:relative;z-index:2}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:.45rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:.3rem .9rem;font-size:.75rem;font-weight:800;color:#fff;letter-spacing:.06em;text-transform:uppercase;margin-bottom:1.1rem;backdrop-filter:blur(4px)}
 .hero-eyebrow i{font-size:.85rem;color:#7dffc3}
-.hero-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;color:#fff;line-height:1.12;margin-bottom:.85rem;letter-spacing:-.02em}
+.hero-title{font-size:clamp(2rem,4.5vw,3.6rem);font-weight:900;color:#fff;line-height:1.08;margin-bottom:.85rem;letter-spacing:-.02em}
 .hero-title em{font-style:normal;color:#7dffc3}
-.hero-sub{font-size:.95rem;color:rgba(255,255,255,.82);margin-bottom:1.4rem;max-width:540px;line-height:1.6}
+.hero-sub{font-size:1rem;color:rgba(255,255,255,.82);margin-bottom:1.4rem;max-width:600px;line-height:1.6}
 .hero-badges{display:flex;flex-wrap:wrap;gap:.55rem;margin-bottom:1.5rem}
 .hero-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:.32rem .8rem;font-size:.78rem;font-weight:700;color:#fff;backdrop-filter:blur(4px)}
 .hero-badge i{color:#7dffc3;font-size:.8rem}
@@ -50,14 +94,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15p
 .hero-btn-sec{display:inline-flex;align-items:center;gap:.5rem;background:transparent;color:#fff;border:2px solid rgba(255,255,255,.4);border-radius:12px;padding:.73rem 1.4rem;font-size:.92rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:.2s;text-decoration:none;white-space:nowrap}
 .hero-btn-sec:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.7)}
 .hero-right{display:flex;flex-direction:column;gap:.65rem}
-.hero-stat{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:.85rem 1.2rem;min-width:170px;backdrop-filter:blur(8px);transition:.2s}
+.hero-stat{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:.85rem 1.4rem;min-width:190px;backdrop-filter:blur(8px);transition:.2s}
 .hero-stat:hover{background:rgba(255,255,255,.16)}
 .hero-stat-lbl{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.6);margin-bottom:.3rem}
-.hero-stat-val{font-size:1.7rem;font-weight:900;color:#fff;line-height:1;margin-bottom:.18rem}
+.hero-stat-val{font-size:1.9rem;font-weight:900;color:#fff;line-height:1;margin-bottom:.18rem}
 .hero-stat-sub{font-size:.72rem;color:rgba(255,255,255,.65)}
 /* ══ TRUST BAR ══════════════════════════════════════════════ */
 .trust-bar{background:#fff;border-bottom:1px solid var(--border);padding:.9rem 1.5rem}
-.trust-bar-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-around;gap:1.2rem;flex-wrap:wrap}
+.trust-bar-inner{max-width:100%;margin:0 auto;display:flex;align-items:center;justify-content:space-around;gap:1.2rem;flex-wrap:wrap;padding:0 2rem}
 .trust-item{display:flex;align-items:center;gap:.65rem;padding:.3rem 0}
 .trust-icon{width:38px;height:38px;border-radius:10px;background:var(--primary3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .trust-icon i{font-size:1rem;color:var(--primary)}
@@ -67,15 +111,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15p
   .hero-inner{grid-template-columns:1fr}
   .hero-right{flex-direction:row;flex-wrap:wrap}
   .hero-stat{flex:1;min-width:140px}
-  .hero{padding:2.2rem 1rem 2rem}
+  .hero{padding:2.2rem 1.5rem 2rem}
 }
 @media(max-width:600px){
-  .hero{padding:1.8rem .9rem 1.6rem}
-  .hero-title{font-size:1.65rem}
+  .hero{padding:1.8rem 1rem 1.6rem}
+  .hero-title{font-size:1.75rem}
   .hero-right{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
   .hero-stat{min-width:0;padding:.65rem .85rem}
-  .hero-stat-val{font-size:1.3rem}
-  .trust-bar-inner{gap:.8rem;justify-content:flex-start}
+  .hero-stat-val{font-size:1.4rem}
+  .trust-bar-inner{gap:.8rem;justify-content:flex-start;padding:0 1rem}
   .trust-item{flex:1;min-width:140px}
 }
 /* ─── TOP BAR ─── */
@@ -230,27 +274,78 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .offres-track{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;transition:transform .45s cubic-bezier(.25,.46,.45,.94)}
 .ocard{border-radius:16px;overflow:hidden;position:relative;aspect-ratio:16/9;cursor:pointer;transition:.22s;min-height:160px}
 .ocard:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.5)}
-.ocard-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:.35s}
-.ocard:hover .ocard-bg{transform:scale(1.04)}
+.ocard-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .35s ease}
+.ocard:hover .ocard-bg{transform:scale(1.05)}
 .ocard-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:1.3rem 1.4rem}
-/* Card 1 — electronique, bleu */
-.ocard-elec .ocard-bg{background:linear-gradient(135deg,#1a3a6e 0%,#2563eb 100%)}
-.ocard-elec .ocard-overlay{background:linear-gradient(180deg,rgba(30,58,138,.3) 0%,rgba(30,58,138,.85) 100%)}
-/* Card 2 — paiement, orange/doré */
-.ocard-pay .ocard-bg{background:linear-gradient(135deg,#92400e 0%,#d97706 100%)}
-.ocard-pay .ocard-overlay{background:linear-gradient(180deg,rgba(146,64,14,.2) 0%,rgba(146,64,14,.88) 100%)}
-/* Card 3 — mode, rose/violet */
-.ocard-mode .ocard-bg{background:linear-gradient(135deg,#6b21a8 0%,#db2777 100%)}
-.ocard-mode .ocard-overlay{background:linear-gradient(180deg,rgba(107,33,168,.2) 0%,rgba(107,33,168,.88) 100%)}
-.ocard-eyebrow{display:inline-flex;align-items:center;gap:.35rem;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.75);margin-bottom:.4rem}
+
+/* ── Card 1 : ÉLECTRONIQUE — bleu tech avec silhouette casque ── */
+.ocard-elec .ocard-bg{
+  background:
+    /* Reflet brillant haut-droite simulant une surface chromée */
+    radial-gradient(ellipse 55% 45% at 78% 22%, rgba(147,210,255,.55) 0%, transparent 60%),
+    /* Ombre douce côté gauche */
+    radial-gradient(ellipse 40% 70% at 10% 60%, rgba(10,30,90,.8) 0%, transparent 65%),
+    /* Cercle lumineux central — lentille/écouteur */
+    radial-gradient(circle 90px at 70% 48%, rgba(200,230,255,.22) 0%, transparent 55%),
+    /* Anneau sombre — casque silhouette */
+    radial-gradient(circle 130px at 70% 50%, rgba(30,80,180,.0) 0%, rgba(15,50,150,.55) 75%, transparent 100%),
+    /* Fond dégradé bleu profond → bleu électrique */
+    linear-gradient(135deg, #0a1a4a 0%, #0e2a7d 30%, #1b4fc2 60%, #2d78ea 85%, #5ca0ff 100%);
+}
+.ocard-elec .ocard-overlay{
+  background:linear-gradient(180deg,transparent 0%,transparent 30%,rgba(8,25,90,.55) 65%,rgba(5,15,70,.9) 100%);
+}
+
+/* ── Card 2 : PAIEMENT — amber chaud avec silhouette personne ── */
+.ocard-pay .ocard-bg{
+  background:
+    /* Lumière chaude arrière-plan droite */
+    radial-gradient(ellipse 50% 60% at 82% 35%, rgba(255,220,100,.6) 0%, transparent 55%),
+    /* Zone sombre gauche — profondeur */
+    radial-gradient(ellipse 45% 80% at 8% 55%, rgba(80,30,5,.75) 0%, transparent 60%),
+    /* Halo central chaud — chaleur humaine */
+    radial-gradient(ellipse 60% 55% at 52% 42%, rgba(255,170,50,.18) 0%, transparent 65%),
+    /* Silhouette diffuse d'une personne — blob vertical */
+    radial-gradient(ellipse 28% 68% at 50% 40%, rgba(200,100,0,.35) 0%, rgba(160,70,0,.2) 60%, transparent 100%),
+    /* Fond dégradé ambre → brun doré */
+    linear-gradient(135deg, #3d1a00 0%, #7a3500 25%, #b85c00 50%, #d97c10 72%, #f5a623 88%, #ffc247 100%);
+}
+.ocard-pay .ocard-overlay{
+  background:linear-gradient(180deg,transparent 0%,transparent 25%,rgba(80,30,0,.5) 62%,rgba(55,18,0,.92) 100%);
+}
+
+/* ── Card 3 : MODE — violet → rose avec silhouette vêtements ── */
+.ocard-mode .ocard-bg{
+  background:
+    /* Reflets roses pastel haut */
+    radial-gradient(ellipse 55% 40% at 75% 18%, rgba(255,180,220,.55) 0%, transparent 58%),
+    /* Ombre profonde violet gauche */
+    radial-gradient(ellipse 40% 75% at 8% 62%, rgba(50,5,70,.8) 0%, transparent 62%),
+    /* Raies verticales diffuses — penderie/cintres */
+    repeating-linear-gradient(90deg,
+      transparent 0px,
+      transparent 14px,
+      rgba(255,255,255,.04) 14px,
+      rgba(255,255,255,.04) 16px
+    ),
+    /* Halo rose centrale — vêtement mis en valeur */
+    radial-gradient(ellipse 55% 60% at 55% 45%, rgba(230,80,160,.22) 0%, transparent 65%),
+    /* Fond dégradé violet profond → rose vif */
+    linear-gradient(135deg, #2d0645 0%, #5b0f8a 25%, #8b1fae 48%, #c2266e 72%, #e83e8c 88%, #ff6bb5 100%);
+}
+.ocard-mode .ocard-overlay{
+  background:linear-gradient(180deg,transparent 0%,transparent 25%,rgba(60,5,80,.52) 62%,rgba(35,2,52,.92) 100%);
+}
+
+.ocard-eyebrow{display:inline-flex;align-items:center;gap:.35rem;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.85);margin-bottom:.4rem}
 .ocard-eyebrow i{font-size:.7rem}
-.ocard-title{font-size:1.05rem;font-weight:900;color:#fff;line-height:1.25;margin-bottom:.3rem}
-.ocard-sub{font-size:.75rem;color:rgba(255,255,255,.72);margin-bottom:.75rem;line-height:1.45}
+.ocard-title{font-size:1.05rem;font-weight:900;color:#fff;line-height:1.25;margin-bottom:.3rem;text-shadow:0 2px 8px rgba(0,0,0,.4)}
+.ocard-sub{font-size:.75rem;color:rgba(255,255,255,.78);margin-bottom:.75rem;line-height:1.45}
 .ocard-footer{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
-.ocard-btn{display:inline-flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);color:#fff;padding:.38rem .85rem;border-radius:20px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:.15s;white-space:nowrap;text-decoration:none;backdrop-filter:blur(4px)}
-.ocard-btn:hover{background:rgba(255,255,255,.28)}
+.ocard-btn{display:inline-flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:.38rem .85rem;border-radius:20px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:.15s;white-space:nowrap;text-decoration:none;backdrop-filter:blur(6px)}
+.ocard-btn:hover{background:rgba(255,255,255,.3)}
 .ocard-price{text-align:right}
-.ocard-price .op-val{font-size:1rem;font-weight:900;color:#fff}
+.ocard-price .op-val{font-size:1rem;font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5)}
 .ocard-price .op-old{font-size:.72rem;color:rgba(255,255,255,.5);text-decoration:line-through;display:block}
 @media(max-width:960px){
   .offres-track{grid-template-columns:repeat(2,1fr)}
@@ -1376,17 +1471,6 @@ let wishlist = new Set({{ customer_wishlist|tojson }});
 /* ═══════════════════════════════════════════════════════════════
    FONT SIZE
 ═══════════════════════════════════════════════════════════════ */
-/* ─── ÉTOILES FLOTTANTES HERO ─── */
-@keyframes starFloat1{0%{transform:translateY(0) rotate(0deg);opacity:.9}50%{transform:translateY(-18px) rotate(180deg);opacity:.5}100%{transform:translateY(0) rotate(360deg);opacity:.9}}
-@keyframes starFloat2{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:.6}33%{transform:translateY(-22px) rotate(120deg) scale(1.2);opacity:.9}66%{transform:translateY(-8px) rotate(240deg) scale(.8);opacity:.4}100%{transform:translateY(0) rotate(360deg) scale(1);opacity:.6}}
-@keyframes starFloat3{0%{transform:translateY(0) translateX(0) rotate(0);opacity:.7}50%{transform:translateY(-14px) translateX(8px) rotate(90deg);opacity:.4}100%{transform:translateY(0) translateX(0) rotate(180deg);opacity:.7}}
-@keyframes starTwinkle{0%,100%{opacity:.9;transform:scale(1)}50%{opacity:.2;transform:scale(.5)}}
-.hero-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
-.hstar{position:absolute;color:#fff;font-style:normal;will-change:transform}
-.hstar.s1{animation:starFloat1 var(--dur,4s) ease-in-out infinite}
-.hstar.s2{animation:starFloat2 var(--dur,6s) ease-in-out infinite}
-.hstar.s3{animation:starFloat3 var(--dur,5s) ease-in-out infinite}
-.hstar.st{animation:starTwinkle var(--dur,2.5s) ease-in-out infinite}
 
 /* ─── PUBLICITÉ TEMPORAIRE ─── */
 @keyframes adSlideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -2478,30 +2562,38 @@ document.addEventListener('DOMContentLoaded',()=>{
 function initHeroStars(){
   const container = document.getElementById('heroStars');
   if(!container) return;
-  const shapes = ['★','✦','✧','✶','✸','✺','⋆','·','✮','☆'];
-  const count = 42;
+  const bigShapes  = ['★','✦','✶','✸','✺','☆','✮','✱','❋'];
+  const smallShapes= ['·','⋆','✧','✦','✩','∗','⊹'];
+  const count = 60;
   for(let i=0;i<count;i++){
-    const s = document.createElement('span');
-    const type = Math.random();
+    const s      = document.createElement('span');
+    const isBig  = Math.random() > .5;
+    const rnd    = Math.random();
     let cls = 'hstar ';
-    if(type<.3) cls += 's1';
-    else if(type<.6) cls += 's2';
-    else if(type<.85) cls += 's3';
-    else cls += 'st';
+    if(rnd<.28)       cls += 's1';
+    else if(rnd<.56)  cls += 's2';
+    else if(rnd<.82)  cls += 's3';
+    else               cls += 'st';
     s.className = cls;
+    const shapes  = isBig ? bigShapes : smallShapes;
     s.textContent = shapes[Math.floor(Math.random()*shapes.length)];
-    const size = 8 + Math.random()*18;
-    const dur  = (2.5 + Math.random()*5).toFixed(1);
-    const delay = (Math.random()*4).toFixed(1);
-    const opacity = (.15 + Math.random()*.55).toFixed(2);
-    s.style.cssText = `
-      left:${Math.random()*100}%;
-      top:${Math.random()*100}%;
-      font-size:${size}px;
-      opacity:${opacity};
-      --dur:${dur}s;
-      animation-delay:-${delay}s;
-    `;
+    const size    = isBig ? (14 + Math.random()*18) : (7 + Math.random()*7);
+    const dur     = (isBig ? 3 : 2) + Math.random()*4;
+    const delay   = (Math.random()*7).toFixed(1);
+    const opacity = isBig ? (.5 + Math.random()*.5) : (.3 + Math.random()*.4);
+    // Cycle couleur indépendant par étoile
+    const cdur    = (5 + Math.random()*8).toFixed(1);
+    const cdelay  = `-${(Math.random()*12).toFixed(1)}s`;
+    s.style.cssText = [
+      `left:${(Math.random()*104)-2}%`,
+      `top:${(Math.random()*100)}%`,
+      `font-size:${size.toFixed(1)}px`,
+      `opacity:${opacity.toFixed(2)}`,
+      `--dur:${dur.toFixed(1)}s`,
+      `--cdur:${cdur}s`,
+      `--cdelay:${cdelay}`,
+      `animation-delay:-${delay}s`,
+    ].join(';');
     container.appendChild(s);
   }
 }
