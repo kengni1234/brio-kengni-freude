@@ -1,126 +1,264 @@
 {% extends "base.html" %}
-{% block title %}Notifications - Kengni Finance{% endblock %}
+{% block title %}🔔 Notifications — Kengni Finance{% endblock %}
 {% block page_title %}Notifications{% endblock %}
 {% block content %}
-<div class="container-fluid">
+<style>
+:root{--ng:#00e676;--nb:#4a9eff;--ny:#ffd700;--nr:#ff4757;--ns:#0d1117;}
+.notif-page{max-width:900px;margin:0 auto;padding:0 4px;}
+/* Header */
+.notif-page-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px;
+}
+.notif-page-title{font-size:22px;font-weight:900;display:flex;align-items:center;gap:10px;}
+.notif-page-title span{font-size:28px;}
+.notif-count-pill{
+  background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);
+  color:var(--ng);border-radius:20px;padding:4px 14px;
+  font-size:12px;font-weight:700;margin-left:4px;
+}
+.notif-unread-pill{
+  background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.25);
+  color:var(--nr);border-radius:20px;padding:4px 14px;
+  font-size:12px;font-weight:700;
+}
+.notif-header-actions{display:flex;gap:8px;align-items:center;}
+.btn-mark-all{
+  background:linear-gradient(135deg,rgba(0,230,118,.12),rgba(0,230,118,.06));
+  border:1px solid rgba(0,230,118,.25);color:var(--ng);
+  border-radius:12px;padding:8px 16px;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .2s;font-family:inherit;
+}
+.btn-mark-all:hover{background:rgba(0,230,118,.2);box-shadow:0 0 16px rgba(0,230,118,.2);}
+/* Filtres */
+.notif-filters{
+  display:flex;gap:6px;flex-wrap:wrap;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;padding:10px 14px;margin-bottom:20px;
+}
+.nf-btn{
+  padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.08);
+  background:transparent;color:#6b7280;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .18s;font-family:inherit;
+}
+.nf-btn:hover{color:#e5e7eb;border-color:rgba(255,255,255,.15);}
+.nf-btn.active{color:#000;border-color:transparent;}
+.nf-btn.active.nf-all    {background:linear-gradient(135deg,var(--ng),#00c853);}
+.nf-btn.active.nf-info   {background:linear-gradient(135deg,var(--nb),#2563eb);}
+.nf-btn.active.nf-warning{background:linear-gradient(135deg,var(--ny),#d97706);}
+.nf-btn.active.nf-alert  {background:linear-gradient(135deg,var(--nr),#dc2626);}
+.nf-btn.active.nf-success{background:linear-gradient(135deg,#10b981,#059669);}
+/* Cards */
+.notif-card{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:16px 18px;border-radius:16px;margin-bottom:8px;
+  border:1px solid rgba(255,255,255,.05);
+  background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.notif-card:hover{
+  border-color:rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);
+  transform:translateX(3px);
+}
+.notif-card.unread{
+  background:linear-gradient(135deg,rgba(0,230,118,.05),rgba(0,230,118,.02));
+  border-color:rgba(0,230,118,.12);
+}
+.notif-card.unread::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--ng),#009944);border-radius:4px 0 0 4px;
+}
+.notif-card.type-warning.unread{background:rgba(255,215,0,.04);border-color:rgba(255,215,0,.12);}
+.notif-card.type-warning.unread::before{background:var(--ny);}
+.notif-card.type-alert.unread{background:rgba(255,71,87,.04);border-color:rgba(255,71,87,.12);}
+.notif-card.type-alert.unread::before{background:var(--nr);}
+.notif-card.type-info.unread::before{background:var(--nb);}
+.notif-card-icon{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+.notif-card-icon.type-success{background:rgba(16,185,129,.15);}
+.notif-card-icon.type-info{background:rgba(74,158,255,.15);}
+.notif-card-icon.type-warning{background:rgba(255,215,0,.15);}
+.notif-card-icon.type-alert{background:rgba(255,71,87,.15);}
+.notif-card-body{flex:1;min-width:0;}
+.notif-card-header{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+.notif-card-title{font-size:14px;font-weight:800;color:#f0f0f0;}
+.new-badge{
+  background:#ff4757;color:#fff;border-radius:6px;
+  font-size:9px;font-weight:900;padding:2px 6px;letter-spacing:.5px;
+  animation:newPop .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes newPop{from{transform:scale(0);}to{transform:scale(1);}}
+.notif-card-msg{font-size:13px;color:#6b7280;line-height:1.55;margin-bottom:5px;}
+.notif-card-footer{display:flex;align-items:center;gap:8px;}
+.notif-card-time{font-size:11px;color:#374151;display:flex;align-items:center;gap:4px;}
+.notif-card-actions{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.btn-read{
+  background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);
+  color:var(--ng);border-radius:8px;padding:4px 10px;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
+}
+.btn-read:hover{background:rgba(0,230,118,.18);}
+.btn-goto{
+  background:rgba(74,158,255,.08);border:1px solid rgba(74,158,255,.2);
+  color:var(--nb);border-radius:8px;padding:4px 10px;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
+  text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+}
+.btn-goto:hover{background:rgba(74,158,255,.18);}
+/* Empty */
+.notif-empty-state{
+  text-align:center;padding:60px 20px;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);
+  border-radius:20px;
+}
+.notif-empty-icon{font-size:4rem;display:block;margin-bottom:16px;opacity:.25;}
+/* Stats bar */
+.notif-stats{
+  display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;
+}
+.notif-stat{
+  flex:1;min-width:120px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:14px;padding:12px 16px;text-align:center;
+}
+.notif-stat-num{font-size:22px;font-weight:900;display:block;}
+.notif-stat-lbl{font-size:11px;color:#6b7280;margin-top:2px;}
+</style>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="mb-1"><i class="fas fa-bell"></i> Centre de Notifications</h4>
-            <small class="text-muted">
-                {{ notifications|length }} notification(s) —
-                {{ notifications|selectattr('is_read','equalto',0)|list|length }} non lue(s)
-            </small>
-        </div>
-        <button class="btn btn-sm btn-outline-primary" onclick="markAllRead()">
-            <i class="fas fa-check-double"></i> Tout marquer lu
-        </button>
-    </div>
-
-    <!-- Filtres -->
-    <div class="custom-table p-3 mb-4">
-        <div class="btn-group btn-group-sm" role="group">
-            <button class="btn btn-outline-secondary active" onclick="filterNotifs('all', this)">Toutes</button>
-            <button class="btn btn-outline-success" onclick="filterNotifs('success', this)">✅ Succès</button>
-            <button class="btn btn-outline-warning" onclick="filterNotifs('warning', this)">⚠️ Alertes</button>
-            <button class="btn btn-outline-info" onclick="filterNotifs('info', this)">ℹ️ Info</button>
-            <button class="btn btn-outline-danger" onclick="filterNotifs('alert', this)">🔴 Urgentes</button>
-        </div>
-    </div>
-
-    <!-- Liste des notifications -->
-    <div id="notificationsList">
-        {% if notifications %}
-            {% for notif in notifications %}
-            <div class="custom-table p-3 mb-3 notif-item notif-{{ notif.type }}"
-                 id="notif-{{ notif.id }}"
-                 style="border-left: 4px solid
-                    {% if notif.type == 'success' %}#00d4aa
-                    {% elif notif.type == 'warning' %}#ffd700
-                    {% elif notif.type == 'alert' %}#ff4757
-                    {% else %}#4a9eff{% endif %};
-                 opacity: {% if notif.is_read %}0.6{% else %}1{% endif %};">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="d-flex align-items-start gap-3">
-                        <div style="font-size:24px; margin-top:2px;">
-                            {% if notif.type == 'success' %}✅
-                            {% elif notif.type == 'warning' %}⚠️
-                            {% elif notif.type == 'alert' %}🔴
-                            {% else %}ℹ️{% endif %}
-                        </div>
-                        <div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <strong>{{ notif.title }}</strong>
-                                {% if not notif.is_read %}
-                                <span class="badge" style="background:#ff4757; font-size:9px;">NOUVEAU</span>
-                                {% endif %}
-                            </div>
-                            <p class="mb-1 text-muted">{{ notif.message }}</p>
-                            <small class="text-muted">
-                                <i class="fas fa-clock"></i>
-                                {{ notif.created_at[:16] if notif.created_at else '' }}
-                            </small>
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        {% if not notif.is_read %}
-                        <button class="btn btn-sm btn-outline-success" onclick="markRead({{ notif.id }})">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        {% endif %}
-                        {% if notif.action_url %}
-                        <a href="{{ notif.action_url }}" class="btn btn-sm btn-outline-info">
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="custom-table p-5 text-center">
-                <i class="fas fa-bell-slash fa-3x mb-3" style="color:#444;"></i>
-                <h5 class="text-muted">Aucune notification</h5>
-                <p class="text-muted">Les notifications apparaîtront ici lors de vos activités</p>
-            </div>
+<div class="notif-page">
+  <!-- Header -->
+  <div class="notif-page-header">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div class="notif-page-title">
+        <span>🔔</span> Notifications
+        <span class="notif-count-pill">{{ notifications|length }} total</span>
+        {% set unread = notifications|selectattr('is_read','equalto',0)|list|length %}
+        {% if unread > 0 %}
+        <span class="notif-unread-pill">{{ unread }} non lue{% if unread > 1 %}s{% endif %}</span>
         {% endif %}
+      </div>
     </div>
+    <div class="notif-header-actions">
+      <button class="btn-mark-all" onclick="markAllRead()">✔ Tout marquer lu</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="notif-stats">
+    {% set ns_s = notifications|selectattr('type','equalto','success')|list|length %}
+    {% set ns_i = notifications|selectattr('type','equalto','info')|list|length %}
+    {% set ns_w = notifications|selectattr('type','equalto','warning')|list|length %}
+    {% set ns_a = notifications|selectattr('type','equalto','alert')|list|length %}
+    <div class="notif-stat"><span class="notif-stat-num" style="color:#10b981">{{ ns_s }}</span><div class="notif-stat-lbl">✅ Succès</div></div>
+    <div class="notif-stat"><span class="notif-stat-num" style="color:#4a9eff">{{ ns_i }}</span><div class="notif-stat-lbl">💬 Info</div></div>
+    <div class="notif-stat"><span class="notif-stat-num" style="color:#ffd700">{{ ns_w }}</span><div class="notif-stat-lbl">⚠️ Alertes</div></div>
+    <div class="notif-stat"><span class="notif-stat-num" style="color:#ff4757">{{ ns_a }}</span><div class="notif-stat-lbl">🔴 Urgentes</div></div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="notif-filters">
+    <button class="nf-btn nf-all active" onclick="filterN('all',this)">🏷 Toutes</button>
+    <button class="nf-btn nf-success" onclick="filterN('success',this)">✅ Succès</button>
+    <button class="nf-btn nf-info"    onclick="filterN('info',this)">💬 Info</button>
+    <button class="nf-btn nf-warning" onclick="filterN('warning',this)">⚠️ Alertes</button>
+    <button class="nf-btn nf-alert"   onclick="filterN('alert',this)">🔴 Urgentes</button>
+    <button class="nf-btn" onclick="filterN('unread',this)" style="margin-left:auto">🔵 Non lues</button>
+  </div>
+
+  <!-- Liste -->
+  <div id="notifsList">
+    {% if notifications %}
+      {% for n in notifications %}
+      <div class="notif-card {% if not n.is_read %}unread{% endif %} type-{{ n.type or 'info' }}"
+           id="notif-{{ n.id }}"
+           data-type="{{ n.type or 'info' }}"
+           data-read="{{ n.is_read }}"
+           onclick="handleClick({{ n.id }},'{{ n.action_url or '' }}')">
+        <div class="notif-card-icon type-{{ n.type or 'info' }}">
+          {% if n.type == 'success' %}✅
+          {% elif n.type == 'warning' %}⚠️
+          {% elif n.type == 'alert' %}🔴
+          {% else %}💬{% endif %}
+        </div>
+        <div class="notif-card-body">
+          <div class="notif-card-header">
+            <span class="notif-card-title">{{ n.title }}</span>
+            {% if not n.is_read %}<span class="new-badge">NOUVEAU</span>{% endif %}
+          </div>
+          <div class="notif-card-msg">{{ n.message }}</div>
+          <div class="notif-card-footer">
+            <span class="notif-card-time">🕐 {{ n.created_at[:16] if n.created_at else '' }}</span>
+            <div class="notif-card-actions">
+              {% if not n.is_read %}
+              <button class="btn-read" onclick="event.stopPropagation();markRead({{ n.id }})">✓ Lu</button>
+              {% endif %}
+              {% if n.action_url %}
+              <a href="{{ n.action_url }}" class="btn-goto" onclick="event.stopPropagation()">Voir →</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="notif-empty-state">
+        <span class="notif-empty-icon">🔔</span>
+        <h5 style="color:#9ca3af;font-size:16px;margin-bottom:6px;">Aucune notification</h5>
+        <p style="color:#4b5563;font-size:13px;">Vos notifications apparaîtront ici</p>
+      </div>
+    {% endif %}
+  </div>
 </div>
 
 <script>
 function markRead(id) {
-    fetch(`/api/mark-notification-read/${id}`, { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                const el = document.getElementById(`notif-${id}`);
-                if (el) {
-                    el.style.opacity = '0.6';
-                    el.querySelector('.badge')?.remove();
-                    el.querySelector(`button[onclick="markRead(${id})"]`)?.remove();
-                }
-            }
-        });
-}
-
-function markAllRead() {
-    document.querySelectorAll('.notif-item').forEach(el => {
-        const id = el.id.replace('notif-', '');
-        if (id) {
-            fetch(`/api/mark-notification-read/${id}`, { method: 'POST' });
-            el.style.opacity = '0.6';
-            el.querySelector('.badge')?.remove();
+  fetch(`/api/mark-notification-read/${id}`, {method:'POST'})
+    .then(r=>r.json()).then(d=>{
+      if(d.success){
+        const el=document.getElementById(`notif-${id}`);
+        if(el){
+          el.classList.remove('unread');
+          el.querySelector('.new-badge')?.remove();
+          el.querySelector('.btn-read')?.remove();
+          el.dataset.read='1';
         }
-    });
-    setTimeout(() => location.reload(), 800);
-}
-
-function filterNotifs(type, btn) {
-    document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.notif-item').forEach(el => {
-        el.style.display = (type === 'all' || el.classList.contains(`notif-${type}`)) ? '' : 'none';
+      }
     });
 }
+function markAllRead() {
+  fetch('/api/notifications/mark-all-read',{method:'POST'}).then(()=>{
+    document.querySelectorAll('.notif-card.unread').forEach(el=>{
+      el.classList.remove('unread');
+      el.querySelector('.new-badge')?.remove();
+      el.querySelector('.btn-read')?.remove();
+      el.dataset.read='1';
+    });
+    toast && toast('✅ Toutes les notifications lues');
+  });
+}
+function handleClick(id, url) {
+  markRead(id);
+  if(url && url!=='None' && url!=='null' && url!=='') {
+    setTimeout(()=>window.location.href=url, 250);
+  }
+}
+function filterN(type, btn) {
+  document.querySelectorAll('.nf-btn').forEach(b=>{
+    b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  document.querySelectorAll('.notif-card').forEach(el=>{
+    let show = type==='all'
+      || el.dataset.type===type
+      || (type==='unread' && el.dataset.read==='0');
+    el.style.display = show ? '' : 'none';
+  });
+}
+// Auto-refresh toutes les 30s
+setInterval(()=>location.reload(), 30000);
 </script>
 {% endblock %}

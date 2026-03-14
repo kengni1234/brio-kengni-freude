@@ -3190,6 +3190,73 @@ def notifications():
     
     return render_template('notifications.html', notifications=notifications_list)
 
+
+@app.route('/api/notifications/list')
+@login_required
+def api_notifications_list():
+    """Liste complète des notifications — panneau chat."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'notifications': []})
+    try:
+        rows = conn.execute("""
+            SELECT id, type, title, message, action_url, is_read, created_at
+            FROM notifications
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 60
+        """, (user_id,)).fetchall()
+        return jsonify({'notifications': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'notifications': [], 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/notifications/count')
+@login_required
+def api_notifications_count():
+    """Count + dernières notifications — polling léger."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'unread': 0, 'notifications': []})
+    try:
+        rows = conn.execute("""
+            SELECT id, type, title, message, action_url, is_read, created_at
+            FROM notifications
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 30
+        """, (user_id,)).fetchall()
+        notifs = [dict(r) for r in rows]
+        unread = sum(1 for n in notifs if not n['is_read'])
+        return jsonify({'unread': unread, 'notifications': notifs})
+    except Exception as e:
+        return jsonify({'unread': 0, 'notifications': []}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/notifications/mark-all-read', methods=['POST'])
+@login_required
+def api_notifications_mark_all():
+    """Marquer toutes les notifications comme lues."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False})
+    try:
+        conn.execute(
+            "UPDATE notifications SET is_read = 1 WHERE user_id = ?",
+            (user_id,)
+        )
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception:
+        return jsonify({'success': False}), 500
+    finally:
+        conn.close()
+
 @app.route('/api/mark-notification-read/<int:notification_id>', methods=['POST'])
 @login_required
 def mark_notification_read(notification_id):
@@ -5434,17 +5501,21 @@ def init_chat_db():
     cursor = conn.cursor()
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS chat_messages (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id      INTEGER NOT NULL,
-        content      TEXT    NOT NULL,
-        content_enc  TEXT,
-        is_encrypted INTEGER DEFAULT 0,
-        reply_to_id  INTEGER,
-        reactions    TEXT    DEFAULT '{}',
-        tags         TEXT    DEFAULT '[]',
-        edited       INTEGER DEFAULT 0,
-        deleted      INTEGER DEFAULT 0,
-        created_at   TEXT    DEFAULT (datetime('now')),
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id        INTEGER NOT NULL,
+        content        TEXT    NOT NULL,
+        content_enc    TEXT,
+        is_encrypted   INTEGER DEFAULT 0,
+        reply_to_id    INTEGER,
+        reactions      TEXT    DEFAULT '{}',
+        tags           TEXT    DEFAULT '[]',
+        edited         INTEGER DEFAULT 0,
+        deleted        INTEGER DEFAULT 0,
+        msg_type       TEXT    DEFAULT 'text',
+        voice_url      TEXT,
+        voice_duration INTEGER DEFAULT 0,
+        is_private     INTEGER DEFAULT 0,
+        created_at     TEXT    DEFAULT (datetime('now')),
         FOREIGN KEY (user_id) REFERENCES users(id)
     )''')
     cursor.execute('''
@@ -5455,11 +5526,16 @@ def init_chat_db():
         method     TEXT    NOT NULL,
         sent_at    TEXT    DEFAULT (datetime('now'))
     )''')
-    # Colonne whatsapp sur users si absente
-    try:
-        cursor.execute("ALTER TABLE users ADD COLUMN whatsapp TEXT")
-    except Exception:
-        pass
+    # Migrations colonnes manquantes
+    for _sql in [
+        "ALTER TABLE users ADD COLUMN whatsapp TEXT",
+        "ALTER TABLE chat_messages ADD COLUMN msg_type TEXT DEFAULT 'text'",
+        "ALTER TABLE chat_messages ADD COLUMN voice_url TEXT",
+        "ALTER TABLE chat_messages ADD COLUMN voice_duration INTEGER DEFAULT 0",
+        "ALTER TABLE chat_messages ADD COLUMN is_private INTEGER DEFAULT 0",
+    ]:
+        try: cursor.execute(_sql)
+        except Exception: pass
     conn.commit()
     conn.close()
 
@@ -5561,15 +5637,25 @@ def api_chat_messages():
     if not conn:
         return jsonify({'messages': []})
     cursor = conn.cursor()
+    uid = session['user_id']
     cursor.execute('''
         SELECT m.id, m.content, m.content_enc, m.is_encrypted,
                m.reply_to_id, m.reactions, m.tags, m.edited, m.deleted,
-               m.created_at, u.username, u.id as user_id
+               m.created_at, u.username, u.id as user_id,
+               COALESCE(m.msg_type,'text') as msg_type,
+               m.voice_url, COALESCE(m.voice_duration,0) as voice_duration,
+               COALESCE(m.is_private,0) as is_private
         FROM chat_messages m
         JOIN users u ON u.id = m.user_id
         WHERE m.id > ? AND m.deleted = 0
+          AND (
+            m.is_private = 0
+            OR m.user_id = ?
+            OR (m.tags IS NOT NULL AND m.tags != '[]'
+                AND instr(m.tags, cast(? as text)) > 0)
+          )
         ORDER BY m.id ASC LIMIT ?
-    ''', (since_id, limit))
+    ''', (since_id, uid, uid, limit))
     rows = []
     for r in cursor.fetchall():
         d = dict(r)
@@ -5577,6 +5663,10 @@ def api_chat_messages():
         except: d['reactions'] = {}
         try: d['tags'] = json.loads(d['tags'] or '[]')
         except: d['tags'] = []
+        # Signal data
+        if d.get('msg_type') == 'signal':
+            try: d['signal_data'] = json.loads(d.get('content_enc') or '{}')
+            except: d['signal_data'] = None
         rows.append(d)
     conn.close()
     return jsonify({'messages': rows})
@@ -5598,13 +5688,15 @@ def api_chat_send():
     if not conn:
         return jsonify({'success': False, 'error': 'DB error'}), 500
     cursor = conn.cursor()
+    is_private = 1 if tags else 0
     cursor.execute('''
-        INSERT INTO chat_messages (user_id, content, content_enc, is_encrypted, reply_to_id, tags)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO chat_messages
+            (user_id, content, content_enc, is_encrypted, reply_to_id, tags, is_private)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ''', (user_id,
           content if not encrypt_it else '🔒 Message chiffré',
           content_enc, 1 if encrypt_it else 0,
-          reply_to, json.dumps(tags)))
+          reply_to, json.dumps(tags), is_private))
     msg_id  = cursor.lastrowid
     preview = content[:120]
     for tid in tags:
@@ -5628,6 +5720,71 @@ def api_chat_send():
     else:
         conn.close()
     return jsonify({'success': True, 'id': msg_id})
+
+
+@app.route('/api/chat/send-voice', methods=['POST'])
+@login_required
+def api_chat_send_voice():
+    """Upload message vocal et sauvegarde en base."""
+    import os, uuid
+    user_id     = session['user_id']
+    sender_name = session.get('username', 'Membre')
+    voice_file  = request.files.get('voice')
+    duration    = request.form.get('duration', 0, type=int)
+    tags_raw    = request.form.get('tags', '[]')
+    reply_to    = request.form.get('reply_to_id') or None
+    if not voice_file:
+        return jsonify({'success': False, 'error': 'Fichier manquant'}), 400
+    # Sauvegarder le fichier
+    ext      = 'webm' if 'webm' in (voice_file.mimetype or '') else 'ogg'
+    filename = f"voice_{user_id}_{uuid.uuid4().hex[:10]}.{ext}"
+    upload_dir = os.path.join(os.path.dirname(__file__), 'static', 'uploads', 'voices')
+    os.makedirs(upload_dir, exist_ok=True)
+    filepath = os.path.join(upload_dir, filename)
+    voice_file.save(filepath)
+    voice_url = f"/static/uploads/voices/{filename}"
+    try:
+        tags = json.loads(tags_raw)
+    except Exception:
+        tags = []
+    is_private = 1 if tags else 0
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO chat_messages
+            (user_id, content, msg_type, voice_url, voice_duration,
+             is_private, tags, reply_to_id)
+        VALUES (?, ?, 'voice', ?, ?, ?, ?, ?)
+    """, (user_id, '🎙 Message vocal', voice_url, duration,
+          is_private, json.dumps(tags), reply_to))
+    msg_id = cursor.lastrowid
+    # Notifications pour les taggés
+    preview = f"🎙 Message vocal de {sender_name}"
+    for tid in tags:
+        try:
+            cursor.execute("""
+                INSERT INTO notifications (user_id, type, title, message, action_url, created_at)
+                VALUES (?,?,?,?,?,datetime('now'))
+            """, (int(tid), 'info', f"🎙 {sender_name} vous a envoyé un vocal", preview, '/chat'))
+        except Exception:
+            pass
+    conn.commit()
+    if tags:
+        cursor.execute(
+            "SELECT id, username, email, whatsapp FROM users WHERE id IN (%s)"
+            % ','.join('?' * len(tags)), [int(t) for t in tags]
+        )
+        tagged_users = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        def _notify():
+            for u in tagged_users:
+                _chat_notify_email(u, sender_name, preview, msg_id)
+        threading.Thread(target=_notify, daemon=True).start()
+    else:
+        conn.close()
+    return jsonify({'success': True, 'id': msg_id, 'voice_url': voice_url})
 
 @app.route('/api/chat/decrypt', methods=['POST'])
 @login_required
