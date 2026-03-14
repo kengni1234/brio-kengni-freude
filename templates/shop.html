@@ -4,11 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>k-Ni Store — Boutique en ligne Yaoundé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --orange:#f97316;--orange2:#ea6c0a;--orange3:#fff7ed;--orange-glow:rgba(249,115,22,.18);
+  --orange:#00b074;--orange2:#009060;--orange3:#e8f8f2;--orange-glow:rgba(0,176,116,.18);
   --green:#10b981;--green2:#059669;
   --red:#ef4444;--gold:#f59e0b;
   --ink:#111827;--ink2:#374151;--muted:#6b7280;--border:#e5e7eb;--bg:#f8fafc;
@@ -62,7 +64,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .search-dropdown.open{display:block}
 .sd-section{padding:.6rem .8rem .3rem;font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--muted);letter-spacing:.06em}
 .sd-item{display:flex;align-items:center;gap:.7rem;padding:.55rem .9rem;cursor:pointer;transition:.12s;font-size:.88rem}
-.sd-item:hover{background:#fff7ed}
+.sd-item:hover{background:#e8f8f2}
 .sd-item i{color:var(--orange);width:16px;text-align:center}
 .sd-item .sd-name{flex:1;font-weight:500}
 .sd-item .sd-price{color:var(--orange);font-weight:700;font-size:.82rem}
@@ -91,8 +93,8 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .cat-nav::-webkit-scrollbar{display:none}
 .cat-nav-inner{display:flex;align-items:stretch;gap:0;max-width:1400px;margin:0 auto;padding:0 1rem}
 .cat-pill{display:flex;align-items:center;gap:.4rem;padding:.65rem 1.1rem;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-3px;transition:.15s;white-space:nowrap;flex-shrink:0}
-.cat-pill:hover{color:var(--orange);background:#fff7ed}
-.cat-pill.active{color:var(--orange);border-bottom-color:var(--orange);background:#fff7ed}
+.cat-pill:hover{color:var(--orange);background:#e8f8f2}
+.cat-pill.active{color:var(--orange);border-bottom-color:var(--orange);background:#e8f8f2}
 .cat-pill .em{font-size:1rem}
 
 /* ─── FLASH SALE ─── */
@@ -151,20 +153,20 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
   inset:0;
   background-size:cover;
   background-position:center;
-  opacity:.12;
+  opacity:.14;
   z-index:0;
   pointer-events:none;
   transition:opacity .35s ease;
   border-radius:var(--radius);
 }
-.pcard:hover::before{opacity:.22;}
+.pcard:hover::before{opacity:.25;}
 
 /* Image propre du produit — priorité maximale */
 .pcard[style*="--pcard-bg"]::before{
   background-image:var(--pcard-bg);
-  opacity:.15;
+  opacity:.18;
 }
-.pcard:hover[style*="--pcard-bg"]::before{opacity:.28;}
+.pcard:hover[style*="--pcard-bg"]::before{opacity:.32;}
 
 /* Images par catégorie (fallback si pas d'image produit) */
 .pcard[data-cat="electronique"]::before{background-image:url("https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=70&auto=format&fit=crop")}
@@ -188,7 +190,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .pbadge{position:absolute;top:.5rem;left:.5rem;font-size:.68rem;font-weight:800;padding:.22rem .5rem;border-radius:6px;letter-spacing:.03em;z-index:2}
 .pb-hot{background:#fef2f2;color:var(--red);border:1px solid #fca5a5}
 .pb-new{background:#f0fdf4;color:var(--green2);border:1px solid #86efac}
-.pb-promo{background:#fff7ed;color:var(--orange2);border:1px solid #fdba74}
+.pb-promo{background:#e8f8f2;color:var(--orange2);border:1px solid #6ee7c4}
 .pcard-wish{position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.85rem;transition:.18s;z-index:2;backdrop-filter:blur(4px)}
 .pcard-wish:hover,.pcard-wish.wished{color:var(--red);animation:heartBeat .4s ease}
 .pcard-wish.wished{background:#fef2f2}
@@ -214,7 +216,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .inline-promo h3{font-size:1.15rem;font-weight:800}
 .inline-promo p{font-size:.82rem;opacity:.85;margin-top:.2rem}
 .inline-promo-btn{background:#fff;color:var(--orange2);border:none;padding:.5rem 1.2rem;border-radius:9px;font-weight:800;cursor:pointer;font-size:.85rem;font-family:var(--font);transition:.15s}
-.inline-promo-btn:hover{background:#fff7ed}
+.inline-promo-btn:hover{background:#e8f8f2}
 .no-results{grid-column:1/-1;text-align:center;padding:4rem 2rem;color:var(--muted)}
 .no-results .no-icon{font-size:3.5rem;margin-bottom:1rem;opacity:.3}
 .no-results h3{font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:.4rem}
@@ -261,7 +263,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .detail-price .old{font-size:1rem;color:var(--muted);text-decoration:line-through}
 .detail-price .disc{background:#fef2f2;color:var(--red);font-weight:800;font-size:.8rem;padding:.2rem .5rem;border-radius:7px}
 .stock-chip{display:inline-flex;align-items:center;gap:.35rem;background:#f0fdf4;color:var(--green2);border:1px solid #86efac;border-radius:7px;font-size:.78rem;font-weight:700;padding:.25rem .6rem;margin-bottom:1rem}
-.stock-chip.low{background:#fff7ed;color:#c2410c;border-color:#fdba74}
+.stock-chip.low{background:#e8f8f2;color:#c2410c;border-color:#6ee7c4}
 .stock-chip.out{background:#fef2f2;color:var(--red);border-color:#fca5a5}
 .qty-row{display:flex;align-items:center;gap:.7rem;margin-bottom:1rem}
 .qty-label{font-size:.82rem;color:var(--muted);font-weight:600}
@@ -294,7 +296,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .spec-table td:first-child{font-weight:600;color:var(--muted);width:38%}
 /* Reviews in tab */
 .rev-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
-.rev-avg{display:flex;flex-direction:column;align-items:center;background:#fff7ed;border-radius:12px;padding:.8rem 1.2rem}
+.rev-avg{display:flex;flex-direction:column;align-items:center;background:#e8f8f2;border-radius:12px;padding:.8rem 1.2rem}
 .rev-avg .num{font-size:2.2rem;font-weight:900;color:var(--orange);line-height:1}
 .rev-avg .stars{color:var(--gold);font-size:1rem;margin:.2rem 0}
 .rev-avg .cnt{font-size:.72rem;color:var(--muted)}
@@ -307,7 +309,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .review-body{font-size:.82rem;color:var(--ink2)}
 .btn-add-review{background:var(--orange);color:#fff;border:none;border-radius:9px;padding:.5rem 1.2rem;font-size:.83rem;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:1rem;display:flex;align-items:center;gap:.4rem;transition:.15s}
 .btn-add-review:hover{background:var(--orange2)}
-.review-form{background:#fff7ed;border-radius:12px;padding:1rem;margin-bottom:1rem}
+.review-form{background:#e8f8f2;border-radius:12px;padding:1rem;margin-bottom:1rem}
 .star-picker{display:flex;gap:.3rem;margin-bottom:.7rem;font-size:1.4rem;cursor:pointer}
 .star-picker span{transition:.15s;opacity:.4}
 .star-picker span:hover,.star-picker span.sel{opacity:1;color:var(--gold)}
@@ -357,7 +359,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .section-title i{color:var(--orange)}
 .pay-options{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem}
 .pay-opt{border:2px solid var(--border);border-radius:11px;padding:.75rem;cursor:pointer;transition:.2s;display:flex;align-items:center;gap.6rem}
-.pay-opt:hover,.pay-opt.sel{border-color:var(--orange);background:#fff7ed}
+.pay-opt:hover,.pay-opt.sel{border-color:var(--orange);background:#e8f8f2}
 .pay-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;transition:.15s;display:flex;align-items:center;justify-content:center}
 .pay-opt.sel .pay-radio{border-color:var(--orange);background:var(--orange)}
 .pay-opt.sel .pay-radio::after{content:'';width:6px;height:6px;background:#fff;border-radius:50%}
@@ -383,11 +385,11 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 
 /* ─── AUTH MODAL ─── */
 .auth-modal{background:var(--white);border-radius:22px;max-width:440px;width:100%;overflow:hidden;animation:fadeUp .25s ease;box-shadow:0 25px 80px rgba(0,0,0,.25)}
-.auth-header{background:linear-gradient(135deg,var(--orange),#f97316 40%,#ea580c);padding:2rem 2rem 1.5rem;color:#fff;position:relative;overflow:hidden}
+.auth-header{background:linear-gradient(135deg,#00b074,#009060 40%,#007a50);padding:2rem 2rem 1.5rem;color:#fff;position:relative;overflow:hidden}
 .auth-header::before{content:'🛍';font-size:5rem;position:absolute;right:-1rem;top:-1rem;opacity:.12;transform:rotate(15deg)}
 .auth-header h2{font-size:1.3rem;font-weight:900;margin-bottom:.3rem}
 .auth-header p{font-size.83rem;opacity:.88}
-.auth-tabs{display:flex;background:#fff7ed;margin:0}
+.auth-tabs{display:flex;background:#e8f8f2;margin:0}
 .auth-tab{flex:1;padding:.7rem;border:none;background:none;cursor:pointer;font-size.85rem;font-weight:700;color:var(--muted);font-family:var(--font);transition:.15s;border-bottom:3px solid transparent}
 .auth-tab.active{color:var(--orange);border-bottom-color:var(--orange);background:#fff}
 .auth-body{padding:1.6rem 2rem 2rem}
@@ -416,7 +418,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .account-avatar{width:56px;height:56px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:#fff;flex-shrink:0}
 .account-info h2{font-size:1.1rem;font-weight:800}
 .account-info p{font-size:.8rem;opacity:.75}
-.account-points{background:rgba(249,115,22,.2);border:1px solid var(--orange);border-radius:8px;padding:.25rem .7rem;font-size:.78rem;font-weight:700;margin-top:.3rem;display:inline-block}
+.account-points{background:rgba(0,176,116,.2);border:1px solid var(--orange);border-radius:8px;padding:.25rem .7rem;font-size:.78rem;font-weight:700;margin-top:.3rem;display:inline-block}
 .account-tabs{display:flex;background:#f9fafb;border-bottom:2px solid var(--border);overflow-x:auto;scrollbar-width:none}
 .account-tab{flex-shrink:0;padding:.7rem 1.2rem;border:none;background:none;cursor:pointer;font-size.82rem;font-weight:600;color:var(--muted);font-family:var(--font);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;display:flex;align-items:center;gap.4rem}
 .account-tab.active,.account-tab:hover{color:var(--orange);border-bottom-color:var(--orange)}
@@ -438,7 +440,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .order-items{flex:1;font-size.8rem;color:var(--ink2)}
 .order-total{font-weight:700;font-size.88rem;color:var(--ink)}
 .order-status{font-size.72rem;font-weight:700;padding.2rem.55rem;border-radius:6px}
-.os-pending{background:#fff7ed;color:#c2410c}
+.os-pending{background:#e8f8f2;color:#c2410c}
 .os-processing{background:#eff6ff;color:#1d4ed8}
 .os-shipped{background:#f0fdf4;color:var(--green2)}
 .os-delivered{background:#f0fdf4;color:var(--green2)}
@@ -447,7 +449,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .profile-save{background:var(--orange);color:#fff;border:none;border-radius:10px;padding.55rem 1.4rem;font-size.85rem;font-weight:700;cursor:pointer;font-family:var(--font);transition.15s;margin-top.3rem}
 .profile-save:hover{background:var(--orange2)}
 /* Promo code display */
-.promo-code-box{background:linear-gradient(135deg,var(--orange),#ea580c);border-radius:14px;padding:1.2rem 1.5rem;color:#fff;text-align:center;margin-bottom:1rem}
+.promo-code-box{background:linear-gradient(135deg,var(--orange),#007a50);border-radius:14px;padding:1.2rem 1.5rem;color:#fff;text-align:center;margin-bottom:1rem}
 .promo-code-box .code{font-size:1.8rem;font-weight:900;letter-spacing:.1em;background:rgba(255,255,255,.2);border-radius:10px;padding.4rem 1rem;margin.5rem 0;display:inline-block}
 .promo-code-copy{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding.3rem.8rem;font-size.78rem;font-weight:700;cursor:pointer;font-family:var(--font);transition.15s}
 .promo-code-copy:hover{background:rgba(255,255,255,.35)}
@@ -513,7 +515,7 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 2rem 1.5rem;margin-top:3
 .toast i{font-size:1rem}
 
 /* ─── SEARCH HIGHLIGHT ─── */
-.hl{background:rgba(249,115,22,.2);color:var(--orange2);border-radius:3px;padding:0 1px}
+.hl{background:rgba(0,176,116,.2);color:var(--orange2);border-radius:3px;padding:0 1px}
 
 /* ─── SSE NOTIF ─── */
 #sseNotif{position:fixed;top:5rem;left:50%;transform:translateX(-50%);background:var(--orange);color:#fff;border-radius:12px;padding.6rem 1.2rem;font-size.84rem;font-weight:700;z-index:3000;display:none;align-items:center;gap.5rem;box-shadow:var(--shadow-lg);animation:slideDown .3s ease}
@@ -1104,7 +1106,7 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 2rem 1.5rem;margin-top:3
     </div>
     <div id="accountPromo" class="account-pane">
       <div id="promoBox"></div>
-      <div style="background:#fff7ed;border-radius:12px;padding:1rem;font-size:.83rem;color:var(--ink2)">
+      <div style="background:#e8f8f2;border-radius:12px;padding:1rem;font-size:.83rem;color:var(--ink2)">
         <strong>Comment utiliser votre code promo ?</strong><br>
         Saisissez votre code dans le champ "Code Promo" lors du paiement pour bénéficier de votre réduction.
       </div>
@@ -1532,7 +1534,7 @@ function searchKbd(e){
   else if(e.key==='Escape'){closeSearchDropdown();return;}
   else if(e.key==='Enter'){triggerSearch();return;}
   else return;
-  items.forEach((it,i)=>it.style.background=i===_sdIdx?'#fff7ed':'');
+  items.forEach((it,i)=>it.style.background=i===_sdIdx?'#e8f8f2':'');
   if(_sdIdx>=0&&items[_sdIdx]) items[_sdIdx].scrollIntoView({block:'nearest'});
 }
 /* Mobile search */
@@ -2196,32 +2198,16 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll();});
 /* ═══════════════════════════════════════════════════════════════
    SSE
 ═══════════════════════════════════════════════════════════════ */
-(function(){
-  const es = new EventSource('/shop/stream');
-  es.onmessage = function(ev){
-    try{
-      const data = JSON.parse(ev.data);
-      if(data.type==='product_updated'||data.type==='new_order'){
-        const el = document.getElementById('sseNotif');
-        const txt = data.type==='new_order'?'Nouvelle commande reçue !':'Produits mis à jour';
-        document.getElementById('sseNotifText').textContent=txt;
-        el.style.display='flex';
-        setTimeout(()=>el.style.display='none',3500);
-        // Refresh product stocks
-        setTimeout(syncProds, 800);
-      }
-    }catch(e){}
-  };
-  es.onerror = ()=>es.close();
-})();
+// SSE désactivé — PythonAnywhere WSGI
+setInterval(()=>{ if(document.visibilityState==='visible') syncProds(); }, 60000);
 
 async function syncProds(){
   try{
-    const r = await fetch('/shop/api/products/export?format=json');
+    const r = await fetch('/shop/api/stocks');
     if(!r.ok) return;
     const d = await r.json();
-    if(!d.products) return;
-    d.products.forEach(p=>{
+    if(!d.stocks) return;
+    d.stocks.forEach(p=>{
       if(PRODS[p.id]) PRODS[p.id].stock = p.stock;
       const btn = document.querySelector(`.pcard[data-id="${p.id}"] .btn-add`);
       if(btn){
