@@ -1322,6 +1322,19 @@ def create_notification(user_id, notif_type, title, message):
 
 # Routes
 
+
+@app.after_request
+def set_cache_headers(response):
+    """Cache statique et sécurité headers."""
+    path = request.path
+    if path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    elif path.startswith('/shop/api/stocks'):
+        response.headers['Cache-Control'] = 'public, max-age=30'
+    elif path in ('/shop',):
+        response.headers['Cache-Control'] = 'private, max-age=60'
+    return response
+
 @app.route('/')
 def index():
     """Landing page"""
@@ -7029,6 +7042,25 @@ def api_news_analyze(article_id):
 # MODULE BOUTIQUE E-COMMERCE — Produits physiques (multi-images)
 # ═══════════════════════════════════════════════════════════════════
 
+
+# ── Index de performance shop (exécutés au démarrage)
+def _ensure_shop_indexes():
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_shop_orders_status ON shop_orders(status)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_orders_created ON shop_orders(created_at DESC)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_prod_cat ON shop_products(category) WHERE is_active=1",
+            "CREATE INDEX IF NOT EXISTS idx_shop_prod_badge ON shop_products(badge) WHERE is_active=1",
+        ]
+        for idx in indexes:
+            try: conn.execute(idx)
+            except Exception: pass
+        conn.commit()
+    finally:
+        conn.close()
+
 def init_shop_db():
     conn = get_db_connection()
     if not conn: return
@@ -7973,7 +8005,10 @@ def shop_sse_stream():
     """SSE endpoint — nouvelles commandes en temps réel."""
     from flask import Response, stream_with_context
     if not session.get('user_id'):
-        return jsonify({'error': 'Non autorisé'}), 403
+        def _empty():
+            yield ": stream désactivé\n\n"
+        return Response(_empty(), mimetype='text/event-stream',
+                       headers={'Cache-Control':'no-cache','X-Accel-Buffering':'no'})
 
     q = _queue.Queue(maxsize=20)
     _sse_clients.append(q)
@@ -8239,10 +8274,38 @@ def shop_banner_upload_image():
         return jsonify({'success': False, 'error': str(e)})
 
 
+
+@app.route('/shop/api/stocks', methods=['GET'])
+def shop_public_stocks():
+    """Stocks publics — syncProds() client."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, stock FROM shop_products WHERE is_active=1"
+        ).fetchall()
+        return jsonify({'stocks': [dict(r) for r in rows]})
+    except Exception:
+        return jsonify({'stocks': []}), 500
+    finally:
+        if conn: conn.close()
+
 @app.route('/shop/api/products/export')
-@login_required
 def shop_export_products():
     """Exporte le catalogue produits en CSV ou Excel."""
+    fmt = request.args.get('format', 'csv').lower()
+    if fmt == 'json':
+        conn = get_db_connection()
+        try:
+            rows = conn.execute(
+                "SELECT id,name,price,stock,badge,image_url FROM shop_products WHERE is_active=1"
+            ).fetchall()
+            return jsonify({'products': [dict(r) for r in rows]})
+        except Exception:
+            return jsonify({'products': []}), 500
+        finally:
+            if conn: conn.close()
+    if not session.get('user_id'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
     perms = get_shop_perms(session.get('user_id'))
     if not perms.get('access'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403

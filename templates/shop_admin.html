@@ -2,14 +2,27 @@
 {% block title %}Admin Boutique — k-Ni Store{% endblock %}
 {% block page_title %}Gestion Boutique{% endblock %}
 {% block content %}
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ══ SYNCHRONISATION k-Ni — Police & couleurs ══ */
-body,*{font-family:'Outfit',system-ui,sans-serif!important}
+body{font-family:'Outfit',system-ui,sans-serif}
+*:not(i):not([class*="fa-"]):not([class*="fas"]):not([class*="far"]):not([class*="fab"]):not([class*="fal"]):not([class*="fad"]){font-family:'Outfit',system-ui,sans-serif}
 /* ══ EMOJI — rendu uniforme cross-platform ══ */
+/* Forcer Font Awesome sur toutes les icônes <i> */
+i[class*="fa-"], i.fas, i.far, i.fab, i.fal, i.fad{
+  font-family:"Font Awesome 6 Free","Font Awesome 6 Brands","FontAwesome",sans-serif!important;
+  font-style:normal!important;
+  font-variant:normal!important;
+  text-rendering:auto!important;
+  -webkit-font-smoothing:antialiased!important;
+}
 .emoji-font,.sa-nb i.emoji,.kpi-ico.emoji-ico,
 button .emoji, span.emoji, [data-emoji]{
-  font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Twemoji Mozilla',system-ui,sans-serif!important;
+  font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',system-ui,sans-serif!important;
   font-style:normal;
 }
 :root{
@@ -43,25 +56,26 @@ button .emoji, span.emoji, [data-emoji]{
 .sa-green-banner small{display:block;font-size:.65rem;color:rgba(255,255,255,.75)!important;margin-top:.12rem}
 .sa-grp{padding:.4rem 1rem .15rem;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--text-secondary);opacity:.55}
 .sa-sep{height:1px;background:var(--border-color);margin:.4rem .8rem}
-.sa-nb{display:flex;align-items:center;gap:.6rem;padding:.62rem 1.1rem;font-size:.82rem;font-weight:600;color:var(--text-secondary);background:none;border:none;cursor:pointer;transition:.15s;text-align:left;width:100%;border-left:3px solid transparent;text-decoration:none;font-family:inherit}
+.sa-nb{display:flex;align-items:center;gap:.65rem;padding:.68rem 1.1rem;font-size:.83rem;font-weight:600;color:var(--text-secondary);background:none;border:none;cursor:pointer;transition:.15s;text-align:left;width:100%;border-left:3px solid transparent;text-decoration:none;font-family:inherit;border-radius:0}
 .sa-nb:hover{color:var(--text-primary);background:rgba(0,176,116,.05)}
 .sa-nb.on{color:var(--primary-color);background:rgba(0,176,116,.07);border-left-color:var(--primary-color)}
-.sa-nb i{width:16px;text-align:center;flex-shrink:0}
+.sa-nb i{width:16px;text-align:center;flex-shrink:0;font-family:"Font Awesome 6 Free","Font Awesome 6 Brands",FontAwesome!important;font-style:normal}
 .sa-nb .badge{margin-left:auto;background:#ef4444;color:#fff;border-radius:20px;font-size:.58rem;padding:.05rem .38rem;font-weight:800}
 .sa-main{flex:1;overflow-y:auto;padding:1.4rem;min-width:0}
 .sec{display:none}.sec.on{display:block}
 /* ══ KPIs ══ */
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem;margin-bottom:1.4rem}
-.kpi{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;padding:1rem 1.15rem;display:flex;align-items:center;gap:.9rem;transition:.2s}
-.kpi:hover{border-color:rgba(0,176,116,.3);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,176,116,.07)}
-.kpi-ico{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
-.kpi-num{font-size:1.5rem;font-weight:800;line-height:1;display:block;letter-spacing:-.02em}
-.kpi-lbl{font-size:.7rem;color:var(--text-secondary);margin-top:.12rem}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:16px;padding:1.2rem 1.3rem;display:flex;align-items:center;gap:1rem;transition:.2s;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,176,116,.03),transparent);pointer-events:none}
+.kpi:hover{border-color:rgba(0,176,116,.35);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,176,116,.1)}
+.kpi-ico{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;font-family:"Font Awesome 6 Free","Font Awesome 6 Brands",FontAwesome!important}
+.kpi-num{font-size:1.75rem;font-weight:900;line-height:1;display:block;letter-spacing:-.03em}
+.kpi-lbl{font-size:.72rem;color:var(--text-secondary);margin-top:.15rem;font-weight:500}
 /* ══ SECTION HEADER ══ */
-.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;gap:.75rem;flex-wrap:wrap}
-.sh h4{font-size:.95rem;font-weight:800;margin:0;display:flex;align-items:center;gap:.5rem}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;gap:.75rem;flex-wrap:wrap;padding-bottom:.75rem;border-bottom:1px solid var(--border-color)}
+.sh h4{font-size:1rem;font-weight:800;margin:0;display:flex;align-items:center;gap:.5rem;color:var(--text-primary)}
 /* ══ BUTTONS ══ */
-.btn-p{background:linear-gradient(135deg,var(--primary-color),#00ff88);border:none;color:#0f1419;padding:.55rem 1.1rem;border-radius:10px;font-weight:800;font-size:.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;transition:.2s;font-family:inherit}
+.btn-p{background:linear-gradient(135deg,#00b074,#00d48a);border:none;color:#fff;padding:.6rem 1.2rem;border-radius:10px;font-weight:800;font-size:.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;transition:.2s;font-family:inherit;letter-spacing:.01em}
 .btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,176,116,.25)}
 .btn-p:disabled{opacity:.55;transform:none;cursor:not-allowed}
 .btn-g{background:rgba(255,255,255,.06);border:1px solid var(--border-color);color:var(--text-secondary);padding:.5rem 1rem;border-radius:10px;font-weight:600;font-size:.8rem;cursor:pointer;font-family:inherit;transition:.15s}
@@ -76,8 +90,8 @@ button .emoji, span.emoji, [data-emoji]{
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
 .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem}
 .fg4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.7rem}
-.fcard{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:13px;overflow:hidden;margin-bottom:1rem}
-.fcard-hd{background:rgba(0,0,0,.12);padding:.55rem 1rem;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-secondary);display:flex;align-items:center;gap:.45rem}
+.fcard{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;overflow:hidden;margin-bottom:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.fcard-hd{background:rgba(0,176,116,.06);border-bottom:1px solid var(--border-color);padding:.6rem 1rem;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-color);display:flex;align-items:center;gap:.45rem}
 .fcard-bd{padding:1rem}
 .fhint{font-size:.67rem;color:var(--text-secondary);margin-top:.2rem}
 /* ══ FILTER ROW ══ */
@@ -99,10 +113,10 @@ button .emoji, span.emoji, [data-emoji]{
 /* ══ TABLE ══ */
 .tw{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:13px;overflow:hidden}
 .tw table{width:100%;border-collapse:collapse}
-.tw th{padding:.6rem .9rem;text-align:left;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-secondary);border-bottom:1px solid var(--border-color);background:rgba(0,0,0,.1);white-space:nowrap}
-.tw td{padding:.75rem .9rem;font-size:.81rem;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.tw th{padding:.7rem 1rem;text-align:left;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-secondary);border-bottom:1px solid var(--border-color);background:rgba(0,176,116,.04);white-space:nowrap}
+.tw td{padding:.85rem 1rem;font-size:.83rem;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;line-height:1.4}
 .tw tr:last-child td{border-bottom:none}
-.tw tr:hover td{background:rgba(0,176,116,.025);cursor:pointer}
+.tw tr:hover td{background:rgba(0,176,116,.04);cursor:pointer;transition:background .15s}
 /* ══ PRODUCT GRID ══ */
 .pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
 .pcard{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:13px;overflow:hidden;transition:.2s;position:relative}
@@ -524,6 +538,13 @@ button .emoji, span.emoji, [data-emoji]{
 <div class="sa-main" id="saMain">
 <!-- ══ DASHBOARD ══ -->
 <div class="sec on" id="sec-dash">
+<div style="background:linear-gradient(135deg,rgba(0,176,116,.08),rgba(0,176,116,.03));border:1px solid rgba(0,176,116,.2);border-radius:14px;padding:.8rem 1.2rem;margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+  <div style="display:flex;align-items:center;gap:.6rem">
+    <div style="width:8px;height:8px;border-radius:50%;background:#00b074;box-shadow:0 0 8px rgba(0,176,116,.6)"></div>
+    <span style="font-size:.82rem;font-weight:700;color:var(--text-primary)">k-Ni Store — Tableau de bord</span>
+  </div>
+  <span style="font-size:.72rem;color:var(--text-secondary)" id="dashDateTime"></span>
+</div>
   <div class="kpis">
     <div class="kpi"><div class="kpi-ico" style="background:rgba(0,176,116,.1)"><i class="fas fa-boxes" style="color:var(--primary-color)"></i></div><div><span class="kpi-num">{{ products|length }}</span><span class="kpi-lbl">Produits</span></div></div>
     <div class="kpi"><div class="kpi-ico" style="background:rgba(245,158,11,.1)"><i class="fas fa-receipt" style="color:#fbbf24"></i></div><div><span class="kpi-num">{{ orders|length }}</span><span class="kpi-lbl">Commandes</span></div></div>
@@ -3951,6 +3972,18 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 /* ══ ÉTOILES BANNIÈRE VERTE ADMIN ══ */
+// Date heure dashboard
+(function(){
+  function updateDT(){
+    const el = document.getElementById('dashDateTime');
+    if(!el) return;
+    const now = new Date();
+    el.textContent = now.toLocaleDateString('fr-CM',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + ' — ' + now.toLocaleTimeString('fr-CM',{hour:'2-digit',minute:'2-digit'});
+  }
+  updateDT();
+  setInterval(updateDT, 30000);
+})();
+
 function initGbStars(){
   const c = document.getElementById('gbStars');
   if(!c) return;
