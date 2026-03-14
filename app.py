@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Kengni Finance + k-Ni Store — Application de gestion financière, trading & boutique en ligne
-Version 2.0 — IA Claude · Yaoundé, Cameroun
+Kengni Finance - Complete Financial Management & Trading Application
+Version 2.0 - Enhanced with AI Analysis and Advanced Features
 """
 
 import os
@@ -48,8 +48,6 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
-app.config['JSON_AS_ASCII'] = False          # ← Emojis & accents natifs dans JSON (PythonAnywhere)
-app.config['JSONIFY_MIMETYPE'] = 'application/json; charset=utf-8'
 
 # ── Configuration Gmail pour les rappels d'agenda ──────────────────────────────
 GMAIL_CONFIG = {
@@ -63,7 +61,7 @@ GMAIL_CONFIG = {
 
 # ── Types et couleurs des événements d'agenda ─────────────────────────────────
 AGENDA_EVENT_COLORS = {
-    'trading':   {'bg': '#00b074', 'border': '#008f5d', 'icon': '📈', 'label': 'Trading'},
+    'trading':   {'bg': '#00d4aa', 'border': '#00b894', 'icon': '📈', 'label': 'Trading'},
     'finance':   {'bg': '#4a9eff', 'border': '#2980b9', 'icon': '💰', 'label': 'Finance'},
     'formation': {'bg': '#a29bfe', 'border': '#6c5ce7', 'icon': '📚', 'label': 'Formation'},
     'personnel': {'bg': '#fd79a8', 'border': '#e84393', 'icon': '👤', 'label': 'Personnel'},
@@ -120,19 +118,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# ── Forcer UTF-8 sur toutes les réponses (PythonAnywhere) ──────────────────────
-@app.after_request
-def force_utf8(response):
-    ct = response.content_type or ''
-    if 'charset' not in ct:
-        if ct.startswith('text/html'):
-            response.headers['Content-Type'] = 'text/html; charset=utf-8'
-        elif ct.startswith('application/json'):
-            response.headers['Content-Type'] = 'application/json; charset=utf-8'
-        elif ct.startswith('text/event-stream'):
-            response.headers['Content-Type'] = 'text/event-stream; charset=utf-8'
-    return response
 
 # Database Connection Helper
 def get_db_connection():
@@ -1149,16 +1134,7 @@ def analyze_trade_image(image_path, trade_data):
 def trading_recommendation(symbol, timeframe='1mo'):
     """AI trading recommendations based on market data"""
     try:
-        # Auto-convert forex pairs: EURUSD → EURUSD=X (Yahoo Finance format)
-        _s = symbol.upper()
-        _forex_pairs = {'EURUSD','GBPUSD','USDJPY','USDCHF','AUDUSD','NZDUSD',
-                        'USDCAD','EURGBP','EURJPY','GBPJPY','XAUUSD','XAGUSD','BTCUSD'}
-        if _s in _forex_pairs and not _s.endswith('=X'):
-            _s = _s + '=X'
-        elif len(_s) == 6 and _s.isalpha() and not _s.endswith('=X'):
-            # Likely a forex pair (6 alpha chars like EURUSD)
-            _s = _s + '=X'
-        ticker = yf.Ticker(_s)
+        ticker = yf.Ticker(symbol)
         hist = ticker.history(period=timeframe)
         
         if hist.empty:
@@ -1538,7 +1514,7 @@ def login_flyers():
             'promo': p['promo'],
             'link': p['link'],
             'badge': 'PROMO',
-            'badge_color': '#00b074'
+            'badge_color': '#00d4aa'
         })
 
     return jsonify({'success': True, 'items': items})
@@ -2452,7 +2428,7 @@ def export_portfolio():
             col_w = [1.2*inch, 0.9*inch, 1*inch, 1.1*inch, 1*inch, 1*inch]
             table = Table(data, colWidths=col_w)
             table.setStyle(TableStyle([
-                ('BACKGROUND',    (0, 0),  (-1, 0),  colors.HexColor('#00b074')),
+                ('BACKGROUND',    (0, 0),  (-1, 0),  colors.HexColor('#00d4aa')),
                 ('TEXTCOLOR',     (0, 0),  (-1, 0),  colors.white),
                 ('ALIGN',         (0, 0),  (-1, -1), 'CENTER'),
                 ('FONTNAME',      (0, 0),  (-1, 0),  'Helvetica-Bold'),
@@ -2618,7 +2594,7 @@ def export_finances():
             col_w = [1.1*inch, 0.9*inch, 1.2*inch, 1.6*inch, 1*inch]
             table = Table(data, colWidths=col_w)
             table.setStyle(TableStyle([
-                ('BACKGROUND',    (0, 0),  (-1, 0),  colors.HexColor('#00b074')),
+                ('BACKGROUND',    (0, 0),  (-1, 0),  colors.HexColor('#00d4aa')),
                 ('TEXTCOLOR',     (0, 0),  (-1, 0),  colors.white),
                 ('ALIGN',         (0, 0),  (-1, -1), 'CENTER'),
                 ('FONTNAME',      (0, 0),  (-1, 0),  'Helvetica-Bold'),
@@ -3322,7 +3298,7 @@ def generate_report():
 def _kf_draw_branded_page(c, width, height, doc_info=None):
     """
     Dessine sur la page courante (canvas ReportLab) :
-      - Logo k-Ni en filigrane central (semi-transparent)
+      - Logo k-ni en filigrane central (semi-transparent)
       - Bande d'en-tête verte : logo petit (centre), infos doc (gauche), infos proprio (droite)
       - QR code en bas à gauche (URL inscription + WhatsApp)
       - Pied de page certifié avec logo miniature
@@ -3375,7 +3351,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     else:
         # Fallback texte si logo absent
         c.saveState()
-        c.setFillColor(colors.HexColor('#00b074'))
+        c.setFillColor(colors.HexColor('#00d4aa'))
         c.setFillAlpha(0.04)
         c.setFont('Helvetica-Bold', 68)
         c.translate(width / 2, height / 2)
@@ -3392,7 +3368,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     c.rect(0, height - hdr_h, width, hdr_h, fill=True, stroke=False)
 
     # Séparateur doré en bas du header
-    c.setStrokeColor(colors.HexColor('#00b074'))
+    c.setStrokeColor(colors.HexColor('#00d4aa'))
     c.setLineWidth(1.8)
     c.line(0, height - hdr_h, width, height - hdr_h)
 
@@ -3420,7 +3396,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     period_str = f"{p_start} → {p_end}" if p_start else 'Tous'
 
     c.setFont('Helvetica-Bold', 9.5)
-    c.drawString(12 * mm, y_top, 'k-Ni Store · Htech-training')
+    c.drawString(12 * mm, y_top, 'k-ni chez Htech-training')
     c.setFont('Helvetica', 7)
     c.drawString(12 * mm, y_top - 5 * mm,  f'Type     : {doc_type}')
     c.drawString(12 * mm, y_top - 9.5 * mm, f'Période  : {period_str}')
@@ -3439,7 +3415,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
                       f"Réf. : KF-{now.strftime('%Y%m%d%H%M')}")
 
     # Ligne verte fine sous le header (séparation corps)
-    c.setStrokeColor(colors.HexColor('#00b074'))
+    c.setStrokeColor(colors.HexColor('#00d4aa'))
     c.setLineWidth(0.8)
     c.line(12 * mm, height - hdr_h - 4 * mm,
            width - 12 * mm, height - hdr_h - 4 * mm)
@@ -3472,7 +3448,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
 
         # Fond blanc + bordure verte légère
         c.setFillColor(colors.white)
-        c.setStrokeColor(colors.HexColor('#00b074'))
+        c.setStrokeColor(colors.HexColor('#00d4aa'))
         c.setLineWidth(0.6)
         c.roundRect(qr_x - 1.5, qr_y - 1.5,
                     qr_size + 3, qr_size + 3, 3,
@@ -3498,7 +3474,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
     ftr_h = 17 * mm
     c.setFillColor(colors.HexColor('#f0f4f0'))
     c.rect(0, 0, width, ftr_h, fill=True, stroke=False)
-    c.setStrokeColor(colors.HexColor('#00b074'))
+    c.setStrokeColor(colors.HexColor('#00d4aa'))
     c.setLineWidth(1)
     c.line(0, ftr_h, width, ftr_h)
 
@@ -3520,7 +3496,7 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
         'Document certifié — Kengni Finance v2.1 — © 2025 Tous droits réservés')
     c.setFont('Helvetica', 6)
     c.drawCentredString(width / 2, ftr_h - 7.5 * mm,
-        'k-Ni Store · Htech-training  ·  +237 695 072 759  ·  WhatsApp : +237 695 072 759')
+        'k-ni chez Htech-training  ·  +237 695 072 759  ·  WhatsApp : +237 695 072 759')
     c.setFont('Helvetica', 5.5)
     c.drawCentredString(width / 2, ftr_h - 11 * mm,
         f"Généré le {now.strftime('%d/%m/%Y à %H:%M')}  ·  Document confidentiel  ·  kengni.pythonanywhere.com")
@@ -3582,7 +3558,7 @@ def download_report(report_id):
                             report.get('title', 'Rapport Kengni Finance'))
 
         # Ligne séparatrice
-        c.setStrokeColor(colors.HexColor('#00b074'))
+        c.setStrokeColor(colors.HexColor('#00d4aa'))
         c.setLineWidth(2)
         c.line(40, content_top - 8, width - 40, content_top - 8)
 
@@ -4535,26 +4511,26 @@ def _send_sincire_email(lead: dict) -> bool:
 <div style="max-width:600px;margin:0 auto;padding:24px;">
 
   <!-- Header -->
-  <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:18px 18px 0 0;padding:36px 32px;text-align:center;border-bottom:3px solid #00b074;">
+  <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:18px 18px 0 0;padding:36px 32px;text-align:center;border-bottom:3px solid #00d4aa;">
     <div style="font-size:3rem;margin-bottom:10px;">🎓</div>
     <h1 style="color:#fff;margin:0;font-size:22px;font-weight:800;">Kengni Trading Academy</h1>
-    <p style="color:#00b074;margin:8px 0 0;font-size:14px;font-weight:600;">Votre place est réservée — Finalisez votre inscription</p>
+    <p style="color:#00d4aa;margin:8px 0 0;font-size:14px;font-weight:600;">Votre place est réservée — Finalisez votre inscription</p>
   </div>
 
   <!-- Body -->
   <div style="background:#111827;padding:32px;border-radius:0 0 18px 18px;border:1px solid #1e2a3a;border-top:none;">
 
     <p style="color:#e0e0e0;font-size:15px;line-height:1.7;margin:0 0 20px;">
-      Bonjour <strong style="color:#00b074;">{name}</strong>,<br><br>
+      Bonjour <strong style="color:#00d4aa;">{name}</strong>,<br><br>
       Merci pour votre intérêt pour la formation <strong style="color:#fff;">"{level}"</strong> !
       Votre dossier a été examiné et nous sommes ravis de vous confirmer que votre place est réservée.<br><br>
       Pour <strong style="color:#ffd700;">finaliser votre inscription</strong>, il vous suffit de procéder au règlement selon l'un des moyens ci-dessous.
     </p>
 
     <!-- Prix -->
-    <div style="background:linear-gradient(135deg,rgba(0,176,116,.15),rgba(0,176,116,.05));border:1px solid rgba(0,176,116,.3);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
+    <div style="background:linear-gradient(135deg,rgba(0,212,170,.15),rgba(0,212,170,.05));border:1px solid rgba(0,212,170,.3);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
       <div style="font-size:.8rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Montant à régler — {level}</div>
-      <div style="font-size:2rem;font-weight:800;color:#00b074;">{prices['xaf']:,} FCFA</div>
+      <div style="font-size:2rem;font-weight:800;color:#00d4aa;">{prices['xaf']:,} FCFA</div>
       <div style="font-size:.9rem;color:#888;margin-top:4px;">≈ {prices['eur']} EUR</div>
     </div>
 
@@ -4614,7 +4590,7 @@ def _send_sincire_email(lead: dict) -> bool:
     <!-- CTA -->
     <div style="text-align:center;margin-bottom:16px;">
       <a href="https://wa.me/237695072759?text=Bonjour%2C%20j%27ai%20effectu%C3%A9%20mon%20paiement%20pour%20la%20formation%20{level.replace(' ','%20')}"
-         style="background:linear-gradient(135deg,#00b074,#7dffc3);color:#000;font-weight:800;font-size:14px;padding:14px 32px;border-radius:10px;text-decoration:none;display:inline-block;box-shadow:0 4px 16px rgba(0,176,116,.4);">
+         style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:800;font-size:14px;padding:14px 32px;border-radius:10px;text-decoration:none;display:inline-block;box-shadow:0 4px 16px rgba(0,212,170,.4);">
         📲 Confirmer mon paiement sur WhatsApp
       </a>
     </div>
@@ -5487,9 +5463,9 @@ def _chat_notify_email(tagged_user: dict, sender_name: str, message_preview: str
 <div style="max-width:560px;margin:0 auto;padding:24px;">
   <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:16px;padding:28px;border:1px solid #1e2a3a;">
     <div style="font-size:2rem;text-align:center;margin-bottom:8px;">💬</div>
-    <h2 style="color:#00b074;text-align:center;margin:0 0 4px;font-size:18px;">Nouveau message</h2>
+    <h2 style="color:#00d4aa;text-align:center;margin:0 0 4px;font-size:18px;">Nouveau message</h2>
     <p style="color:#aaa;text-align:center;font-size:12px;margin:0 0 20px;">Kengni Finance — Messagerie</p>
-    <div style="background:#111827;border-radius:12px;padding:16px;border-left:4px solid #00b074;margin-bottom:20px;">
+    <div style="background:#111827;border-radius:12px;padding:16px;border-left:4px solid #00d4aa;margin-bottom:20px;">
       <p style="color:#888;font-size:12px;margin:0 0 6px;">
         <strong style="color:#fff;">{sender_name}</strong> vous a tagué(e)
       </p>
@@ -5498,7 +5474,7 @@ def _chat_notify_email(tagged_user: dict, sender_name: str, message_preview: str
       </p>
     </div>
     <div style="text-align:center;">
-      <a href="{chat_url}" style="background:linear-gradient(135deg,#00b074,#7dffc3);color:#000;font-weight:800;
+      <a href="{chat_url}" style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:800;
          font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;display:inline-block;">
         📨 Voir le message
       </a>
@@ -6754,22 +6730,6 @@ import xml.etree.ElementTree as _ET
 
 # Cache mémoire pour éviter trop d'appels externes
 _news_cache = {'articles': [], 'btc': {}, 'fear_greed': {}, 'ts': 0}
-
-# ── Cache boutique (TTL 60 s) ─────────────────────────────────────
-_shop_cache: dict = {}
-_SHOP_TTL = 60  # secondes
-
-def _shop_cache_get(key: str):
-    entry = _shop_cache.get(key)
-    if entry and (time.time() - entry['ts']) < _SHOP_TTL:
-        return entry['val']
-    return None
-
-def _shop_cache_set(key: str, val):
-    _shop_cache[key] = {'val': val, 'ts': time.time()}
-
-def _shop_cache_clear():
-    _shop_cache.clear()
 _NEWS_TTL   = 5 * 60  # 5 minutes
 
 _SOURCES = [
@@ -7237,47 +7197,39 @@ def _shop_parse_images(product: dict) -> list:
 
 @app.route('/shop')
 def shop():
-    # Try cache first (produits actifs — TTL 60 s)
-    _cached = _shop_cache_get('shop_products')
-    products = _cached['products'] if _cached else None
-    orders_count = _cached['orders_count'] if _cached else 0
-
-    if products is None:
-        conn = get_db_connection()
-        products = []
-        try:
-            cur = conn.cursor()
-            cur.execute("""
-                SELECT * FROM shop_products WHERE is_active=1
-                ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END,
-                         created_at DESC
-            """)
-            for r in cur.fetchall():
-                p = dict(r)
-                p['all_images'] = _shop_parse_images(p)
-                p['main_image'] = p['all_images'][0] if p['all_images'] else ''
-                products.append(p)
-            cur.execute("SELECT COUNT(*) FROM shop_orders")
-            orders_count = cur.fetchone()[0] or 0
-            _shop_cache_set('shop_products', {'products': products, 'orders_count': orders_count})
-        except Exception as e:
-            print(f"[Shop] {e}")
-        finally:
-            if conn: conn.close()
-
-    # Customer session + wishlist (1 seule connexion)
+    conn = get_db_connection()
+    products, orders_count = [], 0
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT * FROM shop_products WHERE is_active=1
+            ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END,
+                     created_at DESC
+        """)
+        raw = cur.fetchall()
+        for r in raw:
+            p = dict(r)
+            p['all_images'] = _shop_parse_images(p)
+            p['main_image'] = p['all_images'][0] if p['all_images'] else ''
+            products.append(p)
+        cur.execute("SELECT COUNT(*) FROM shop_orders")
+        orders_count = cur.fetchone()[0] or 0
+    except Exception as e:
+        print(f"[Shop] {e}")
+    finally:
+        if conn: conn.close()
+    # Customer session
     customer = _shop_customer()
     customer_wishlist = []
     if customer:
-        conn2 = get_db_connection()
+        _c2 = get_db_connection()
         try:
-            customer_wishlist = [r[0] for r in conn2.execute(
-                "SELECT product_id FROM shop_wishlists WHERE customer_id=?", (customer['id'],)
-            ).fetchall()]
-        except Exception:
-            pass
+            _cur2 = _c2.cursor()
+            _cur2.execute("SELECT product_id FROM shop_wishlists WHERE customer_id=?", (customer['id'],))
+            customer_wishlist = [r[0] for r in _cur2.fetchall()]
+        except Exception: pass
         finally:
-            if conn2: conn2.close()
+            if _c2: _c2.close()
     return render_template('shop.html', products=products, orders_count=orders_count,
                            customer=customer, customer_wishlist=customer_wishlist)
 
@@ -7373,76 +7325,81 @@ def shop_create_order():
 def shop_admin():
     role = session.get('role')
     uid  = session.get('user_id')
+    # Admins toujours autorisés ; autres utilisateurs si au moins 1 permission boutique
     if role not in ('admin', 'superadmin'):
         perms = get_shop_perms(uid)
         if not any(perms.values()):
             return redirect(url_for('shop'))
-
-    products, orders, all_users, activity_data = [], [], [], {}
-    total_revenue = pending_count = active_count = 0
-    from datetime import datetime as _dt
-
-    # ── UNE seule connexion pour toutes les requêtes ──────────────
     conn = get_db_connection()
+    products, orders = [], []
+    total_revenue = pending_count = active_count = 0
     try:
         cur = conn.cursor()
-
-        # Produits
         cur.execute("SELECT * FROM shop_products ORDER BY created_at DESC")
         for r in cur.fetchall():
             p = dict(r)
             p['all_images'] = _shop_parse_images(p)
             p['main_image'] = p['all_images'][0] if p['all_images'] else ''
             products.append(p)
-
-        # Commandes (200 dernières)
         cur.execute("SELECT * FROM shop_orders ORDER BY created_at DESC LIMIT 200")
         orders = [dict(r) for r in cur.fetchall()]
-
-        # Stats rapides
         cur.execute("SELECT COALESCE(SUM(total),0) FROM shop_orders WHERE status='paid'")
         total_revenue = cur.fetchone()[0] or 0
         pending_count = sum(1 for o in orders if o['status'] == 'pending')
         active_count  = sum(1 for p in products if p['is_active'])
-
-        # Utilisateurs
-        cur.execute(
-            "SELECT id, username, email, role, shop_permissions, shop_access, last_login, status FROM users ORDER BY username ASC"
-        )
-        for r in cur.fetchall():
-            u = dict(r)
-            ll = u.get('last_login')
-            if ll:
-                try:
-                    delta = (_dt.now() - _dt.fromisoformat(ll[:19])).days
-                    u['days_inactive'] = delta
-                    u['auto_inactive'] = delta > 8
-                except Exception:
-                    u['days_inactive'] = None
-                    u['auto_inactive'] = False
-            else:
-                u['days_inactive'] = None
-                u['auto_inactive'] = True
-            all_users.append(u)
-
-        # Activité 30 jours
-        cur.execute("""
-            SELECT handled_by, DATE(COALESCE(handled_at,updated_at)) as day, COUNT(*) as cnt
-            FROM shop_orders
-            WHERE handled_by IS NOT NULL
-              AND DATE(COALESCE(handled_at,updated_at)) >= DATE('now','-30 days')
-            GROUP BY handled_by, day ORDER BY day ASC
-        """)
-        for row in cur.fetchall():
-            uid2 = row["handled_by"]
-            if uid2 not in activity_data:
-                activity_data[uid2] = {}
-            activity_data[uid2][row["day"]] = row["cnt"]
-
     except Exception as e:
         print(f"[ShopAdmin] {e}")
     finally:
         if conn: conn.close()
+    # Récupérer tous les utilisateurs pour la section Accès (tous les rôles sauf admin/superadmin)
+    all_users = []
+    try:
+        conn2 = get_db_connection()
+        if conn2:
+            cur2 = conn2.cursor()
+            cur2.execute(
+                "SELECT id, username, email, role, shop_permissions, shop_access, last_login, status FROM users ORDER BY username ASC"
+            )
+            all_users = [dict(r) for r in cur2.fetchall()]
+            # Calculer inactivité : > 8 jours = inactif automatiquement
+            from datetime import datetime as _dt
+            for u in all_users:
+                ll = u.get('last_login')
+                if ll:
+                    try:
+                        delta = (_dt.now() - _dt.fromisoformat(ll[:19])).days
+                        u['days_inactive'] = delta
+                        u['auto_inactive'] = delta > 8
+                    except Exception:
+                        u['days_inactive'] = None
+                        u['auto_inactive'] = False
+                else:
+                    u['days_inactive'] = None
+                    u['auto_inactive'] = True  # Jamais connecté
+            conn2.close()
+    except Exception as e:
+        print(f"[ShopAdmin users] {e}")
+
+    # Données activité (courbes évolution 30 jours)
+    activity_data = {}
+    try:
+        conn3 = get_db_connection()
+        if conn3:
+            cur3 = conn3.cursor()
+            cur3.execute("""
+                SELECT handled_by, DATE(COALESCE(handled_at,updated_at)) as day, COUNT(*) as cnt
+                FROM shop_orders
+                WHERE handled_by IS NOT NULL AND DATE(COALESCE(handled_at,updated_at)) >= DATE('now','-30 days')
+                GROUP BY handled_by, day ORDER BY day ASC
+            """)
+            for row in cur3.fetchall():
+                uid2 = row["handled_by"]
+                if uid2 not in activity_data:
+                    activity_data[uid2] = {}
+                activity_data[uid2][row["day"]] = row["cnt"]
+            conn3.close()
+    except Exception as e:
+        print(f"[ShopAdmin activity] {e}")
 
     current_user_perms = get_shop_perms(session.get("user_id"))
     return render_template("shop_admin.html",
@@ -7510,7 +7467,6 @@ def shop_update_product(pid):
               d.get('badge', ''), d.get('delivery_info', 'Livraison 3-7 jours'),
               1 if d.get('is_active', True) else 0, pid))
         conn.commit()
-        _shop_cache_clear()
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -7563,15 +7519,13 @@ def shop_delete_product(pid):
 
 
 @app.route('/shop/api/product/upload-image', methods=['POST'])
+@login_required
 def shop_upload_product_image():
     """Upload une ou plusieurs images pour un produit.
     Form-data : image (fichier), pid (optionnel, int).
     Retourne l'URL et met à jour la galerie si pid fourni."""
-    # Retourne JSON 401 au lieu de redirection HTML pour les appels AJAX
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Session expirée — reconnectez-vous', 'code': 401}), 401
     if not can_shop('add') and not can_shop('edit'):
-        return jsonify({'success': False, 'error': 'Non autorisé — permissions insuffisantes', 'code': 403}), 403
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
     if 'image' not in request.files:
         return jsonify({'success': False, 'error': 'Aucun fichier reçu'})
     f = request.files['image']
@@ -7584,11 +7538,7 @@ def shop_upload_product_image():
         fname = secure_filename(f'shop_{datetime.now().strftime("%Y%m%d_%H%M%S%f")}.{ext}')
         dest  = os.path.join(app.config['UPLOAD_FOLDER'], 'shop')
         os.makedirs(dest, exist_ok=True)
-        filepath = os.path.join(dest, fname)
-        f.save(filepath)
-        # Vérification que le fichier a bien été sauvegardé
-        if not os.path.exists(filepath):
-            return jsonify({'success': False, 'error': 'Sauvegarde échouée — vérifiez les permissions du dossier uploads'})
+        f.save(os.path.join(dest, fname))
         url = f'/static/uploads/shop/{fname}'
 
         # Si pid fourni → ajouter à la galerie du produit
@@ -7625,9 +7575,8 @@ def shop_upload_product_image():
 
 
 @app.route('/shop/api/product/<int:pid>/remove-image', methods=['POST'])
+@login_required
 def shop_remove_product_image(pid):
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Session expirée', 'code': 401}), 401
     """Supprime une image de la galerie d'un produit (+ fichier local si uploadé)."""
     if not can_shop('edit'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -8024,11 +7973,7 @@ def shop_sse_stream():
     """SSE endpoint — nouvelles commandes en temps réel."""
     from flask import Response, stream_with_context
     if not session.get('user_id'):
-        # Retourner un stream vide pour éviter erreur CORS/403 côté client
-        def empty_gen():
-            yield ": stream désactivé pour visiteurs\n\n"
-        return Response(empty_gen(), mimetype='text/event-stream',
-                       headers={'Cache-Control':'no-cache','X-Accel-Buffering':'no'})
+        return jsonify({'error': 'Non autorisé'}), 403
 
     q = _queue.Queue(maxsize=20)
     _sse_clients.append(q)
@@ -8049,7 +7994,7 @@ def shop_sse_stream():
             except ValueError: pass
 
     resp = Response(stream_with_context(generate()),
-                    mimetype='text/event-stream; charset=utf-8',
+                    mimetype='text/event-stream',
                     headers={
                         'Cache-Control': 'no-cache',
                         'X-Accel-Buffering': 'no',
@@ -8268,9 +8213,8 @@ def shop_banner_order(bid):
 
 
 @app.route('/shop/api/banners/upload-image', methods=['POST'])
+@login_required
 def shop_banner_upload_image():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Session expirée — reconnectez-vous', 'code': 401}), 401
     """Upload une image pour une bannière promotionnelle."""
     if not can_shop('add') and not can_shop('edit'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -8295,45 +8239,15 @@ def shop_banner_upload_image():
         return jsonify({'success': False, 'error': str(e)})
 
 
-
-@app.route('/shop/api/stocks', methods=['GET'])
-def shop_public_stocks():
-    """Stocks publics — utilisé par syncProds() client sans auth."""
-    conn = get_db_connection()
-    try:
-        rows = conn.execute(
-            "SELECT id, stock, is_active FROM shop_products WHERE is_active=1"
-        ).fetchall()
-        return jsonify({'stocks': [dict(r) for r in rows]})
-    except Exception as e:
-        return jsonify({'stocks': [], 'error': str(e)}), 500
-    finally:
-        if conn: conn.close()
-
 @app.route('/shop/api/products/export')
+@login_required
 def shop_export_products():
     """Exporte le catalogue produits en CSV ou Excel."""
-    fmt = request.args.get('format', 'csv').lower()
-    # Accès JSON public pour syncProds côté client (stocks seulement)
-    if fmt == 'json':
-        conn = get_db_connection()
-        try:
-            rows = conn.execute(
-                "SELECT id, name, price, stock, badge, image_url FROM shop_products WHERE is_active=1"
-            ).fetchall()
-            return jsonify({'products': [dict(r) for r in rows]})
-        except Exception as e:
-            return jsonify({'products': [], 'error': str(e)}), 500
-        finally:
-            if conn: conn.close()
-    # CSV/XLSX : accès admin requis
-    if not session.get('user_id'):
-        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
     perms = get_shop_perms(session.get('user_id'))
     if not perms.get('access'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
 
-    fmt = request.args.get('format', 'csv').lower()  # (déjà géré)
+    fmt = request.args.get('format', 'csv').lower()
     cat = request.args.get('category', '')
 
     conn = get_db_connection()
@@ -8585,118 +8499,6 @@ def shop_kanban_orders():
                 'handler': r['handler_name'] or '',
             })
         return jsonify({'success': True, 'kanban': grouped})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/orders/recent', methods=['GET'])
-@login_required
-def shop_orders_recent():
-    """Retourne les N dernières commandes pour le dashboard."""
-    perms = get_shop_perms(session.get('user_id'))
-    if not perms.get('access'):
-        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
-    limit = min(int(request.args.get('limit', 10)), 50)
-    conn = get_db_connection()
-    try:
-        rows = conn.execute("""
-            SELECT o.*, u.username as handler_name
-            FROM shop_orders o
-            LEFT JOIN users u ON u.id = o.handled_by
-            ORDER BY o.created_at DESC
-            LIMIT ?
-        """, (limit,)).fetchall()
-        orders = []
-        for r in rows:
-            o = dict(r)
-            try:    o['items'] = json.loads(o.get('items_json') or o.get('items') or '[]')
-            except: o['items'] = []
-            orders.append(o)
-        return jsonify({'success': True, 'orders': orders})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/products/all', methods=['GET'])
-@login_required
-def shop_products_all():
-    """Retourne tous les produits (actifs et inactifs) pour l'admin."""
-    perms = get_shop_perms(session.get('user_id'))
-    if not perms.get('access'):
-        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
-    cat    = request.args.get('category', '')
-    search = request.args.get('q', '').strip()
-    conn = get_db_connection()
-    try:
-        q      = "SELECT * FROM shop_products"
-        params = []
-        conds  = []
-        if cat:
-            conds.append("category = ?"); params.append(cat)
-        if search:
-            conds.append("(name LIKE ? OR description LIKE ?)"); params += [f'%{search}%', f'%{search}%']
-        if conds:
-            q += " WHERE " + " AND ".join(conds)
-        q += " ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1 WHEN 'promo' THEN 2 ELSE 3 END, created_at DESC"
-        rows = conn.execute(q, params).fetchall()
-        products = []
-        for r in rows:
-            p = dict(r)
-            try:
-                imgs = json.loads(p.get('images') or '[]')
-                p['all_images'] = [p['image_url']] if p.get('image_url') else []
-                for img in imgs:
-                    url = img if isinstance(img, str) else img.get('url', '')
-                    if url and url not in p['all_images']:
-                        p['all_images'].append(url)
-                p['main_image'] = p['all_images'][0] if p['all_images'] else ''
-            except Exception:
-                p['all_images'] = [p.get('image_url', '')] if p.get('image_url') else []
-                p['main_image'] = p.get('image_url', '')
-            products.append(p)
-        return jsonify({'success': True, 'products': products, 'total': len(products)})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/shop/api/user/downgrade', methods=['POST'])
-@login_required
-def shop_user_downgrade():
-    """Retire tous les accès boutique d'un utilisateur (downgrade)."""
-    if session.get('role') not in ('admin', 'superadmin'):
-        return jsonify({'success': False, 'error': 'Non autorisé — rôle admin requis'}), 403
-    d      = request.get_json(force=True, silent=True) or {}
-    uid    = d.get('user_id')
-    if not uid:
-        return jsonify({'success': False, 'error': 'user_id manquant'}), 400
-    # Empêcher l'admin de se downgrader lui-même
-    if int(uid) == int(session.get('user_id', 0)):
-        return jsonify({'success': False, 'error': 'Impossible de modifier votre propre compte'}), 400
-    conn = get_db_connection()
-    try:
-        conn.execute(
-            "UPDATE users SET shop_access=0, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-            (uid,)
-        )
-        conn.commit()
-        row = conn.execute("SELECT username FROM users WHERE id=?", (uid,)).fetchone()
-        uname = row['username'] if row else str(uid)
-        # Log dans shop_activity_log si la table existe
-        try:
-            conn.execute("""
-                INSERT INTO shop_activity_log (user_id, action, details, created_at)
-                VALUES (?, 'downgrade', ?, CURRENT_TIMESTAMP)
-            """, (session.get('user_id'), json.dumps({'target_user': uname, 'target_id': uid}, ensure_ascii=False)))
-            conn.commit()
-        except Exception:
-            pass
-        return jsonify({'success': True, 'message': f'Accès boutique retiré pour {uname}'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
@@ -9353,7 +9155,7 @@ def _call_anthropic(system: str, messages: list, max_tokens: int = 800) -> dict:
 @app.route('/shop/api/ai/chat', methods=['POST'])
 def shop_ai_chat():
     """
-    Agent conversationnel Claude pour les clients de k-Ni Store.
+    Agent conversationnel Claude pour les clients de k-ni Store.
     Répond aux questions produits, livraison, paiement.
     Escalade intelligente vers WhatsApp / support humain.
     Aucune authentification requise (public).
@@ -9380,9 +9182,8 @@ def shop_ai_chat():
         for p in catalog[:40]
     ) or '(catalogue non chargé)'
 
-    SYSTEM = f"""Tu es Keni, l'assistante IA de k-Ni Store — boutique en ligne de qualité basée à Yaoundé, Cameroun.
+    SYSTEM = f"""Tu es Keni, l'assistante IA de k-ni Store — boutique en ligne de qualité basée à Yaoundé, Cameroun.
 Tu parles français. Tu es chaleureuse, efficace et professionnelle.
-La boutique s'appelle exactement « k-Ni Store » (k minuscule, N majuscule).
 
 CATALOGUE ACTUEL (produits disponibles) :
 {cat_lines}
@@ -9433,13 +9234,13 @@ Réponds UNIQUEMENT avec le texte de ta réponse (sans préfixe ni balise sauf [
     if escalade:
         try:
             bloc = reply.split('[ESCALADE]')[1].split('[FIN ESCALADE]')[0].strip()
-            wa_text = f"Bonjour k-Ni Store ! Je suis transféré(e) depuis le chat.\n\n{bloc}"
+            wa_text = f"Bonjour k-ni Store ! Je suis transféré(e) depuis le chat.\n\n{bloc}"
         except Exception:
-            wa_text = "Bonjour, j'ai besoin d'une assistance humaine depuis le chat k-Ni."
+            wa_text = "Bonjour, j'ai besoin d'une assistance humaine depuis le chat k-ni."
         # Nettoyer la réponse affichée
         reply = reply.replace('[ESCALADE]', '').split('[FIN ESCALADE]')[0].strip()
         if not reply:
-            reply = "Je vais vous mettre en contact avec un conseiller k-Ni qui pourra vous aider directement. 😊"
+            reply = "Je vais vous mettre en contact avec un conseiller k-ni qui pourra vous aider directement. 😊"
 
     return jsonify({
         'reply': reply,
@@ -9465,7 +9266,7 @@ def _ai_chat_fallback(message: str, catalog: list) -> str:
         if any(w in name for w in msg.split() if len(w) > 3):
             price = p.get('price', 0)
             return f"Nous avons **{p['name']}** à {price:,} XAF. Stock disponible. Souhaitez-vous commander ?"
-    return "Bonjour ! Je suis Keni, votre assistante k-Ni Store. Posez-moi vos questions sur nos produits, livraisons ou paiements ! 😊"
+    return "Bonjour ! Je suis Keni, votre assistante k-ni Store. Posez-moi vos questions sur nos produits, livraisons ou paiements ! 😊"
 
 
 # ── Route : Recommandations IA ───────────────────────────────────────
@@ -9517,7 +9318,7 @@ def shop_ai_recommend():
         'stock': p.get('stock'), 'badge': p.get('badge')
     } for p in catalog[:50] if p.get('stock', 0) > 0], ensure_ascii=False)
 
-    SYSTEM = """Tu es un moteur de recommandations pour k-Ni Store (boutique en ligne, Yaoundé, Cameroun).
+    SYSTEM = """Tu es un moteur de recommandations pour k-ni Store (boutique Cameroun).
 Tu analyses le comportement d'un visiteur et tu sélectionnes les produits les plus pertinents.
 Tu réponds UNIQUEMENT en JSON valide, sans aucun texte autour."""
 
@@ -9592,36 +9393,17 @@ if __name__ == '__main__':
     
     # Run the application
     print("=" * 60)
-    print("🚀 Kengni Finance + k-Ni Store — Démarrage")
+    print("🚀 Kengni Finance v2.0 - Démarrage")
     print("=" * 60)
-    print("📊 Finance & Trading       → http://localhost:5001")
-    print("🛍  k-Ni Store (boutique)  → http://localhost:5001/shop")
-    print("⚙️  Admin général          → http://localhost:5001/admin")
-    print("🏪  Admin boutique         → http://localhost:5001/shop/admin")
+    print("📊 Application de gestion financière et trading avec IA")
+    print("🌐 URL: http://localhost:5001")
     print("👤 Email: fabrice.kengni@icloud.com")
+    print("📅 Agenda: http://localhost:5001/agenda")
     print("=" * 60)
     
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
 
 else:
     # Exécuté par Gunicorn (PythonAnywhere, Fly.io, etc.)
-    # ── Forcer UTF-8 système pour éviter les emojis cassés ──────────
-    import sys, locale
-    try:
-        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-    except Exception:
-        try:
-            locale.setlocale(locale.LC_ALL, 'C.UTF-8')
-        except Exception:
-            pass
-    if hasattr(sys.stdout, 'reconfigure'):
-        try: sys.stdout.reconfigure(encoding='utf-8')
-        except Exception: pass
-    if hasattr(sys.stderr, 'reconfigure'):
-        try: sys.stderr.reconfigure(encoding='utf-8')
-        except Exception: pass
-    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
-    os.environ.setdefault('PYTHONUTF8', '1')
-    # ────────────────────────────────────────────────────────────────
     init_db()
     start_agenda_scheduler()
