@@ -2,11 +2,85 @@
 {% block title %}Paramètres - Kengni Finance{% endblock %}
 {% block page_title %}Paramètres{% endblock %}
 {% block content %}
+
+<!-- Styles photo de profil -->
+<style>
+.avatar-settings-wrap{display:flex;align-items:center;gap:1.4rem;margin-bottom:1.4rem;padding:1.2rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;}
+.avatar-settings-circle{
+  width:80px;height:80px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#4e6fff,#6c8fff);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;font-weight:800;color:#fff;
+  overflow:hidden;position:relative;cursor:pointer;
+  border:3px solid rgba(108,143,255,.3);
+  transition:all .2s;
+}
+.avatar-settings-circle:hover{border-color:rgba(108,143,255,.7);transform:scale(1.04);}
+.avatar-settings-circle img{width:100%;height:100%;object-fit:cover;display:block;}
+.avatar-settings-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,.55);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;opacity:0;transition:opacity .2s;
+}
+.avatar-settings-circle:hover .avatar-settings-overlay{opacity:1;}
+.avatar-settings-info h6{font-size:.95rem;font-weight:700;margin-bottom:.3rem;}
+.avatar-settings-info p{font-size:.8rem;color:#6b7280;margin-bottom:.7rem;}
+.avatar-btn-row{display:flex;gap:.5rem;flex-wrap:wrap;}
+.avatar-action-btn{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.42rem .9rem;border-radius:20px;font-size:.8rem;font-weight:700;
+  cursor:pointer;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.06);color:#d1d5db;
+  transition:all .15s;font-family:inherit;
+}
+.avatar-action-btn:hover{background:rgba(108,143,255,.18);border-color:rgba(108,143,255,.4);color:#a5b8ff;}
+.avatar-action-btn.danger:hover{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#f87171;}
+.avatar-progress{height:3px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:.6rem;display:none;}
+.avatar-progress-fill{height:100%;background:linear-gradient(90deg,#4e6fff,#22c55e);width:0;transition:width .3s;}
+</style>
+
 <div class="container-fluid">
     <div class="row g-4">
         <div class="col-lg-6">
             <div class="custom-table p-4">
                 <h5 class="mb-4"><i class="fas fa-user"></i> Profil Utilisateur</h5>
+
+                <!-- ══ PHOTO DE PROFIL ══ -->
+                <div class="avatar-settings-wrap">
+                  <div class="avatar-settings-circle" id="avatarCircle"
+                       onclick="document.getElementById('avatarFileInput').click()">
+                    {% if settings.avatar %}
+                      <img src="{{ settings.avatar }}" alt="Avatar" id="avatarSettingsImg">
+                    {% else %}
+                      <span id="avatarSettingsInitial">{{ settings.username[0]|upper if settings.username else '?' }}</span>
+                      <img src="" alt="" id="avatarSettingsImg" style="display:none">
+                    {% endif %}
+                    <div class="avatar-settings-overlay">📷</div>
+                  </div>
+                  <div class="avatar-settings-info">
+                    <h6>Photo de profil</h6>
+                    <p>JPG, PNG ou WebP · Max 5 Mo</p>
+                    <div class="avatar-btn-row">
+                      <button class="avatar-action-btn"
+                              onclick="document.getElementById('avatarFileInput').click()">
+                        📁 Changer
+                      </button>
+                      {% if settings.avatar %}
+                      <button class="avatar-action-btn danger" id="removeAvatarBtn"
+                              onclick="removeAvatar()">
+                        🗑 Supprimer
+                      </button>
+                      {% endif %}
+                    </div>
+                    <div class="avatar-progress" id="avatarProgress">
+                      <div class="avatar-progress-fill" id="avatarProgressFill"></div>
+                    </div>
+                  </div>
+                </div>
+                <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/gif,image/webp"
+                       style="display:none" onchange="handleAvatarChange(this)">
+                <!-- ══ FIN PHOTO ══ -->
+
                 <form id="profileForm">
                     <div class="mb-3">
                         <label class="form-label">Nom d'utilisateur</label>
@@ -39,11 +113,13 @@
                             <option value="EUR" {% if settings.preferred_currency == 'EUR' %}selected{% endif %}>EUR (€)</option>
                             <option value="USD" {% if settings.preferred_currency == 'USD' %}selected{% endif %}>USD ($)</option>
                             <option value="GBP" {% if settings.preferred_currency == 'GBP' %}selected{% endif %}>GBP (£)</option>
+                            <option value="XAF" {% if settings.preferred_currency == 'XAF' %}selected{% endif %}>XAF (FCFA)</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Fuseau horaire</label>
                         <select class="form-control" name="timezone">
+                            <option value="Africa/Douala" {% if settings.timezone == 'Africa/Douala' %}selected{% endif %}>Africa/Douala (WAT)</option>
                             <option value="Europe/Paris" {% if settings.timezone == 'Europe/Paris' %}selected{% endif %}>Europe/Paris</option>
                             <option value="America/New_York" {% if settings.timezone == 'America/New_York' %}selected{% endif %}>America/New_York</option>
                             <option value="Asia/Tokyo" {% if settings.timezone == 'Asia/Tokyo' %}selected{% endif %}>Asia/Tokyo</option>
@@ -80,45 +156,108 @@
 </div>
 
 <script>
+/* ══ PHOTO DE PROFIL ══ */
+const INIT_LETTER = "{{ settings.username[0]|upper if settings.username else '?' }}";
+
+function handleAvatarChange(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5 * 1024 * 1024) { showToast('Fichier trop lourd — max 5 Mo', 'danger'); return; }
+  if(!file.type.startsWith('image/')) { showToast('Format non supporté', 'danger'); return; }
+  // Prévisualisation immédiate
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('avatarSettingsImg');
+    const ini = document.getElementById('avatarSettingsInitial');
+    img.src = e.target.result; img.style.display = 'block';
+    if(ini) ini.style.display = 'none';
+    const rb = document.getElementById('removeAvatarBtn');
+    if(rb) rb.style.display = '';
+  };
+  reader.readAsDataURL(file);
+  uploadAvatarSettings(file);
+  input.value = '';
+}
+
+async function uploadAvatarSettings(file) {
+  const prog = document.getElementById('avatarProgress');
+  const fill = document.getElementById('avatarProgressFill');
+  prog.style.display = 'block';
+  let pct = 0;
+  const ticker = setInterval(() => { pct = Math.min(pct + 10, 88); fill.style.width = pct + '%'; }, 80);
+  const fd = new FormData();
+  fd.append('avatar', file, file.name);
+  try {
+    const res  = await fetch('/api/upload-avatar', { method:'POST', body: fd });
+    clearInterval(ticker);
+    const data = await res.json();
+    if(data.success) {
+      fill.style.width = '100%';
+      setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0'; }, 600);
+      showToast('Photo de profil mise à jour', 'success');
+    } else {
+      prog.style.display = 'none';
+      showToast(data.error || 'Erreur upload', 'danger');
+    }
+  } catch(e) {
+    clearInterval(ticker);
+    prog.style.display = 'none';
+    showToast('Erreur réseau', 'danger');
+  }
+}
+
+async function removeAvatar() {
+  if(!confirm('Supprimer la photo de profil ?')) return;
+  try {
+    const res  = await fetch('/api/remove-avatar', { method:'POST' });
+    const data = await res.json();
+    if(data.success) {
+      const img = document.getElementById('avatarSettingsImg');
+      img.src = ''; img.style.display = 'none';
+      let ini = document.getElementById('avatarSettingsInitial');
+      if(!ini) {
+        ini = document.createElement('span');
+        ini.id = 'avatarSettingsInitial';
+        ini.textContent = INIT_LETTER;
+        document.getElementById('avatarCircle').prepend(ini);
+      } else { ini.style.display = ''; }
+      const rb = document.getElementById('removeAvatarBtn');
+      if(rb) rb.style.display = 'none';
+      showToast('Photo supprimée', 'success');
+    } else {
+      showToast(data.error || 'Erreur', 'danger');
+    }
+  } catch(e) { showToast('Erreur réseau', 'danger'); }
+}
+
+/* ══ PROFIL FORM ══ */
 document.getElementById('profileForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
-    
     const response = await fetch('/api/update-settings', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     });
-    
-    if (response.ok) {
-        showToast('Profil mis à jour avec succès', 'success');
-    } else {
-        showToast('Erreur lors de la mise à jour', 'danger');
-    }
+    if (response.ok) { showToast('Profil mis à jour avec succès', 'success'); }
+    else             { showToast('Erreur lors de la mise à jour', 'danger'); }
 });
 
+/* ══ PRÉFÉRENCES FORM ══ */
 document.getElementById('preferencesForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
-    
-    // Convert checkboxes
     data.notifications_email = e.target.notifications_email.checked ? 1 : 0;
-    data.notifications_app = e.target.notifications_app.checked ? 1 : 0;
-    
+    data.notifications_app   = e.target.notifications_app.checked   ? 1 : 0;
     const response = await fetch('/api/update-settings', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     });
-    
-    if (response.ok) {
-        showToast('Préférences mises à jour avec succès', 'success');
-        setTimeout(() => location.reload(), 1000);
-    } else {
-        showToast('Erreur lors de la mise à jour', 'danger');
-    }
+    if (response.ok) { showToast('Préférences mises à jour', 'success'); setTimeout(() => location.reload(), 1000); }
+    else             { showToast('Erreur lors de la mise à jour', 'danger'); }
 });
 </script>
 {% endblock %}

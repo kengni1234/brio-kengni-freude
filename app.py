@@ -156,6 +156,7 @@ def init_db():
             theme TEXT DEFAULT 'light',
             notifications_email INTEGER DEFAULT 1,
             notifications_app INTEGER DEFAULT 1,
+            avatar TEXT DEFAULT '',
             created_at TEXT NOT NULL,
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
             last_login TEXT
@@ -496,6 +497,18 @@ def init_db():
         except Exception:
             pass
 
+        # Migration: avatar photo de profil utilisateur
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''")
+        except Exception:
+            pass
+
+        # Migration: détection première connexion
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN is_first_login INTEGER DEFAULT 1")
+        except Exception:
+            pass
+
         # Table factures boutique
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS shop_invoices (
@@ -636,7 +649,8 @@ def inject_global_context():
     OPTIMISÉ : 1 seule requête SQL, skip total sur /static/ /api/ /shop/api/."""
     _path = request.path
     _empty = {'training_total_nav': 0, 'user_allowed_pages': None,
-              'ALL_USER_PAGES': ALL_USER_PAGES, 'user_shop_access': False}
+              'ALL_USER_PAGES': ALL_USER_PAGES, 'user_shop_access': False,
+              'current_username': '', 'current_avatar': ''}
     # Skip sur requêtes sans rendu HTML (gain ~40% des appels)
     if (_path.startswith('/static/')
             or _path.startswith('/shop/api/')
@@ -647,6 +661,7 @@ def inject_global_context():
     uid = session.get('user_id')
     if not uid:
         return ctx
+    ctx['current_username'] = session.get('username', '')
     role = session.get('role', 'user')
     if role in ('admin', 'superadmin'):
         ctx['user_shop_access'] = True
@@ -654,14 +669,18 @@ def inject_global_context():
     if not conn:
         return ctx
     try:
-        # 1 seule requête : tout ce dont le nav a besoin
+        # 1 seule requête : tout ce dont le nav a besoin + avatar
         row = conn.execute("""
             SELECT u.allowed_pages, u.shop_access, u.shop_permissions,
+                   COALESCE(u.avatar,'') as avatar,
                    (SELECT COUNT(*) FROM training_courses WHERE user_id = u.id) AS tcnt
             FROM users u WHERE u.id = ?
         """, (uid,)).fetchone()
         if row:
             ctx['training_total_nav'] = row['tcnt'] or 0
+            ctx['current_avatar']     = row['avatar'] or ''
+            # Mettre à jour la session avec l'avatar
+            session['avatar'] = row['avatar'] or ''
             if role not in ('admin', 'superadmin'):
                 if row['allowed_pages']:
                     try: ctx['user_allowed_pages'] = json.loads(row['allowed_pages'])
@@ -1272,6 +1291,7 @@ def verify_token_page():
         if entered_token == stored_token:
             # Token correct — compléter la session
             is_admin_login = session.pop('pending_2fa_is_admin_login', False)
+            is_first       = session.pop('pending_2fa_is_first', False)
             session['user_id']  = session.pop('pending_2fa_user_id',  None)
             session['username'] = session.pop('pending_2fa_username', '')
             session['email']    = session.pop('pending_2fa_email',    '')
@@ -1281,9 +1301,12 @@ def verify_token_page():
             session.pop('pending_2fa_expires', None)
             session['admin_secondary_verified'] = False  # Reset secondary check on new login
             session.permanent = False  # Session expire a la fermeture du navigateur
-            
+
             if is_admin_login:
                 return redirect(url_for('admin_secondary_verify'))
+            # ── Première connexion → onboarding photo de profil ──
+            if is_first:
+                return redirect(url_for('onboarding'))
             # Splash screen annonces (si annonce active) → sinon dashboard direct
             return redirect(url_for('show_announcement'))
         else:
@@ -1359,15 +1382,19 @@ def login():
             if user and check_password_hash(user['password'], password):
                 # Générer le token 2FA
                 token_2fa = str(random.randint(100000, 999999))
-                
+
+                # ── Détecter première connexion (last_login est NULL) ──
+                is_first = (user['last_login'] is None)
+
                 # Stocker les infos en session en attente de vérification
-                session['pending_2fa_token']    = token_2fa
-                session['pending_2fa_user_id']  = user['id']
-                session['pending_2fa_username'] = user['username']
-                session['pending_2fa_email']    = user['email']
-                session['pending_2fa_theme']    = user['theme']
-                session['pending_2fa_role']     = user['role']
-                session['pending_2fa_expires']  = (datetime.now() + timedelta(minutes=5)).isoformat()
+                session['pending_2fa_token']       = token_2fa
+                session['pending_2fa_user_id']     = user['id']
+                session['pending_2fa_username']    = user['username']
+                session['pending_2fa_email']       = user['email']
+                session['pending_2fa_theme']       = user['theme']
+                session['pending_2fa_role']        = user['role']
+                session['pending_2fa_expires']     = (datetime.now() + timedelta(minutes=5)).isoformat()
+                session['pending_2fa_is_first']    = is_first
                 
                 # Update last login
                 cursor.execute("UPDATE users SET last_login = ? WHERE id = ?", 
@@ -3167,6 +3194,134 @@ def update_settings():
             return jsonify({'success': False, 'message': str(e)}), 500
     
     return jsonify({'success': False, 'message': 'Erreur de connexion'}), 500
+
+
+# ═══════════════════════════════════════════════════════
+# PHOTO DE PROFIL — Onboarding + Upload / Suppression
+# ═══════════════════════════════════════════════════════
+
+@app.route('/onboarding')
+@login_required
+def onboarding():
+    """Page de première connexion — choix photo de profil."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    user = {}
+    if conn:
+        try:
+            row = conn.execute(
+                "SELECT id, username, email, avatar FROM users WHERE id=?", (user_id,)
+            ).fetchone()
+            if row:
+                user = dict(row)
+        except Exception:
+            pass
+        finally:
+            conn.close()
+    return render_template('onboarding.html', user=user)
+
+
+@app.route('/api/upload-avatar', methods=['POST'])
+@login_required
+def api_upload_avatar():
+    """Upload la photo de profil de l'utilisateur connecté."""
+    import uuid as _uuid
+    user_id = session['user_id']
+
+    img_file = request.files.get('avatar')
+    if not img_file:
+        return jsonify({'success': False, 'error': 'Fichier manquant'}), 400
+    if not allowed_file(img_file.filename):
+        return jsonify({'success': False, 'error': 'Format non supporté (jpg/png/gif/webp)'}), 400
+
+    # Supprimer l'ancien avatar si c'était un fichier local
+    conn = get_db_connection()
+    if conn:
+        try:
+            row = conn.execute(
+                "SELECT avatar FROM users WHERE id=?", (user_id,)
+            ).fetchone()
+            if row and row['avatar'] and '/uploads/avatars/' in (row['avatar'] or ''):
+                old_path = os.path.join('static', row['avatar'].lstrip('/'))
+                if os.path.isfile(old_path):
+                    os.remove(old_path)
+        except Exception:
+            pass
+        finally:
+            conn.close()
+
+    # Sauvegarder le nouveau fichier
+    ext      = img_file.filename.rsplit('.', 1)[-1].lower()
+    filename = f"avatar_{user_id}_{_uuid.uuid4().hex[:8]}.{ext}"
+    dest_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'avatars')
+    os.makedirs(dest_dir, exist_ok=True)
+    img_file.save(os.path.join(dest_dir, filename))
+    avatar_url = f"/static/uploads/avatars/{filename}"
+
+    # Sauvegarder en DB + session
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+    try:
+        conn.execute(
+            "UPDATE users SET avatar=?, is_first_login=0, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (avatar_url, user_id)
+        )
+        conn.commit()
+        session['avatar'] = avatar_url
+        return jsonify({'success': True, 'avatar_url': avatar_url})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/remove-avatar', methods=['POST'])
+@login_required
+def api_remove_avatar():
+    """Supprime la photo de profil et remet le défaut (initiales)."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+    try:
+        row = conn.execute("SELECT avatar FROM users WHERE id=?", (user_id,)).fetchone()
+        if row and row['avatar'] and '/uploads/avatars/' in (row['avatar'] or ''):
+            old_path = os.path.join('static', row['avatar'].lstrip('/'))
+            if os.path.isfile(old_path):
+                os.remove(old_path)
+        conn.execute(
+            "UPDATE users SET avatar='', updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (user_id,)
+        )
+        conn.commit()
+        session['avatar'] = ''
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/skip-onboarding', methods=['POST'])
+@login_required
+def api_skip_onboarding():
+    """Marque la première connexion comme passée sans photo."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    try:
+        conn.execute(
+            "UPDATE users SET is_first_login=0, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (user_id,)
+        )
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/notifications')
 @page_access_required('notifications')
@@ -5515,6 +5670,7 @@ def init_chat_db():
         voice_url      TEXT,
         voice_duration INTEGER DEFAULT 0,
         is_private     INTEGER DEFAULT 0,
+        image_url      TEXT    DEFAULT '',
         created_at     TEXT    DEFAULT (datetime('now')),
         FOREIGN KEY (user_id) REFERENCES users(id)
     )''')
@@ -5533,6 +5689,7 @@ def init_chat_db():
         "ALTER TABLE chat_messages ADD COLUMN voice_url TEXT",
         "ALTER TABLE chat_messages ADD COLUMN voice_duration INTEGER DEFAULT 0",
         "ALTER TABLE chat_messages ADD COLUMN is_private INTEGER DEFAULT 0",
+        "ALTER TABLE chat_messages ADD COLUMN image_url TEXT DEFAULT ''",
     ]:
         try: cursor.execute(_sql)
         except Exception: pass
@@ -5644,7 +5801,8 @@ def api_chat_messages():
                m.created_at, u.username, u.id as user_id,
                COALESCE(m.msg_type,'text') as msg_type,
                m.voice_url, COALESCE(m.voice_duration,0) as voice_duration,
-               COALESCE(m.is_private,0) as is_private
+               COALESCE(m.is_private,0) as is_private,
+               COALESCE(m.image_url,'') as image_url
         FROM chat_messages m
         JOIN users u ON u.id = m.user_id
         WHERE m.id > ? AND m.deleted = 0
@@ -5659,10 +5817,18 @@ def api_chat_messages():
     rows = []
     for r in cursor.fetchall():
         d = dict(r)
-        try: d['reactions'] = json.loads(d['reactions'] or '{}')
-        except: d['reactions'] = {}
+        try:
+            raw = json.loads(d['reactions'] or '{}')
+            # Normaliser : {emoji: [user_ids]} → {emoji: count}
+            d['reactions'] = {e: len(v) if isinstance(v, list) else int(v)
+                              for e, v in raw.items() if v}
+        except:
+            d['reactions'] = {}
         try: d['tags'] = json.loads(d['tags'] or '[]')
         except: d['tags'] = []
+        # Migration colonne image_url si absente
+        if 'image_url' not in d:
+            d['image_url'] = ''
         # Signal data
         if d.get('msg_type') == 'signal':
             try: d['signal_data'] = json.loads(d.get('content_enc') or '{}')
@@ -5857,6 +6023,81 @@ def api_chat_delete(msg_id):
 @login_required
 def api_chat_members():
     return jsonify({'members': _get_all_members()})
+
+
+@app.route('/api/chat/upload-image', methods=['POST'])
+@login_required
+def api_chat_upload_image():
+    """Upload une image dans le chat et enregistre le message en base."""
+    import uuid as _uuid
+    user_id     = session['user_id']
+    sender_name = session.get('username', 'Membre')
+    img_file    = request.files.get('image')
+    caption     = request.form.get('caption', '').strip()[:500]
+    reply_to    = request.form.get('reply_to_id') or None
+    tags_raw    = request.form.get('tags', '[]')
+
+    if not img_file:
+        return jsonify({'success': False, 'error': 'Fichier image manquant'}), 400
+    if not allowed_file(img_file.filename):
+        return jsonify({'success': False, 'error': 'Format non supporté (png/jpg/gif/webp)'}), 400
+
+    # Sauvegarder le fichier
+    ext      = img_file.filename.rsplit('.', 1)[-1].lower()
+    filename = f"chat_{user_id}_{_uuid.uuid4().hex[:10]}.{ext}"
+    dest_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'chat')
+    os.makedirs(dest_dir, exist_ok=True)
+    filepath  = os.path.join(dest_dir, filename)
+    img_file.save(filepath)
+    image_url = f"/static/uploads/chat/{filename}"
+
+    try:
+        tags = json.loads(tags_raw)
+    except Exception:
+        tags = []
+    is_private = 1 if tags else 0
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO chat_messages
+            (user_id, content, msg_type, image_url, reply_to_id, tags, is_private)
+        VALUES (?, ?, 'image', ?, ?, ?, ?)
+    """, (user_id,
+          caption if caption else '📷 Image',
+          image_url, reply_to,
+          json.dumps(tags), is_private))
+    msg_id  = cursor.lastrowid
+    preview = f"📷 Image de {sender_name}{(' : ' + caption) if caption else ''}"
+
+    # Notifications pour les taggés
+    for tid in tags:
+        try:
+            cursor.execute("""
+                INSERT INTO notifications (user_id, type, title, message, action_url, created_at)
+                VALUES (?,?,?,?,?,datetime('now'))
+            """, (int(tid), 'info', f"📷 {sender_name} vous a tagué dans une image", preview, '/chat'))
+        except Exception:
+            pass
+    conn.commit()
+
+    if tags:
+        cursor.execute(
+            "SELECT id, username, email, whatsapp FROM users WHERE id IN (%s)"
+            % ','.join('?' * len(tags)), [int(t) for t in tags]
+        )
+        tagged_users = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        def _notify():
+            for u in tagged_users:
+                _chat_notify_email(u, sender_name, preview, msg_id)
+        threading.Thread(target=_notify, daemon=True).start()
+    else:
+        conn.close()
+
+    return jsonify({'success': True, 'id': msg_id, 'image_url': image_url})
 
 @app.route('/api/chat/whatsapp-tag')
 @login_required

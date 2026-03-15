@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bienvenue — Kengni Finance</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:linear-gradient(135deg,#0d1b3e 0%,#0f1f4a 40%,#111833 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  color:#e8ecf1;
+}
+
+/* Fond animé */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 30%,rgba(100,120,255,.1) 0%,transparent 65%),
+    radial-gradient(ellipse 500px 350px at 80% 70%,rgba(80,100,220,.08) 0%,transparent 65%);
+}
+
+.card{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:24px;
+  padding:2.5rem 2rem 2rem;
+  width:100%;max-width:440px;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1);
+  position:relative;z-index:1;
+  animation:fadeUp .4s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* Step indicator */
+.steps{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-bottom:2rem;
+}
+.step{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;
+  border:2px solid rgba(255,255,255,.15);
+  color:rgba(255,255,255,.35);transition:.3s;
+}
+.step.active{background:#6c8fff;border-color:#6c8fff;color:#fff;box-shadow:0 0 18px rgba(108,143,255,.45);}
+.step.done{background:rgba(34,197,94,.2);border-color:#22c55e;color:#22c55e;}
+.step-line{flex:1;height:1px;background:rgba(255,255,255,.1);max-width:40px;}
+
+/* Header */
+.header{text-align:center;margin-bottom:2rem;}
+.welcome-icon{
+  width:64px;height:64px;border-radius:18px;margin:0 auto 14px;
+  background:linear-gradient(135deg,rgba(108,143,255,.2),rgba(78,111,255,.15));
+  border:1px solid rgba(108,143,255,.3);
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+}
+.header h2{font-size:1.35rem;font-weight:800;color:#f0f4ff;margin-bottom:.4rem;}
+.header p{font-size:.9rem;color:rgba(240,244,255,.55);line-height:1.55;}
+
+/* Avatar zone */
+.avatar-zone{
+  display:flex;flex-direction:column;align-items:center;gap:1.2rem;
+  margin-bottom:1.8rem;
+}
+.avatar-preview{
+  width:110px;height:110px;border-radius:50%;
+  background:linear-gradient(135deg,#6c8fff,#4e6fff);
+  border:3px solid rgba(108,143,255,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.4rem;font-weight:800;color:#fff;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:all .22s;
+  box-shadow:0 0 0 6px rgba(108,143,255,.1);
+}
+.avatar-preview:hover{
+  border-color:rgba(108,143,255,.8);
+  box-shadow:0 0 0 8px rgba(108,143,255,.15),0 8px 28px rgba(0,0,0,.35);
+  transform:scale(1.04);
+}
+.avatar-preview img{
+  width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;
+}
+.avatar-overlay{
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(0,0,0,.55);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  opacity:0;transition:opacity .2s;
+  font-size:11px;font-weight:700;color:#fff;
+}
+.avatar-preview:hover .avatar-overlay{opacity:1;}
+.avatar-overlay span{font-size:22px;}
+
+/* Upload options */
+.upload-opts{
+  display:flex;gap:.6rem;
+}
+.upload-btn{
+  display:flex;align-items:center;gap:.45rem;
+  padding:.55rem 1rem;border-radius:22px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.07);
+  color:rgba(240,244,255,.8);font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:all .18s;
+  font-family:inherit;
+}
+.upload-btn:hover{background:rgba(108,143,255,.18);border-color:rgba(108,143,255,.4);color:#fff;}
+.upload-btn.primary{background:rgba(108,143,255,.2);border-color:rgba(108,143,255,.4);color:#a5b8ff;}
+.upload-btn.primary:hover{background:rgba(108,143,255,.35);}
+
+/* Tips */
+.avatar-tips{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:.8rem 1rem;
+  font-size:.78rem;color:rgba(240,244,255,.45);
+  display:flex;align-items:flex-start;gap:.5rem;line-height:1.55;
+}
+
+/* Actions */
+.actions{display:flex;flex-direction:column;gap:.7rem;}
+.btn-main{
+  width:100%;padding:.78rem;
+  background:linear-gradient(135deg,#4e6fff,#6c8fff);
+  border:none;border-radius:14px;
+  color:#fff;font-size:.97rem;font-weight:800;
+  cursor:pointer;font-family:inherit;
+  transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+}
+.btn-main:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(108,143,255,.4);}
+.btn-main:disabled{opacity:.5;transform:none;cursor:not-allowed;}
+.btn-skip{
+  width:100%;padding:.65rem;
+  background:transparent;
+  border:1px solid rgba(255,255,255,.1);border-radius:14px;
+  color:rgba(240,244,255,.45);font-size:.88rem;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .18s;
+}
+.btn-skip:hover{border-color:rgba(255,255,255,.22);color:rgba(240,244,255,.7);}
+
+/* Progress bar */
+.upload-progress{
+  width:100%;height:4px;background:rgba(255,255,255,.08);
+  border-radius:4px;overflow:hidden;display:none;margin-top:.5rem;
+}
+.upload-progress-fill{
+  height:100%;background:linear-gradient(90deg,#4e6fff,#22c55e);
+  border-radius:4px;width:0;transition:width .3s ease;
+}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(18,28,65,.97);border:1px solid rgba(255,255,255,.12);
+  color:#f0f4ff;padding:.75rem 1.4rem;border-radius:22px;
+  font-size:.88rem;font-weight:700;z-index:999;
+  backdrop-filter:blur(16px);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+  animation:toastIn .28s ease,toastOut .28s ease 2.4s forwards;
+  white-space:nowrap;
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes toastOut{to{opacity:0}}
+
+/* Hidden file input */
+#fileInput{display:none;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Step indicator -->
+  <div class="steps">
+    <div class="step done">✓</div>
+    <div class="step-line"></div>
+    <div class="step active">2</div>
+    <div class="step-line"></div>
+    <div class="step">3</div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="welcome-icon">👋</div>
+    <h2>Bienvenue, {{ user.username }} !</h2>
+    <p>C'est votre première connexion.<br>
+       Personnalisez votre profil en ajoutant une photo.</p>
+  </div>
+
+  <!-- Avatar preview + upload -->
+  <div class="avatar-zone">
+    <div class="avatar-preview" id="avatarPreview" onclick="document.getElementById('fileInput').click()">
+      {% if user.avatar %}
+        <img src="{{ user.avatar }}" alt="Avatar" id="avatarImg">
+      {% else %}
+        <span id="avatarInitial">{{ user.username[0]|upper }}</span>
+        <img src="" alt="" id="avatarImg" style="display:none">
+      {% endif %}
+      <div class="avatar-overlay">
+        <span>📷</span>
+        Changer
+      </div>
+    </div>
+
+    <div class="upload-opts">
+      <button class="upload-btn primary" onclick="document.getElementById('fileInput').click()">
+        📁 Choisir une photo
+      </button>
+      {% if user.avatar %}
+      <button class="upload-btn" id="removeBtn" onclick="removeAvatar()">
+        🗑 Supprimer
+      </button>
+      {% endif %}
+    </div>
+
+    <div class="upload-progress" id="uploadProgress">
+      <div class="upload-progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="avatar-tips">
+      💡 JPG, PNG ou WebP · Max 5 Mo · Votre photo sera visible par les membres
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn-main" id="continueBtn" onclick="goToDashboard()">
+      ✅ Continuer vers le tableau de bord
+    </button>
+    <button class="btn-skip" onclick="skipOnboarding()">
+      Passer pour l'instant →
+    </button>
+  </div>
+</div>
+
+<!-- Input fichier caché -->
+<input type="file" id="fileInput" accept="image/jpeg,image/png,image/gif,image/webp"
+       onchange="handleFileSelect(this)">
+
+<script>
+const USERNAME = "{{ user.username }}";
+let hasAvatar = {{ 'true' if user.avatar else 'false' }};
+
+/* ── Sélection fichier ── */
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5 * 1024 * 1024) { toast('❌ Fichier trop lourd — max 5 Mo'); return; }
+  if(!file.type.startsWith('image/')) { toast('❌ Fichier non supporté'); return; }
+
+  // Prévisualisation immédiate
+  const reader = new FileReader();
+  reader.onload = e => showPreview(e.target.result);
+  reader.readAsDataURL(file);
+
+  // Upload
+  uploadAvatar(file);
+  input.value = '';
+}
+
+function showPreview(src) {
+  const initEl = document.getElementById('avatarInitial');
+  const imgEl  = document.getElementById('avatarImg');
+  if(initEl) initEl.style.display = 'none';
+  imgEl.src = src; imgEl.style.display = 'block';
+  hasAvatar = true;
+  // Afficher bouton supprimer
+  const removeBtn = document.getElementById('removeBtn');
+  if(removeBtn) removeBtn.style.display = '';
+}
+
+async function uploadAvatar(file) {
+  const prog = document.getElementById('uploadProgress');
+  const fill = document.getElementById('progressFill');
+  const btn  = document.getElementById('continueBtn');
+
+  prog.style.display = 'block';
+  btn.disabled = true;
+
+  // Simuler progression
+  let pct = 0;
+  const ticker = setInterval(() => {
+    pct = Math.min(pct + 8, 88);
+    fill.style.width = pct + '%';
+  }, 80);
+
+  const fd = new FormData();
+  fd.append('avatar', file, file.name);
+
+  try {
+    const res  = await fetch('/api/upload-avatar', { method:'POST', body: fd });
+    clearInterval(ticker);
+    const data = await res.json();
+
+    if(data.success) {
+      fill.style.width = '100%';
+      setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0'; }, 600);
+      toast('✅ Photo enregistrée !');
+    } else {
+      prog.style.display = 'none';
+      toast('❌ ' + (data.error || 'Erreur upload'));
+    }
+  } catch(e) {
+    clearInterval(ticker);
+    prog.style.display = 'none';
+    toast('❌ Erreur réseau');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function removeAvatar() {
+  if(!confirm('Supprimer la photo de profil ?')) return;
+  try {
+    const res  = await fetch('/api/remove-avatar', { method:'POST' });
+    const data = await res.json();
+    if(data.success) {
+      const imgEl   = document.getElementById('avatarImg');
+      const initEl  = document.getElementById('avatarInitial');
+      imgEl.src = ''; imgEl.style.display = 'none';
+      if(initEl) initEl.style.display = '';
+      else {
+        // Recréer l'initiale si nécessaire
+        document.getElementById('avatarPreview').insertAdjacentHTML(
+          'afterbegin', `<span id="avatarInitial">${USERNAME[0].toUpperCase()}</span>`
+        );
+      }
+      const removeBtn = document.getElementById('removeBtn');
+      if(removeBtn) removeBtn.style.display = 'none';
+      hasAvatar = false;
+      toast('🗑 Photo supprimée');
+    } else {
+      toast('❌ ' + (data.error || 'Erreur'));
+    }
+  } catch(e) {
+    toast('❌ Erreur réseau');
+  }
+}
+
+function goToDashboard() {
+  window.location.href = '/announcement';
+}
+
+async function skipOnboarding() {
+  // Marquer is_first_login = 0 sans photo
+  try {
+    await fetch('/api/skip-onboarding', { method: 'POST' });
+  } catch(e) {}
+  window.location.href = '/announcement';
+}
+
+function toast(msg, ms=2800) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}
+</script>
+</body>
+</html>
