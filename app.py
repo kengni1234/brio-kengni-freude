@@ -49,6 +49,27 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 
+# ── Suppression des OSError "write error" dans les logs ───────────────────────
+# Ces erreurs surviennent quand un client (navigateur) ferme la connexion SSE
+# avant que le serveur ait fini d'écrire. C'est un comportement normal mais
+# Werkzeug/Gunicorn les logge comme des erreurs. On les filtre ici.
+import logging as _logging
+
+class _SuppressWriteErrors(_logging.Filter):
+    """Filtre les OSError 'write error' bénignes (client déconnecté)."""
+    def filter(self, record):
+        msg = str(record.getMessage())
+        if 'write error' in msg.lower() or 'broken pipe' in msg.lower():
+            return False
+        exc = record.exc_info
+        if exc and exc[1] and isinstance(exc[1], (OSError, BrokenPipeError)):
+            return False
+        return True
+
+for _log_name in ('werkzeug', 'gunicorn.error', 'gunicorn.access', ''):
+    _lg = _logging.getLogger(_log_name)
+    _lg.addFilter(_SuppressWriteErrors())
+
 # ── Configuration Gmail pour les rappels d'agenda ──────────────────────────────
 GMAIL_CONFIG = {
     'sender_email':    'fabrice.kengni12@gmail.com',
@@ -506,6 +527,18 @@ def init_db():
         # Migration: détection première connexion
         try:
             cursor.execute("ALTER TABLE users ADD COLUMN is_first_login INTEGER DEFAULT 1")
+        except Exception:
+            pass
+
+        # Migration: last_login (peut être absent sur les vieilles bases)
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN last_login TEXT DEFAULT NULL")
+        except Exception:
+            pass
+
+        # Migration: status (peut être absent sur les vieilles bases)
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'")
         except Exception:
             pass
 
@@ -1150,10 +1183,33 @@ def analyze_trade_image(image_path, trade_data):
     
     return insights
 
+
+def _normalize_yf_symbol(symbol: str) -> str:
+    """Normalise un symbole pour Yahoo Finance.
+    - Forex  : EURUSD   → EURUSD=X   (Yahoo exige le suffixe =X)
+    - Crypto : BTCUSDT  → BTC-USD    (format Binance → format yfinance)
+    - Reste  : inchangé (actions, indices…)
+    """
+    s = symbol.upper().strip()
+    # Cryptos Binance (BTCUSDT, ETHUSDT, BNBUSDT…) → BTC-USD
+    for stable in ('USDT', 'BUSD', 'USDC'):
+        if s.endswith(stable) and len(s) > len(stable):
+            return s[:-len(stable)] + '-USD'
+    # Paires forex 6 caractères sans suffixe
+    FOREX_BASES  = {'EUR','GBP','AUD','NZD','CAD','CHF','JPY','SGD',
+                    'HKD','NOK','SEK','DKK','MXN','ZAR','TRY','CNY','XAU','XAG'}
+    FOREX_QUOTES = {'USD','EUR','GBP','JPY','CHF','CAD','AUD','NZD'}
+    if (len(s) == 6 and '=' not in s and '-' not in s and '.' not in s
+            and (s[:3] in FOREX_BASES or s[3:] in FOREX_QUOTES)):
+        return s + '=X'
+    # Déjà formaté ou non-forex (EURUSD=X, BTC-USD, AAPL, ^GSPC…)
+    return s
+
+
 def trading_recommendation(symbol, timeframe='1mo'):
     """AI trading recommendations based on market data"""
     try:
-        ticker = yf.Ticker(symbol)
+        ticker = yf.Ticker(_normalize_yf_symbol(symbol))
         hist = ticker.history(period=timeframe)
         
         if hist.empty:
@@ -1376,7 +1432,7 @@ def login():
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id,username,email,password,role,theme,shop_access,shop_permissions,allowed_pages FROM users WHERE email = ?", (email,))
+            cursor.execute("SELECT id,username,email,password,role,theme,shop_access,shop_permissions,allowed_pages,last_login FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
             
             if user and check_password_hash(user['password'], password):
@@ -1384,7 +1440,10 @@ def login():
                 token_2fa = str(random.randint(100000, 999999))
 
                 # ── Détecter première connexion (last_login est NULL) ──
-                is_first = (user['last_login'] is None)
+                try:
+                    is_first = (user['last_login'] is None)
+                except (IndexError, KeyError):
+                    is_first = False
 
                 # Stocker les infos en session en attente de vérification
                 session['pending_2fa_token']       = token_2fa
@@ -2287,7 +2346,7 @@ def add_position():
         # Obtenir le prix actuel avec yfinance
         current_price = avg_price
         try:
-            ticker = yf.Ticker(data['symbol'])
+            ticker = yf.Ticker(_normalize_yf_symbol(data['symbol']))
             hist = ticker.history(period='1d')
             if not hist.empty:
                 current_price = float(hist['Close'].iloc[-1])
@@ -6351,6 +6410,17 @@ def init_documents_db():
         except Exception:
             pass
 
+    # ── Migrations survey_responses (colonnes absentes sur vieilles bases) ──
+    for col, defn in [
+        ('session_id', 'TEXT'),
+        ('answers',    'TEXT'),
+        ('ip_address', 'TEXT'),
+    ]:
+        try:
+            cursor.execute(f'ALTER TABLE survey_responses ADD COLUMN {col} {defn}')
+        except Exception:
+            pass  # colonne déjà présente
+
     conn.commit()
     conn.close()
     print("✅ Tables documents & survey initialisées")
@@ -8420,7 +8490,10 @@ def shop_sse_stream():
                     yield msg
                 except _queue.Empty:
                     yield ": keepalive\n\n"
-        except GeneratorExit:
+        except (GeneratorExit, OSError, BrokenPipeError):
+            # Client déconnecté — erreur d'écriture normale, on ignore silencieusement
+            pass
+        except Exception:
             pass
         finally:
             try: _sse_clients.remove(q)
