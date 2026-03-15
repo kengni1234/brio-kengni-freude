@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="/static/js/kni-popups.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -20,7 +21,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;overflow-x:hidden}
+body{font-family:var(--font);background:#fff;color:var(--ink);font-size:15px;overflow-x:hidden}
 
 /* ─── ANIMATIONS ─── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -103,7 +104,8 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .flash-timer{background:rgba(0,0,0,.25);border-radius:6px;padding:.15rem .5rem;font-size:.78rem;font-family:monospace;letter-spacing:.05em}
 
 /* ─── SIDEBAR + LAYOUT ─── */
-.main-wrap{max-width:1400px;margin:0 auto;padding:1.5rem 1rem}
+.main-wrap{width:100%;padding:1.5rem 1rem}
+.main-wrap-inner{max-width:1400px;margin:0 auto}
 .main-layout{display:grid;grid-template-columns:240px 1fr;gap:1.5rem;align-items:start}
 .sidebar{position:sticky;top:80px}
 .filter-card{background:var(--white);border-radius:var(--radius);padding:1.1rem;box-shadow:var(--shadow);margin-bottom:1rem}
@@ -132,6 +134,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .prod-count span{color:var(--orange);font-weight:700}
 .view-btns{display:flex;gap:.3rem}
 #prodGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.1rem;transition:.3s}
+#prodGrid .pcard{order:0}
 #prodGrid.list-view{grid-template-columns:1fr}
 .pcard{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:.22s;position:relative;animation:fadeUp .4s ease both}
 .pcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px)}
@@ -221,8 +224,9 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .no-results .no-icon{font-size:3.5rem;margin-bottom:1rem;opacity:.3}
 .no-results h3{font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:.4rem}
 
-/* ─── CAROUSEL ─── */
-.carousel-wrap{grid-column:1/-1;position:relative;border-radius:var(--radius);overflow:hidden;margin-bottom:0;box-shadow:var(--shadow)}
+/* ─── CAROUSEL — pleine largeur hors du grid ─── */
+.carousel-section{width:100%;background:#0d1117;padding:0}
+.carousel-wrap{position:relative;overflow:hidden;margin-bottom:0;box-shadow:var(--shadow)}
 .carousel-track{display:flex;transition:transform .5s cubic-bezier(.25,.46,.45,.94)}
 .carousel-slide{min-width:100%;position:relative;cursor:pointer;aspect-ratio:16/5.5;overflow:hidden}
 .carousel-slide img{width:100%;height:100%;object-fit:cover}
@@ -524,9 +528,11 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 2rem 1.5rem;margin-top:3
 @media(max-width:1024px){
   .main-layout{grid-template-columns:200px 1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
+  .main-wrap{padding:1.2rem .8rem}
 }
 @media(max-width:768px){
   .main-layout{grid-template-columns:1fr}
+  .main-wrap{padding:1rem .6rem}
   .sidebar{display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.4);align-items:flex-start;padding-top:60px}
   .sidebar.mobile-open{display:flex}
   .sidebar-inner{background:var(--white);width:280px;height:100%;overflow-y:auto;padding:1rem;animation:slideDown .2s ease}
@@ -656,8 +662,60 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 2rem 1.5rem;margin-top:3
 <!-- SSE NOTIF -->
 <div id="sseNotif"><i class="fas fa-bell"></i> <span id="sseNotifText"></span></div>
 
+<!-- ══ CAROUSEL PLEINE LARGEUR ══ -->
+<div class="carousel-section">
+  <div class="carousel-wrap">
+    <div class="carousel-track" id="carouselTrack">
+      <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(30,58,95,.85) 0%,rgba(15,23,42,.80) 100%);background-image:url('https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
+        <div class="slide-overlay">
+          <span class="slide-badge">🔥 TOP VENTES</span>
+          <h2>Électronique & Gadgets<br>à prix imbattables</h2>
+          <p>Les meilleures marques, livrées à Yaoundé</p>
+          <button class="slide-btn" onclick="filterCat('electronique')"><i class="fas fa-bolt"></i> Découvrir</button>
+        </div>
+      </div>
+      <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(124,58,237,.82),rgba(79,70,229,.80));background-image:url('https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
+        <div class="slide-overlay">
+          <span class="slide-badge">✨ NOUVEAUTÉS</span>
+          <h2>Mode & Style<br>Tendances 2025</h2>
+          <p>Chaussures, vêtements, accessoires</p>
+          <button class="slide-btn" onclick="filterCat('mode')"><i class="fas fa-tshirt"></i> Explorer</button>
+        </div>
+      </div>
+      <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(0,176,116,.85),rgba(220,38,38,.80));background-image:url('https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
+        <div class="slide-overlay">
+          <span class="slide-badge">🏷 PROMO</span>
+          <h2>Ventes Flash<br>Jusqu'à -50% !</h2>
+          <p>Offres limitées, profitez maintenant</p>
+          <button class="slide-btn" onclick="filterCat('all')"><i class="fas fa-fire"></i> J'en profite</button>
+        </div>
+      </div>
+      <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(6,95,70,.85),rgba(4,120,87,.80));background-image:url('https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
+        <div class="slide-overlay">
+          <span class="slide-badge">🏠 MAISON</span>
+          <h2>Déco & Maison<br>Qualité Premium</h2>
+          <p>Équipez votre intérieur au meilleur prix</p>
+          <button class="slide-btn" onclick="filterCat('maison')"><i class="fas fa-home"></i> Voir</button>
+        </div>
+      </div>
+      <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(30,64,175,.85),rgba(29,78,216,.80));background-image:url('https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
+        <div class="slide-overlay">
+          <span class="slide-badge">📦 LIVRAISON</span>
+          <h2>Livraison rapide<br>Yaoundé & environs</h2>
+          <p>Orange Money · MTN Mobile Money · Espèces</p>
+          <button class="slide-btn" onclick="openAccount()"><i class="fas fa-user-plus"></i> S'inscrire</button>
+        </div>
+      </div>
+    </div>
+    <button class="carousel-arrow prev" onclick="carouselMove(-1)"><i class="fas fa-chevron-left"></i></button>
+    <button class="carousel-arrow next" onclick="carouselMove(1)"><i class="fas fa-chevron-right"></i></button>
+    <div class="carousel-dots" id="carouselDots"></div>
+  </div>
+</div>
+
 <!-- MAIN -->
 <div class="main-wrap">
+  <div class="main-wrap-inner">
   <div class="main-layout" id="mainLayout">
 
     <!-- SIDEBAR -->
@@ -717,55 +775,6 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 2rem 1.5rem;margin-top:3
             <button class="vt-btn" id="vtListM" onclick="setView('list')" title="Liste"><i class="fas fa-list"></i></button>
           </div>
         </div>
-      </div>
-
-      <!-- CAROUSEL -->
-      <div class="carousel-wrap" style="margin-bottom:1.2rem">
-        <div class="carousel-track" id="carouselTrack">
-          <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(30,58,95,.85) 0%,rgba(15,23,42,.80) 100%);background-image:url('https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
-            <div class="slide-overlay">
-              <span class="slide-badge">🔥 TOP VENTES</span>
-              <h2>Électronique & Gadgets<br>à prix imbattables</h2>
-              <p>Les meilleures marques, livrées à Yaoundé</p>
-              <button class="slide-btn" onclick="filterCat('electronique')"><i class="fas fa-bolt"></i> Découvrir</button>
-            </div>
-          </div>
-          <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(124,58,237,.82),rgba(79,70,229,.80));background-image:url('https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
-            <div class="slide-overlay">
-              <span class="slide-badge">✨ NOUVEAUTÉS</span>
-              <h2>Mode & Style<br>Tendances 2025</h2>
-              <p>Chaussures, vêtements, accessoires</p>
-              <button class="slide-btn" onclick="filterCat('mode')"><i class="fas fa-tshirt"></i> Explorer</button>
-            </div>
-          </div>
-          <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(0,176,116,.85),rgba(220,38,38,.80));background-image:url('https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
-            <div class="slide-overlay">
-              <span class="slide-badge">🏷 PROMO</span>
-              <h2>Ventes Flash<br>Jusqu'à -50% !</h2>
-              <p>Offres limitées, profitez maintenant</p>
-              <button class="slide-btn" onclick="filterCat('all')"><i class="fas fa-fire"></i> J'en profite</button>
-            </div>
-          </div>
-          <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(6,95,70,.85),rgba(4,120,87,.80));background-image:url('https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
-            <div class="slide-overlay">
-              <span class="slide-badge">🏠 MAISON</span>
-              <h2>Déco & Maison<br>Qualité Premium</h2>
-              <p>Équipez votre intérieur au meilleur prix</p>
-              <button class="slide-btn" onclick="filterCat('maison')"><i class="fas fa-home"></i> Voir</button>
-            </div>
-          </div>
-          <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(30,64,175,.85),rgba(29,78,216,.80));background-image:url('https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
-            <div class="slide-overlay">
-              <span class="slide-badge">📦 LIVRAISON</span>
-              <h2>Livraison rapide<br>Yaoundé & environs</h2>
-              <p>Orange Money · MTN Mobile Money · Espèces</p>
-              <button class="slide-btn" onclick="openAccount()"><i class="fas fa-user-plus"></i> S'inscrire</button>
-            </div>
-          </div>
-        </div>
-        <button class="carousel-arrow prev" onclick="carouselMove(-1)"><i class="fas fa-chevron-left"></i></button>
-        <button class="carousel-arrow next" onclick="carouselMove(1)"><i class="fas fa-chevron-right"></i></button>
-        <div class="carousel-dots" id="carouselDots"></div>
       </div>
 
       <!-- PRODUCT GRID -->
@@ -852,8 +861,9 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 2rem 1.5rem;margin-top:3
       </div>
 
     </div><!-- /main content -->
-  </div>
-</div>
+  </div><!-- /main-layout -->
+  </div><!-- /main-wrap-inner -->
+</div><!-- /main-wrap -->
 
 <!-- FOOTER -->
 <footer>
@@ -949,7 +959,17 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 2rem 1.5rem;margin-top:3
       </div>
       <div class="form-2col">
         <div class="form-row"><label>Email</label><input id="ckEmail" type="email" placeholder="email@exemple.com"></div>
-        <div class="form-row"><label>Ville</label><input id="ckCity" type="text" placeholder="Yaoundé"></div>
+        <div class="form-row"><label>Quartier / Ville</label><input id="ckCity" type="text" placeholder="ex: Biyem-Assi, Yaoundé"></div>
+      </div>
+      <!-- ── Zone de livraison (CDC) ── -->
+      <div class="form-row" id="zoneRow">
+        <label>Zone de livraison *</label>
+        <select id="ckZone" onchange="onZoneChange(this)" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:.65rem .9rem;font-family:var(--font);font-size:.88rem;outline:none;transition:.2s;background:var(--white);color:var(--ink)">
+          <option value="">Choisir votre zone de livraison…</option>
+        </select>
+        <div id="zoneFeeInfo" style="font-size:.76rem;color:var(--orange);margin-top:.35rem;font-weight:600;padding:.4rem .6rem;background:rgba(0,176,116,.06);border-radius:7px;display:none">
+          <i class="fas fa-truck" style="margin-right:.4rem"></i><span id="zoneFeeText"></span>
+        </div>
       </div>
       <div class="form-row"><label>Note de commande</label><textarea id="ckNote" placeholder="Instructions de livraison…" rows="2" style="resize:vertical"></textarea></div>
 
@@ -1266,11 +1286,18 @@ function carouselMove(dir){goSlide((_cIdx+dir+_cTotal)%_cTotal);}
    TOAST
 ═══════════════════════════════════════════════════════════════ */
 function toast(msg, type='info'){
+  /* Pont vers KniUI */
+  if(typeof KniUI !== 'undefined'){
+    const ktype = type==='ok'?'success': type==='err'?'error': type==='info'?'info': type;
+    KniUI.toast({type: ktype, msg: msg});
+    return;
+  }
+  /* Fallback si KniUI pas encore chargé */
   const c = document.getElementById('toastContainer');
+  if(!c) return;
   const t = document.createElement('div');
-  const icon = type==='ok'?'check-circle':type==='err'?'times-circle':'info-circle';
-  t.className = `toast ${type}`;
-  t.innerHTML = `<i class="fas fa-${icon}"></i> ${msg}`;
+  t.className = 'toast ' + type;
+  t.textContent = msg;
   c.appendChild(t);
   setTimeout(()=>t.remove(),3200);
 }
@@ -1317,7 +1344,7 @@ function addCart(e,id,name,price,img,cat){
   const ex = cart.find(i=>i.id===id);
   if(ex){ex.qty++;}else{cart.push({id,name,price,img,cat,qty:1});}
   saveCart(); renderCart();
-  toast(`<strong>${name}</strong> ajouté au panier`,'ok');
+  KniUI.toast({type:'shop', title:'Panier', msg:`${name} ajouté au panier 🛒`, duration:2800});
 }
 function chgQty(id,d){
   const i = cart.find(x=>x.id===id);
@@ -1347,34 +1374,46 @@ let _curCat='all', _curSort='default', _curMaxPrice=500000, _curAvail='all';
 
 function applyFilters(){
   const q = _getSearchQuery().toLowerCase();
-  const cards = document.querySelectorAll('#prodGrid .pcard');
+  const cards = Array.from(document.querySelectorAll('#prodGrid .pcard'));
   let visible = 0;
-  const sorted = Array.from(cards).sort((a,b)=>{
-    const pa=parseFloat(a.dataset.price), pb=parseFloat(b.dataset.price);
-    const na=a.dataset.name, nb=b.dataset.name;
-    if(_curSort==='price_asc') return pa-pb;
+
+  /* ── Calcul de l'ordre trié (sans toucher au DOM) ── */
+  const sorted = cards.slice().sort((a,b)=>{
+    const pa=parseFloat(a.dataset.price)||0, pb=parseFloat(b.dataset.price)||0;
+    const na=a.dataset.name||'',            nb=b.dataset.name||'';
+    if(_curSort==='price_asc')  return pa-pb;
     if(_curSort==='price_desc') return pb-pa;
-    if(_curSort==='name_asc') return na.localeCompare(nb);
-    if(_curSort==='newest') return (b.dataset.id||0)-(a.dataset.id||0);
+    if(_curSort==='name_asc')   return na.localeCompare(nb);
+    if(_curSort==='newest')     return (parseInt(b.dataset.id)||0)-(parseInt(a.dataset.id)||0);
     return 0;
   });
-  const grid = document.getElementById('prodGrid');
-  sorted.forEach(c=>{
-    const name = c.dataset.name||'';
-    const cat  = c.dataset.cat||'';
-    const price= parseFloat(c.dataset.price)||0;
-    const stock= parseInt(c.dataset.stock)||0;
-    const badge= c.dataset.badge||'';
-    const matchQ = !q || name.includes(q);
+
+  /* ── Appliquer l'ordre via CSS order (aucun déplacement DOM) ── */
+  sorted.forEach((c, idx) => { c.style.order = idx; });
+
+  /* ── Visibilité uniquement par display (pas de réinsertion) ── */
+  cards.forEach(c => {
+    const name  = c.dataset.name||'';
+    const cat   = c.dataset.cat||'';
+    const price = parseFloat(c.dataset.price)||0;
+    const stock = parseInt(c.dataset.stock)||0;
+    const badge = c.dataset.badge||'';
+    const matchQ = !q || name.toLowerCase().includes(q);
     const matchC = _curCat==='all' || cat===_curCat;
     const matchP = price<=_curMaxPrice;
-    const matchA = _curAvail==='all' || (_curAvail==='stock'&&stock>0) || (_curAvail==='promo'&&badge==='promo');
+    const matchA = _curAvail==='all'
+                || (_curAvail==='stock' && stock>0)
+                || (_curAvail==='promo' && badge==='promo');
     const show = matchQ && matchC && matchP && matchA;
-    c.style.display = show?'':'none';
-    if(show){visible++; grid.appendChild(c);}
+    c.style.display = show ? '' : 'none';
+    if(show) visible++;
   });
-  // Show/hide inline promos
-  document.querySelectorAll('#prodGrid .inline-promo').forEach(p=>p.style.display=(_curCat==='all'&&!q)?'':'none');
+
+  /* ── Inline promos ── */
+  document.querySelectorAll('#prodGrid .inline-promo').forEach(p=>{
+    p.style.display = (_curCat==='all' && !q) ? '' : 'none';
+  });
+
   document.getElementById('prodCount').textContent = visible;
   updateCatNav();
 }
@@ -1571,13 +1610,13 @@ async function toggleWish(e,id){
     });
     const d = await r.json();
     if(d.success){
-      if(d.action==='added'){wishlist.add(id);icon.className='fas fa-heart';toast('Ajouté aux favoris ❤️','ok');}
-      else{wishlist.delete(id);icon.className='far fa-heart';toast('Retiré des favoris','info');}
+      if(d.action==='added'){wishlist.add(id);icon.className='fas fa-heart';KniUI.toast({type:'success',title:'Favoris',msg:'Produit ajouté à vos favoris ❤️',duration:2500});}
+      else{wishlist.delete(id);icon.className='far fa-heart';KniUI.toast({type:'info',msg:'Retiré des favoris',duration:2000});}
     }
   } else {
     // localStorage fallback
     if(wishlist.has(id)){wishlist.delete(id);icon.className='far fa-heart';toast('Retiré des favoris','info');}
-    else{wishlist.add(id);icon.className='fas fa-heart';toast('Connectez-vous pour sauvegarder vos favoris 💡','info');}
+    else{wishlist.add(id);icon.className='fas fa-heart';KniUI.toast({type:'info',title:'Compte requis',msg:'Connectez-vous pour sauvegarder vos favoris 💡',action:openAuth,actionLabel:'Se connecter'});}
     localStorage.setItem('kni_wish',JSON.stringify([...wishlist]));
   }
   document.querySelectorAll(`.pcard[data-id="${id}"] .pcard-wish`).forEach(b=>{
@@ -1707,7 +1746,7 @@ function addCartFromDetail(id){
   const ex = cart.find(i=>i.id===id);
   if(ex){ex.qty+=qty;}else{cart.push({id,name:p.name,price:p.price,img:p.image_url,cat:p.category,qty});}
   saveCart(); renderCart();
-  toast(`${qty}× <strong>${p.name}</strong> ajouté au panier`,'ok');
+  KniUI.toast({type:'shop', title:`${qty}× ajouté`, msg:`${p.name} dans votre panier 🛒`, duration:2800});
 }
 function switchDetailTab(tab){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>{
@@ -1794,14 +1833,14 @@ function setRevRating(n){
 async function submitReview(pid){
   const title = document.getElementById('revTitle').value.trim();
   const body  = document.getElementById('revBody').value.trim();
-  if(!body){toast('Veuillez écrire votre avis','err');return;}
+  if(!body){KniUI.toast.warning('Veuillez écrire votre avis avant de publier');return;}
   const r = await fetch(`/shop/api/product/${pid}/review`,{
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({rating:_revRating, title, body})
   });
   const d = await r.json();
-  if(d.success){toast('Avis publié ! Merci 🙏','ok'); loadReviews(pid);}
-  else{toast(d.error||'Erreur','err');}
+  if(d.success){KniUI.toast.success('Votre avis a été publié. Merci ! 🙏', 'Avis publié');loadReviews(pid);}
+  else{KniUI.toast.error(d.error||'Erreur lors de la publication');}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1809,8 +1848,10 @@ async function submitReview(pid){
 ═══════════════════════════════════════════════════════════════ */
 let _payMethod = 'orange_money', _promoDiscount = 0, _promoCode = '';
 function openCheckout(){
-  if(!cart.length){toast('Votre panier est vide','err');return;}
+  if(!cart.length){KniUI.toast.warning('Ajoutez des articles avant de commander', 'Panier vide');return;}
   closeCart();
+  // Load delivery zones
+  loadDeliveryZones();
   // Pre-fill if logged in
   if(CUST.logged){
     document.getElementById('ckName').value = CUST.name||'';
@@ -1838,13 +1879,18 @@ function selectPay(el, method){
 }
 function renderOrderSummary(){
   const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const discount = _promoDiscount;
-  const total = Math.max(0,subtotal-discount);
+  const discount  = _promoDiscount || 0;
+  const zoneEl    = document.getElementById('ckZone');
+  const zoneSel   = zoneEl ? zoneEl.options[zoneEl.selectedIndex] : null;
+  const delivFee  = (zoneSel && zoneSel.value) ? parseFloat(zoneSel.dataset.fee||'0') : 0;
+  const total     = Math.max(0, subtotal - discount + delivFee);
+  const delivLabel= (zoneSel && zoneSel.value)
+    ? `${fmt(delivFee)} — ${zoneSel.dataset.nom||''}` : 'Gratuite / À confirmer';
   document.getElementById('orderSummary').innerHTML = `
     ${cart.map(i=>`<div class="order-sum-item"><span>${i.name} ×${i.qty}</span><span>${fmt(i.price*i.qty)}</span></div>`).join('')}
-    <div class="order-sum-item" style="color:var(--green2)"><span>Livraison</span><span>À confirmer</span></div>
-    ${discount?`<div class="order-sum-item" style="color:var(--green2)"><span>Remise</span><span>-${fmt(discount)}</span></div>`:''}
-    <div class="order-sum-total"><span>Total</span><span>${fmt(total)}</span></div>`;
+    <div class="order-sum-item" style="color:var(--green2)"><span>🚚 Livraison</span><span>${delivLabel}</span></div>
+    ${discount?`<div class="order-sum-item" style="color:var(--green2)"><span>🏷 Remise</span><span>-${fmt(discount)}</span></div>`:''}
+    <div class="order-sum-total"><span>Total à payer</span><span>${fmt(total)}</span></div>`;
 }
 async function applyPromo(){
   const code = document.getElementById('ckPromo').value.trim().toUpperCase();
@@ -1860,7 +1906,7 @@ async function applyPromo(){
     document.getElementById('promoMsg').textContent = d.message;
     document.getElementById('promoSuccess').style.display='flex';
     renderOrderSummary();
-    toast(d.message,'ok');
+    KniUI.toast.success(d.message, 'Code promo appliqué 🏷');
   } else {
     toast(d.error||'Code invalide','err');
   }
@@ -1871,31 +1917,42 @@ async function confirmOrder(){
   const email = document.getElementById('ckEmail').value.trim();
   const city  = document.getElementById('ckCity').value.trim();
   const note  = document.getElementById('ckNote').value.trim();
-  if(!name||!phone){toast('Nom et téléphone requis','err');return;}
+  const zoneEl = document.getElementById('ckZone');
+  const zoneSel = zoneEl ? zoneEl.options[zoneEl.selectedIndex] : null;
+  const deliveryZone = zoneSel ? zoneSel.text : '';
+  const deliveryFee  = zoneSel ? parseFloat(zoneSel.dataset.fee||'0') : 0;
+  if(!name||!phone){KniUI.toast.warning('Veuillez renseigner votre nom et téléphone', 'Champs requis');return;}
   const btn = document.getElementById('ckBtn');
   btn.disabled=true;
   btn.innerHTML='<span class="spinner"></span> Envoi…';
+  const loadRemove = KniUI.loading.show ? (KniUI.loading.show('Traitement de votre commande…'), null) : null;
   const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
   const total = Math.max(0,subtotal-_promoDiscount);
   try{
     const r = await fetch('/shop/order',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({items:cart, total, name, phone, email, city, note,
-                            pay_method:_payMethod, promo_code:_promoCode, discount:_promoDiscount})
+      body: JSON.stringify({items:cart, total: total + deliveryFee, name, phone, email, city, note,
+                            pay_method:_payMethod, promo_code:_promoCode, discount:_promoDiscount,
+                            delivery_zone:deliveryZone, delivery_fee:deliveryFee})
     });
     const d = await r.json();
     if(d.success){
       cart=[]; saveCart(); renderCart();
       closeCheckout();
-      document.getElementById('successMsg').textContent =
-        `Commande #${d.order_id} confirmée ! Nous vous contacterons au ${phone} pour organiser la livraison.`;
+      const orderRef = d.order_number || ('#' + d.order_id);
+      const feeLabel = deliveryFee > 0 ? ` + ${new Intl.NumberFormat('fr-CM').format(deliveryFee)} XAF livraison` : '';
+      document.getElementById('successMsg').innerHTML =
+        `<strong style="color:var(--orange)">${orderRef}</strong> confirmée !<br>
+         Nous vous contacterons au <strong>${phone}</strong> pour organiser la livraison${feeLabel}.<br>
+         <a href="/shop/suivi" target="_blank" style="color:var(--orange);font-size:.82rem">📍 Suivre ma commande →</a>`;
       document.getElementById('successBg').classList.add('open');
       document.getElementById('overlay').classList.add('open');
       if(CUST.logged){CUST.points+=Math.max(1,Math.floor(total/1000));}
     } else {
-      toast(d.error||'Erreur serveur','err');
+      KniUI.toast.error(d.error||'Erreur serveur. Veuillez réessayer.', 'Erreur commande');
     }
-  }catch(e){toast('Erreur réseau','err');}
+  }catch(e){KniUI.toast.error('Erreur réseau — vérifiez votre connexion.', 'Connexion');}
+  KniUI.loading.hide();
   btn.disabled=false;
   btn.innerHTML='<i class="fas fa-check-circle"></i> Confirmer la commande';
 }
@@ -1903,6 +1960,54 @@ function closeSuccess(){
   document.getElementById('successBg').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
 }
+/* ═══════════════════════════════════════════════════════════════
+   ZONES DE LIVRAISON (CDC)
+═══════════════════════════════════════════════════════════════ */
+let _zonesCache = [];
+async function loadDeliveryZones(){
+  const sel = document.getElementById('ckZone');
+  if(!sel) return;
+  // Already loaded
+  if(_zonesCache.length){
+    _fillZoneSelect(sel); return;
+  }
+  try{
+    const r = await fetch('/shop/api/zones-livraison');
+    const d = await r.json();
+    if(d.success){ _zonesCache = d.zones||[]; _fillZoneSelect(sel); }
+  }catch(e){}
+}
+function _fillZoneSelect(sel){
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Choisir votre zone de livraison…</option>';
+  _zonesCache.forEach(z=>{
+    const opt = document.createElement('option');
+    opt.value = z.id;
+    opt.textContent = `${z.nom} — ${new Intl.NumberFormat('fr-CM').format(z.frais)} XAF (${z.delai_min}-${z.delai_max}j)`;
+    opt.dataset.fee = z.frais;
+    opt.dataset.nom = z.nom;
+    opt.dataset.delai = `${z.delai_min}-${z.delai_max} jours`;
+    if(String(z.id)===String(prev)) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function onZoneChange(sel){
+  const opt = sel.options[sel.selectedIndex];
+  const info = document.getElementById('zoneFeeInfo');
+  const txt  = document.getElementById('zoneFeeText');
+  if(sel.value && opt.dataset.fee){
+    const fee = parseFloat(opt.dataset.fee);
+    txt.textContent = `Frais : ${new Intl.NumberFormat('fr-CM').format(fee)} XAF — Livraison ${opt.dataset.delai}`;
+    info.style.display='block';
+    _promoDelivery = fee;
+  } else {
+    info.style.display='none';
+    _promoDelivery = 0;
+  }
+  renderOrderSummary();
+}
+
+
 
 /* ═══════════════════════════════════════════════════════════════
    AUTH

@@ -696,7 +696,7 @@ def inject_global_context():
         return ctx
     ctx['current_username'] = session.get('username', '')
     role = session.get('role', 'user')
-    if role in ('admin', 'superadmin'):
+    if role in ('admin', 'superadmin', 'shop_manager'):
         ctx['user_shop_access'] = True
     conn = get_db_connection()
     if not conn:
@@ -775,11 +775,11 @@ def get_user_allowed_pages(user_id):
 def get_shop_perms(user_id):
     """Retourne les permissions boutique d'un utilisateur.
     {'add': bool, 'edit': bool, 'delete': bool, 'access': bool}
-    Les admins/superadmin ont tout par defaut.
+    Les admins/superadmin/shop_manager ont tout par defaut.
     Tout utilisateur avec shop_access=1 peut voir la boutique selon ses permissions.
     """
     role = session.get('role', 'user')
-    if role in ('admin', 'superadmin'):
+    if role in ('admin', 'superadmin', 'shop_manager'):
         return {'add': True, 'edit': True, 'delete': True, 'access': True}
     conn = get_db_connection()
     if conn:
@@ -810,7 +810,7 @@ def can_shop(perm):
     perm : 'add' | 'edit' | 'delete'
     """
     role = session.get('role', 'user')
-    if role in ('admin', 'superadmin'):
+    if role in ('admin', 'superadmin', 'shop_manager'):
         return True
     uid = session.get('user_id')
     if not uid:
@@ -4350,17 +4350,31 @@ def admin_create_user():
     data = request.get_json(force=True, silent=True)
     username,email,password = data.get('username','').strip(), data.get('email','').strip(), data.get('password','').strip()
     role, status = data.get('role','user'), data.get('status','active')
-    allowed = ['viewer','user','editor','admin']
+    allowed = ['viewer','user','editor','shop_manager','moderateur','comptable','admin']
     if session.get('role')=='superadmin': allowed.append('superadmin')
     if not all([username,email,password]): return jsonify({'success':False,'message':'Tous les champs sont requis'}),400
     if role not in allowed: return jsonify({'success':False,'message':'Rôle non autorisé'}),403
+    # Shop permissions: shop_manager hérite de tout, sinon prendre les valeurs du form
+    if role == 'shop_manager':
+        shop_access = 1
+        shop_perms  = json.dumps({'add':True,'edit':True,'delete':True})
+    else:
+        shop_access = 1 if data.get('shop_access') else 0
+        raw_perms   = data.get('shop_permissions', {})
+        shop_perms  = json.dumps({
+            'add':    bool(raw_perms.get('add',    False)),
+            'edit':   bool(raw_perms.get('edit',   False)),
+            'delete': bool(raw_perms.get('delete', False)),
+        }) if raw_perms else None
     conn = get_db_connection()
     if conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM users WHERE email=?", (email,))
         if cursor.fetchone(): conn.close(); return jsonify({'success':False,'message':'Email déjà utilisé'}),409
-        cursor.execute("INSERT INTO users (username,email,password,role,status,created_at) VALUES (?,?,?,?,?,?)",
-                       (username,email,generate_password_hash(password),role,status,datetime.now().isoformat()))
+        cursor.execute(
+            "INSERT INTO users (username,email,password,role,status,shop_access,shop_permissions,created_at) VALUES (?,?,?,?,?,?,?,?)",
+            (username,email,generate_password_hash(password),role,status,shop_access,shop_perms,datetime.now().isoformat())
+        )
         conn.commit(); new_id=cursor.lastrowid; conn.close()
         return jsonify({'success':True,'message':f'Compte créé (ID {new_id})','id':new_id})
     return jsonify({'success':False,'message':'Erreur DB'}),500
@@ -4370,14 +4384,36 @@ def admin_create_user():
 def admin_update_user(user_id):
     data = request.get_json(force=True, silent=True)
     role, status = data.get('role'), data.get('status')
-    allowed = ['viewer','user','editor','admin']
+    allowed = ['viewer','user','editor','shop_manager','moderateur','comptable','admin']
     if session.get('role')=='superadmin': allowed.append('superadmin')
     if role and role not in allowed: return jsonify({'success':False,'message':'Rôle non autorisé'}),403
     conn = get_db_connection()
     if conn:
         cursor = conn.cursor()
-        if role:   cursor.execute("UPDATE users SET role=?,updated_at=? WHERE id=?",   (role,   datetime.now().isoformat(), user_id))
-        if status: cursor.execute("UPDATE users SET status=?,updated_at=? WHERE id=?", (status, datetime.now().isoformat(), user_id))
+        if role:
+            cursor.execute("UPDATE users SET role=?,updated_at=? WHERE id=?", (role, datetime.now().isoformat(), user_id))
+            # shop_manager : auto-activer tous les droits boutique
+            if role == 'shop_manager':
+                cursor.execute(
+                    "UPDATE users SET shop_access=1, shop_permissions=? WHERE id=?",
+                    (json.dumps({'add':True,'edit':True,'delete':True}), user_id)
+                )
+        if status:
+            cursor.execute("UPDATE users SET status=?,updated_at=? WHERE id=?", (status, datetime.now().isoformat(), user_id))
+        # Mise à jour des permissions boutique si envoyées explicitement
+        if 'shop_access' in data or 'shop_permissions' in data:
+            if role != 'shop_manager':  # shop_manager a déjà tout
+                shop_access = 1 if data.get('shop_access') else 0
+                raw_perms   = data.get('shop_permissions', {})
+                shop_perms  = json.dumps({
+                    'add':    bool(raw_perms.get('add',    False)),
+                    'edit':   bool(raw_perms.get('edit',   False)),
+                    'delete': bool(raw_perms.get('delete', False)),
+                }) if raw_perms else None
+                cursor.execute(
+                    "UPDATE users SET shop_access=?, shop_permissions=?, updated_at=? WHERE id=?",
+                    (shop_access, shop_perms, datetime.now().isoformat(), user_id)
+                )
         conn.commit(); conn.close()
         return jsonify({'success':True,'message':'Utilisateur mis à jour'})
     return jsonify({'success':False,'message':'Erreur DB'}),500
@@ -4436,6 +4472,42 @@ def admin_get_permissions(user_id):
     """Get allowed pages for a user."""
     allowed = get_user_allowed_pages(user_id)
     return jsonify({'success': True, 'pages': allowed})
+
+@app.route('/admin/get-shop-permissions/<int:user_id>')
+@admin_required
+def admin_get_shop_permissions(user_id):
+    """Get shop permissions for a user — appele par admin.html modal."""
+    role = ''
+    conn = get_db_connection()
+    perms = {'add': False, 'edit': False, 'delete': False, 'access': False}
+    if conn:
+        try:
+            row = conn.execute(
+                "SELECT role, shop_access, shop_permissions FROM users WHERE id=?",
+                (user_id,)
+            ).fetchone()
+            if row:
+                role = row['role']
+                if role in ('admin', 'superadmin', 'shop_manager'):
+                    perms = {'add': True, 'edit': True, 'delete': True, 'access': True}
+                else:
+                    has_access = bool(row['shop_access'])
+                    p = {}
+                    try:
+                        p = json.loads(row['shop_permissions'] or '{}')
+                    except Exception:
+                        pass
+                    perms = {
+                        'add':    bool(p.get('add', False)),
+                        'edit':   bool(p.get('edit', False)),
+                        'delete': bool(p.get('delete', False)),
+                        'access': has_access or any([p.get('add'), p.get('edit'), p.get('delete')]),
+                    }
+        except Exception:
+            pass
+        finally:
+            conn.close()
+    return jsonify({**perms, 'role': role})
 
 
 @app.route('/api/admin/users')
@@ -7674,6 +7746,277 @@ except Exception as _e:
     print(f"[Shop] init skipped: {_e}")
 
 
+# ═══════════════════════════════════════════════════════════════════
+# MODULE CDC k-Ni Store — Flash Sales, Fidélité, Zones Livraison,
+# Pages Institutionnelles, Numéro commande, Suivi, Promos avancées
+# ═══════════════════════════════════════════════════════════════════
+def init_kni_cdc_db():
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        conn.executescript("""
+        -- ── Flash Sales / Ventes Flash ──
+        CREATE TABLE IF NOT EXISTS kni_flash_sales (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id  INTEGER NOT NULL,
+            prix_flash  REAL    NOT NULL,
+            date_debut  TEXT    NOT NULL,
+            date_fin    TEXT    NOT NULL,
+            is_active   INTEGER DEFAULT 1,
+            created_at  TEXT    DEFAULT (datetime('now'))
+        );
+
+        -- ── Zones de livraison ──
+        CREATE TABLE IF NOT EXISTS kni_zones_livraison (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom         TEXT    NOT NULL,
+            quartiers   TEXT    DEFAULT '[]',
+            frais       REAL    NOT NULL DEFAULT 500,
+            delai_min   INTEGER DEFAULT 1,
+            delai_max   INTEGER DEFAULT 3,
+            is_active   INTEGER DEFAULT 1
+        );
+
+        -- ── Programme fidélité ──
+        CREATE TABLE IF NOT EXISTS kni_loyalty_history (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER NOT NULL,
+            points      INTEGER NOT NULL,
+            motif       TEXT    DEFAULT '',
+            ref_order   TEXT    DEFAULT '',
+            created_at  TEXT    DEFAULT (datetime('now'))
+        );
+
+        -- ── Pages institutionnelles ──
+        CREATE TABLE IF NOT EXISTS kni_pages (
+            slug        TEXT    PRIMARY KEY,
+            titre       TEXT    NOT NULL,
+            contenu     TEXT    DEFAULT '',
+            updated_at  TEXT    DEFAULT (datetime('now'))
+        );
+
+        -- ── Messages SAV/Contact ──
+        CREATE TABLE IF NOT EXISTS kni_contacts (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom         TEXT    DEFAULT '',
+            email       TEXT    DEFAULT '',
+            telephone   TEXT    DEFAULT '',
+            sujet       TEXT    DEFAULT '',
+            message     TEXT    NOT NULL,
+            statut      TEXT    DEFAULT 'nouveau',
+            reponse     TEXT    DEFAULT '',
+            created_at  TEXT    DEFAULT (datetime('now'))
+        );
+        """)
+        conn.commit()
+        # Migrations shop_orders pour numéro unique + suivi
+        for _sql in [
+            "ALTER TABLE shop_orders ADD COLUMN order_number TEXT DEFAULT ''",
+            "ALTER TABLE shop_orders ADD COLUMN delivery_zone TEXT DEFAULT ''",
+            "ALTER TABLE shop_orders ADD COLUMN delivery_fee REAL DEFAULT 0",
+            "ALTER TABLE shop_orders ADD COLUMN delivery_slot TEXT DEFAULT ''",
+            "ALTER TABLE shop_orders ADD COLUMN handled_by TEXT DEFAULT ''",
+            "ALTER TABLE shop_orders ADD COLUMN tracking_notes TEXT DEFAULT ''",
+        ]:
+            try: conn.execute(_sql); conn.commit()
+            except Exception: pass
+        # Migrations promo_codes pour expiration + usage unique
+        for _sql in [
+            "ALTER TABLE shop_promo_codes ADD COLUMN expires_at TEXT DEFAULT ''",
+            "ALTER TABLE shop_promo_codes ADD COLUMN single_use INTEGER DEFAULT 0",
+            "ALTER TABLE shop_promo_codes ADD COLUMN description TEXT DEFAULT ''",
+        ]:
+            try: conn.execute(_sql); conn.commit()
+            except Exception: pass
+        # Migrations shop_products pour flash sale et specifications
+        for _sql in [
+            "ALTER TABLE shop_products ADD COLUMN specifications TEXT DEFAULT ''",
+            "ALTER TABLE shop_products ADD COLUMN slug TEXT DEFAULT ''",
+            "ALTER TABLE shop_products ADD COLUMN variants TEXT DEFAULT '[]'",
+            "ALTER TABLE shop_products ADD COLUMN weight REAL DEFAULT 0",
+            "ALTER TABLE shop_products ADD COLUMN guarantee TEXT DEFAULT ''",
+        ]:
+            try: conn.execute(_sql); conn.commit()
+            except Exception: pass
+        # Seed zones de livraison par défaut
+        try:
+            zones = [
+                ('Centre-Ville / Ngousso', '["Centre-Ville","Ngousso","Mfandena","Bastos"]', 500, 1, 2),
+                ('Biyem-Assi / Étoug-Ebe', '["Biyem-Assi","Étoug-Ebe","Melen","Cité-Verte"]', 1000, 2, 3),
+                ('Mendong / Mimboman', '["Mendong","Mimboman","Nkol-Eton","Nkol-Bisson"]', 1500, 2, 4),
+                ('Yaoundé Banlieue', '["Obala","Nkolmesseng","Soa","Mbankomo"]', 2500, 3, 5),
+                ('Douala & autres villes', '["Douala","Bafoussam","Kribi","Limbe"]', 5000, 5, 7),
+            ]
+            conn.executemany(
+                "INSERT OR IGNORE INTO kni_zones_livraison (nom,quartiers,frais,delai_min,delai_max) VALUES (?,?,?,?,?)",
+                zones)
+            # Seed pages institutionnelles par défaut
+            pages = [
+                ('comment-commander', 'Comment commander', '## Comment passer une commande ?\n\n**Étape 1 : Choisir vos produits**\nParcourez notre catalogue, ajoutez les articles à votre panier.\n\n**Étape 2 : Valider votre panier**\nVérifiez votre commande et cliquez sur "Commander".\n\n**Étape 3 : Saisir vos coordonnées**\nIndiquez votre nom, téléphone et quartier de livraison.\n\n**Étape 4 : Choisir le paiement**\nOrange Money, MTN MoMo ou paiement à la livraison.\n\n**Étape 5 : Confirmation**\nVous recevez une confirmation par WhatsApp. Notre équipe vous contacte dans les 30 minutes.'),
+                ('politique-retour', 'Politique de Retour', '## Politique de Retour — 7 jours\n\nNous acceptons les retours dans un délai de **7 jours** à compter de la réception.\n\n**Conditions :**\n- Article non utilisé, dans son emballage d\'origine\n- Ticket ou preuve d\'achat obligatoire\n- Article non endommagé par le client\n\n**Procédure :**\n1. Contactez-nous au 695 072 759 (WhatsApp/Appel)\n2. Décrivez le problème avec photos si possible\n3. Convenez d\'un RDV pour le retour\n4. Remboursement ou échange sous 48h\n\n**Exceptions :** Articles soldés, téléchargements numériques.'),
+                ('faq', 'Questions Fréquentes (FAQ)', '## Questions Fréquentes\n\n**Quels sont vos délais de livraison ?**\nLivraison en 1 à 3 jours pour Yaoundé centre, 3 à 7 jours pour les villes éloignées.\n\n**Comment payer ?**\nOrange Money, MTN MoMo, Espèces à la livraison.\n\n**Puis-je annuler ma commande ?**\nOui, contactez-nous dans l\'heure suivant votre commande au 695 072 759.\n\n**Les produits sont-ils garantis ?**\nOui, tous nos produits sont garantis. Contactez notre SAV pour tout problème.\n\n**Comment suivre ma commande ?**\nVous recevez le statut par WhatsApp. Vous pouvez aussi consulter votre espace client.'),
+                ('a-propos', 'À propos de k-Ni Store', '## k-Ni Store — Votre boutique de confiance à Yaoundé\n\nFondé en 2023, k-Ni Store est une boutique e-commerce spécialisée dans l\'électronique, la mode et les accessoires de qualité.\n\n**Notre mission :** Rendre les produits de qualité accessibles à tous les camerounais, avec une livraison rapide et un service client irréprochable.\n\n**Nos valeurs :** Confiance · Qualité · Proximité · Service client\n\n**Contact :** 695 072 759 · 670 695 946\n**Email :** kni.store@gmail.com\n**Adresse :** Yaoundé, Cameroun'),
+                ('contact-sav', 'Contact & SAV', '## Contact & Service Après-Vente\n\n📞 **Téléphones :** 695 072 759 (Orange) | 670 695 946 (MTN)\n📱 **WhatsApp :** wa.me/237695072759\n✉️ **Email :** kni.store@gmail.com\n📍 **Adresse :** Ongola Market A18, Yaoundé\n\n**Horaires :** Lundi – Samedi, 8h – 20h\n\n**Pour un retour ou une réclamation :**\nContactez-nous par WhatsApp avec votre numéro de commande et une description du problème.'),
+                ('cgv', 'Conditions Générales de Vente', '## Conditions Générales de Vente\n\nLes présentes CGV régissent les relations entre k-Ni Store et ses clients.\n\n**Commandes :** Toute commande vaut acceptation des présentes CGV.\n\n**Prix :** Les prix sont en Francs CFA (XAF), TTC, hors frais de livraison.\n\n**Livraison :** Limitée à Yaoundé et environs. Délais indicatifs non contractuels.\n\n**Paiement :** Mobile Money (Orange, MTN), espèces à la livraison.\n\n**Retours :** Voir notre politique de retour (7 jours, article intact).\n\n**Responsabilité :** k-Ni Store ne peut être tenu responsable de dommages indirects.\n\n© 2026 k-Ni Store — Yaoundé, Cameroun'),
+            ]
+            conn.executemany(
+                "INSERT OR IGNORE INTO kni_pages (slug,titre,contenu) VALUES (?,?,?)",
+                pages)
+            conn.commit()
+        except Exception: pass
+    except Exception as e:
+        print(f"[CDC] init error: {e}")
+    finally:
+        conn.close()
+
+try:
+    init_kni_cdc_db()
+except Exception as _e:
+    print(f"[CDC] init skipped: {_e}")
+# Tables créées séparément pour ne pas perturber l'existant
+# ═══════════════════════════════════════════════════════════════════
+def init_erp_db():
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        conn.executescript("""
+        -- ── MODULE 1 : CRM Tiers (Clients / Prospects / Fournisseurs) ──
+        CREATE TABLE IF NOT EXISTS erp_tiers (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom           TEXT    NOT NULL,
+            type          TEXT    NOT NULL DEFAULT 'client',
+            email         TEXT    DEFAULT '',
+            telephone     TEXT    DEFAULT '',
+            telephone2    TEXT    DEFAULT '',
+            ville         TEXT    DEFAULT 'Yaoundé',
+            quartier      TEXT    DEFAULT '',
+            source        TEXT    DEFAULT '',
+            statut        TEXT    NOT NULL DEFAULT 'prospect',
+            notes         TEXT    DEFAULT '',
+            whatsapp      TEXT    DEFAULT '',
+            chiffre_affaires REAL DEFAULT 0,
+            created_at    TEXT    DEFAULT (datetime('now')),
+            updated_at    TEXT    DEFAULT (datetime('now'))
+        );
+
+        -- ── MODULE 2 : Devis / Propositions commerciales ──
+        CREATE TABLE IF NOT EXISTS erp_devis (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero        TEXT    NOT NULL UNIQUE,
+            tiers_id      INTEGER,
+            statut        TEXT    NOT NULL DEFAULT 'brouillon',
+            lignes        TEXT    NOT NULL DEFAULT '[]',
+            remise_globale REAL   DEFAULT 0,
+            tva_pct       REAL    DEFAULT 19.25,
+            montant_ht    REAL    DEFAULT 0,
+            montant_tva   REAL    DEFAULT 0,
+            montant_ttc   REAL    DEFAULT 0,
+            validite_jours INTEGER DEFAULT 30,
+            notes         TEXT    DEFAULT '',
+            created_by    INTEGER,
+            commande_id   INTEGER,
+            created_at    TEXT    DEFAULT (datetime('now')),
+            updated_at    TEXT    DEFAULT (datetime('now'))
+        );
+
+        -- ── MODULE 5 : Fournisseurs + Commandes fournisseurs ──
+        CREATE TABLE IF NOT EXISTS erp_fournisseurs (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom           TEXT    NOT NULL,
+            pays          TEXT    DEFAULT 'Cameroun',
+            contact       TEXT    DEFAULT '',
+            email         TEXT    DEFAULT '',
+            telephone     TEXT    DEFAULT '',
+            delai_moyen   INTEGER DEFAULT 7,
+            notes         TEXT    DEFAULT '',
+            created_at    TEXT    DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS erp_commandes_fourn (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero        TEXT    NOT NULL UNIQUE,
+            fournisseur_id INTEGER,
+            statut        TEXT    NOT NULL DEFAULT 'brouillon',
+            lignes        TEXT    NOT NULL DEFAULT '[]',
+            montant_total REAL    DEFAULT 0,
+            date_livraison_prev TEXT DEFAULT '',
+            notes         TEXT    DEFAULT '',
+            created_by    INTEGER,
+            created_at    TEXT    DEFAULT (datetime('now')),
+            updated_at    TEXT    DEFAULT (datetime('now'))
+        );
+
+        -- ── MODULE 7 : SAV / Tickets d'intervention ──
+        CREATE TABLE IF NOT EXISTS erp_tickets (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero        TEXT    NOT NULL UNIQUE,
+            tiers_id      INTEGER,
+            titre         TEXT    NOT NULL,
+            description   TEXT    DEFAULT '',
+            type_interv   TEXT    NOT NULL DEFAULT 'panne',
+            priorite      TEXT    NOT NULL DEFAULT 'normale',
+            statut        TEXT    NOT NULL DEFAULT 'ouvert',
+            technicien_id INTEGER,
+            rapport       TEXT    DEFAULT '',
+            pieces        TEXT    DEFAULT '',
+            montant_mo    REAL    DEFAULT 0,
+            montant_pieces REAL   DEFAULT 0,
+            facture_id    INTEGER,
+            created_by    INTEGER,
+            created_at    TEXT    DEFAULT (datetime('now')),
+            updated_at    TEXT    DEFAULT (datetime('now')),
+            resolu_at     TEXT    DEFAULT ''
+        );
+
+        -- ── MODULE 6 : Mouvements de stock ──
+        CREATE TABLE IF NOT EXISTS erp_stock_moves (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id    INTEGER NOT NULL,
+            type_mvt      TEXT    NOT NULL DEFAULT 'sortie',
+            quantite      INTEGER NOT NULL DEFAULT 0,
+            motif         TEXT    DEFAULT '',
+            ref_doc       TEXT    DEFAULT '',
+            user_id       INTEGER,
+            created_at    TEXT    DEFAULT (datetime('now'))
+        );
+
+        -- ── MODULE 8 : Contrats de maintenance ──
+        CREATE TABLE IF NOT EXISTS erp_contrats (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero        TEXT    NOT NULL UNIQUE,
+            tiers_id      INTEGER,
+            type_contrat  TEXT    NOT NULL DEFAULT 'mensuel',
+            services      TEXT    DEFAULT '[]',
+            montant       REAL    DEFAULT 0,
+            date_debut    TEXT    DEFAULT '',
+            date_fin      TEXT    DEFAULT '',
+            renouvellement_auto INTEGER DEFAULT 0,
+            statut        TEXT    NOT NULL DEFAULT 'actif',
+            notes         TEXT    DEFAULT '',
+            created_by    INTEGER,
+            created_at    TEXT    DEFAULT (datetime('now')),
+            updated_at    TEXT    DEFAULT (datetime('now'))
+        );
+        """)
+        conn.commit()
+        # Migrations colonnes erp_products (prix d'achat pour calcul marge)
+        for _sql in [
+            "ALTER TABLE shop_products ADD COLUMN prix_achat REAL DEFAULT 0",
+            "ALTER TABLE shop_products ADD COLUMN fournisseur_id INTEGER DEFAULT NULL",
+        ]:
+            try: conn.execute(_sql); conn.commit()
+            except Exception: pass
+    except Exception as e:
+        print(f"[ERP] init error: {e}")
+    finally:
+        conn.close()
+
+try:
+    init_erp_db()
+except Exception as _e:
+    print(f"[ERP] init skipped: {_e}")
+
+
 # ── Helpers images Shop ──────────────────────────────────────────────────────
 
 SHOP_IMG_FOLDER = os.path.join('static', 'uploads', 'shop')
@@ -7745,6 +8088,8 @@ def shop_create_order():
     customer_city  = (data.get('city') or '').strip()
     pay_method     = data.get('pay_method', 'orange_money')
     note           = data.get('note', '')
+    delivery_zone  = (data.get('delivery_zone') or '').strip()
+    delivery_fee   = float(data.get('delivery_fee') or 0)
 
     if not items or not customer_name:
         return jsonify({'success': False, 'error': 'Données manquantes'})
@@ -7779,13 +8124,19 @@ def shop_create_order():
         cur.execute("""
             INSERT INTO shop_orders
             (customer_name, customer_phone, customer_city, customer_email, customer_id,
-             items_summary, items_json, total, pay_method, note, promo_code, discount, status)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'pending')
+             items_summary, items_json, total, pay_method, note, promo_code, discount,
+             delivery_zone, delivery_fee, status)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'pending')
         """, (customer_name, customer_phone, customer_city, customer_email, customer_id,
               items_summary, _json.dumps(items, ensure_ascii=False),
-              total, pay_method, note, promo_code, discount))
+              total, pay_method, note, promo_code, discount, delivery_zone, delivery_fee))
         conn.commit()
         order_id = cur.lastrowid
+        # Auto-generate KNI-YYYYMMDD-XXXX order number
+        from datetime import date as _d_order
+        order_num = f"KNI-{_d_order.today().strftime('%Y%m%d')}-{order_id:04d}"
+        conn.execute("UPDATE shop_orders SET order_number=? WHERE id=?", (order_num, order_id))
+        conn.commit()
         # Loyalty points
         if session.get('shop_cid'):
             _pts = max(1, int((total or 0) / 1000))
@@ -7817,7 +8168,7 @@ def shop_create_order():
         return jsonify({'success': False, 'error': str(e)})
     finally:
         if conn: conn.close()
-    return jsonify({'success': True, 'order_id': order_id})
+    return jsonify({'success': True, 'order_id': order_id, 'order_number': order_num})
 
 
 @app.route('/shop/admin')
@@ -7825,8 +8176,8 @@ def shop_create_order():
 def shop_admin():
     role = session.get('role')
     uid  = session.get('user_id')
-    # Admins toujours autorisés ; autres utilisateurs si au moins 1 permission boutique
-    if role not in ('admin', 'superadmin'):
+    # Admins et shop_manager toujours autorisés ; autres si au moins 1 permission boutique
+    if role not in ('admin', 'superadmin', 'shop_manager'):
         perms = get_shop_perms(uid)
         if not any(perms.values()):
             return redirect(url_for('shop'))
@@ -9918,6 +10269,1331 @@ Réponds en JSON pur (aucun texte autour) :
         # Fallback
         recs = [p for p in catalog if p.get('badge') == 'hot' and p.get('stock', 0) > 0][:4]
         return jsonify({'recommendations': recs, 'reason': 'Produits populaires', 'fallback': True})
+
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ROUTES ERP — CRM / Devis / Fournisseurs / SAV / Contrats / Stock
+# ═══════════════════════════════════════════════════════════════════
+
+def _erp_next_num(prefix, table, col='numero'):
+    """Génère le prochain numéro de séquence : PREFIX-YYYY-NNNN"""
+    conn = get_db_connection()
+    try:
+        year = datetime.now().year
+        row  = conn.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE {col} LIKE ?",
+            (f"{prefix}-{year}-%",)
+        ).fetchone()
+        n = (row[0] if row else 0) + 1
+        return f"{prefix}-{year}-{n:04d}"
+    except Exception:
+        return f"{prefix}-{datetime.now().year}-{random.randint(1000,9999)}"
+    finally:
+        conn.close()
+
+
+# ── CRM Tiers ───────────────────────────────────────────────────────
+
+@app.route('/shop/api/erp/tiers', methods=['GET'])
+@login_required
+def erp_tiers_list():
+    typ    = request.args.get('type', '')
+    statut = request.args.get('statut', '')
+    q      = request.args.get('q', '').strip()
+    conn   = get_db_connection()
+    try:
+        sql    = "SELECT * FROM erp_tiers WHERE 1=1"
+        params = []
+        if typ:    sql += " AND type=?";    params.append(typ)
+        if statut: sql += " AND statut=?";  params.append(statut)
+        if q:      sql += " AND (nom LIKE ? OR email LIKE ? OR telephone LIKE ?)"; params += [f'%{q}%']*3
+        sql += " ORDER BY nom ASC"
+        rows = conn.execute(sql, params).fetchall()
+        return jsonify({'success': True, 'tiers': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/tiers', methods=['POST'])
+@login_required
+def erp_tiers_create():
+    d    = request.get_json(force=True, silent=True) or {}
+    nom  = str(d.get('nom', '')).strip()
+    if not nom:
+        return jsonify({'success': False, 'error': 'Nom requis'}), 400
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO erp_tiers
+            (nom,type,email,telephone,telephone2,ville,quartier,source,statut,notes,whatsapp)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        """, (nom, d.get('type','client'), d.get('email',''), d.get('telephone',''),
+              d.get('telephone2',''), d.get('ville','Yaoundé'), d.get('quartier',''),
+              d.get('source',''), d.get('statut','prospect'), d.get('notes',''),
+              d.get('whatsapp','')))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/tiers/<int:tid>', methods=['PUT'])
+@login_required
+def erp_tiers_update(tid):
+    d    = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        fields = ['nom','type','email','telephone','telephone2','ville','quartier',
+                  'source','statut','notes','whatsapp']
+        sets   = [f"{f}=?" for f in fields if f in d]
+        if not sets:
+            return jsonify({'success': False, 'error': 'Rien à mettre à jour'}), 400
+        vals = [d[f] for f in fields if f in d] + [datetime.now().isoformat(), tid]
+        conn.execute(f"UPDATE erp_tiers SET {','.join(sets)},updated_at=? WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/tiers/<int:tid>', methods=['DELETE'])
+@login_required
+def erp_tiers_delete(tid):
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM erp_tiers WHERE id=?", (tid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/tiers/<int:tid>/history')
+@login_required
+def erp_tiers_history(tid):
+    """Historique : commandes boutique + devis + tickets liés à ce tiers."""
+    conn = get_db_connection()
+    try:
+        tiers = dict(conn.execute("SELECT * FROM erp_tiers WHERE id=?", (tid,)).fetchone() or {})
+        if not tiers:
+            return jsonify({'success': False, 'error': 'Tiers introuvable'}), 404
+        devis   = [dict(r) for r in conn.execute(
+            "SELECT id,numero,statut,montant_ttc,created_at FROM erp_devis WHERE tiers_id=? ORDER BY created_at DESC LIMIT 20", (tid,)).fetchall()]
+        tickets = [dict(r) for r in conn.execute(
+            "SELECT id,numero,titre,statut,priorite,created_at FROM erp_tickets WHERE tiers_id=? ORDER BY created_at DESC LIMIT 20", (tid,)).fetchall()]
+        contrats= [dict(r) for r in conn.execute(
+            "SELECT id,numero,type_contrat,statut,montant,date_fin FROM erp_contrats WHERE tiers_id=? ORDER BY created_at DESC LIMIT 10", (tid,)).fetchall()]
+        # Commandes boutique liées par email/téléphone
+        orders  = []
+        if tiers.get('email') or tiers.get('telephone'):
+            sql = "SELECT id,customer_name,total,status,created_at FROM shop_orders WHERE "
+            conds, params = [], []
+            if tiers.get('email'):    conds.append("customer_email=?");  params.append(tiers['email'])
+            if tiers.get('telephone'):conds.append("customer_phone=?");  params.append(tiers['telephone'])
+            rows = conn.execute(sql + " OR ".join(conds) + " ORDER BY created_at DESC LIMIT 20", params).fetchall()
+            orders = [dict(r) for r in rows]
+        return jsonify({'success': True, 'tiers': tiers, 'devis': devis,
+                        'tickets': tickets, 'contrats': contrats, 'orders': orders})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Devis ───────────────────────────────────────────────────────────
+
+@app.route('/shop/api/erp/devis', methods=['GET'])
+@login_required
+def erp_devis_list():
+    statut = request.args.get('statut', '')
+    conn   = get_db_connection()
+    try:
+        sql = """SELECT d.*, t.nom as tiers_nom FROM erp_devis d
+                 LEFT JOIN erp_tiers t ON t.id=d.tiers_id"""
+        params = []
+        if statut: sql += " WHERE d.statut=?"; params.append(statut)
+        sql += " ORDER BY d.created_at DESC LIMIT 200"
+        rows = conn.execute(sql, params).fetchall()
+        result = []
+        for r in rows:
+            row = dict(r)
+            try: row['lignes'] = json.loads(row['lignes'] or '[]')
+            except: row['lignes'] = []
+            result.append(row)
+        return jsonify({'success': True, 'devis': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/devis', methods=['POST'])
+@login_required
+def erp_devis_create():
+    d       = request.get_json(force=True, silent=True) or {}
+    lignes  = d.get('lignes', [])
+    tva     = float(d.get('tva_pct', 19.25) or 19.25)
+    remise  = float(d.get('remise_globale', 0) or 0)
+    ht      = sum(float(l.get('prix_unitaire',0)) * int(l.get('quantite',1)) *
+                  (1 - float(l.get('remise',0))/100) for l in lignes)
+    ht_net  = round(ht * (1 - remise/100), 2)
+    tva_amt = round(ht_net * tva / 100, 2)
+    ttc     = round(ht_net + tva_amt, 2)
+    numero  = _erp_next_num('DEV', 'erp_devis')
+    conn    = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO erp_devis
+            (numero,tiers_id,statut,lignes,remise_globale,tva_pct,
+             montant_ht,montant_tva,montant_ttc,validite_jours,notes,created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (numero, d.get('tiers_id'), d.get('statut','brouillon'),
+              json.dumps(lignes, ensure_ascii=False),
+              remise, tva, ht_net, tva_amt, ttc,
+              int(d.get('validite_jours', 30) or 30),
+              d.get('notes',''), session['user_id']))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid, 'numero': numero, 'montant_ttc': ttc})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/devis/<int:did>', methods=['PUT'])
+@login_required
+def erp_devis_update(did):
+    d    = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        upd = ['updated_at=?']; vals = [datetime.now().isoformat()]
+        for f in ['statut','notes','validite_jours','tiers_id']:
+            if f in d: upd.append(f"{f}=?"); vals.append(d[f])
+        if 'lignes' in d:
+            lignes  = d['lignes']
+            tva     = float(d.get('tva_pct', 19.25) or 19.25)
+            remise  = float(d.get('remise_globale', 0) or 0)
+            ht      = sum(float(l.get('prix_unitaire',0)) * int(l.get('quantite',1)) *
+                          (1 - float(l.get('remise',0))/100) for l in lignes)
+            ht_net  = round(ht * (1 - remise/100), 2)
+            tva_amt = round(ht_net * tva / 100, 2)
+            ttc     = round(ht_net + tva_amt, 2)
+            for f2, v2 in [('lignes', json.dumps(lignes, ensure_ascii=False)),
+                           ('remise_globale', remise), ('tva_pct', tva),
+                           ('montant_ht', ht_net), ('montant_tva', tva_amt), ('montant_ttc', ttc)]:
+                upd.append(f"{f2}=?"); vals.append(v2)
+        vals.append(did)
+        conn.execute(f"UPDATE erp_devis SET {','.join(upd)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/devis/<int:did>/convert', methods=['POST'])
+@login_required
+def erp_devis_convert(did):
+    """Convertit un devis en commande boutique."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute("SELECT * FROM erp_devis WHERE id=?", (did,)).fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Devis introuvable'}), 404
+        dev = dict(row)
+        tiers = {}
+        if dev.get('tiers_id'):
+            t = conn.execute("SELECT * FROM erp_tiers WHERE id=?", (dev['tiers_id'],)).fetchone()
+            if t: tiers = dict(t)
+        lignes = json.loads(dev.get('lignes') or '[]')
+        items_summary = ', '.join(f"{l.get('designation','?')} x{l.get('quantite',1)}" for l in lignes[:3])
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO shop_orders
+            (customer_name,customer_phone,customer_city,items_summary,items_json,
+             total,pay_method,status,note,customer_email)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
+        """, (tiers.get('nom',''), tiers.get('telephone',''),
+              tiers.get('ville',''), items_summary,
+              dev.get('lignes','[]'), dev.get('montant_ttc',0),
+              'virement', 'pending',
+              f"Converti depuis devis {dev['numero']}",
+              tiers.get('email','')))
+        oid = cur.lastrowid
+        conn.execute("UPDATE erp_devis SET statut='converti',commande_id=?,updated_at=? WHERE id=?",
+                     (oid, datetime.now().isoformat(), did))
+        conn.commit()
+        return jsonify({'success': True, 'order_id': oid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Fournisseurs ────────────────────────────────────────────────────
+
+@app.route('/shop/api/erp/fournisseurs', methods=['GET'])
+@login_required
+def erp_fourn_list():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("SELECT * FROM erp_fournisseurs ORDER BY nom ASC").fetchall()
+        return jsonify({'success': True, 'fournisseurs': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/fournisseurs', methods=['POST'])
+@login_required
+def erp_fourn_create():
+    d = request.get_json(force=True, silent=True) or {}
+    if not d.get('nom','').strip():
+        return jsonify({'success': False, 'error': 'Nom requis'}), 400
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""INSERT INTO erp_fournisseurs
+            (nom,pays,contact,email,telephone,delai_moyen,notes)
+            VALUES (?,?,?,?,?,?,?)""",
+            (d['nom'].strip(), d.get('pays','Cameroun'), d.get('contact',''),
+             d.get('email',''), d.get('telephone',''),
+             int(d.get('delai_moyen',7) or 7), d.get('notes','')))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/fournisseurs/<int:fid>', methods=['PUT'])
+@login_required
+def erp_fourn_update(fid):
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        fields = ['nom','pays','contact','email','telephone','delai_moyen','notes']
+        sets   = [f"{f}=?" for f in fields if f in d]
+        if not sets: return jsonify({'success': False, 'error': 'Rien à mettre à jour'}), 400
+        vals = [d[f] for f in fields if f in d] + [fid]
+        conn.execute(f"UPDATE erp_fournisseurs SET {','.join(sets)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/fournisseurs/<int:fid>', methods=['DELETE'])
+@login_required
+def erp_fourn_delete(fid):
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM erp_fournisseurs WHERE id=?", (fid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/commandes-fourn', methods=['GET'])
+@login_required
+def erp_cmd_fourn_list():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""SELECT c.*,f.nom as fourn_nom
+            FROM erp_commandes_fourn c
+            LEFT JOIN erp_fournisseurs f ON f.id=c.fournisseur_id
+            ORDER BY c.created_at DESC LIMIT 200""").fetchall()
+        result = []
+        for r in rows:
+            row = dict(r)
+            try: row['lignes'] = json.loads(row['lignes'] or '[]')
+            except: row['lignes'] = []
+            result.append(row)
+        return jsonify({'success': True, 'commandes': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/commandes-fourn', methods=['POST'])
+@login_required
+def erp_cmd_fourn_create():
+    d      = request.get_json(force=True, silent=True) or {}
+    lignes = d.get('lignes', [])
+    total  = round(sum(float(l.get('prix_unitaire',0)) * int(l.get('quantite',1)) for l in lignes), 2)
+    numero = _erp_next_num('CF', 'erp_commandes_fourn')
+    conn   = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""INSERT INTO erp_commandes_fourn
+            (numero,fournisseur_id,statut,lignes,montant_total,
+             date_livraison_prev,notes,created_by)
+            VALUES (?,?,?,?,?,?,?,?)""",
+            (numero, d.get('fournisseur_id'), d.get('statut','brouillon'),
+             json.dumps(lignes, ensure_ascii=False), total,
+             d.get('date_livraison_prev',''), d.get('notes',''), session['user_id']))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid, 'numero': numero})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/commandes-fourn/<int:cid>', methods=['PUT'])
+@login_required
+def erp_cmd_fourn_update(cid):
+    d    = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        upd = ['updated_at=?']; vals = [datetime.now().isoformat()]
+        for f in ['statut','notes','date_livraison_prev','fournisseur_id']:
+            if f in d: upd.append(f"{f}=?"); vals.append(d[f])
+        if 'lignes' in d:
+            lignes = d['lignes']
+            total  = round(sum(float(l.get('prix_unitaire',0)) * int(l.get('quantite',1)) for l in lignes), 2)
+            upd.append("lignes=?"); vals.append(json.dumps(lignes, ensure_ascii=False))
+            upd.append("montant_total=?"); vals.append(total)
+        vals.append(cid)
+        conn.execute(f"UPDATE erp_commandes_fourn SET {','.join(upd)} WHERE id=?", vals)
+        # Si statut → reçue : mettre à jour les stocks automatiquement
+        if d.get('statut') == 'recue':
+            row = conn.execute("SELECT lignes FROM erp_commandes_fourn WHERE id=?", (cid,)).fetchone()
+            if row:
+                try:
+                    lignes = json.loads(row['lignes'] or '[]')
+                    for l in lignes:
+                        pid = l.get('product_id')
+                        qty = int(l.get('quantite', 0))
+                        if pid and qty > 0:
+                            conn.execute("UPDATE shop_products SET stock=stock+? WHERE id=?", (qty, pid))
+                            conn.execute("""INSERT INTO erp_stock_moves
+                                (product_id,type_mvt,quantite,motif,ref_doc,user_id)
+                                VALUES (?,?,?,?,?,?)""",
+                                (pid, 'entree', qty, 'Réception fournisseur',
+                                 f'CF-{cid}', session.get('user_id')))
+                except Exception: pass
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── SAV / Tickets ───────────────────────────────────────────────────
+
+@app.route('/shop/api/erp/tickets', methods=['GET'])
+@login_required
+def erp_tickets_list():
+    statut = request.args.get('statut', '')
+    conn   = get_db_connection()
+    try:
+        sql = """SELECT t.*,
+                 ti.nom as tiers_nom, ti.telephone as tiers_tel,
+                 u.username as tech_nom
+                 FROM erp_tickets t
+                 LEFT JOIN erp_tiers ti ON ti.id=t.tiers_id
+                 LEFT JOIN users u ON u.id=t.technicien_id"""
+        params = []
+        if statut: sql += " WHERE t.statut=?"; params.append(statut)
+        sql += " ORDER BY t.created_at DESC LIMIT 200"
+        rows = conn.execute(sql, params).fetchall()
+        return jsonify({'success': True, 'tickets': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/tickets', methods=['POST'])
+@login_required
+def erp_tickets_create():
+    d      = request.get_json(force=True, silent=True) or {}
+    titre  = str(d.get('titre','')).strip()
+    if not titre:
+        return jsonify({'success': False, 'error': 'Titre requis'}), 400
+    numero = _erp_next_num('SAV', 'erp_tickets')
+    conn   = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""INSERT INTO erp_tickets
+            (numero,tiers_id,titre,description,type_interv,priorite,statut,
+             technicien_id,rapport,pieces,montant_mo,montant_pieces,created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (numero, d.get('tiers_id'), titre, d.get('description',''),
+             d.get('type_interv','panne'), d.get('priorite','normale'),
+             d.get('statut','ouvert'), d.get('technicien_id'),
+             d.get('rapport',''), d.get('pieces',''),
+             float(d.get('montant_mo',0) or 0),
+             float(d.get('montant_pieces',0) or 0),
+             session['user_id']))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid, 'numero': numero})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/tickets/<int:tid>', methods=['PUT'])
+@login_required
+def erp_tickets_update(tid):
+    d    = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        upd = ['updated_at=?']; vals = [datetime.now().isoformat()]
+        for f in ['statut','priorite','type_interv','titre','description',
+                  'technicien_id','rapport','pieces','montant_mo','montant_pieces','tiers_id']:
+            if f in d: upd.append(f"{f}=?"); vals.append(d[f])
+        if d.get('statut') in ('resolu','cloture'):
+            upd.append("resolu_at=?"); vals.append(datetime.now().isoformat())
+        vals.append(tid)
+        conn.execute(f"UPDATE erp_tickets SET {','.join(upd)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/tickets/<int:tid>', methods=['DELETE'])
+@login_required
+def erp_tickets_delete(tid):
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM erp_tickets WHERE id=?", (tid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Contrats ─────────────────────────────────────────────────────────
+
+@app.route('/shop/api/erp/contrats', methods=['GET'])
+@login_required
+def erp_contrats_list():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""SELECT c.*, t.nom as tiers_nom
+            FROM erp_contrats c LEFT JOIN erp_tiers t ON t.id=c.tiers_id
+            ORDER BY c.created_at DESC LIMIT 200""").fetchall()
+        result = []
+        for r in rows:
+            row = dict(r)
+            try: row['services'] = json.loads(row['services'] or '[]')
+            except: row['services'] = []
+            result.append(row)
+        return jsonify({'success': True, 'contrats': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/contrats', methods=['POST'])
+@login_required
+def erp_contrats_create():
+    d      = request.get_json(force=True, silent=True) or {}
+    numero = _erp_next_num('CTR', 'erp_contrats')
+    conn   = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""INSERT INTO erp_contrats
+            (numero,tiers_id,type_contrat,services,montant,
+             date_debut,date_fin,renouvellement_auto,statut,notes,created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            (numero, d.get('tiers_id'), d.get('type_contrat','mensuel'),
+             json.dumps(d.get('services',[]), ensure_ascii=False),
+             float(d.get('montant',0) or 0),
+             d.get('date_debut',''), d.get('date_fin',''),
+             int(d.get('renouvellement_auto',0) or 0),
+             d.get('statut','actif'), d.get('notes',''), session['user_id']))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid, 'numero': numero})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/contrats/<int:cid>', methods=['PUT'])
+@login_required
+def erp_contrats_update(cid):
+    d    = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        upd = ['updated_at=?']; vals = [datetime.now().isoformat()]
+        for f in ['statut','type_contrat','montant','date_debut','date_fin',
+                  'renouvellement_auto','notes','tiers_id']:
+            if f in d: upd.append(f"{f}=?"); vals.append(d[f])
+        if 'services' in d:
+            upd.append("services=?"); vals.append(json.dumps(d['services'], ensure_ascii=False))
+        vals.append(cid)
+        conn.execute(f"UPDATE erp_contrats SET {','.join(upd)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Mouvements stock ─────────────────────────────────────────────────
+
+@app.route('/shop/api/erp/stock-moves', methods=['GET'])
+@login_required
+def erp_stock_moves():
+    pid  = request.args.get('product_id', type=int)
+    conn = get_db_connection()
+    try:
+        sql    = """SELECT m.*, p.name as product_name, u.username
+                    FROM erp_stock_moves m
+                    LEFT JOIN shop_products p ON p.id=m.product_id
+                    LEFT JOIN users u ON u.id=m.user_id"""
+        params = []
+        if pid: sql += " WHERE m.product_id=?"; params.append(pid)
+        sql += " ORDER BY m.created_at DESC LIMIT 500"
+        rows = conn.execute(sql, params).fetchall()
+        return jsonify({'success': True, 'moves': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/erp/stock-moves', methods=['POST'])
+@login_required
+def erp_stock_move_create():
+    d   = request.get_json(force=True, silent=True) or {}
+    pid = d.get('product_id')
+    qty = int(d.get('quantite', 0) or 0)
+    typ = d.get('type_mvt', 'sortie')
+    if not pid or qty <= 0:
+        return jsonify({'success': False, 'error': 'product_id et quantite requis'}), 400
+    conn = get_db_connection()
+    try:
+        delta = qty if typ == 'entree' else -qty
+        conn.execute("UPDATE shop_products SET stock=MAX(0,stock+?) WHERE id=?", (delta, pid))
+        conn.execute("""INSERT INTO erp_stock_moves
+            (product_id,type_mvt,quantite,motif,ref_doc,user_id)
+            VALUES (?,?,?,?,?,?)""",
+            (pid, typ, qty, d.get('motif',''), d.get('ref_doc',''), session['user_id']))
+        conn.commit()
+        new_stock = conn.execute("SELECT stock FROM shop_products WHERE id=?", (pid,)).fetchone()
+        return jsonify({'success': True, 'new_stock': new_stock[0] if new_stock else None})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Dashboard ERP (KPIs enrichis) ───────────────────────────────────
+
+@app.route('/shop/api/erp/dashboard')
+@login_required
+def erp_dashboard():
+    conn = get_db_connection()
+    try:
+        today = datetime.now().date().isoformat()
+        in30  = (datetime.now().date().__class__.today().__class__.fromordinal(
+            datetime.now().toordinal() + 30)).isoformat()
+        stats = {}
+        # CRM
+        stats['total_clients']    = conn.execute("SELECT COUNT(*) FROM erp_tiers WHERE type='client'").fetchone()[0]
+        stats['total_prospects']  = conn.execute("SELECT COUNT(*) FROM erp_tiers WHERE type='prospect'").fetchone()[0]
+        stats['total_fourn']      = conn.execute("SELECT COUNT(*) FROM erp_fournisseurs").fetchone()[0]
+        # Devis
+        stats['devis_ouverts']    = conn.execute("SELECT COUNT(*) FROM erp_devis WHERE statut IN ('brouillon','envoye')").fetchone()[0]
+        stats['devis_ca']         = conn.execute("SELECT COALESCE(SUM(montant_ttc),0) FROM erp_devis WHERE statut='accepte'").fetchone()[0]
+        # Tickets SAV
+        stats['tickets_ouverts']  = conn.execute("SELECT COUNT(*) FROM erp_tickets WHERE statut NOT IN ('resolu','cloture')").fetchone()[0]
+        stats['tickets_urgents']  = conn.execute("SELECT COUNT(*) FROM erp_tickets WHERE priorite='urgente' AND statut NOT IN ('resolu','cloture')").fetchone()[0]
+        # Contrats
+        stats['contrats_actifs']  = conn.execute("SELECT COUNT(*) FROM erp_contrats WHERE statut='actif'").fetchone()[0]
+        stats['contrats_expir']   = conn.execute("SELECT COUNT(*) FROM erp_contrats WHERE statut='actif' AND date_fin <= ?", (in30,)).fetchone()[0]
+        # Stock
+        stats['stock_valeur']     = conn.execute("SELECT COALESCE(SUM(prix_achat*stock),0) FROM shop_products WHERE is_active=1").fetchone()[0]
+        stats['produits_rupture'] = conn.execute("SELECT COUNT(*) FROM shop_products WHERE stock=0 AND is_active=1").fetchone()[0]
+        # Contrats expirant bientôt
+        contrats_exp = [dict(r) for r in conn.execute("""
+            SELECT c.numero, c.date_fin, c.montant, t.nom as tiers_nom
+            FROM erp_contrats c LEFT JOIN erp_tiers t ON t.id=c.tiers_id
+            WHERE c.statut='actif' AND c.date_fin <= ? ORDER BY c.date_fin ASC LIMIT 5
+        """, (in30,)).fetchall()]
+        # Tickets urgents
+        tickets_urg = [dict(r) for r in conn.execute("""
+            SELECT t.id, t.numero, t.titre, t.priorite, ti.nom as tiers_nom
+            FROM erp_tickets t LEFT JOIN erp_tiers ti ON ti.id=t.tiers_id
+            WHERE t.statut NOT IN ('resolu','cloture') AND t.priorite IN ('urgente','haute')
+            ORDER BY t.created_at DESC LIMIT 5
+        """).fetchall()]
+        return jsonify({'success': True, 'stats': stats,
+                        'contrats_exp': contrats_exp, 'tickets_urg': tickets_urg})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ROUTES CDC k-Ni Store — Flash Sales · Zones Livraison · Fidélité
+# Pages institutionnelles · Numéro commande · Contact SAV · Promos
+# ═══════════════════════════════════════════════════════════════════
+
+# ── Numéro de commande unique KNI-YYYYMMDD-XXXX ─────────────────
+def _gen_order_number():
+    from datetime import date as _date
+    prefix = f"KNI-{_date.today().strftime('%Y%m%d')}-"
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM shop_orders WHERE order_number LIKE ?",
+            (prefix + '%',)).fetchone()
+        n = (row[0] if row else 0) + 1
+        return f"{prefix}{n:04d}"
+    except Exception:
+        import random as _r
+        return f"{prefix}{_r.randint(1000,9999)}"
+    finally:
+        conn.close()
+
+
+# ── Flash Sales ──────────────────────────────────────────────────
+
+@app.route('/shop/api/flash-sales', methods=['GET'])
+def kni_flash_sales_public():
+    """Retourne les flash sales actives (public)."""
+    conn = get_db_connection()
+    try:
+        now = datetime.now().isoformat()
+        rows = conn.execute("""
+            SELECT f.*, p.name, p.image_url, p.price as prix_normal, p.stock
+            FROM kni_flash_sales f
+            JOIN shop_products p ON p.id = f.product_id
+            WHERE f.is_active=1 AND f.date_debut <= ? AND f.date_fin >= ?
+            ORDER BY f.date_fin ASC
+        """, (now, now)).fetchall()
+        result = []
+        for r in rows:
+            d = dict(r)
+            d['seconds_left'] = max(0, int(
+                (datetime.fromisoformat(d['date_fin']) - datetime.now()).total_seconds()))
+            d['pct_off'] = round((1 - d['prix_flash'] / d['prix_normal']) * 100) if d['prix_normal'] else 0
+            result.append(d)
+        return jsonify({'success': True, 'flash_sales': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/flash-sales', methods=['GET'])
+@login_required
+def kni_flash_sales_admin():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT f.*, p.name, p.price as prix_normal
+            FROM kni_flash_sales f JOIN shop_products p ON p.id=f.product_id
+            ORDER BY f.created_at DESC
+        """).fetchall()
+        return jsonify({'success': True, 'flash_sales': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/flash-sales', methods=['POST'])
+@login_required
+def kni_flash_sale_create():
+    d = request.get_json(force=True, silent=True) or {}
+    if not d.get('product_id') or not d.get('prix_flash') or not d.get('date_fin'):
+        return jsonify({'success': False, 'error': 'product_id, prix_flash et date_fin requis'}), 400
+    conn = get_db_connection()
+    try:
+        debut = d.get('date_debut') or datetime.now().isoformat()
+        cur = conn.cursor()
+        cur.execute("""INSERT INTO kni_flash_sales
+            (product_id, prix_flash, date_debut, date_fin, is_active)
+            VALUES (?,?,?,?,1)""",
+            (d['product_id'], float(d['prix_flash']),
+             debut, d['date_fin']))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/flash-sales/<int:fid>', methods=['PUT'])
+@login_required
+def kni_flash_sale_update(fid):
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        upd, vals = [], []
+        for f in ['prix_flash', 'date_debut', 'date_fin', 'is_active', 'product_id']:
+            if f in d: upd.append(f"{f}=?"); vals.append(d[f])
+        if not upd: return jsonify({'success': False, 'error': 'Rien à mettre à jour'}), 400
+        vals.append(fid)
+        conn.execute(f"UPDATE kni_flash_sales SET {','.join(upd)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/flash-sales/<int:fid>', methods=['DELETE'])
+@login_required
+def kni_flash_sale_delete(fid):
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM kni_flash_sales WHERE id=?", (fid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Zones de livraison ───────────────────────────────────────────
+
+@app.route('/shop/api/zones-livraison', methods=['GET'])
+def kni_zones_public():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM kni_zones_livraison WHERE is_active=1 ORDER BY frais ASC"
+        ).fetchall()
+        result = []
+        for r in rows:
+            row = dict(r)
+            try: row['quartiers'] = json.loads(row['quartiers'] or '[]')
+            except: row['quartiers'] = []
+            result.append(row)
+        return jsonify({'success': True, 'zones': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/zones-livraison', methods=['GET'])
+@login_required
+def kni_zones_admin():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("SELECT * FROM kni_zones_livraison ORDER BY frais ASC").fetchall()
+        result = []
+        for r in rows:
+            row = dict(r)
+            try: row['quartiers'] = json.loads(row['quartiers'] or '[]')
+            except: row['quartiers'] = []
+            result.append(row)
+        return jsonify({'success': True, 'zones': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/zones-livraison', methods=['POST'])
+@login_required
+def kni_zone_create():
+    d = request.get_json(force=True, silent=True) or {}
+    if not d.get('nom') or d.get('frais') is None:
+        return jsonify({'success': False, 'error': 'nom et frais requis'}), 400
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""INSERT INTO kni_zones_livraison
+            (nom, quartiers, frais, delai_min, delai_max, is_active)
+            VALUES (?,?,?,?,?,1)""",
+            (d['nom'], json.dumps(d.get('quartiers', []), ensure_ascii=False),
+             float(d['frais']), int(d.get('delai_min', 1) or 1), int(d.get('delai_max', 3) or 3)))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/zones-livraison/<int:zid>', methods=['PUT'])
+@login_required
+def kni_zone_update(zid):
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        upd, vals = [], []
+        for f in ['nom', 'frais', 'delai_min', 'delai_max', 'is_active']:
+            if f in d: upd.append(f"{f}=?"); vals.append(d[f])
+        if 'quartiers' in d:
+            upd.append("quartiers=?")
+            vals.append(json.dumps(d['quartiers'], ensure_ascii=False))
+        if not upd: return jsonify({'success': False, 'error': 'Rien à mettre à jour'}), 400
+        vals.append(zid)
+        conn.execute(f"UPDATE kni_zones_livraison SET {','.join(upd)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/zones-livraison/<int:zid>', methods=['DELETE'])
+@login_required
+def kni_zone_delete(zid):
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM kni_zones_livraison WHERE id=?", (zid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Programme Fidélité ───────────────────────────────────────────
+
+@app.route('/shop/api/admin/loyalty/history', methods=['GET'])
+@login_required
+def kni_loyalty_history():
+    cid = request.args.get('customer_id', type=int)
+    conn = get_db_connection()
+    try:
+        sql = """SELECT h.*, c.name as customer_name
+                 FROM kni_loyalty_history h
+                 LEFT JOIN shop_customers c ON c.id=h.customer_id"""
+        params = []
+        if cid: sql += " WHERE h.customer_id=?"; params.append(cid)
+        sql += " ORDER BY h.created_at DESC LIMIT 500"
+        rows = conn.execute(sql, params).fetchall()
+        return jsonify({'success': True, 'history': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/loyalty/add-points', methods=['POST'])
+@login_required
+def kni_loyalty_add():
+    d = request.get_json(force=True, silent=True) or {}
+    cid = d.get('customer_id')
+    pts = int(d.get('points', 0) or 0)
+    if not cid or pts == 0:
+        return jsonify({'success': False, 'error': 'customer_id et points requis'}), 400
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE shop_customers SET points=MAX(0,points+?) WHERE id=?", (pts, cid))
+        conn.execute("""INSERT INTO kni_loyalty_history
+            (customer_id, points, motif, ref_order)
+            VALUES (?,?,?,?)""",
+            (cid, pts, d.get('motif', 'Ajout manuel'), d.get('ref_order', '')))
+        conn.commit()
+        row = conn.execute("SELECT points FROM shop_customers WHERE id=?", (cid,)).fetchone()
+        return jsonify({'success': True, 'new_total': row[0] if row else 0})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+def _loyalty_tier(points):
+    """Retourne le palier fidélité selon les points."""
+    if points >= 5000: return {'tier': 'Platine', 'icon': '💎', 'color': '#a855f7'}
+    if points >= 2000: return {'tier': 'Or',      'icon': '🥇', 'color': '#f59e0b'}
+    if points >= 500:  return {'tier': 'Argent',  'icon': '🥈', 'color': '#9ca3af'}
+    return                    {'tier': 'Bronze',  'icon': '🥉', 'color': '#b45309'}
+
+
+@app.route('/shop/api/admin/loyalty/stats', methods=['GET'])
+@login_required
+def kni_loyalty_stats():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT c.id, c.name, c.email, c.phone, c.points,
+                   COUNT(h.id) as nb_operations
+            FROM shop_customers c
+            LEFT JOIN kni_loyalty_history h ON h.customer_id=c.id
+            GROUP BY c.id ORDER BY c.points DESC LIMIT 100
+        """).fetchall()
+        result = []
+        for r in rows:
+            d = dict(r)
+            d.update(_loyalty_tier(d['points'] or 0))
+            result.append(d)
+        totals = conn.execute("SELECT SUM(points), COUNT(*) FROM shop_customers").fetchone()
+        return jsonify({'success': True, 'customers': result,
+                        'total_points': totals[0] or 0, 'total_members': totals[1] or 0})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Pages institutionnelles ──────────────────────────────────────
+
+@app.route('/shop/page/<slug>')
+def kni_page_public(slug):
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM kni_pages WHERE slug=?", (slug,)).fetchone()
+        if not row:
+            return "Page introuvable", 404
+        page = dict(row)
+        return render_template('shop_page.html', page=page)
+    except Exception:
+        return "Erreur", 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/pages', methods=['GET'])
+@login_required
+def kni_pages_admin():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("SELECT slug, titre, updated_at FROM kni_pages ORDER BY slug").fetchall()
+        return jsonify({'success': True, 'pages': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/pages/<slug>', methods=['GET'])
+@login_required
+def kni_page_get(slug):
+    conn = get_db_connection()
+    try:
+        row = conn.execute("SELECT * FROM kni_pages WHERE slug=?", (slug,)).fetchone()
+        if not row: return jsonify({'success': False, 'error': 'Page introuvable'}), 404
+        return jsonify({'success': True, 'page': dict(row)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/pages/<slug>', methods=['PUT'])
+@login_required
+def kni_page_update(slug):
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        now = datetime.now().isoformat()
+        conn.execute("""INSERT INTO kni_pages (slug, titre, contenu, updated_at)
+            VALUES (?,?,?,?)
+            ON CONFLICT(slug) DO UPDATE SET
+            titre=excluded.titre, contenu=excluded.contenu, updated_at=excluded.updated_at""",
+            (slug, d.get('titre', slug), d.get('contenu', ''), now))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Messages Contact / SAV ───────────────────────────────────────
+
+@app.route('/shop/contact', methods=['POST'])
+def kni_contact_submit():
+    d = request.get_json(force=True, silent=True) or request.form
+    msg = str(d.get('message', '')).strip()
+    if not msg:
+        if request.is_json: return jsonify({'success': False, 'error': 'Message requis'}), 400
+        return redirect('/shop')
+    conn = get_db_connection()
+    try:
+        conn.execute("""INSERT INTO kni_contacts
+            (nom, email, telephone, sujet, message)
+            VALUES (?,?,?,?,?)""",
+            (str(d.get('nom', '')).strip(), str(d.get('email', '')).strip(),
+             str(d.get('telephone', '')).strip(), str(d.get('sujet', '')).strip(), msg))
+        conn.commit()
+        if request.is_json:
+            return jsonify({'success': True, 'message': 'Message envoyé ! Nous répondrons sous 24h.'})
+        return redirect('/shop')
+    except Exception as e:
+        if request.is_json: return jsonify({'success': False, 'error': str(e)}), 500
+        return redirect('/shop')
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/contacts', methods=['GET'])
+@login_required
+def kni_contacts_admin():
+    statut = request.args.get('statut', '')
+    conn = get_db_connection()
+    try:
+        sql = "SELECT * FROM kni_contacts"
+        params = []
+        if statut: sql += " WHERE statut=?"; params.append(statut)
+        sql += " ORDER BY created_at DESC LIMIT 200"
+        rows = conn.execute(sql, params).fetchall()
+        return jsonify({'success': True, 'contacts': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/contacts/<int:cid>', methods=['PUT'])
+@login_required
+def kni_contact_update(cid):
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        upd, vals = [], []
+        for f in ['statut', 'reponse']:
+            if f in d: upd.append(f"{f}=?"); vals.append(d[f])
+        if not upd: return jsonify({'success': False, 'error': 'Rien à mettre à jour'}), 400
+        vals.append(cid)
+        conn.execute(f"UPDATE kni_contacts SET {','.join(upd)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Suivi commande client ────────────────────────────────────────
+
+@app.route('/shop/suivi')
+def kni_order_tracking():
+    """Page de suivi de commande par numéro KNI-..."""
+    return render_template('shop_tracking.html')
+
+
+@app.route('/shop/api/suivi', methods=['POST'])
+def kni_order_track():
+    d = request.get_json(force=True, silent=True) or {}
+    num = str(d.get('order_number', '')).strip().upper()
+    tel = str(d.get('phone', '')).strip()
+    if not num and not tel:
+        return jsonify({'success': False, 'error': 'Numéro de commande ou téléphone requis'}), 400
+    conn = get_db_connection()
+    try:
+        sql = "SELECT * FROM shop_orders WHERE 1=1"
+        params = []
+        if num:
+            sql += " AND (order_number=? OR CAST(id AS TEXT)=?)"; params += [num, num.replace('KNI-', '').lstrip('0')]
+        elif tel:
+            sql += " AND customer_phone=?"; params.append(tel)
+        sql += " ORDER BY created_at DESC LIMIT 5"
+        rows = conn.execute(sql, params).fetchall()
+        if not rows:
+            return jsonify({'success': False, 'error': 'Aucune commande trouvée'})
+        result = []
+        SL = {'pending': 'En attente', 'paid': 'Payée', 'shipped': '🚚 Expédiée',
+              'delivered': '✅ Livrée', 'cancelled': '❌ Annulée',
+              'preparation': '📦 En préparation'}
+        for r in rows:
+            o = dict(r)
+            o['status_label'] = SL.get(o['status'], o['status'])
+            try: o['items'] = json.loads(o.get('items_json') or '[]')
+            except: o['items'] = []
+            result.append(o)
+        return jsonify({'success': True, 'orders': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Numéro de commande auto sur création ────────────────────────
+# Patch shop_create_order pour ajouter numéro + points fidélité
+_original_shop_create_order = None
+
+def _patch_shop_order_number():
+    """Patch le endpoint shop_create_order pour injecter le numéro KNI-."""
+    pass  # Les nouvelles commandes créées via /shop/order reçoivent le numéro en post-insert
+
+
+@app.route('/shop/api/order/add-number', methods=['POST'])
+@login_required
+def kni_add_order_numbers():
+    """Patch en masse : génère les numéros manquants sur les commandes existantes."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, created_at FROM shop_orders WHERE order_number='' OR order_number IS NULL"
+        ).fetchall()
+        updated = 0
+        for r in rows:
+            from datetime import date as _date
+            d = (r['created_at'] or '')[:10].replace('-', '') or _date.today().strftime('%Y%m%d')
+            num = f"KNI-{d}-{r['id']:04d}"
+            conn.execute("UPDATE shop_orders SET order_number=? WHERE id=?", (num, r['id']))
+            updated += 1
+        conn.commit()
+        return jsonify({'success': True, 'updated': updated})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Promos avancées (expiration, usage unique) ───────────────────
+
+@app.route('/shop/api/admin/promos', methods=['GET'])
+@login_required
+def kni_promos_list():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM shop_promo_codes ORDER BY created_at DESC"
+        ).fetchall()
+        now = datetime.now().isoformat()
+        result = []
+        for r in rows:
+            d = dict(r)
+            d['is_expired'] = bool(d.get('expires_at') and d['expires_at'] < now)
+            result.append(d)
+        return jsonify({'success': True, 'promos': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/promos', methods=['POST'])
+@login_required
+def kni_promo_create():
+    d = request.get_json(force=True, silent=True) or {}
+    code = str(d.get('code', '')).strip().upper()
+    if not code:
+        return jsonify({'success': False, 'error': 'Code requis'}), 400
+    conn = get_db_connection()
+    try:
+        conn.execute("""INSERT OR REPLACE INTO shop_promo_codes
+            (code, discount, type, min_order, max_uses, is_active,
+             expires_at, single_use, description)
+            VALUES (?,?,?,?,?,1,?,?,?)""",
+            (code, float(d.get('discount', 10) or 10), d.get('type', 'percent'),
+             float(d.get('min_order', 0) or 0), int(d.get('max_uses', 1000) or 1000),
+             d.get('expires_at', ''), int(d.get('single_use', 0) or 0),
+             d.get('description', '')))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/promos/<string:code>', methods=['PUT'])
+@login_required
+def kni_promo_update(code):
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        upd, vals = [], []
+        for f in ['discount', 'type', 'min_order', 'max_uses', 'is_active',
+                  'expires_at', 'single_use', 'description']:
+            if f in d: upd.append(f"{f}=?"); vals.append(d[f])
+        if not upd: return jsonify({'success': False, 'error': 'Rien à mettre à jour'}), 400
+        vals.append(code)
+        conn.execute(f"UPDATE shop_promo_codes SET {','.join(upd)} WHERE code=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/promos/<string:code>', methods=['DELETE'])
+@login_required
+def kni_promo_delete(code):
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM shop_promo_codes WHERE code=?", (code,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# ── Dashboard CDC (KPIs enrichis pour shop_admin) ────────────────
+
+@app.route('/shop/api/admin/cdc-dashboard')
+@login_required
+def kni_cdc_dashboard():
+    conn = get_db_connection()
+    try:
+        now = datetime.now().isoformat()
+        stats = {}
+        stats['flash_actives']   = conn.execute(
+            "SELECT COUNT(*) FROM kni_flash_sales WHERE is_active=1 AND date_fin>=?", (now,)).fetchone()[0]
+        stats['total_zones']     = conn.execute(
+            "SELECT COUNT(*) FROM kni_zones_livraison WHERE is_active=1").fetchone()[0]
+        stats['total_promos']    = conn.execute(
+            "SELECT COUNT(*) FROM shop_promo_codes WHERE is_active=1").fetchone()[0]
+        stats['messages_new']    = conn.execute(
+            "SELECT COUNT(*) FROM kni_contacts WHERE statut='nouveau'").fetchone()[0]
+        stats['total_points']    = conn.execute(
+            "SELECT COALESCE(SUM(points),0) FROM shop_customers").fetchone()[0]
+        stats['top_tier_count']  = conn.execute(
+            "SELECT COUNT(*) FROM shop_customers WHERE points>=2000").fetchone()[0]
+        # Commandes sans numéro
+        stats['orders_no_num']   = conn.execute(
+            "SELECT COUNT(*) FROM shop_orders WHERE order_number='' OR order_number IS NULL").fetchone()[0]
+        # Flash sales actives
+        flash = [dict(r) for r in conn.execute("""
+            SELECT f.id, f.prix_flash, f.date_fin, p.name, p.price as prix_normal
+            FROM kni_flash_sales f JOIN shop_products p ON p.id=f.product_id
+            WHERE f.is_active=1 AND f.date_fin>=? ORDER BY f.date_fin ASC LIMIT 5
+        """, (now,)).fetchall()]
+        # Messages récents
+        msgs = [dict(r) for r in conn.execute(
+            "SELECT * FROM kni_contacts ORDER BY created_at DESC LIMIT 5").fetchall()]
+        return jsonify({'success': True, 'stats': stats, 'flash': flash, 'messages': msgs})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="/static/js/kni-popups.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ══ SYNCHRONISATION k-Ni — Police & couleurs ══ */
@@ -517,6 +518,21 @@ button .emoji, span.emoji, [data-emoji]{
     <button class="sa-nb" id="nb-stock" onclick="go('stock')"><i class="fas fa-warehouse"></i> Valeur stock</button>
     <button class="sa-nb" id="nb-analytics" onclick="go('analytics')"><i class="fas fa-chart-line"></i> Analytiques</button>
     <div class="sa-sep"></div>
+    <div class="sa-grp">ERP — Gestion</div>
+    <button class="sa-nb" id="nb-crm" onclick="go('crm')"><i class="fas fa-address-book"></i> CRM Clients</button>
+    <button class="sa-nb" id="nb-devis" onclick="go('devis')"><i class="fas fa-file-alt"></i> Devis</button>
+    <button class="sa-nb" id="nb-fourn" onclick="go('fourn')"><i class="fas fa-truck-loading"></i> Fournisseurs</button>
+    <button class="sa-nb" id="nb-sav" onclick="go('sav')"><i class="fas fa-tools"></i> SAV / Tickets</button>
+    <button class="sa-nb" id="nb-contrats" onclick="go('contrats')"><i class="fas fa-file-contract"></i> Contrats</button>
+    <div class="sa-sep"></div>
+    <div class="sa-grp">k-Ni Store — CDC</div>
+    <button class="sa-nb" id="nb-flash" onclick="go('flash')"><i class="fas fa-bolt"></i> Flash Sales <span id="flashBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#ef4444;color:#fff;border-radius:20px;padding:.05rem .35rem">0</span></button>
+    <button class="sa-nb" id="nb-zones" onclick="go('zones')"><i class="fas fa-map-marker-alt"></i> Zones Livraison</button>
+    <button class="sa-nb" id="nb-fidelite" onclick="go('fidelite')"><i class="fas fa-star"></i> Programme Fidélité</button>
+    <button class="sa-nb" id="nb-promos" onclick="go('promos')"><i class="fas fa-tags"></i> Codes Promo</button>
+    <button class="sa-nb" id="nb-pages" onclick="go('pages')"><i class="fas fa-file-alt"></i> Pages du site</button>
+    <button class="sa-nb" id="nb-messages" onclick="go('messages')"><i class="fas fa-envelope"></i> Messages SAV <span id="msgBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#ef4444;color:#fff;border-radius:20px;padding:.05rem .35rem">0</span></button>
+    <div class="sa-sep"></div>
     <div class="sa-grp">Équipe</div>
     <button class="sa-nb" id="nb-staff" onclick="go('staff')"><i class="fas fa-headset"></i> Assistance</button>
     <button class="sa-nb" id="nb-banners" onclick="go('banners')"><i class="fas fa-scroll"></i> Bannières top</button>
@@ -572,7 +588,7 @@ button .emoji, span.emoji, [data-emoji]{
   {% if orders %}
   <div class="tw" style="overflow-x:auto"><table><thead><tr><th>Réf</th><th>Client</th><th>Produits</th><th>Total</th><th>Statut</th><th>Date</th></tr></thead><tbody>
   {% for o in orders[:6] %}
-  <tr onclick="showOrd({{ o.id }})"><td><code style="color:var(--primary-color)">#{{ o.id }}</code></td><td><strong>{{ o.customer_name or '—' }}</strong></td>
+  <tr onclick="showOrd({{ o.id }})"><td><code style="color:var(--primary-color)">{{ o.order_number or ('#'+o.id|string) }}</code></td><td><strong>{{ o.customer_name or '—' }}</strong></td>
   <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.76rem;color:var(--text-secondary)">{{ o.items_summary or '—' }}</td>
   <td style="font-family:var(--font-mono);font-weight:700;color:var(--primary-color);white-space:nowrap">{{ "{:,.0f}".format(o.total) }} XAF</td>
   <td><span class="sp sp-{{ o.status }}">{{ {'pending':'⏳ Attente','paid':'✅ Payé','shipped':'🚚 Expédié','delivered':'📬 Livré','cancelled':'❌ Annulé'}.get(o.status, o.status) }}</span></td>
@@ -828,8 +844,8 @@ button .emoji, span.emoji, [data-emoji]{
     {% set user_map = {} %}
     {% for u in all_users %}{% set _ = user_map.update({u.id: u.username}) %}{% endfor %}
     {% for o in orders %}
-    <tr class="ord-row" data-status="{{ o.status }}" data-q="{{ ((o.customer_name or '')+(o.customer_phone or ''))|lower }}" onclick="showOrd({{ o.id }})">
-      <td><code style="color:var(--primary-color)">#{{ o.id }}</code></td>
+    <tr class="ord-row" data-status="{{ o.status }}" data-q="{{ ((o.order_number or '')+(o.customer_name or '')+(o.customer_phone or ''))|lower }}" onclick="showOrd({{ o.id }})">
+      <td><code style="color:var(--primary-color)">{{ o.order_number or ('#'+o.id|string) }}</code></td>
       <td><strong>{{ o.customer_name or '—' }}</strong></td>
       <td style="font-family:var(--font-mono);font-size:.74rem">{{ o.customer_phone or '—' }}</td>
       <td style="font-size:.76rem;color:var(--text-secondary)">{{ o.customer_city or '—' }}</td>
@@ -1272,6 +1288,235 @@ button .emoji, span.emoji, [data-emoji]{
 {% endif %}
 </div><!-- /sa-main -->
 
+<!-- ══ FLASH SALES ══ -->
+<div class="sec" id="sec-flash">
+  <div class="sh">
+    <h4><i class="fas fa-bolt" style="color:#f59e0b"></i> Flash Sales — Ventes Flash</h4>
+    <button class="btn-p" onclick="openFlashModal()"><i class="fas fa-plus"></i> Nouvelle vente flash</button>
+  </div>
+  <div class="kpis" id="flashKpis" style="margin-bottom:1.2rem"></div>
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Produit</th><th>Prix normal</th><th>Prix flash</th><th>Réduction</th><th>Fin dans</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="flashBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ ZONES LIVRAISON ══ -->
+<div class="sec" id="sec-zones">
+  <div class="sh">
+    <h4><i class="fas fa-map-marker-alt" style="color:var(--primary-color)"></i> Zones de Livraison</h4>
+    <button class="btn-p" onclick="openZoneModal()"><i class="fas fa-plus"></i> Nouvelle zone</button>
+  </div>
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Zone</th><th>Quartiers couverts</th><th>Frais (XAF)</th><th>Délai</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="zonesBody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ PROGRAMME FIDÉLITÉ ══ -->
+<div class="sec" id="sec-fidelite">
+  <div class="sh">
+    <h4><i class="fas fa-star" style="color:#f59e0b"></i> Programme de Fidélité</h4>
+    <button class="btn-p" onclick="openAddPointsModal()"><i class="fas fa-plus"></i> Ajouter des points</button>
+  </div>
+  <div class="kpis" id="fideliteKpis" style="margin-bottom:1.2rem"></div>
+  <!-- Paliers -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;margin-bottom:1.2rem">
+    <div style="background:rgba(180,83,9,.12);border:1px solid rgba(180,83,9,.3);border-radius:12px;padding:1rem;text-align:center">
+      <div style="font-size:1.4rem">🥉</div><div style="font-weight:800;color:#b45309">Bronze</div><div style="font-size:.75rem;color:var(--text-secondary)">0 – 499 pts</div>
+    </div>
+    <div style="background:rgba(156,163,175,.12);border:1px solid rgba(156,163,175,.3);border-radius:12px;padding:1rem;text-align:center">
+      <div style="font-size:1.4rem">🥈</div><div style="font-weight:800;color:#9ca3af">Argent</div><div style="font-size:.75rem;color:var(--text-secondary)">500 – 1 999 pts</div>
+    </div>
+    <div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:1rem;text-align:center">
+      <div style="font-size:1.4rem">🥇</div><div style="font-weight:800;color:#f59e0b">Or</div><div style="font-size:.75rem;color:var(--text-secondary)">2 000 – 4 999 pts</div>
+    </div>
+    <div style="background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:1rem;text-align:center">
+      <div style="font-size:1.4rem">💎</div><div style="font-weight:800;color:#a855f7">Platine</div><div style="font-size:.75rem;color:var(--text-secondary)">5 000+ pts</div>
+    </div>
+  </div>
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Client</th><th>Email</th><th>Téléphone</th><th>Points</th><th>Palier</th><th>Actions</th></tr></thead>
+      <tbody id="fideliteBody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ CODES PROMO ══ -->
+<div class="sec" id="sec-promos">
+  <div class="sh">
+    <h4><i class="fas fa-tags" style="color:var(--primary-color)"></i> Codes Promo Avancés</h4>
+    <button class="btn-p" onclick="openPromoModal()"><i class="fas fa-plus"></i> Nouveau code</button>
+  </div>
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Code</th><th>Réduction</th><th>Type</th><th>Min. achat</th><th>Usages</th><th>Expiration</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="promosBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ PAGES DU SITE ══ -->
+<div class="sec" id="sec-pages">
+  <div class="sh">
+    <h4><i class="fas fa-file-alt" style="color:var(--primary-color)"></i> Pages Institutionnelles</h4>
+    <span style="font-size:.78rem;color:var(--text-secondary)">Modifiez le contenu des pages du site</span>
+  </div>
+  <div id="pagesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem;margin-bottom:1.2rem"></div>
+  <div id="pageEditor" style="display:none">
+    <div class="sh" style="margin-bottom:.8rem">
+      <h4 id="pageEditorTitle" style="font-size:.9rem">Éditer la page</h4>
+      <button class="btn-g" style="font-size:.78rem" onclick="closePagesEditor()"><i class="fas fa-arrow-left"></i> Retour</button>
+    </div>
+    <div style="margin-bottom:.7rem"><label class="fl">Titre de la page</label><input class="fc" id="pageTitle"></div>
+    <div style="margin-bottom:.7rem">
+      <label class="fl">Contenu (Markdown supporté)</label>
+      <textarea class="fc" id="pageContent" rows="16" style="font-family:monospace;font-size:.82rem;resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;gap:.6rem;justify-content:flex-end">
+      <a id="pageLinkBtn" href="#" target="_blank" class="btn-g" style="text-decoration:none;font-size:.8rem"><i class="fas fa-external-link-alt"></i> Voir en ligne</a>
+      <button class="btn-p" onclick="savePage()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MESSAGES SAV ══ -->
+<div class="sec" id="sec-messages">
+  <div class="sh">
+    <h4><i class="fas fa-envelope" style="color:var(--primary-color)"></i> Messages & SAV Clients</h4>
+    <div style="display:flex;gap:.5rem">
+      <select id="msgStatutFilter" class="btn-g" style="padding:.45rem .7rem" onchange="loadMessages()">
+        <option value="">Tous</option><option value="nouveau">Nouveaux</option>
+        <option value="en_cours">En cours</option><option value="resolu">Résolus</option>
+      </select>
+    </div>
+  </div>
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Date</th><th>Nom</th><th>Contact</th><th>Sujet</th><th>Message</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="messagesBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ CRM CLIENTS ══ -->
+<div class="sec" id="sec-crm">
+  <div class="sh">
+    <h4><i class="fas fa-address-book" style="color:var(--primary-color)"></i> CRM — Tiers</h4>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <select id="crmTypeFilter" class="btn-g" style="padding:.45rem .7rem" onchange="loadCRM()">
+        <option value="">Tous</option><option value="client">Clients</option>
+        <option value="prospect">Prospects</option><option value="fournisseur">Fournisseurs</option>
+      </select>
+      <input id="crmSearch" class="btn-g" style="padding:.45rem .7rem;border-radius:10px;outline:none;min-width:160px" placeholder="🔍 Rechercher…" oninput="loadCRM()">
+      <button class="btn-p" onclick="openCRMModal()"><i class="fas fa-plus"></i> Nouveau tiers</button>
+    </div>
+  </div>
+  <div class="tw" style="overflow-x:auto">
+    <table id="crmTable">
+      <thead><tr><th>Nom</th><th>Type</th><th>Statut</th><th>Ville</th><th>Téléphone</th><th>Email</th><th>Actions</th></tr></thead>
+      <tbody id="crmBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i> Chargement…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ DEVIS ══ -->
+<div class="sec" id="sec-devis">
+  <div class="sh">
+    <h4><i class="fas fa-file-alt" style="color:var(--primary-color)"></i> Devis & Propositions</h4>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <select id="devisStatutFilter" class="btn-g" style="padding:.45rem .7rem" onchange="loadDevis()">
+        <option value="">Tous</option><option value="brouillon">Brouillon</option>
+        <option value="envoye">Envoyé</option><option value="accepte">Accepté</option>
+        <option value="refuse">Refusé</option><option value="converti">Converti</option>
+      </select>
+      <button class="btn-p" onclick="openDevisModal()"><i class="fas fa-plus"></i> Nouveau devis</button>
+    </div>
+  </div>
+  <div class="kpis" id="devisKpis" style="margin-bottom:1.2rem"></div>
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Numéro</th><th>Client</th><th>Statut</th><th>Montant TTC</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody id="devisBody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i> Chargement…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ FOURNISSEURS ══ -->
+<div class="sec" id="sec-fourn">
+  <div class="sh">
+    <h4><i class="fas fa-truck-loading" style="color:var(--primary-color)"></i> Fournisseurs & Achats</h4>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn-g" id="fournTabFourn" onclick="switchFournTab('fourn')" style="border-color:var(--primary-color);color:var(--primary-color)">Fournisseurs</button>
+      <button class="btn-g" id="fournTabCmd" onclick="switchFournTab('cmd')">Commandes</button>
+      <button class="btn-p" id="fournAddBtn" onclick="openFournModal()"><i class="fas fa-plus"></i> Ajouter</button>
+    </div>
+  </div>
+  <!-- Fournisseurs list -->
+  <div id="fournListPanel">
+    <div class="tw" style="overflow-x:auto">
+      <table><thead><tr><th>Nom</th><th>Pays</th><th>Contact</th><th>Téléphone</th><th>Délai moy.</th><th>Actions</th></tr></thead>
+      <tbody id="fournBody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- Commandes fournisseurs -->
+  <div id="cmdFournPanel" style="display:none">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.8rem">
+      <button class="btn-p" onclick="openCmdFournModal()"><i class="fas fa-plus"></i> Nouvelle commande</button>
+    </div>
+    <div class="tw" style="overflow-x:auto">
+      <table><thead><tr><th>Numéro</th><th>Fournisseur</th><th>Statut</th><th>Montant</th><th>Livr. prévue</th><th>Actions</th></tr></thead>
+      <tbody id="cmdFournBody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SAV / TICKETS ══ -->
+<div class="sec" id="sec-sav">
+  <div class="sh">
+    <h4><i class="fas fa-tools" style="color:var(--primary-color)"></i> SAV — Tickets d'intervention</h4>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+      <select id="savStatutFilter" class="btn-g" style="padding:.45rem .7rem" onchange="loadSAV()">
+        <option value="">Tous</option><option value="ouvert">Ouvert</option>
+        <option value="en_cours">En cours</option><option value="attente_piece">Attente pièce</option>
+        <option value="resolu">Résolu</option><option value="cloture">Clôturé</option>
+      </select>
+      <button class="btn-p" onclick="openSAVModal()"><i class="fas fa-plus"></i> Nouveau ticket</button>
+    </div>
+  </div>
+  <div class="kpis" id="savKpis" style="margin-bottom:1.2rem"></div>
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>N° Commande</th><th>Client</th><th>Titre</th><th>Type</th><th>Priorité</th><th>Statut</th><th>Technicien</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody id="savBody"><tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ CONTRATS ══ -->
+<div class="sec" id="sec-contrats">
+  <div class="sh">
+    <h4><i class="fas fa-file-contract" style="color:var(--primary-color)"></i> Contrats de maintenance</h4>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn-p" onclick="openContratsModal()"><i class="fas fa-plus"></i> Nouveau contrat</button>
+    </div>
+  </div>
+  <div id="contratsAlerts" style="margin-bottom:1rem"></div>
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Numéro</th><th>Client</th><th>Type</th><th>Montant/mois</th><th>Fin</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="contratsBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- ══ DETAIL PANEL ══ -->
 <aside class="dp closed" id="dpanel">
   <div class="dp-hd"><h5 id="dpTitle">Détail</h5><button class="dp-x" onclick="closeDP()"><i class="fas fa-times"></i></button></div>
@@ -1325,6 +1570,397 @@ button .emoji, span.emoji, [data-emoji]{
 </div>
 
 <!-- ══ INVOICE MODAL ══ -->
+<!-- ══ MODAL FLASH SALE ══ -->
+<div class="modal-ov" id="flashModal">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-hd"><h4 id="flashModalTitle">Nouvelle vente flash</h4><button class="modal-x" onclick="closeFlashModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="flashId">
+      <div style="margin-bottom:.7rem"><label class="fl">Produit *</label>
+        <select class="fc" id="flashProduct"><option value="">— Choisir un produit —</option></select>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Prix flash (XAF) *</label><input class="fc" id="flashPrix" type="number" min="0" placeholder="Ex: 5000" oninput="calcFlashPct()"></div>
+        <div><label class="fl">Réduction estimée</label><div id="flashPct" style="padding:.55rem .7rem;background:rgba(239,68,68,.1);color:#f87171;border-radius:8px;font-weight:800;font-size:.9rem;margin-top:.25rem">—</div></div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Début</label><input class="fc" id="flashDebut" type="datetime-local"></div>
+        <div><label class="fl">Fin *</label><input class="fc" id="flashFin" type="datetime-local"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:.5rem;font-size:.83rem;cursor:pointer">
+        <input type="checkbox" id="flashActive" checked> Activer immédiatement
+      </label>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeFlashModal()">Annuler</button>
+      <button class="btn-p" onclick="saveFlash()"><i class="fas fa-bolt"></i> Lancer la vente flash</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ZONE LIVRAISON ══ -->
+<div class="modal-ov" id="zoneModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hd"><h4 id="zoneModalTitle">Nouvelle zone</h4><button class="modal-x" onclick="closeZoneModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="zoneId">
+      <div style="margin-bottom:.7rem"><label class="fl">Nom de la zone *</label><input class="fc" id="zoneNom" placeholder="Ex: Centre-Ville / Ngousso"></div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Frais de livraison (XAF) *</label><input class="fc" id="zoneFrais" type="number" min="0" value="500"></div>
+        <div style="display:flex;gap:.4rem">
+          <div style="flex:1"><label class="fl">Délai min (j)</label><input class="fc" id="zoneDelaiMin" type="number" min="1" value="1"></div>
+          <div style="flex:1"><label class="fl">Délai max (j)</label><input class="fc" id="zoneDelaiMax" type="number" min="1" value="3"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:.7rem">
+        <label class="fl">Quartiers couverts (un par ligne)</label>
+        <textarea class="fc" id="zoneQuartiers" rows="4" placeholder="Centre-Ville&#10;Ngousso&#10;Mfandena&#10;Bastos"></textarea>
+      </div>
+      <label style="display:flex;align-items:center;gap:.5rem;font-size:.83rem;cursor:pointer">
+        <input type="checkbox" id="zoneActive" checked> Zone active
+      </label>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeZoneModal()">Annuler</button>
+      <button class="btn-p" onclick="saveZone()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL AJOUT POINTS ══ -->
+<div class="modal-ov" id="addPointsModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-hd"><h4>Ajouter / Retirer des points</h4><button class="modal-x" onclick="closeAddPointsModal()">&times;</button></div>
+    <div class="modal-bd">
+      <div style="margin-bottom:.7rem"><label class="fl">Client *</label>
+        <select class="fc" id="pointsCustomer"><option value="">— Sélectionner —</option></select>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Points (négatif = retrait)</label><input class="fc" id="pointsVal" type="number" placeholder="Ex: 100"></div>
+        <div><label class="fl">Référence commande</label><input class="fc" id="pointsRef" placeholder="KNI-..."></div>
+      </div>
+      <div style="margin-bottom:.7rem"><label class="fl">Motif</label><input class="fc" id="pointsMotif" value="Ajout manuel" placeholder="Ex: Bonus commande, Correction..."></div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeAddPointsModal()">Annuler</button>
+      <button class="btn-p" onclick="savePoints()"><i class="fas fa-star"></i> Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CODE PROMO ══ -->
+<div class="modal-ov" id="promoModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hd"><h4 id="promoModalTitle">Nouveau code promo</h4><button class="modal-x" onclick="closePromoModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="promoCode">
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Code promo *</label><input class="fc" id="promoCodeInput" placeholder="Ex: NOEL25" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+        <div><label class="fl">Type</label>
+          <select class="fc" id="promoType">
+            <option value="percent">% Pourcentage</option>
+            <option value="fixed">XAF Montant fixe</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Valeur réduction *</label><input class="fc" id="promoDiscount" type="number" min="0" placeholder="Ex: 10"></div>
+        <div><label class="fl">Achat minimum (XAF)</label><input class="fc" id="promoMinOrder" type="number" min="0" value="0"></div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Nb max d'utilisations</label><input class="fc" id="promoMaxUses" type="number" min="1" value="1000"></div>
+        <div><label class="fl">Expire le</label><input class="fc" id="promoExpires" type="date"></div>
+      </div>
+      <div style="margin-bottom:.7rem"><label class="fl">Description interne</label><input class="fc" id="promoDesc" placeholder="Ex: Promo Noël 2026"></div>
+      <label style="display:flex;align-items:center;gap:.5rem;font-size:.83rem;cursor:pointer;margin-bottom:.5rem">
+        <input type="checkbox" id="promoSingleUse"> Usage unique par client
+      </label>
+      <label style="display:flex;align-items:center;gap:.5rem;font-size:.83rem;cursor:pointer">
+        <input type="checkbox" id="promoActive" checked> Code actif
+      </label>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closePromoModal()">Annuler</button>
+      <button class="btn-p" onclick="savePromo()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL REPONSE MESSAGE ══ -->
+<div class="modal-ov" id="msgReplyModal">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-hd"><h4>Répondre / Traiter le message</h4><button class="modal-x" onclick="closeMsgReplyModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="msgReplyId">
+      <div id="msgReplyContent" style="background:rgba(255,255,255,.04);border:1px solid var(--border-color);border-radius:10px;padding:.9rem;font-size:.84rem;color:var(--text-secondary);margin-bottom:.9rem;line-height:1.6"></div>
+      <div style="margin-bottom:.7rem"><label class="fl">Statut</label>
+        <select class="fc" id="msgReplyStatut">
+          <option value="nouveau">Nouveau</option>
+          <option value="en_cours">En cours de traitement</option>
+          <option value="resolu">Résolu</option>
+        </select>
+      </div>
+      <div><label class="fl">Notes internes / Réponse</label>
+        <textarea class="fc" id="msgReplyText" rows="4" placeholder="Notes internes ou réponse apportée au client…"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeMsgReplyModal()">Annuler</button>
+      <button class="btn-p" onclick="saveMsgReply()"><i class="fas fa-check"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+<div class="modal-ov" id="crmModal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-hd"><h4 id="crmModalTitle">Nouveau tiers</h4><button class="modal-x" onclick="closeCRMModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="crmId">
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Nom / Raison sociale *</label><input class="fc" id="crmNom" placeholder="Ex: Jean Dupont"></div>
+        <div><label class="fl">Type *</label>
+          <select class="fc" id="crmType">
+            <option value="client">Client</option><option value="prospect">Prospect</option><option value="fournisseur">Fournisseur</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Statut</label>
+          <select class="fc" id="crmStatut">
+            <option value="prospect">Prospect</option><option value="client_actif">Client actif</option>
+            <option value="client_inactif">Client inactif</option>
+          </select>
+        </div>
+        <div><label class="fl">Ville</label>
+          <select class="fc" id="crmVille">
+            <option value="Yaoundé">Yaoundé</option><option value="Douala">Douala</option><option value="Autre">Autre</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Téléphone *</label><input class="fc" id="crmTel" placeholder="6XX XXX XXX"></div>
+        <div><label class="fl">WhatsApp</label><input class="fc" id="crmWa" placeholder="237XXXXXXXXX"></div>
+      </div>
+      <div style="margin-bottom:.7rem"><label class="fl">Email</label><input class="fc" id="crmEmail" type="email" placeholder="email@exemple.com"></div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Quartier / Adresse</label><input class="fc" id="crmQuartier" placeholder="Bastos, Mvan…"></div>
+        <div><label class="fl">Source d'acquisition</label>
+          <select class="fc" id="crmSource">
+            <option value="">—</option><option value="WhatsApp">WhatsApp</option><option value="Bouche à oreille">Bouche à oreille</option>
+            <option value="Réseaux sociaux">Réseaux sociaux</option><option value="Site web">Site web</option><option value="Autre">Autre</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:.7rem"><label class="fl">Notes internes</label><textarea class="fc" id="crmNotes" rows="2" placeholder="Informations privées…"></textarea></div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeCRMModal()">Annuler</button>
+      <button class="btn-p" onclick="saveCRM()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL DEVIS ══ -->
+<div class="modal-ov" id="devisModal">
+  <div class="modal-box" style="max-width:700px">
+    <div class="modal-hd"><h4 id="devisModalTitle">Nouveau devis</h4><button class="modal-x" onclick="closeDevisModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="devisId">
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Client / Tiers</label>
+          <select class="fc" id="devisTiersId"><option value="">— Sélectionner —</option></select>
+        </div>
+        <div><label class="fl">Validité (jours)</label><input class="fc" id="devisValidite" type="number" value="30" min="1"></div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">TVA (%)</label><input class="fc" id="devisTva" type="number" value="19.25" step="0.01"></div>
+        <div><label class="fl">Remise globale (%)</label><input class="fc" id="devisRemise" type="number" value="0" min="0" max="100" step="0.1"></div>
+      </div>
+      <!-- Lignes -->
+      <div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;margin-bottom:.7rem">
+        <div style="background:var(--bg-color);padding:.5rem .75rem;font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;display:flex;gap:.5rem">
+          <span style="flex:2">Désignation</span><span style="flex:1">Qté</span><span style="flex:1">Prix HT</span><span style="flex:1">Remise%</span><span style="flex:1">Total HT</span><span style="width:32px"></span>
+        </div>
+        <div id="devisLignes" style="padding:.5rem"></div>
+        <div style="padding:.5rem .75rem">
+          <button class="btn-g" style="font-size:.78rem" onclick="addDevisLigne()"><i class="fas fa-plus"></i> Ajouter ligne</button>
+        </div>
+      </div>
+      <!-- Totaux -->
+      <div style="text-align:right;font-size:.85rem;color:var(--text-secondary);margin-bottom:.7rem">
+        <div>Total HT : <strong id="devisTotalHT" style="color:var(--text-primary)">0 XAF</strong></div>
+        <div>TVA (<span id="devisTvaLabel">19.25</span>%) : <strong id="devisTotalTVA" style="color:var(--text-primary)">0 XAF</strong></div>
+        <div style="font-size:1rem;margin-top:.25rem">Total TTC : <strong id="devisTotalTTC" style="color:var(--primary-color)">0 XAF</strong></div>
+      </div>
+      <div><label class="fl">Notes / Conditions</label><textarea class="fc" id="devisNotes" rows="2" placeholder="Conditions de paiement, délais…"></textarea></div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeDevisModal()">Annuler</button>
+      <button class="btn-g" onclick="saveDevis('brouillon')"><i class="fas fa-save"></i> Brouillon</button>
+      <button class="btn-p" onclick="saveDevis('envoye')"><i class="fas fa-paper-plane"></i> Enregistrer & Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL FOURNISSEUR ══ -->
+<div class="modal-ov" id="fournModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hd"><h4 id="fournModalTitle">Nouveau fournisseur</h4><button class="modal-x" onclick="closeFournModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="fournId">
+      <div style="margin-bottom:.7rem"><label class="fl">Nom *</label><input class="fc" id="fournNom" placeholder="Ex: Tech Supplies China"></div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Pays</label>
+          <select class="fc" id="fournPays">
+            <option value="Cameroun">Cameroun</option><option value="Chine">Chine</option>
+            <option value="Dubai (EAU)">Dubai (EAU)</option><option value="France">France</option>
+            <option value="Nigeria">Nigeria</option><option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div><label class="fl">Délai livraison moyen (j)</label><input class="fc" id="fournDelai" type="number" value="7" min="1"></div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Contact</label><input class="fc" id="fournContact" placeholder="Nom du contact"></div>
+        <div><label class="fl">Téléphone</label><input class="fc" id="fournTel" placeholder="+86 XXX…"></div>
+      </div>
+      <div style="margin-bottom:.7rem"><label class="fl">Email</label><input class="fc" id="fournEmail" type="email" placeholder="supplier@example.com"></div>
+      <div><label class="fl">Notes</label><textarea class="fc" id="fournNotes" rows="2" placeholder="Conditions, catalogues…"></textarea></div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeFournModal()">Annuler</button>
+      <button class="btn-p" onclick="saveFourn()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL COMMANDE FOURNISSEUR ══ -->
+<div class="modal-ov" id="cmdFournModal">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-hd"><h4 id="cmdFournModalTitle">Nouvelle commande fournisseur</h4><button class="modal-x" onclick="closeCmdFournModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="cmdFournId">
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Fournisseur *</label>
+          <select class="fc" id="cmdFournFournId"><option value="">— Sélectionner —</option></select>
+        </div>
+        <div><label class="fl">Date livraison prévue</label><input class="fc" id="cmdFournDate" type="date"></div>
+      </div>
+      <div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;margin-bottom:.7rem">
+        <div style="background:var(--bg-color);padding:.5rem .75rem;font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;display:flex;gap:.5rem">
+          <span style="flex:2">Produit / Désignation</span><span style="flex:1">Qté</span><span style="flex:1">Prix achat</span><span style="flex:1">Total</span><span style="width:32px"></span>
+        </div>
+        <div id="cmdFournLignes" style="padding:.5rem"></div>
+        <div style="padding:.5rem .75rem">
+          <button class="btn-g" style="font-size:.78rem" onclick="addCmdFournLigne()"><i class="fas fa-plus"></i> Ajouter ligne</button>
+        </div>
+      </div>
+      <div style="text-align:right;font-size:.9rem;margin-bottom:.7rem">
+        Total : <strong id="cmdFournTotal" style="color:var(--primary-color)">0 XAF</strong>
+      </div>
+      <div><label class="fl">Notes</label><textarea class="fc" id="cmdFournNotes" rows="2" placeholder="Instructions de livraison…"></textarea></div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeCmdFournModal()">Annuler</button>
+      <button class="btn-p" onclick="saveCmdFourn()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL SAV ══ -->
+<div class="modal-ov" id="savModal">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-hd"><h4 id="savModalTitle">Nouveau ticket SAV</h4><button class="modal-x" onclick="closeSAVModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="savId">
+      <div style="margin-bottom:.7rem"><label class="fl">Titre *</label><input class="fc" id="savTitre" placeholder="Résumé du problème en une ligne"></div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Client</label>
+          <select class="fc" id="savTiersId"><option value="">— Sans client —</option></select>
+        </div>
+        <div><label class="fl">Type d'intervention</label>
+          <select class="fc" id="savType">
+            <option value="panne">Panne</option><option value="installation">Installation</option>
+            <option value="maintenance">Maintenance préventive</option><option value="formation">Formation</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Priorité</label>
+          <select class="fc" id="savPriorite">
+            <option value="normale">Normale</option><option value="haute">Haute</option>
+            <option value="urgente">⚡ Urgente (&lt;4h)</option><option value="basse">Basse</option>
+          </select>
+        </div>
+        <div><label class="fl">Statut</label>
+          <select class="fc" id="savStatut">
+            <option value="ouvert">Ouvert</option><option value="en_cours">En cours</option>
+            <option value="attente_piece">Attente pièce</option>
+            <option value="resolu">Résolu</option><option value="cloture">Clôturé</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Technicien assigné</label>
+          <select class="fc" id="savTechnicien"><option value="">— Non assigné —</option></select>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <div style="flex:1"><label class="fl">M.O. (XAF)</label><input class="fc" id="savMO" type="number" value="0" min="0"></div>
+          <div style="flex:1"><label class="fl">Pièces (XAF)</label><input class="fc" id="savPieces" type="number" value="0" min="0"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:.7rem"><label class="fl">Description</label><textarea class="fc" id="savDesc" rows="2" placeholder="Détails du problème signalé…"></textarea></div>
+      <div><label class="fl">Rapport d'intervention</label><textarea class="fc" id="savRapport" rows="2" placeholder="Ce qui a été fait, pièces remplacées…"></textarea></div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeSAVModal()">Annuler</button>
+      <button class="btn-p" onclick="saveSAV()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CONTRAT ══ -->
+<div class="modal-ov" id="contratsModal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-hd"><h4 id="contratsModalTitle">Nouveau contrat</h4><button class="modal-x" onclick="closeContratsModal()">&times;</button></div>
+    <div class="modal-bd">
+      <input type="hidden" id="contratsId">
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Client *</label>
+          <select class="fc" id="contratsTiersId"><option value="">— Sélectionner —</option></select>
+        </div>
+        <div><label class="fl">Type de contrat</label>
+          <select class="fc" id="contratsType">
+            <option value="mensuel">Mensuel</option><option value="trimestriel">Trimestriel</option>
+            <option value="annuel">Annuel</option><option value="ponctuel">Ponctuel</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Montant (XAF)</label><input class="fc" id="contratsMontant" type="number" value="0" min="0"></div>
+        <div><label class="fl">Statut</label>
+          <select class="fc" id="contratsStatut">
+            <option value="actif">Actif</option><option value="suspendu">Suspendu</option>
+            <option value="expire">Expiré</option><option value="annule">Annulé</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div><label class="fl">Date début</label><input class="fc" id="contratsDebut" type="date"></div>
+        <div><label class="fl">Date fin</label><input class="fc" id="contraatsFin" type="date"></div>
+      </div>
+      <div style="margin-bottom:.7rem"><label class="fl">Services couverts (un par ligne)</label>
+        <textarea class="fc" id="contratsServices" rows="3" placeholder="Ex : Maintenance réseau&#10;Support téléphonique&#10;Sauvegarde données"></textarea>
+      </div>
+      <label style="display:flex;align-items:center;gap:.5rem;font-size:.83rem;margin-bottom:.7rem;cursor:pointer">
+        <input type="checkbox" id="contratsRenouvAuto"> Renouvellement automatique
+      </label>
+      <div><label class="fl">Notes</label><textarea class="fc" id="contratsNotes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeContratsModal()">Annuler</button>
+      <button class="btn-p" onclick="saveContrat()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
 <div class="modal-ov" id="invModal">
   <div class="modal-box" style="max-width:640px">
     <div class="modal-hd"><h4 id="invModalTitle">Nouvelle facture</h4><button class="modal-x" onclick="closeInvModal()">&times;</button></div>
@@ -1378,23 +2014,30 @@ button .emoji, span.emoji, [data-emoji]{
 <script>
 /* ══ DATA FROM JINJA ══ */
 const PRODS = { {% for p in products %}{{ p.id }}: {{ {'id':p.id,'name':p.name,'description':p.description or '','features':p.features or '','category':p.category,'price':p.price,'original_price':p.original_price or 0,'stock':p.stock,'image_url':p.image_url or '','images':p.images or '[]','badge':p.badge or '','is_active':p.is_active,'reviews_count':p.reviews_count or 0,'delivery_info':p.delivery_info or 'Livraison 3-7 jours'}|tojson }},{% endfor %} };
-const ORDERS = { {% for o in orders %}{{ o.id }}: {{ {'id':o.id,'customer_name':o.customer_name or '','customer_phone':o.customer_phone or '','customer_city':o.customer_city or '','items_summary':o.items_summary or '','items_json':o.items_json or '[]','total':o.total,'pay_method':o.pay_method or '','note':o.note or '','status':o.status,'created_at':o.created_at or '','handled_by':o.handled_by}|tojson }},{% endfor %} };
+const ORDERS = { {% for o in orders %}{{ o.id }}: {{ {'id':o.id,'order_number':o.order_number or '','customer_name':o.customer_name or '','customer_phone':o.customer_phone or '','customer_city':o.customer_city or '','items_summary':o.items_summary or '','items_json':o.items_json or '[]','total':o.total,'pay_method':o.pay_method or '','note':o.note or '','status':o.status,'created_at':o.created_at or '','handled_by':o.handled_by,'delivery_zone':o.delivery_zone or '','delivery_fee':o.delivery_fee or 0}|tojson }},{% endfor %} };
 const ACT_DATA = {{ activity_data | tojson }};
 const SL = {pending:'⏳ En attente',paid:'✅ Payé',shipped:'🚚 Expédié',delivered:'📬 Livré',cancelled:'❌ Annulé'};
 const SC = {pending:'sp-pending',paid:'sp-paid',shipped:'sp-shipped',delivered:'sp-delivered',cancelled:'sp-cancelled'};
 
 /* ══ TOAST ══ */
 function toast(m, ok=true){
+  if(typeof KniUI !== 'undefined'){
+    KniUI.toast({type: ok?'success':'error', msg: m});
+    return;
+  }
+  /* Fallback DOM element */
   const t=document.getElementById('toast');
-  document.getElementById('toast-ico').className='fas fa-'+(ok?'check-circle':'exclamation-circle');
-  document.getElementById('toast-ico').style.color=ok?'var(--primary-color)':'#f87171';
-  document.getElementById('toast-msg').textContent=m;
+  if(!t) return;
+  const ico=document.getElementById('toast-ico');
+  const msg=document.getElementById('toast-msg');
+  if(ico){ ico.className='fas fa-'+(ok?'check-circle':'exclamation-circle'); ico.style.color=ok?'var(--primary-color)':'#f87171'; }
+  if(msg) msg.textContent=m;
   t.classList.add('show'); clearTimeout(t._t);
   t._t=setTimeout(()=>t.classList.remove('show'),3200);
 }
 
 /* ══ NAVIGATION ══ */
-const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc'];
+const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','zones','fidelite','promos','pages','messages'];
 function go(n){
   SECS.forEach(s=>{
     const el=document.getElementById('sec-'+s);
@@ -1411,6 +2054,17 @@ function go(n){
   if(n==='perf') loadPerf();
   if(n==='inv') loadInvoices();
   if(n==='stock') loadStockValue();
+  if(n==='crm') loadCRM();
+  if(n==='devis') loadDevis();
+  if(n==='fourn'){ loadFourn(); loadCmdFourn(); }
+  if(n==='sav') loadSAV();
+  if(n==='contrats') loadContrats();
+  if(n==='flash') loadFlash();
+  if(n==='zones') loadZones();
+  if(n==='fidelite') loadFidelite();
+  if(n==='promos') loadPromos();
+  if(n==='pages') loadPages();
+  if(n==='messages') loadMessages();
 }
 
 /* ══ FORM TABS ══ */
@@ -1514,10 +2168,10 @@ async function uploadGalFile(f,slot){
         document.getElementById('pimg').value=res.url;
       }
       initGallery();
-      toast(`Photo ${slot+1} ajoutée ✅`);
+      KniUI.toast({type:'success', title:'Image uploadée', msg:`Photo ${slot+1} ajoutée au produit`});
     } else {
       ub.style.display='none';
-      toast('❌ '+(res.error||'Upload échoué'),false);
+      KniUI.toast.error(res.error||'Upload échoué', 'Erreur upload');
     }
   }catch(e){
     clearInterval(t); ub.style.display='none';
@@ -1640,9 +2294,17 @@ async function saveProd(){
   try{
     const r=await fetch(id?`/shop/api/product/${id}`:'/shop/api/product',{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const res=await r.json();
-    if(res.success){toast(id?'Produit mis à jour ✅':'Produit créé ✅');setTimeout(()=>location.reload(),900);}
-    else{toast('❌ '+res.error,false);btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Enregistrer le produit';}
-  }catch(e){toast('Erreur réseau',false);btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Enregistrer le produit';}
+    if(res.success){
+      KniUI.toast.success(id?'Produit mis à jour avec succès':'Produit créé avec succès', id?'Mis à jour':'Créé');
+      setTimeout(()=>location.reload(),1000);
+    } else {
+      KniUI.toast.error(res.error||'Erreur lors de la sauvegarde');
+      btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> Enregistrer le produit';
+    }
+  }catch(e){
+    KniUI.toast.error('Erreur réseau — vérifiez votre connexion');
+    btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> Enregistrer le produit';
+  }
 }
 
 /* ══ LOAD EDIT ══ */
@@ -1752,14 +2414,29 @@ function qkStockSet(id, raw, e){
 async function toggleP(id){
   const r=await fetch(`/shop/api/product/${id}/toggle`,{method:'POST'});
   const res=await r.json();
-  if(res.success)location.reload(); else toast('❌ '+res.error,false);
+  if(res.success){
+    KniUI.toast.success('Statut mis à jour', 'Commande');
+    setTimeout(()=>location.reload(), 1200);
+  } else {
+    KniUI.toast.error(res.error||'Erreur lors de la mise à jour');
+  }
 }
-async function delProd(id,name){
-  if(!confirm(`Supprimer "${name}" ?`))return;
-  const r=await fetch(`/shop/api/product/${id}`,{method:'DELETE'});
-  const res=await r.json();
-  if(res.success){document.getElementById(`pc-${id}`)?.remove();toast('Produit supprimé');}
-  else toast('❌ '+res.error,false);
+async function delProd(id, name){
+  const ok = await KniUI.danger(
+    `Supprimer le produit <strong>${name}</strong> ? Cette action est irréversible.`,
+    {title: 'Supprimer ce produit ?'}
+  );
+  if(!ok) return;
+  KniUI.loading.show('Suppression du produit…');
+  const r = await fetch(`/shop/api/product/${id}`, {method:'DELETE'});
+  const res = await r.json();
+  KniUI.loading.hide();
+  if(res.success){
+    document.getElementById(`pc-${id}`)?.remove();
+    KniUI.toast.success(`${name} supprimé du catalogue`, 'Produit supprimé');
+  } else {
+    KniUI.toast.error(res.error||'Erreur lors de la suppression');
+  }
 }
 function showProd(id){
   const p=PRODS[id]; if(!p)return;
@@ -1793,9 +2470,10 @@ function showOrd(id){
   const wn=(o.customer_phone||'').replace(/\D/g,'');
   document.getElementById('dpBody').innerHTML=`
     <div style="background:var(--accent-color);border:1px solid var(--border-color);border-radius:10px;padding:.85rem;margin-bottom:.85rem">
-      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem"><span style="font-family:var(--font-mono);color:var(--primary-color);font-weight:800">#${id}</span><span class="sp ${SC[o.status]||'sp-pending'}">${SL[o.status]||o.status}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem"><span style="font-family:var(--font-mono);color:var(--primary-color);font-weight:800">${o.order_number||('#'+id)}</span><span class="sp ${SC[o.status]||'sp-pending'}">${SL[o.status]||o.status}</span></div>
       ${o.created_at?`<div style="font-size:.7rem;color:var(--text-secondary)">${o.created_at.slice(0,16)}</div>`:''}
       <div style="font-weight:800;font-size:.9rem;margin-top:.3rem">${o.customer_name||'—'}</div>
+      ${o.delivery_zone?`<div style="font-size:.74rem;color:var(--primary-color);margin-top:.2rem"><i class="fas fa-truck"></i> Zone: <strong>${o.delivery_zone}</strong> — ${(o.delivery_fee||0).toLocaleString('fr-FR')} XAF</div>`:''}
       ${o.customer_phone?`<div style="font-size:.76rem;color:var(--text-secondary)">📱 ${o.customer_phone}</div>`:''}
       ${o.customer_city?`<div style="font-size:.76rem;color:var(--text-secondary)">📍 ${o.customer_city}</div>`:''}
       ${o.note?`<div style="font-size:.73rem;margin-top:.3rem;color:var(--text-secondary)">📝 ${o.note}</div>`:''}
@@ -1812,6 +2490,7 @@ function showOrd(id){
       <option value="cancelled" ${o.status==='cancelled'?'selected':''}>❌ Annulé</option>
     </select>
     <button class="btn-p" style="width:100%;justify-content:center;margin-bottom:.45rem;font-size:.8rem" onclick="genInv(${id})"><i class="fas fa-file-invoice"></i> Générer facture</button>
+        <a href="/shop/suivi" target="_blank" style="display:flex;align-items:center;gap:.4rem;padding:.45rem .8rem;background:rgba(0,176,116,.08);border:1px solid rgba(0,176,116,.25);border-radius:8px;color:var(--primary-color);font-size:.78rem;font-weight:700;text-decoration:none;margin-bottom:.45rem"><i class="fas fa-map-marker-alt"></i> Page suivi client</a>
     ${wn?`<a href="https://wa.me/${wn.startsWith('237')?'':'237'}${wn}?text=${encodeURIComponent('Bonjour '+o.customer_name+', concernant votre commande #'+id+' — Total: '+o.total.toLocaleString('fr-FR')+' XAF. Merci !')}" target="_blank" class="btn-p" style="text-decoration:none;background:#25d366;color:#fff;width:100%;justify-content:center;display:flex;gap:.4rem;margin-bottom:.45rem;font-size:.8rem;padding:.55rem"><i class="fab fa-whatsapp"></i> WhatsApp</a>`:''}`;
   document.getElementById('dpanel').classList.remove('closed');
 }
@@ -1832,10 +2511,21 @@ async function updOSD(id,status){
   else toast('❌ '+res.error,false);
 }
 async function delOrd(id){
-  if(!confirm('Supprimer cette commande ?'))return;
-  const r=await fetch(`/shop/api/order/${id}`,{method:'DELETE'});
-  const res=await r.json();
-  if(res.success){closeDP();location.reload();}else toast('❌ '+res.error,false);
+  const ok = await KniUI.danger(
+    'Supprimer cette commande définitivement ?',
+    {title: 'Supprimer la commande ?'}
+  );
+  if(!ok) return;
+  KniUI.loading.show('Suppression de la commande…');
+  const r = await fetch(`/shop/api/order/${id}`, {method:'DELETE'});
+  const res = await r.json();
+  KniUI.loading.hide();
+  if(res.success){
+    KniUI.toast.success('Commande supprimée', 'Suppression');
+    closeDP(); setTimeout(()=>location.reload(), 900);
+  } else {
+    KniUI.toast.error(res.error||'Erreur lors de la suppression');
+  }
 }
 
 /* ══ FILTERS ══ */
@@ -1928,7 +2618,7 @@ function buildOrdDropdown(q){
       html+=`<div style="padding:.5rem .8rem;cursor:pointer;display:flex;align-items:center;gap:.55rem;font-size:.82rem;transition:background .1s" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="document.querySelectorAll('#ordFilts .fchip').forEach(b=>b.dataset.os===\`${k}\`?b.classList.add('on'):b.classList.remove('on'));oStatus='${k}';applyOF();closeOrdDropdown()">${v}<span style="margin-left:auto;background:rgba(0,176,116,.12);color:var(--primary-color);border-radius:20px;font-size:.68rem;font-weight:700;padding:.1rem .45rem">${n}</span></div>`;
     });
   } else {
-    const matches=ords.filter(o=>(o.customer_name||'').toLowerCase().includes(qq)||(o.customer_phone||'').toLowerCase().includes(qq)||String(o.id).includes(qq)||(o.items_summary||'').toLowerCase().includes(qq)).slice(0,7);
+    const matches=ords.filter(o=>(o.customer_name||'').toLowerCase().includes(qq)||(o.customer_phone||'').toLowerCase().includes(qq)||String(o.id).includes(qq)||(o.order_number||'').toLowerCase().includes(qq)||(o.items_summary||'').toLowerCase().includes(qq)).slice(0,7);
     if(matches.length){
       html+=`<div style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);padding:.5rem .8rem .3rem;border-bottom:1px solid var(--border-color)">Commandes (${matches.length})</div>`;
       matches.forEach(o=>{
@@ -2092,7 +2782,8 @@ async function sfToggle(id,active){
   try{const r=await fetch(`/shop/api/staff/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...s,specialties:s.specialties||[],is_active:active})});const d=await r.json();if(d.success){staffData=staffData.map(x=>x.id===id?{...x,is_active:active}:x);toast(active?'Activé ✅':'Désactivé');}else toast('❌ '+d.error,false);}catch(e){toast('Erreur',false);}
 }
 async function sfDelete(id){
-  if(!confirm('Supprimer cet agent ?'))return;
+  const ok = await KniUI.danger('Supprimer cet agent du système ?', {title: 'Supprimer l\'agent ?'});
+  if(!ok) return;
   try{const r=await fetch(`/shop/api/staff/${id}`,{method:'DELETE'});const d=await r.json();if(d.success){staffData=staffData.filter(x=>x.id!==id);renderStaff();toast('Agent supprimé');}else toast('❌ '+d.error,false);}catch(e){toast('Erreur',false);}
 }
 document.getElementById('staffModal').addEventListener('click',function(e){if(e.target===this)staffClose();});
@@ -2119,7 +2810,11 @@ function filterUsers(type){
 
 // ── Rétrograder un admin en Gestionnaire boutique ─────────
 async function downgradeUser(uid,username){
-  if(!confirm(`⚠️ Rétrograder "${username}" ?\n\nIl perdra le rôle Admin mais gardera son accès à la boutique (ajouter/modifier produits).\n\nConfirmer ?`)) return;
+  const ok = await KniUI.warning(
+    `<strong>${username}</strong> perdra le rôle Admin mais gardera son accès boutique (ajouter/modifier produits).`,
+    {title: `⚠️ Rétrograder ${username} ?`, confirmText: 'Rétrograder', cancelText: 'Annuler'}
+  );
+  if(!ok) return;
   try{
     const r=await fetch('/shop/api/user/downgrade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,new_role:'user'})});
     const d=await r.json();
@@ -2275,7 +2970,8 @@ function genInvFromProduct(pid){
   renderInvItems(); calcInvTotal();
 }
 async function deleteInv(id){
-  if(!confirm('Supprimer cette facture ?'))return;
+  const ok = await KniUI.danger('Supprimer cette facture définitivement ?', {title: 'Supprimer la facture ?'});
+  if(!ok) return;
   try{const r=await fetch(`/shop/api/invoice/${id}`,{method:'DELETE'});const d=await r.json();if(d.success){invoices=invoices.filter(x=>x.id!==id);renderInvoices();toast('Facture supprimée');}else toast('❌ '+d.error,false);}catch(e){toast('Erreur',false);}
 }
 
@@ -3520,7 +4216,8 @@ async function bannerToggle(id, active) {
 
 // ── Suppression ──────────────────────────────────────────
 async function bannerDelete(id) {
-  if(!confirm('Supprimer cette bannière ?')) return;
+  const ok = await KniUI.danger('Supprimer cette bannière ?', {title: 'Supprimer la bannière ?'});
+  if(!ok) return;
   try {
     const r = await fetch(`/shop/api/banners/${id}`,{method:'DELETE'});
     const d = await r.json();
@@ -4081,5 +4778,904 @@ function initGbStars(){
     </div>
   </div>
 </div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   MODULE ERP — CRM / Devis / Fournisseurs / SAV / Contrats
+═══════════════════════════════════════════════════════════════════ */
+const fmtXAF = n => new Intl.NumberFormat('fr-CM').format(Math.round(n||0)) + ' XAF';
+const ERP_SD = {
+  brouillon:'🖊 Brouillon',envoye:'📤 Envoyé',accepte:'✅ Accepté',
+  refuse:'❌ Refusé',converti:'🔄 Converti',
+  ouvert:'🟠 Ouvert',en_cours:'🔵 En cours',attente_piece:'⏳ Attente pièce',
+  resolu:'✅ Résolu',cloture:'⬛ Clôturé',
+  actif:'🟢 Actif',suspendu:'🟡 Suspendu',expire:'🔴 Expiré',annule:'⬛ Annulé'
+};
+const ERP_PC = {urgente:'#ef4444',haute:'#f97316',normale:'#6b7280',basse:'#9ca3af'};
+
+function erpFetch(url,opts={}){
+  return fetch(url,{headers:{'Content-Type':'application/json'},...opts}).then(r=>r.json()).catch(e=>({success:false,error:e.message}));
+}
+function erpBadge(txt,bg='rgba(0,176,116,.15)',col='var(--primary-color)'){
+  return `<span style="background:${bg};color:${col};border-radius:20px;padding:.18rem .55rem;font-size:.72rem;font-weight:700;white-space:nowrap">${txt}</span>`;
+}
+async function populateTiersSelect(selId,sel=''){
+  const [d1,d2]=await Promise.all([erpFetch('/shop/api/erp/tiers?type=client'),erpFetch('/shop/api/erp/tiers?type=prospect')]);
+  const all=[...(d1.tiers||[]),(d2.tiers||[])].flat();
+  const s=document.getElementById(selId); if(!s)return;
+  s.innerHTML='<option value="">— Sélectionner —</option>'+all.map(t=>`<option value="${t.id}"${t.id==sel?' selected':''}>${t.nom} (${t.ville||''})</option>`).join('');
+}
+async function populateFournSelect(selId,sel=''){
+  const d=await erpFetch('/shop/api/erp/fournisseurs');
+  const s=document.getElementById(selId); if(!s)return;
+  s.innerHTML='<option value="">— Sélectionner —</option>'+(d.fournisseurs||[]).map(f=>`<option value="${f.id}"${f.id==sel?' selected':''}>${f.nom}</option>`).join('');
+}
+function populateUsersSelectERP(selId,sel=''){
+  const s=document.getElementById(selId); if(!s)return;
+  const users=typeof ALL_USERS!=='undefined'?ALL_USERS:[];
+  s.innerHTML='<option value="">— Non assigné —</option>'+users.map(u=>`<option value="${u.id}"${u.id==sel?' selected':''}>${u.username}</option>`).join('');
+}
+
+/* ── CRM ── */
+async function loadCRM(){
+  const typ=document.getElementById('crmTypeFilter')?.value||'';
+  const q=document.getElementById('crmSearch')?.value||'';
+  const d=await erpFetch(`/shop/api/erp/tiers?type=${typ}&q=${encodeURIComponent(q)}`);
+  const tb=document.getElementById('crmBody'); if(!tb)return;
+  if(!d.success){tb.innerHTML=`<tr><td colspan="7" style="color:#f87171;padding:1rem">${d.error||'Erreur'}</td></tr>`;return;}
+  if(!d.tiers?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun tiers — créez-en un !</td></tr>';return;}
+  const tC={client:'rgba(0,176,116,.15)',prospect:'rgba(59,130,246,.15)',fournisseur:'rgba(245,158,11,.15)'};
+  const tT={client:'var(--primary-color)',prospect:'#60a5fa',fournisseur:'#fbbf24'};
+  tb.innerHTML=d.tiers.map(t=>`<tr>
+    <td><strong>${t.nom}</strong></td>
+    <td>${erpBadge(t.type||'—',tC[t.type]||'',tT[t.type]||'')}</td>
+    <td>${erpBadge(t.statut||'—')}</td>
+    <td>${t.ville||'—'}</td>
+    <td>${t.telephone||'—'}</td>
+    <td style="font-size:.8rem">${t.email||'—'}</td>
+    <td><div style="display:flex;gap:.35rem">
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editCRMItem(${t.id})"><i class="fas fa-edit"></i></button>
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="deleteCRMItem(${t.id},'${(t.nom||'').replace(/'/g,"\\'")}')"><i class="fas fa-trash" style="color:#f87171"></i></button>
+      ${t.whatsapp?`<a class="btn-g" style="padding:.28rem .6rem;font-size:.75rem;text-decoration:none" href="https://wa.me/${t.whatsapp}" target="_blank"><i class="fab fa-whatsapp" style="color:#25d366"></i></a>`:''}
+    </div></td>
+  </tr>`).join('');
+}
+let _crmCache=[];
+function openCRMModal(data=null){
+  _crmCache=data?[data]:[];
+  document.getElementById('crmId').value=data?.id||'';
+  document.getElementById('crmModalTitle').textContent=data?'Modifier tiers':'Nouveau tiers';
+  document.getElementById('crmNom').value=data?.nom||'';
+  document.getElementById('crmEmail').value=data?.email||'';
+  document.getElementById('crmTel').value=data?.telephone||'';
+  document.getElementById('crmWa').value=data?.whatsapp||'';
+  document.getElementById('crmQuartier').value=data?.quartier||'';
+  document.getElementById('crmNotes').value=data?.notes||'';
+  document.getElementById('crmType').value=data?.type||'client';
+  document.getElementById('crmStatut').value=data?.statut||'prospect';
+  document.getElementById('crmVille').value=data?.ville||'Yaoundé';
+  document.getElementById('crmSource').value=data?.source||'';
+  document.getElementById('crmModal').classList.add('open');
+}
+function closeCRMModal(){document.getElementById('crmModal').classList.remove('open');}
+async function editCRMItem(id){
+  const d=await erpFetch(`/shop/api/erp/tiers?q=`);
+  const t=(d.tiers||[]).find(x=>x.id===id); if(t) openCRMModal(t);
+}
+async function saveCRM(){
+  const id=document.getElementById('crmId').value;
+  const p={nom:document.getElementById('crmNom').value.trim(),type:document.getElementById('crmType').value,
+    statut:document.getElementById('crmStatut').value,email:document.getElementById('crmEmail').value.trim(),
+    telephone:document.getElementById('crmTel').value.trim(),whatsapp:document.getElementById('crmWa').value.trim(),
+    ville:document.getElementById('crmVille').value,quartier:document.getElementById('crmQuartier').value.trim(),
+    source:document.getElementById('crmSource').value,notes:document.getElementById('crmNotes').value.trim()};
+  if(!p.nom){toast('Nom requis',false);return;}
+  const d=await erpFetch(id?`/shop/api/erp/tiers/${id}`:'/shop/api/erp/tiers',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){toast(id?'Tiers mis à jour':'Tiers créé');closeCRMModal();loadCRM();}
+  else toast(d.error||'Erreur',false);
+}
+async function deleteCRMItem(id,nom){
+  const ok = await KniUI.danger(`Supprimer <strong>${nom}</strong> du CRM ?`, {title: 'Supprimer ce tiers ?'});
+  if(!ok) return;
+  const d=await erpFetch(`/shop/api/erp/tiers/${id}`,{method:'DELETE'});
+  if(d.success){toast('Tiers supprimé');loadCRM();}else toast(d.error,false);
+}
+
+/* ── Devis ── */
+let _devisLignes=[];
+async function loadDevis(){
+  const s=document.getElementById('devisStatutFilter')?.value||'';
+  const d=await erpFetch(`/shop/api/erp/devis?statut=${s}`);
+  const tb=document.getElementById('devisBody'); if(!tb)return;
+  const kEl=document.getElementById('devisKpis');
+  if(kEl&&d.devis){
+    const acc=d.devis.filter(x=>x.statut==='accepte');
+    kEl.innerHTML=`<div class="kpi"><div class="kpi-ico" style="background:rgba(0,176,116,.12)"><i class="fas fa-file-alt" style="color:var(--primary-color)"></i></div><div><span class="kpi-num">${d.devis.length}</span><span class="kpi-lbl">Total devis</span></div></div>
+    <div class="kpi"><div class="kpi-ico" style="background:rgba(16,185,129,.12)"><i class="fas fa-check" style="color:#10b981"></i></div><div><span class="kpi-num">${acc.length}</span><span class="kpi-lbl">Acceptés</span></div></div>
+    <div class="kpi"><div class="kpi-ico" style="background:rgba(59,130,246,.12)"><i class="fas fa-coins" style="color:#60a5fa"></i></div><div><span class="kpi-num">${fmtXAF(acc.reduce((s,x)=>s+(x.montant_ttc||0),0))}</span><span class="kpi-lbl">CA accepté</span></div></div>`;
+  }
+  if(!d.success){tb.innerHTML=`<tr><td colspan="6" style="color:#f87171;padding:1rem">${d.error}</td></tr>`;return;}
+  if(!d.devis?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun devis</td></tr>';return;}
+  const sc={brouillon:'rgba(107,114,128,.15)',envoye:'rgba(59,130,246,.15)',accepte:'rgba(0,176,116,.15)',refuse:'rgba(239,68,68,.15)',converti:'rgba(168,85,247,.15)'};
+  const tc={brouillon:'#9ca3af',envoye:'#60a5fa',accepte:'var(--primary-color)',refuse:'#f87171',converti:'#a855f7'};
+  tb.innerHTML=d.devis.map(v=>`<tr>
+    <td><strong>${v.numero}</strong></td>
+    <td>${v.tiers_nom||'<em style="opacity:.5">Sans client</em>'}</td>
+    <td>${erpBadge(ERP_SD[v.statut]||v.statut,sc[v.statut]||'',tc[v.statut]||'')}</td>
+    <td style="font-weight:700;color:var(--primary-color)">${fmtXAF(v.montant_ttc||0)}</td>
+    <td style="font-size:.8rem">${(v.created_at||'').slice(0,10)}</td>
+    <td><div style="display:flex;gap:.35rem">
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editDevisItem(${v.id})"><i class="fas fa-edit"></i></button>
+      ${v.statut!=='converti'?`<button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" title="Convertir en commande" onclick="convertDevisItem(${v.id},'${v.numero}')"><i class="fas fa-exchange-alt" style="color:var(--primary-color)"></i></button>`:''}
+    </div></td>
+  </tr>`).join('');
+}
+function openDevisModal(data=null){
+  _devisLignes=data?.lignes?JSON.parse(JSON.stringify(data.lignes)):[];
+  document.getElementById('devisId').value=data?.id||'';
+  document.getElementById('devisModalTitle').textContent=data?'Modifier devis':'Nouveau devis';
+  document.getElementById('devisValidite').value=data?.validite_jours||30;
+  document.getElementById('devisTva').value=data?.tva_pct||19.25;
+  document.getElementById('devisRemise').value=data?.remise_globale||0;
+  document.getElementById('devisNotes').value=data?.notes||'';
+  populateTiersSelect('devisTiersId',data?.tiers_id||'');
+  renderDevisLignes();
+  document.getElementById('devisModal').classList.add('open');
+}
+function closeDevisModal(){document.getElementById('devisModal').classList.remove('open');}
+async function editDevisItem(id){
+  const d=await erpFetch('/shop/api/erp/devis');
+  const v=(d.devis||[]).find(x=>x.id===id); if(v)openDevisModal(v);
+}
+function renderDevisLignes(){
+  const el=document.getElementById('devisLignes'); if(!el)return;
+  el.innerHTML=_devisLignes.map((l,i)=>`<div style="display:flex;gap:.35rem;align-items:center;margin-bottom:.35rem">
+    <input class="fc" style="flex:2;padding:.38rem .6rem" placeholder="Désignation" value="${l.designation||''}" oninput="_devisLignes[${i}].designation=this.value;calcDevis()">
+    <input class="fc" style="flex:1;padding:.38rem .6rem" type="number" min="1" value="${l.quantite||1}" oninput="_devisLignes[${i}].quantite=+this.value;calcDevis()">
+    <input class="fc" style="flex:1;padding:.38rem .6rem" type="number" min="0" value="${l.prix_unitaire||0}" oninput="_devisLignes[${i}].prix_unitaire=+this.value;calcDevis()">
+    <input class="fc" style="flex:1;padding:.38rem .6rem" type="number" min="0" max="100" value="${l.remise||0}" oninput="_devisLignes[${i}].remise=+this.value;calcDevis()">
+    <span style="flex:1;font-size:.82rem;font-weight:700;color:var(--primary-color)">${fmtXAF((l.prix_unitaire||0)*(l.quantite||1)*(1-(l.remise||0)/100))}</span>
+    <button class="btn-g" style="padding:.28rem .5rem;font-size:.75rem" onclick="_devisLignes.splice(${i},1);renderDevisLignes()"><i class="fas fa-times" style="color:#f87171"></i></button>
+  </div>`).join('');
+  calcDevis();
+}
+function addDevisLigne(){_devisLignes.push({designation:'',quantite:1,prix_unitaire:0,remise:0});renderDevisLignes();}
+function calcDevis(){
+  const tva=parseFloat(document.getElementById('devisTva')?.value||19.25);
+  const rem=parseFloat(document.getElementById('devisRemise')?.value||0);
+  const ht=_devisLignes.reduce((s,l)=>s+(l.prix_unitaire||0)*(l.quantite||1)*(1-(l.remise||0)/100),0);
+  const htN=ht*(1-rem/100), tvaA=htN*tva/100, ttc=htN+tvaA;
+  document.getElementById('devisTotalHT').textContent=fmtXAF(htN);
+  document.getElementById('devisTotalTVA').textContent=fmtXAF(tvaA);
+  document.getElementById('devisTotalTTC').textContent=fmtXAF(ttc);
+  document.getElementById('devisTvaLabel').textContent=tva;
+}
+async function saveDevis(statut){
+  const id=document.getElementById('devisId').value;
+  const p={tiers_id:document.getElementById('devisTiersId').value||null,statut,lignes:_devisLignes,
+    validite_jours:parseInt(document.getElementById('devisValidite').value)||30,
+    tva_pct:parseFloat(document.getElementById('devisTva').value)||19.25,
+    remise_globale:parseFloat(document.getElementById('devisRemise').value)||0,
+    notes:document.getElementById('devisNotes').value.trim()};
+  if(!p.lignes.length){toast('Ajoutez au moins une ligne',false);return;}
+  const d=await erpFetch(id?`/shop/api/erp/devis/${id}`:'/shop/api/erp/devis',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){toast(id?'Devis mis à jour':`Devis ${d.numero} créé`);closeDevisModal();loadDevis();}
+  else toast(d.error||'Erreur',false);
+}
+async function convertDevisItem(id,num){
+  const ok = await KniUI.confirm(`Convertir le devis <strong>${num}</strong> en commande boutique ?`, {title: 'Convertir en commande ?', confirmText: 'Convertir', variant:'info'});
+  if(!ok) return;
+  const d=await erpFetch(`/shop/api/erp/devis/${id}/convert`,{method:'POST'});
+  if(d.success){toast(`✅ Commande #${d.order_id} créée depuis ${num}`);loadDevis();}
+  else toast(d.error||'Erreur',false);
+}
+
+/* ── Fournisseurs ── */
+function switchFournTab(tab){
+  document.getElementById('fournListPanel').style.display=tab==='fourn'?'':'none';
+  document.getElementById('cmdFournPanel').style.display=tab==='cmd'?'':'none';
+  ['fournTabFourn','fournTabCmd'].forEach(id=>{
+    const btn=document.getElementById(id); if(!btn)return;
+    const active=(id==='fournTabFourn'&&tab==='fourn')||(id==='fournTabCmd'&&tab==='cmd');
+    btn.style.borderColor=active?'var(--primary-color)':'';
+    btn.style.color=active?'var(--primary-color)':'';
+  });
+  const addBtn=document.getElementById('fournAddBtn'); if(!addBtn)return;
+  addBtn.onclick=tab==='fourn'?openFournModal:openCmdFournModal;
+  addBtn.innerHTML=`<i class="fas fa-plus"></i> ${tab==='fourn'?'Ajouter fournisseur':'Nouvelle commande'}`;
+}
+async function loadFourn(){
+  const d=await erpFetch('/shop/api/erp/fournisseurs');
+  const tb=document.getElementById('fournBody'); if(!tb)return;
+  if(!d.fournisseurs?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun fournisseur</td></tr>';return;}
+  tb.innerHTML=d.fournisseurs.map(f=>`<tr>
+    <td><strong>${f.nom}</strong></td><td>${f.pays||'—'}</td><td>${f.contact||'—'}</td>
+    <td>${f.telephone||'—'}</td>
+    <td>${erpBadge(f.delai_moyen+'j')}</td>
+    <td><div style="display:flex;gap:.35rem">
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editFournItem(${f.id})"><i class="fas fa-edit"></i></button>
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="deleteFournItem(${f.id},'${(f.nom||'').replace(/'/g,"\\'")}')"><i class="fas fa-trash" style="color:#f87171"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+function openFournModal(data=null){
+  document.getElementById('fournId').value=data?.id||'';
+  document.getElementById('fournModalTitle').textContent=data?'Modifier fournisseur':'Nouveau fournisseur';
+  document.getElementById('fournNom').value=data?.nom||'';
+  document.getElementById('fournPays').value=data?.pays||'Cameroun';
+  document.getElementById('fournContact').value=data?.contact||'';
+  document.getElementById('fournTel').value=data?.telephone||'';
+  document.getElementById('fournEmail').value=data?.email||'';
+  document.getElementById('fournDelai').value=data?.delai_moyen||7;
+  document.getElementById('fournNotes').value=data?.notes||'';
+  document.getElementById('fournModal').classList.add('open');
+}
+function closeFournModal(){document.getElementById('fournModal').classList.remove('open');}
+async function editFournItem(id){
+  const d=await erpFetch('/shop/api/erp/fournisseurs');
+  const f=(d.fournisseurs||[]).find(x=>x.id===id); if(f)openFournModal(f);
+}
+async function saveFourn(){
+  const id=document.getElementById('fournId').value;
+  const p={nom:document.getElementById('fournNom').value.trim(),pays:document.getElementById('fournPays').value,
+    contact:document.getElementById('fournContact').value.trim(),telephone:document.getElementById('fournTel').value.trim(),
+    email:document.getElementById('fournEmail').value.trim(),delai_moyen:parseInt(document.getElementById('fournDelai').value)||7,
+    notes:document.getElementById('fournNotes').value.trim()};
+  if(!p.nom){toast('Nom requis',false);return;}
+  const d=await erpFetch(id?`/shop/api/erp/fournisseurs/${id}`:'/shop/api/erp/fournisseurs',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){KniUI.toast.success('Fournisseur enregistré avec succès');closeFournModal();loadFourn();}
+  else KniUI.toast.error(d.error||'Erreur lors de la sauvegarde');
+}
+async function deleteFournItem(id, nom){
+  const ok = await KniUI.danger(`Supprimer le fournisseur <strong>${nom}</strong> ?`, {title: 'Supprimer ce fournisseur ?'});
+  if(!ok) return;
+  const d = await erpFetch(`/shop/api/erp/fournisseurs/${id}`, {method:'DELETE'});
+  if(d.success){
+    KniUI.toast.success(`${nom} supprimé du registre`, 'Fournisseur');
+    loadFourn();
+  } else {
+    KniUI.toast.error(d.error||'Erreur lors de la suppression');
+  }
+}
+/* Commandes fournisseurs */
+let _cmdFournLignes=[];
+async function loadCmdFourn(){
+  const d=await erpFetch('/shop/api/erp/commandes-fourn');
+  const tb=document.getElementById('cmdFournBody'); if(!tb)return;
+  if(!d.commandes?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucune commande fournisseur</td></tr>';return;}
+  const sc={brouillon:'rgba(107,114,128,.15)',envoyee:'rgba(59,130,246,.15)',en_transit:'rgba(245,158,11,.15)',recue:'rgba(0,176,116,.15)',annulee:'rgba(239,68,68,.15)'};
+  tb.innerHTML=d.commandes.map(c=>`<tr>
+    <td><strong>${c.numero}</strong></td><td>${c.fourn_nom||'—'}</td>
+    <td>${erpBadge(c.statut||'—',sc[c.statut]||'')}</td>
+    <td style="font-weight:700">${fmtXAF(c.montant_total||0)}</td>
+    <td style="font-size:.8rem">${c.date_livraison_prev||'—'}</td>
+    <td><select style="background:var(--secondary-color);border:1px solid var(--border-color);color:var(--text-primary);border-radius:8px;padding:.28rem .5rem;font-size:.75rem;cursor:pointer" onchange="updateCmdFournStatut(${c.id},this.value)">
+      <option value="${c.statut}" selected disabled>${c.statut}</option>
+      <option value="envoyee">Envoyée</option><option value="en_transit">En transit</option>
+      <option value="recue">✅ Reçue → stock</option><option value="annulee">Annulée</option>
+    </select></td>
+  </tr>`).join('');
+}
+async function updateCmdFournStatut(id,statut){
+  const d=await erpFetch(`/shop/api/erp/commandes-fourn/${id}`,{method:'PUT',body:JSON.stringify({statut})});
+  if(d.success){toast(statut==='recue'?'Reçue — stock mis à jour ✅':'Statut mis à jour');loadCmdFourn();}
+  else toast(d.error||'Erreur',false);
+}
+function openCmdFournModal(data=null){
+  _cmdFournLignes=data?.lignes?JSON.parse(JSON.stringify(data.lignes)):[];
+  document.getElementById('cmdFournId').value=data?.id||'';
+  document.getElementById('cmdFournModalTitle').textContent=data?'Modifier commande':'Nouvelle commande fournisseur';
+  document.getElementById('cmdFournNotes').value=data?.notes||'';
+  document.getElementById('cmdFournDate').value=data?.date_livraison_prev||'';
+  populateFournSelect('cmdFournFournId',data?.fournisseur_id||'');
+  renderCmdFournLignes();
+  document.getElementById('cmdFournModal').classList.add('open');
+}
+function closeCmdFournModal(){document.getElementById('cmdFournModal').classList.remove('open');}
+function renderCmdFournLignes(){
+  const el=document.getElementById('cmdFournLignes'); if(!el)return;
+  el.innerHTML=_cmdFournLignes.map((l,i)=>`<div style="display:flex;gap:.35rem;align-items:center;margin-bottom:.35rem">
+    <input class="fc" style="flex:2;padding:.38rem .6rem" placeholder="Produit/désignation" value="${l.designation||''}" oninput="_cmdFournLignes[${i}].designation=this.value;calcCF()">
+    <input class="fc" style="flex:1;padding:.38rem .6rem" type="number" min="1" value="${l.quantite||1}" oninput="_cmdFournLignes[${i}].quantite=+this.value;calcCF()">
+    <input class="fc" style="flex:1;padding:.38rem .6rem" type="number" min="0" value="${l.prix_unitaire||0}" oninput="_cmdFournLignes[${i}].prix_unitaire=+this.value;calcCF()">
+    <span style="flex:1;font-size:.82rem;font-weight:700;color:var(--primary-color)">${fmtXAF((l.prix_unitaire||0)*(l.quantite||1))}</span>
+    <button class="btn-g" style="padding:.28rem .5rem;font-size:.75rem" onclick="_cmdFournLignes.splice(${i},1);renderCmdFournLignes()"><i class="fas fa-times" style="color:#f87171"></i></button>
+  </div>`).join('');
+  calcCF();
+}
+function addCmdFournLigne(){_cmdFournLignes.push({designation:'',quantite:1,prix_unitaire:0});renderCmdFournLignes();}
+function calcCF(){const t=_cmdFournLignes.reduce((s,l)=>s+(l.prix_unitaire||0)*(l.quantite||1),0);const e=document.getElementById('cmdFournTotal');if(e)e.textContent=fmtXAF(t);}
+async function saveCmdFourn(){
+  const id=document.getElementById('cmdFournId').value;
+  const p={fournisseur_id:document.getElementById('cmdFournFournId').value||null,lignes:_cmdFournLignes,
+    date_livraison_prev:document.getElementById('cmdFournDate').value,notes:document.getElementById('cmdFournNotes').value.trim()};
+  const d=await erpFetch(id?`/shop/api/erp/commandes-fourn/${id}`:'/shop/api/erp/commandes-fourn',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){toast('Commande enregistrée');closeCmdFournModal();loadCmdFourn();}
+  else toast(d.error||'Erreur',false);
+}
+
+/* ── SAV ── */
+async function loadSAV(){
+  const s=document.getElementById('savStatutFilter')?.value||'';
+  const d=await erpFetch(`/shop/api/erp/tickets?statut=${s}`);
+  const tb=document.getElementById('savBody'); if(!tb)return;
+  const kEl=document.getElementById('savKpis');
+  if(kEl&&d.tickets){
+    const ouv=d.tickets.filter(t=>!['resolu','cloture'].includes(t.statut)).length;
+    const urg=d.tickets.filter(t=>t.priorite==='urgente'&&!['resolu','cloture'].includes(t.statut)).length;
+    kEl.innerHTML=`<div class="kpi"><div class="kpi-ico" style="background:rgba(245,158,11,.12)"><i class="fas fa-ticket-alt" style="color:#fbbf24"></i></div><div><span class="kpi-num">${d.tickets.length}</span><span class="kpi-lbl">Total tickets</span></div></div>
+    <div class="kpi"><div class="kpi-ico" style="background:rgba(239,68,68,.12)"><i class="fas fa-fire" style="color:#f87171"></i></div><div><span class="kpi-num">${urg}</span><span class="kpi-lbl">Urgents</span></div></div>
+    <div class="kpi"><div class="kpi-ico" style="background:rgba(0,176,116,.12)"><i class="fas fa-tools" style="color:var(--primary-color)"></i></div><div><span class="kpi-num">${ouv}</span><span class="kpi-lbl">En cours</span></div></div>`;
+  }
+  if(!d.success){tb.innerHTML=`<tr><td colspan="9" style="color:#f87171;padding:1rem">${d.error}</td></tr>`;return;}
+  if(!d.tickets?.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun ticket SAV</td></tr>';return;}
+  const stC={ouvert:'rgba(245,158,11,.15)',en_cours:'rgba(59,130,246,.15)',attente_piece:'rgba(168,85,247,.15)',resolu:'rgba(0,176,116,.15)',cloture:'rgba(107,114,128,.15)'};
+  const stT={ouvert:'#fbbf24',en_cours:'#60a5fa',attente_piece:'#a855f7',resolu:'var(--primary-color)',cloture:'#9ca3af'};
+  tb.innerHTML=d.tickets.map(t=>`<tr>
+    <td style="font-size:.8rem"><strong>${t.numero}</strong></td>
+    <td>${t.tiers_nom||'—'}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.titre||''}">${t.titre||'—'}</td>
+    <td style="font-size:.78rem">${t.type_interv||'—'}</td>
+    <td>${erpBadge(t.priorite||'—','rgba('+((ERP_PC[t.priorite]||'#6b7280').replace('#',''))+'26)',ERP_PC[t.priorite]||'#6b7280')}</td>
+    <td>${erpBadge(ERP_SD[t.statut]||t.statut,stC[t.statut]||'',stT[t.statut]||'')}</td>
+    <td style="font-size:.8rem">${t.tech_nom||'—'}</td>
+    <td style="font-size:.78rem">${(t.created_at||'').slice(0,10)}</td>
+    <td><div style="display:flex;gap:.35rem">
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editSAVItem(${t.id})"><i class="fas fa-edit"></i></button>
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="deleteSAVItem(${t.id})"><i class="fas fa-trash" style="color:#f87171"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+function openSAVModal(data=null){
+  document.getElementById('savId').value=data?.id||'';
+  document.getElementById('savModalTitle').textContent=data?'Modifier ticket':'Nouveau ticket SAV';
+  document.getElementById('savTitre').value=data?.titre||'';
+  document.getElementById('savType').value=data?.type_interv||'panne';
+  document.getElementById('savPriorite').value=data?.priorite||'normale';
+  document.getElementById('savStatut').value=data?.statut||'ouvert';
+  document.getElementById('savDesc').value=data?.description||'';
+  document.getElementById('savRapport').value=data?.rapport||'';
+  document.getElementById('savMO').value=data?.montant_mo||0;
+  document.getElementById('savPieces').value=data?.montant_pieces||0;
+  populateTiersSelect('savTiersId',data?.tiers_id||'');
+  populateUsersSelectERP('savTechnicien',data?.technicien_id||'');
+  document.getElementById('savModal').classList.add('open');
+}
+function closeSAVModal(){document.getElementById('savModal').classList.remove('open');}
+async function editSAVItem(id){
+  const d=await erpFetch(`/shop/api/erp/tickets`);
+  const t=(d.tickets||[]).find(x=>x.id===id); if(t)openSAVModal(t);
+}
+async function saveSAV(){
+  const id=document.getElementById('savId').value;
+  const p={titre:document.getElementById('savTitre').value.trim(),
+    tiers_id:document.getElementById('savTiersId').value||null,
+    type_interv:document.getElementById('savType').value,
+    priorite:document.getElementById('savPriorite').value,
+    statut:document.getElementById('savStatut').value,
+    description:document.getElementById('savDesc').value.trim(),
+    rapport:document.getElementById('savRapport').value.trim(),
+    technicien_id:document.getElementById('savTechnicien').value||null,
+    montant_mo:parseFloat(document.getElementById('savMO').value)||0,
+    montant_pieces:parseFloat(document.getElementById('savPieces').value)||0};
+  if(!p.titre){toast('Titre requis',false);return;}
+  const d=await erpFetch(id?`/shop/api/erp/tickets/${id}`:'/shop/api/erp/tickets',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){toast(id?'Ticket mis à jour':`Ticket ${d.numero} créé`);closeSAVModal();loadSAV();}
+  else toast(d.error||'Erreur',false);
+}
+async function deleteSAVItem(id){
+  const ok = await KniUI.danger('Supprimer ce ticket SAV définitivement ?', {title: 'Supprimer le ticket ?'});
+  if(!ok) return;
+  const d=await erpFetch(`/shop/api/erp/tickets/${id}`,{method:'DELETE'});
+  if(d.success){toast('Ticket supprimé');loadSAV();}else toast(d.error,false);
+}
+
+/* ── Contrats ── */
+async function loadContrats(){
+  const d=await erpFetch('/shop/api/erp/contrats');
+  const tb=document.getElementById('contratsBody'); if(!tb)return;
+  const al=document.getElementById('contratsAlerts');
+  if(al&&d.contrats){
+    const today=new Date().toISOString().slice(0,10);
+    const in30=new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+    const exp=d.contrats.filter(c=>c.statut==='actif'&&c.date_fin&&c.date_fin<=in30&&c.date_fin>=today);
+    al.innerHTML=exp.length?`<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:.75rem 1rem;font-size:.83rem;color:#fbbf24;display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem"><i class="fas fa-exclamation-triangle"></i><strong>${exp.length}</strong> contrat(s) à renouveler dans 30 jours</div>`:'';
+  }
+  if(!d.contrats?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun contrat</td></tr>';return;}
+  const sc={actif:'rgba(0,176,116,.15)',suspendu:'rgba(245,158,11,.15)',expire:'rgba(239,68,68,.15)',annule:'rgba(107,114,128,.15)'};
+  const tc={actif:'var(--primary-color)',suspendu:'#fbbf24',expire:'#f87171',annule:'#9ca3af'};
+  const today=new Date().toISOString().slice(0,10);
+  tb.innerHTML=d.contrats.map(c=>`<tr>
+    <td><strong>${c.numero}</strong></td>
+    <td>${c.tiers_nom||'—'}</td>
+    <td style="font-size:.82rem">${c.type_contrat||'—'}</td>
+    <td style="font-weight:700;color:var(--primary-color)">${fmtXAF(c.montant||0)}</td>
+    <td style="font-size:.8rem;${c.date_fin&&c.date_fin<today?'color:#f87171':c.date_fin&&c.date_fin<new Date(Date.now()+30*86400000).toISOString().slice(0,10)?'color:#fbbf24':''}">${c.date_fin||'—'}</td>
+    <td>${erpBadge(ERP_SD[c.statut]||c.statut,sc[c.statut]||'',tc[c.statut]||'')}</td>
+    <td><button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editContratItem(${c.id})"><i class="fas fa-edit"></i></button></td>
+  </tr>`).join('');
+}
+function openContratsModal(data=null){
+  document.getElementById('contratsId').value=data?.id||'';
+  document.getElementById('contratsModalTitle').textContent=data?'Modifier contrat':'Nouveau contrat';
+  document.getElementById('contratsType').value=data?.type_contrat||'mensuel';
+  document.getElementById('contratsMontant').value=data?.montant||0;
+  document.getElementById('contratsStatut').value=data?.statut||'actif';
+  document.getElementById('contratsDebut').value=data?.date_debut||'';
+  document.getElementById('contraatsFin').value=data?.date_fin||'';
+  document.getElementById('contratsServices').value=(data?.services||[]).join('\n');
+  document.getElementById('contratsNotes').value=data?.notes||'';
+  document.getElementById('contratsRenouvAuto').checked=!!(data?.renouvellement_auto);
+  populateTiersSelect('contratsTiersId',data?.tiers_id||'');
+  document.getElementById('contratsModal').classList.add('open');
+}
+function closeContratsModal(){document.getElementById('contratsModal').classList.remove('open');}
+async function editContratItem(id){
+  const d=await erpFetch('/shop/api/erp/contrats');
+  const c=(d.contrats||[]).find(x=>x.id===id); if(c)openContratsModal(c);
+}
+async function saveContrat(){
+  const id=document.getElementById('contratsId').value;
+  const svc=document.getElementById('contratsServices').value.trim();
+  const p={tiers_id:document.getElementById('contratsTiersId').value||null,
+    type_contrat:document.getElementById('contratsType').value,
+    montant:parseFloat(document.getElementById('contratsMontant').value)||0,
+    statut:document.getElementById('contratsStatut').value,
+    date_debut:document.getElementById('contratsDebut').value,
+    date_fin:document.getElementById('contraatsFin').value,
+    services:svc?svc.split('\n').map(s=>s.trim()).filter(Boolean):[],
+    renouvellement_auto:document.getElementById('contratsRenouvAuto').checked?1:0,
+    notes:document.getElementById('contratsNotes').value.trim()};
+  const d=await erpFetch(id?`/shop/api/erp/contrats/${id}`:'/shop/api/erp/contrats',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){toast('Contrat enregistré');closeContratsModal();loadContrats();}
+  else toast(d.error||'Erreur',false);
+}
+
+/* ── Dashboard ERP (KPIs injectés dans le dashboard existant) ── */
+(async()=>{
+  try{
+    const d=await erpFetch('/shop/api/erp/dashboard');
+    if(!d.success)return;
+    const s=d.stats;
+    const dashEl=document.getElementById('sec-dash'); if(!dashEl)return;
+    let erpDiv=document.getElementById('erpKpiRow');
+    if(!erpDiv){erpDiv=document.createElement('div');erpDiv.id='erpKpiRow';dashEl.appendChild(erpDiv);}
+    erpDiv.innerHTML=`<div class="sh" style="margin-bottom:.8rem"><h4><i class="fas fa-building" style="color:var(--primary-color)"></i> Modules ERP</h4></div>
+    <div class="kpis">
+      <div class="kpi" style="cursor:pointer" onclick="go('crm')"><div class="kpi-ico" style="background:rgba(0,176,116,.12)"><i class="fas fa-address-book" style="color:var(--primary-color)"></i></div><div><span class="kpi-num">${s.total_clients}</span><span class="kpi-lbl">Clients</span></div></div>
+      <div class="kpi" style="cursor:pointer" onclick="go('crm')"><div class="kpi-ico" style="background:rgba(59,130,246,.12)"><i class="fas fa-user-plus" style="color:#60a5fa"></i></div><div><span class="kpi-num">${s.total_prospects}</span><span class="kpi-lbl">Prospects</span></div></div>
+      <div class="kpi" style="cursor:pointer" onclick="go('devis')"><div class="kpi-ico" style="background:rgba(245,158,11,.12)"><i class="fas fa-file-alt" style="color:#fbbf24"></i></div><div><span class="kpi-num">${s.devis_ouverts}</span><span class="kpi-lbl">Devis ouverts</span></div></div>
+      <div class="kpi" style="cursor:pointer" onclick="go('sav')"><div class="kpi-ico" style="background:rgba(239,68,68,.12)"><i class="fas fa-tools" style="color:#f87171"></i></div><div><span class="kpi-num">${s.tickets_ouverts}</span><span class="kpi-lbl">Tickets SAV</span></div></div>
+      <div class="kpi" style="cursor:pointer" onclick="go('contrats')"><div class="kpi-ico" style="background:rgba(168,85,247,.12)"><i class="fas fa-file-contract" style="color:#a855f7"></i></div><div><span class="kpi-num">${s.contrats_actifs}</span><span class="kpi-lbl">Contrats actifs</span></div></div>
+      ${s.contrats_expir>0?`<div class="kpi" style="cursor:pointer;border-color:rgba(245,158,11,.4)" onclick="go('contrats')"><div class="kpi-ico" style="background:rgba(245,158,11,.15)"><i class="fas fa-exclamation-triangle" style="color:#fbbf24"></i></div><div><span class="kpi-num" style="color:#fbbf24">${s.contrats_expir}</span><span class="kpi-lbl">À renouveler</span></div></div>`:''}
+      ${s.tickets_urgents>0?`<div class="kpi" style="cursor:pointer;border-color:rgba(239,68,68,.5)" onclick="go('sav')"><div class="kpi-ico" style="background:rgba(239,68,68,.2)"><i class="fas fa-fire" style="color:#f87171"></i></div><div><span class="kpi-num" style="color:#f87171">${s.tickets_urgents}</span><span class="kpi-lbl">Urgents SAV</span></div></div>`:''}
+    </div>`;
+  }catch(e){}
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+   CDC k-Ni STORE — Flash Sales · Zones · Fidélité · Promos · Pages · Messages
+═══════════════════════════════════════════════════════════════════ */
+
+const cdcFmt = n => new Intl.NumberFormat('fr-CM').format(Math.round(n||0))+' XAF';
+function cdcFetch(url,opts={}){
+  return fetch(url,{headers:{'Content-Type':'application/json'},...opts}).then(r=>r.json()).catch(e=>({success:false,error:e.message}));
+}
+function cdcBadge(txt,bg='rgba(0,176,116,.15)',col='var(--primary-color)'){
+  return `<span style="background:${bg};color:${col};border-radius:20px;padding:.18rem .55rem;font-size:.72rem;font-weight:700;white-space:nowrap">${txt}</span>`;
+}
+function fmtTimer(sec){
+  if(sec<=0)return'<span style="color:#f87171">Terminée</span>';
+  const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  return`<span style="font-family:monospace;color:#f59e0b;font-weight:800">${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+}
+
+/* ── Flash Sales ── */
+let _flashTimers=[];
+async function loadFlash(){
+  _flashTimers.forEach(clearInterval); _flashTimers=[];
+  const d=await cdcFetch('/shop/api/admin/flash-sales');
+  const tb=document.getElementById('flashBody'); if(!tb)return;
+  const kEl=document.getElementById('flashKpis');
+  if(kEl&&d.flash_sales){
+    const now=new Date().toISOString();
+    const actives=d.flash_sales.filter(f=>f.is_active&&f.date_fin>=now);
+    kEl.innerHTML=`<div class="kpi"><div class="kpi-ico" style="background:rgba(245,158,11,.12)"><i class="fas fa-bolt" style="color:#f59e0b"></i></div><div><span class="kpi-num">${actives.length}</span><span class="kpi-lbl">Flash actives</span></div></div>
+    <div class="kpi"><div class="kpi-ico" style="background:rgba(0,176,116,.12)"><i class="fas fa-fire" style="color:var(--primary-color)"></i></div><div><span class="kpi-num">${d.flash_sales.length}</span><span class="kpi-lbl">Total créées</span></div></div>`;
+    const badge=document.getElementById('flashBadge');
+    if(badge){badge.textContent=actives.length;badge.style.display=actives.length?'':'none';}
+  }
+  if(!d.success||!d.flash_sales?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucune vente flash — créez-en une !</td></tr>';return;}
+  tb.innerHTML=d.flash_sales.map(f=>{
+    const now=new Date().toISOString();
+    const active=f.is_active&&f.date_fin>=now;
+    const pct=f.prix_normal?Math.round((1-f.prix_flash/f.prix_normal)*100):0;
+    return`<tr>
+      <td><strong>${f.name||'—'}</strong></td>
+      <td>${cdcFmt(f.prix_normal||0)}</td>
+      <td style="color:var(--primary-color);font-weight:800">${cdcFmt(f.prix_flash||0)}</td>
+      <td>${cdcBadge('-'+pct+'%','rgba(239,68,68,.15)','#f87171')}</td>
+      <td id="timer_${f.id}">${fmtTimer(Math.max(0,Math.floor((new Date(f.date_fin)-new Date())/1000)))}</td>
+      <td>${cdcBadge(active?'🟢 Active':'⬛ Inactive',active?'rgba(0,176,116,.15)':'rgba(107,114,128,.15)',active?'var(--primary-color)':'#9ca3af')}</td>
+      <td><div style="display:flex;gap:.35rem">
+        <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editFlash(${f.id})"><i class="fas fa-edit"></i></button>
+        <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="toggleFlash(${f.id},${f.is_active?0:1})">${f.is_active?'⏸':'▶'}</button>
+        <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="deleteFlash(${f.id})"><i class="fas fa-trash" style="color:#f87171"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  // Timers live
+  d.flash_sales.forEach(f=>{
+    if(!f.is_active) return;
+    const t=setInterval(()=>{
+      const el=document.getElementById('timer_'+f.id); if(!el){clearInterval(t);return;}
+      const sec=Math.max(0,Math.floor((new Date(f.date_fin)-new Date())/1000));
+      el.innerHTML=fmtTimer(sec);
+      if(sec===0)clearInterval(t);
+    },1000);
+    _flashTimers.push(t);
+  });
+}
+async function populateFlashProducts(sel,selected=''){
+  const s=document.getElementById(sel); if(!s)return;
+  const prods=Object.values(typeof PRODS!=='undefined'?PRODS:{});
+  s.innerHTML='<option value="">— Choisir un produit —</option>'+
+    prods.map(p=>`<option value="${p.id}" data-price="${p.price}" ${p.id==selected?'selected':''}>${p.name} — ${cdcFmt(p.price)}</option>`).join('');
+  s.onchange=()=>calcFlashPct();
+}
+function calcFlashPct(){
+  const sel=document.getElementById('flashProduct');
+  const opt=sel?.options[sel.selectedIndex];
+  const px=parseFloat(opt?.dataset?.price||0);
+  const fp=parseFloat(document.getElementById('flashPrix')?.value||0);
+  const el=document.getElementById('flashPct'); if(!el)return;
+  el.textContent=px&&fp?'-'+Math.round((1-fp/px)*100)+'%':'—';
+}
+function openFlashModal(data=null){
+  document.getElementById('flashId').value=data?.id||'';
+  document.getElementById('flashModalTitle').textContent=data?'Modifier vente flash':'Nouvelle vente flash';
+  document.getElementById('flashPrix').value=data?.prix_flash||'';
+  document.getElementById('flashActive').checked=data?.is_active!==0;
+  const now=new Date();
+  now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  if(!data) document.getElementById('flashDebut').value=now.toISOString().slice(0,16);
+  else document.getElementById('flashDebut').value=(data.date_debut||'').slice(0,16);
+  document.getElementById('flashFin').value=(data?.date_fin||'').slice(0,16);
+  populateFlashProducts('flashProduct',data?.product_id||'');
+  document.getElementById('flashModal').classList.add('open');
+}
+function closeFlashModal(){document.getElementById('flashModal').classList.remove('open');}
+async function editFlash(id){
+  const d=await cdcFetch('/shop/api/admin/flash-sales');
+  const f=(d.flash_sales||[]).find(x=>x.id===id); if(f)openFlashModal(f);
+}
+async function saveFlash(){
+  const id=document.getElementById('flashId').value;
+  const finVal=document.getElementById('flashFin').value;
+  if(!document.getElementById('flashProduct').value||!document.getElementById('flashPrix').value||!finVal){toast('Produit, prix et date de fin requis',false);return;}
+  const p={product_id:+document.getElementById('flashProduct').value,
+    prix_flash:+document.getElementById('flashPrix').value,
+    date_debut:document.getElementById('flashDebut').value,
+    date_fin:finVal,
+    is_active:document.getElementById('flashActive').checked?1:0};
+  const d=await cdcFetch(id?`/shop/api/admin/flash-sales/${id}`:'/shop/api/admin/flash-sales',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){
+    KniUI.toast({type:'shop', title:'Vente Flash ⚡', msg:'Vente flash enregistrée avec succès'});
+    closeFlashModal(); loadFlash();
+  } else {
+    KniUI.toast.error(d.error||'Erreur lors de la création');
+  }
+}
+async function toggleFlash(id,val){
+  const d=await cdcFetch(`/shop/api/admin/flash-sales/${id}`,{method:'PUT',body:JSON.stringify({is_active:val})});
+  if(d.success){toast(val?'Flash activée ▶':'Flash suspendue ⏸');loadFlash();}else toast(d.error,false);
+}
+async function deleteFlash(id){
+  const ok = await KniUI.danger('Supprimer cette vente flash ?', {title: 'Supprimer la vente flash ?'});
+  if(!ok) return;
+  const d=await cdcFetch(`/shop/api/admin/flash-sales/${id}`,{method:'DELETE'});
+  if(d.success){toast('Vente flash supprimée');loadFlash();}else toast(d.error,false);
+}
+
+/* ── Zones Livraison ── */
+async function loadZones(){
+  const d=await cdcFetch('/shop/api/admin/zones-livraison');
+  const tb=document.getElementById('zonesBody'); if(!tb)return;
+  if(!d.zones?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucune zone</td></tr>';return;}
+  tb.innerHTML=d.zones.map(z=>`<tr>
+    <td><strong>${z.nom}</strong></td>
+    <td style="font-size:.78rem;max-width:200px">${(z.quartiers||[]).slice(0,4).join(', ')}${z.quartiers?.length>4?'…':''}</td>
+    <td style="font-weight:700;color:var(--primary-color)">${cdcFmt(z.frais)}</td>
+    <td>${z.delai_min}–${z.delai_max} j</td>
+    <td>${cdcBadge(z.is_active?'🟢 Active':'⬛ Inactive',z.is_active?'rgba(0,176,116,.15)':'rgba(107,114,128,.15)',z.is_active?'var(--primary-color)':'#9ca3af')}</td>
+    <td><div style="display:flex;gap:.35rem">
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editZone(${z.id})"><i class="fas fa-edit"></i></button>
+      <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="deleteZone(${z.id},'${(z.nom||'').replace(/'/g,"\\'")}')"><i class="fas fa-trash" style="color:#f87171"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+let _zonesCache=[];
+function openZoneModal(data=null){
+  document.getElementById('zoneId').value=data?.id||'';
+  document.getElementById('zoneModalTitle').textContent=data?'Modifier zone':'Nouvelle zone livraison';
+  document.getElementById('zoneNom').value=data?.nom||'';
+  document.getElementById('zoneFrais').value=data?.frais||500;
+  document.getElementById('zoneDelaiMin').value=data?.delai_min||1;
+  document.getElementById('zoneDelaiMax').value=data?.delai_max||3;
+  document.getElementById('zoneQuartiers').value=(data?.quartiers||[]).join('\n');
+  document.getElementById('zoneActive').checked=data?.is_active!==0;
+  document.getElementById('zoneModal').classList.add('open');
+}
+function closeZoneModal(){document.getElementById('zoneModal').classList.remove('open');}
+async function editZone(id){
+  const d=await cdcFetch('/shop/api/admin/zones-livraison');
+  const z=(d.zones||[]).find(x=>x.id===id); if(z)openZoneModal(z);
+}
+async function saveZone(){
+  const id=document.getElementById('zoneId').value;
+  const q=document.getElementById('zoneQuartiers').value.trim().split('\n').map(s=>s.trim()).filter(Boolean);
+  const p={nom:document.getElementById('zoneNom').value.trim(),frais:+document.getElementById('zoneFrais').value,
+    delai_min:+document.getElementById('zoneDelaiMin').value,delai_max:+document.getElementById('zoneDelaiMax').value,
+    quartiers:q,is_active:document.getElementById('zoneActive').checked?1:0};
+  if(!p.nom){toast('Nom requis',false);return;}
+  const d=await cdcFetch(id?`/shop/api/admin/zones-livraison/${id}`:'/shop/api/admin/zones-livraison',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){toast('Zone enregistrée');closeZoneModal();loadZones();}else toast(d.error||'Erreur',false);
+}
+async function deleteZone(id,nom){
+  const ok = await KniUI.danger(`Supprimer la zone <strong>${nom}</strong> ?`);
+  if(!ok) return;
+  const d=await cdcFetch(`/shop/api/admin/zones-livraison/${id}`,{method:'DELETE'});
+  if(d.success){toast('Zone supprimée');loadZones();}else toast(d.error,false);
+}
+
+/* ── Programme Fidélité ── */
+async function loadFidelite(){
+  const d=await cdcFetch('/shop/api/admin/loyalty/stats');
+  const tb=document.getElementById('fideliteBody'); if(!tb)return;
+  const kEl=document.getElementById('fideliteKpis');
+  if(kEl&&d.success){
+    kEl.innerHTML=`<div class="kpi"><div class="kpi-ico" style="background:rgba(245,158,11,.12)"><i class="fas fa-star" style="color:#f59e0b"></i></div><div><span class="kpi-num">${d.total_members}</span><span class="kpi-lbl">Membres</span></div></div>
+    <div class="kpi"><div class="kpi-ico" style="background:rgba(168,85,247,.12)"><i class="fas fa-gem" style="color:#a855f7"></i></div><div><span class="kpi-num">${d.customers?.filter(c=>c.tier==='Or'||c.tier==='Platine').length||0}</span><span class="kpi-lbl">Or / Platine</span></div></div>
+    <div class="kpi"><div class="kpi-ico" style="background:rgba(0,176,116,.12)"><i class="fas fa-coins" style="color:var(--primary-color)"></i></div><div><span class="kpi-num">${new Intl.NumberFormat('fr-CM').format(d.total_points||0)}</span><span class="kpi-lbl">Points distribués</span></div></div>`;
+  }
+  if(!d.success||!d.customers?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun membre</td></tr>';return;}
+  // Pré-charger la liste pour le modal
+  _fideliteCustomers=d.customers;
+  tb.innerHTML=d.customers.map(c=>`<tr>
+    <td><strong>${c.name||'—'}</strong></td>
+    <td style="font-size:.8rem">${c.email||'—'}</td>
+    <td>${c.phone||'—'}</td>
+    <td style="font-weight:800;color:var(--primary-color)">${new Intl.NumberFormat('fr-CM').format(c.points||0)}</td>
+    <td>${cdcBadge(c.icon+' '+c.tier,'rgba('+hexToRgb(c.color||'#9ca3af')+',.15)',c.color||'#9ca3af')}</td>
+    <td><button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="quickAddPoints(${c.id},'${(c.name||'').replace(/'/g,"\\'")}')"><i class="fas fa-plus" style="color:var(--primary-color)"></i></button></td>
+  </tr>`).join('');
+}
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+let _fideliteCustomers=[];
+async function populatePointsCustomers(selected=''){
+  const d=await cdcFetch('/shop/api/admin/loyalty/stats');
+  const s=document.getElementById('pointsCustomer'); if(!s)return;
+  s.innerHTML='<option value="">— Sélectionner —</option>'+
+    (d.customers||[]).map(c=>`<option value="${c.id}" ${c.id==selected?'selected':''}>${c.name} (${new Intl.NumberFormat('fr-CM').format(c.points||0)} pts)</option>`).join('');
+}
+function openAddPointsModal(data=null){
+  document.getElementById('pointsVal').value='';
+  document.getElementById('pointsRef').value='';
+  document.getElementById('pointsMotif').value='Ajout manuel';
+  populatePointsCustomers(data?.customer_id||'');
+  document.getElementById('addPointsModal').classList.add('open');
+}
+function closeAddPointsModal(){document.getElementById('addPointsModal').classList.remove('open');}
+function quickAddPoints(id,nom){
+  populatePointsCustomers(id);
+  document.getElementById('addPointsModal').classList.add('open');
+}
+async function savePoints(){
+  const cid=document.getElementById('pointsCustomer').value;
+  const pts=parseInt(document.getElementById('pointsVal').value||0);
+  if(!cid||!pts){toast('Client et points requis',false);return;}
+  const d=await cdcFetch('/shop/api/admin/loyalty/add-points',{method:'POST',body:JSON.stringify({
+    customer_id:+cid,points:pts,motif:document.getElementById('pointsMotif').value.trim(),
+    ref_order:document.getElementById('pointsRef').value.trim()
+  })});
+  if(d.success){toast(`✅ ${pts>0?'+'+pts:pts} pts appliqués — Total: ${new Intl.NumberFormat('fr-CM').format(d.new_total)} pts`);closeAddPointsModal();loadFidelite();}
+  else toast(d.error||'Erreur',false);
+}
+
+/* ── Codes Promo ── */
+async function loadPromos(){
+  const d=await cdcFetch('/shop/api/admin/promos');
+  const tb=document.getElementById('promosBody'); if(!tb)return;
+  if(!d.promos?.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun code promo</td></tr>';return;}
+  const now=new Date().toISOString().slice(0,10);
+  tb.innerHTML=d.promos.map(p=>{
+    const exp=p.expires_at&&p.expires_at<now;
+    return`<tr>
+      <td><strong style="font-family:monospace;font-size:.9rem;letter-spacing:.04em">${p.code}</strong></td>
+      <td style="font-weight:700;color:var(--primary-color)">${p.discount}${p.type==='percent'?'%':' XAF'}</td>
+      <td>${p.type==='percent'?'%':'Fixe'}</td>
+      <td style="font-size:.8rem">${p.min_order?cdcFmt(p.min_order):'—'}</td>
+      <td style="font-size:.8rem">${p.uses||0} / ${p.max_uses}</td>
+      <td style="font-size:.78rem;${exp?'color:#f87171':''}">${p.expires_at?p.expires_at.slice(0,10):'Sans expiration'}</td>
+      <td>${cdcBadge(exp?'⏰ Expiré':p.is_active?'🟢 Actif':'⬛ Inactif',
+        exp?'rgba(239,68,68,.15)':p.is_active?'rgba(0,176,116,.15)':'rgba(107,114,128,.15)',
+        exp?'#f87171':p.is_active?'var(--primary-color)':'#9ca3af')}
+        ${p.single_use?cdcBadge('Usage unique','rgba(168,85,247,.15)','#a855f7'):''}</td>
+      <td><div style="display:flex;gap:.35rem">
+        <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editPromo('${p.code}')"><i class="fas fa-edit"></i></button>
+        <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="deletePromo('${p.code}')"><i class="fas fa-trash" style="color:#f87171"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+let _promosCache=[];
+function openPromoModal(data=null){
+  document.getElementById('promoCode').value=data?.code||'';
+  document.getElementById('promoModalTitle').textContent=data?'Modifier code promo':'Nouveau code promo';
+  document.getElementById('promoCodeInput').value=data?.code||'';
+  document.getElementById('promoCodeInput').disabled=!!data;
+  document.getElementById('promoType').value=data?.type||'percent';
+  document.getElementById('promoDiscount').value=data?.discount||10;
+  document.getElementById('promoMinOrder').value=data?.min_order||0;
+  document.getElementById('promoMaxUses').value=data?.max_uses||1000;
+  document.getElementById('promoExpires').value=(data?.expires_at||'').slice(0,10);
+  document.getElementById('promoDesc').value=data?.description||'';
+  document.getElementById('promoSingleUse').checked=!!(data?.single_use);
+  document.getElementById('promoActive').checked=data?.is_active!==0;
+  document.getElementById('promoModal').classList.add('open');
+}
+function closePromoModal(){document.getElementById('promoModal').classList.remove('open');}
+async function editPromo(code){
+  const d=await cdcFetch('/shop/api/admin/promos');
+  const p=(d.promos||[]).find(x=>x.code===code); if(p)openPromoModal(p);
+}
+async function savePromo(){
+  const oldCode=document.getElementById('promoCode').value;
+  const code=document.getElementById('promoCodeInput').value.trim().toUpperCase();
+  if(!code){toast('Code requis',false);return;}
+  const p={code,discount:+document.getElementById('promoDiscount').value||10,
+    type:document.getElementById('promoType').value,
+    min_order:+document.getElementById('promoMinOrder').value||0,
+    max_uses:+document.getElementById('promoMaxUses').value||1000,
+    expires_at:document.getElementById('promoExpires').value||'',
+    description:document.getElementById('promoDesc').value.trim(),
+    single_use:document.getElementById('promoSingleUse').checked?1:0,
+    is_active:document.getElementById('promoActive').checked?1:0};
+  const url=oldCode?`/shop/api/admin/promos/${oldCode}`:'/shop/api/admin/promos';
+  const d=await cdcFetch(url,{method:oldCode?'PUT':'POST',body:JSON.stringify(p)});
+  if(d.success){toast('Code promo enregistré');closePromoModal();loadPromos();}else toast(d.error||'Erreur',false);
+}
+async function deletePromo(code){
+  const ok = await KniUI.danger(`Supprimer le code promo <strong>${code}</strong> ?`);
+  if(!ok) return;
+  const d=await cdcFetch(`/shop/api/admin/promos/${code}`,{method:'DELETE'});
+  if(d.success){toast('Code supprimé');loadPromos();}else toast(d.error,false);
+}
+
+/* ── Pages Institutionnelles ── */
+let _currentPageSlug='';
+async function loadPages(){
+  const d=await cdcFetch('/shop/api/admin/pages');
+  const el=document.getElementById('pagesList'); if(!el)return;
+  document.getElementById('pageEditor').style.display='none';
+  el.style.display='grid';
+  if(!d.pages?.length){el.innerHTML='<div style="color:var(--text-secondary)">Aucune page</div>';return;}
+  const icons={
+    'comment-commander':'🛒','politique-retour':'↩️','faq':'❓',
+    'a-propos':'ℹ️','contact-sav':'📞','cgv':'📋'
+  };
+  el.innerHTML=d.pages.map(p=>`
+    <div style="background:var(--secondary-color);border:1px solid var(--border-color);border-radius:14px;padding:1.1rem;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:.5rem" onmouseover="this.style.borderColor='var(--primary-color)'" onmouseout="this.style.borderColor='var(--border-color)'" onclick="editPage('${p.slug}')">
+      <div style="font-size:1.5rem">${icons[p.slug]||'📄'}</div>
+      <div style="font-weight:700;font-size:.88rem">${p.titre}</div>
+      <div style="font-size:.72rem;color:var(--text-secondary)">/shop/page/${p.slug}</div>
+      <div style="font-size:.7rem;color:var(--text-secondary);margin-top:auto">Modifié: ${(p.updated_at||'').slice(0,10)}</div>
+    </div>`).join('');
+}
+async function editPage(slug){
+  const d=await cdcFetch(`/shop/api/admin/pages/${slug}`);
+  if(!d.success){toast('Page introuvable',false);return;}
+  _currentPageSlug=slug;
+  document.getElementById('pagesList').style.display='none';
+  document.getElementById('pageEditor').style.display='block';
+  document.getElementById('pageEditorTitle').textContent=d.page.titre;
+  document.getElementById('pageTitle').value=d.page.titre||'';
+  document.getElementById('pageContent').value=d.page.contenu||'';
+  document.getElementById('pageLinkBtn').href=`/shop/page/${slug}`;
+}
+function closePagesEditor(){
+  document.getElementById('pageEditor').style.display='none';
+  document.getElementById('pagesList').style.display='grid';
+  loadPages();
+}
+async function savePage(){
+  const d=await cdcFetch(`/shop/api/admin/pages/${_currentPageSlug}`,{method:'PUT',body:JSON.stringify({
+    titre:document.getElementById('pageTitle').value.trim(),
+    contenu:document.getElementById('pageContent').value
+  })});
+  if(d.success){toast('Page enregistrée ✅');closePagesEditor();}else toast(d.error||'Erreur',false);
+}
+
+/* ── Messages SAV ── */
+async function loadMessages(){
+  const s=document.getElementById('msgStatutFilter')?.value||'';
+  const d=await cdcFetch(`/shop/api/admin/contacts?statut=${s}`);
+  const tb=document.getElementById('messagesBody'); if(!tb)return;
+  // Badge
+  const badge=document.getElementById('msgBadge');
+  const news=(d.contacts||[]).filter(c=>c.statut==='nouveau').length;
+  if(badge){badge.textContent=news;badge.style.display=news?'':'none';}
+  if(!d.contacts?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun message</td></tr>';return;}
+  const stC={nouveau:'rgba(59,130,246,.15)',en_cours:'rgba(245,158,11,.15)',resolu:'rgba(0,176,116,.15)'};
+  const stT={nouveau:'#60a5fa',en_cours:'#fbbf24',resolu:'var(--primary-color)'};
+  const stL={nouveau:'🔵 Nouveau',en_cours:'🟡 En cours',resolu:'✅ Résolu'};
+  tb.innerHTML=d.contacts.map(c=>`<tr>
+    <td style="font-size:.78rem">${(c.created_at||'').slice(0,10)}</td>
+    <td><strong>${c.nom||'—'}</strong></td>
+    <td style="font-size:.78rem">${c.telephone||c.email||'—'}</td>
+    <td style="font-size:.8rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.sujet||'—'}</td>
+    <td style="font-size:.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.message||''}">${(c.message||'').slice(0,80)}…</td>
+    <td>${cdcBadge(stL[c.statut]||c.statut,stC[c.statut]||'',stT[c.statut]||'')}</td>
+    <td><button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="openMsgReply(${c.id})"><i class="fas fa-reply"></i></button></td>
+  </tr>`).join('');
+}
+let _msgCache=[];
+async function openMsgReply(id){
+  const d=await cdcFetch('/shop/api/admin/contacts');
+  const c=(d.contacts||[]).find(x=>x.id===id); if(!c)return;
+  document.getElementById('msgReplyId').value=id;
+  document.getElementById('msgReplyStatut').value=c.statut||'nouveau';
+  document.getElementById('msgReplyText').value=c.reponse||'';
+  document.getElementById('msgReplyContent').innerHTML=`
+    <div style="margin-bottom:.5rem"><strong>${c.nom||'Anonyme'}</strong> — ${c.telephone||c.email||''} — <em>${(c.created_at||'').slice(0,16)}</em></div>
+    ${c.sujet?`<div style="font-weight:700;margin-bottom:.3rem">${c.sujet}</div>`:''}
+    <div>${(c.message||'').replace(/\n/g,'<br>')}</div>`;
+  document.getElementById('msgReplyModal').classList.add('open');
+}
+function closeMsgReplyModal(){document.getElementById('msgReplyModal').classList.remove('open');}
+async function saveMsgReply(){
+  const id=document.getElementById('msgReplyId').value;
+  const d=await cdcFetch(`/shop/api/admin/contacts/${id}`,{method:'PUT',body:JSON.stringify({
+    statut:document.getElementById('msgReplyStatut').value,
+    reponse:document.getElementById('msgReplyText').value.trim()
+  })});
+  if(d.success){toast('Message mis à jour');closeMsgReplyModal();loadMessages();}else toast(d.error||'Erreur',false);
+}
+
+/* ── CDC Dashboard — KPIs boutique enrichis ── */
+(async()=>{
+  try{
+    const d=await cdcFetch('/shop/api/admin/cdc-dashboard');
+    if(!d.success)return;
+    const s=d.stats;
+    // Mettre à jour les badges sidebar
+    const fB=document.getElementById('flashBadge');
+    if(fB&&s.flash_actives){fB.textContent=s.flash_actives;fB.style.display='flex';}
+    const mB=document.getElementById('msgBadge');
+    if(mB&&s.messages_new){mB.textContent=s.messages_new;mB.style.display='flex';}
+    // Injecter dans le dashboard existant
+    const dashEl=document.getElementById('sec-dash'); if(!dashEl)return;
+    let cdcDiv=document.getElementById('cdcKpiRow');
+    if(!cdcDiv){cdcDiv=document.createElement('div');cdcDiv.id='cdcKpiRow';dashEl.appendChild(cdcDiv);}
+    cdcDiv.innerHTML=`<div class="sh" style="margin-bottom:.8rem;margin-top:1.2rem"><h4><i class="fas fa-store" style="color:var(--primary-color)"></i> k-Ni Store — Boutique</h4></div>
+    <div class="kpis">
+      <div class="kpi" style="cursor:pointer" onclick="go('flash')"><div class="kpi-ico" style="background:rgba(245,158,11,.12)"><i class="fas fa-bolt" style="color:#f59e0b"></i></div><div><span class="kpi-num">${s.flash_actives}</span><span class="kpi-lbl">Flash Sales actives</span></div></div>
+      <div class="kpi" style="cursor:pointer" onclick="go('zones')"><div class="kpi-ico" style="background:rgba(59,130,246,.12)"><i class="fas fa-map-marker-alt" style="color:#60a5fa"></i></div><div><span class="kpi-num">${s.total_zones}</span><span class="kpi-lbl">Zones livraison</span></div></div>
+      <div class="kpi" style="cursor:pointer" onclick="go('promos')"><div class="kpi-ico" style="background:rgba(168,85,247,.12)"><i class="fas fa-tags" style="color:#a855f7"></i></div><div><span class="kpi-num">${s.total_promos}</span><span class="kpi-lbl">Promos actives</span></div></div>
+      <div class="kpi" style="cursor:pointer" onclick="go('fidelite')"><div class="kpi-ico" style="background:rgba(245,158,11,.12)"><i class="fas fa-star" style="color:#f59e0b"></i></div><div><span class="kpi-num">${new Intl.NumberFormat('fr-CM').format(s.total_points||0)}</span><span class="kpi-lbl">Points fidélité</span></div></div>
+      ${s.messages_new>0?`<div class="kpi" style="cursor:pointer;border-color:rgba(239,68,68,.4)" onclick="go('messages')"><div class="kpi-ico" style="background:rgba(239,68,68,.15)"><i class="fas fa-envelope" style="color:#f87171"></i></div><div><span class="kpi-num" style="color:#f87171">${s.messages_new}</span><span class="kpi-lbl">Messages SAV</span></div></div>`:''}
+      ${s.orders_no_num>0?`<div class="kpi" style="cursor:pointer;border-color:rgba(245,158,11,.4)" title="Cliquer pour générer les numéros KNI" onclick="genOrderNumbers()"><div class="kpi-ico" style="background:rgba(245,158,11,.15)"><i class="fas fa-hashtag" style="color:#fbbf24"></i></div><div><span class="kpi-num" style="color:#fbbf24">${s.orders_no_num}</span><span class="kpi-lbl">Sans numéro KNI</span></div></div>`:''}
+    </div>`;
+  }catch(e){}
+})();
+
+async function genOrderNumbers(){
+  const d=await cdcFetch('/shop/api/order/add-number',{method:'POST'});
+  if(d.success)toast(`✅ ${d.updated} numéros KNI générés`);else toast(d.error||'Erreur',false);
+}
+</script>
 
 {% endblock %}
