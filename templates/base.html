@@ -651,6 +651,200 @@
         }
     </style>
 
+    <style>
+/* ═══════════════════════════════════════════════════════════
+   BASE — AMÉLIORATIONS DESIGN GLOBALES
+═══════════════════════════════════════════════════════════ */
+
+/* ── Sidebar raffinée ── */
+.sidebar {
+    background: linear-gradient(180deg, #0f1627 0%, #111827 60%, #0d1520 100%) !important;
+    border-right: 1px solid rgba(0,212,170,.12) !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,.45) !important;
+}
+.sidebar .logo img {
+    box-shadow: 0 0 28px rgba(0,212,170,.45), 0 0 0 2px rgba(0,212,170,.15) !important;
+    transition: box-shadow .3s ease !important;
+}
+.sidebar .logo img:hover {
+    box-shadow: 0 0 38px rgba(0,212,170,.65), 0 0 0 3px rgba(0,212,170,.3) !important;
+}
+.sidebar .logo h4 {
+    background: linear-gradient(135deg, #00d4aa, #00ff88);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.35rem !important;
+    letter-spacing: -.02em !important;
+}
+.sidebar-menu a {
+    border-radius: 0 12px 12px 0 !important;
+    margin-right: .75rem !important;
+    transition: all .2s cubic-bezier(.25,.46,.45,.94) !important;
+    border-left: 3px solid transparent !important;
+    letter-spacing: .01em !important;
+}
+.sidebar-menu a:hover {
+    background: rgba(0,212,170,.1) !important;
+    color: var(--primary-color) !important;
+    border-left-color: rgba(0,212,170,.5) !important;
+    padding-left: 1.75rem !important;
+}
+.sidebar-menu a.active {
+    background: rgba(0,212,170,.14) !important;
+    color: var(--primary-color) !important;
+    border-left-color: var(--primary-color) !important;
+    font-weight: 600 !important;
+}
+.sidebar-menu a i {
+    transition: transform .2s ease !important;
+}
+.sidebar-menu a:hover i { transform: scale(1.1) !important; }
+.sidebar-section-label {
+    font-size: .6rem !important;
+    letter-spacing: .14em !important;
+    opacity: .4 !important;
+    padding: .8rem 1.5rem .25rem !important;
+    border-top: 1px solid rgba(255,255,255,.04) !important;
+    margin-top: .25rem !important;
+}
+
+/* ── Main content plein écran ── */
+.main-content {
+    margin-left: 280px;
+    padding: 1.5rem !important;
+    min-height: 100vh;
+    background: var(--dark-bg) !important;
+}
+body.light-theme .main-content { background: #f1f5f9 !important; }
+
+/* ── Top bar raffinée ── */
+.top-bar {
+    background: var(--secondary-color) !important;
+    border-radius: 16px !important;
+    padding: 1.1rem 1.6rem !important;
+    margin-bottom: 1.5rem !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,.18) !important;
+    backdrop-filter: blur(8px) !important;
+}
+.top-bar h1 {
+    font-size: 1.55rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -.03em !important;
+}
+
+/* ── Boutons top bar ── */
+.theme-toggle,
+.notification-badge {
+    background: var(--accent-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 11px !important;
+    transition: all .2s !important;
+    padding: .5rem .9rem !important;
+}
+.theme-toggle:hover { background: rgba(0,212,170,.15) !important; border-color: rgba(0,212,170,.35) !important; color: var(--primary-color) !important; transform: scale(1.04) !important; }
+.notification-badge:hover { background: rgba(0,212,170,.15) !important; border-color: rgba(0,212,170,.35) !important; transform: scale(1.04) !important; }
+.user-profile {
+    background: var(--accent-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 11px !important;
+    transition: all .2s !important;
+}
+.user-profile:hover { background: rgba(0,212,170,.15) !important; border-color: rgba(0,212,170,.3) !important; transform: scale(1.03) !important; }
+.user-profile img { border-radius: 8px !important; border: 2px solid rgba(0,212,170,.25) !important; }
+
+/* ── Stat cards ── */
+.stat-card {
+    border-radius: 18px !important;
+    border: 1px solid rgba(255,255,255,.06) !important;
+    background: var(--secondary-color) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,.18) !important;
+    transition: all .25s cubic-bezier(.25,.46,.45,.94) !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+.stat-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,212,170,.03), transparent);
+    pointer-events: none;
+}
+.stat-card:hover {
+    transform: translateY(-6px) !important;
+    box-shadow: 0 12px 36px rgba(0,212,170,.18) !important;
+    border-color: rgba(0,212,170,.2) !important;
+}
+.stat-card .icon {
+    border-radius: 14px !important;
+    width: 54px !important; height: 54px !important;
+    font-size: 1.6rem !important;
+}
+.stat-card h2 { font-size: 1.85rem !important; font-weight: 900 !important; letter-spacing: -.04em !important; }
+
+/* ── Tables ── */
+.custom-table {
+    border-radius: 18px !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,.12) !important;
+    overflow: hidden !important;
+}
+.custom-table thead { background: rgba(0,212,170,.06) !important; }
+.custom-table th {
+    padding: .85rem 1rem !important;
+    font-size: .72rem !important;
+    font-weight: 800 !important;
+    letter-spacing: .07em !important;
+    color: var(--primary-color) !important;
+    border-bottom: 1px solid rgba(0,212,170,.12) !important;
+}
+.custom-table td { padding: .85rem 1rem !important; font-size: .88rem !important; }
+.custom-table tr:hover { background: rgba(0,212,170,.04) !important; }
+
+/* ── Boutons globaux ── */
+.btn-primary-custom {
+    background: linear-gradient(135deg, #00d4aa, #00b074) !important;
+    border-radius: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: .02em !important;
+    transition: all .2s !important;
+    box-shadow: 0 2px 10px rgba(0,212,170,.25) !important;
+}
+.btn-primary-custom:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(0,212,170,.4) !important;
+}
+.btn-danger-custom {
+    background: linear-gradient(135deg, #ff4757, #ff6b6b) !important;
+    border-radius: 11px !important;
+    transition: all .2s !important;
+}
+.btn-danger-custom:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(255,71,87,.4) !important;
+}
+
+/* ── Status badges ── */
+.status-badge { border-radius: 9px !important; font-size: .75rem !important; padding: .3rem .8rem !important; }
+
+/* ── Scrollbar améliorée ── */
+::-webkit-scrollbar { width: 6px !important; height: 6px !important; }
+::-webkit-scrollbar-track { background: transparent !important; }
+::-webkit-scrollbar-thumb { background: rgba(0,212,170,.3) !important; border-radius: 3px !important; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,212,170,.55) !important; }
+
+/* ── FAB améliorés ── */
+.chat-fab {
+    width: 52px !important; height: 52px !important;
+    font-size: 1.25rem !important;
+    box-shadow: 0 6px 24px rgba(0,212,170,.55) !important;
+}
+.dashboard-fab, .admin-fab, .ann-fab {
+    width: 46px !important; height: 46px !important;
+    font-size: 1.1rem !important;
+}
+    </style>
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 

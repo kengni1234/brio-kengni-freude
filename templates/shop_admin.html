@@ -33,7 +33,7 @@ button .emoji, span.emoji, [data-emoji]{
   --primary-glow:rgba(0,176,116,.18);
 }
 /* ══ LAYOUT ══ */
-.sa-root{display:flex;gap:0;height:calc(100vh - 110px);overflow:hidden;border-radius:16px;overflow:hidden;border:1px solid var(--border-color)}
+.sa-root{display:flex;gap:0;height:calc(100vh - 96px);overflow:hidden;border-radius:16px;border:1px solid var(--border-color)}
 .sa-nav{width:var(--sa-nav-w);flex-shrink:0;background:var(--secondary-color);display:flex;flex-direction:column;overflow-y:auto;border-right:1px solid var(--border-color)}
 .sa-nav-logo{padding:1rem 1.1rem .6rem;border-bottom:1px solid var(--border-color)}
 .sa-nav-logo span{font-weight:800;font-size:.9rem;color:var(--primary-color)}
@@ -119,7 +119,7 @@ button .emoji, span.emoji, [data-emoji]{
 .tw tr:last-child td{border-bottom:none}
 .tw tr:hover td{background:rgba(0,176,116,.04);cursor:pointer;transition:background .15s}
 /* ══ PRODUCT GRID ══ */
-.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem}
 .pcard{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:13px;overflow:hidden;transition:.2s;position:relative}
 .pcard:hover{border-color:var(--primary-color);box-shadow:0 6px 22px rgba(0,176,116,.09)}
 .pcard-img{height:148px;background:var(--accent-color);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
@@ -420,9 +420,208 @@ button .emoji, span.emoji, [data-emoji]{
 .bnav-btn .badge{position:absolute;top:2px;right:6px;background:#ef4444;color:#fff;border-radius:20px;font-size:.55rem;padding:.04rem .32rem;font-weight:800}
 /* ══ RESPONSIVE ══ */
 @media(max-width:960px){.sa-nav{display:none}.dp{display:none}.kpis{grid-template-columns:1fr 1fr}.sa-root{height:calc(100vh - 80px);border-radius:0;border:none}.bnav{display:flex}.sa-main{padding-bottom:70px}}
-@media(max-width:600px){.kpis{grid-template-columns:1fr 1fr}.fg3,.fg4{grid-template-columns:1fr 1fr}.sh{flex-direction:column;align-items:flex-start}.pg{grid-template-columns:1fr 1fr;gap:.75rem}.pcard-img{height:120px}.stats3{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.kpis{grid-template-columns:1fr 1fr;gap:.7rem}.fg3,.fg4{grid-template-columns:1fr 1fr}.sh{flex-direction:column;align-items:flex-start}.pg{grid-template-columns:1fr 1fr;gap:.75rem}.pcard-img{height:130px}.stats3{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.kpis{grid-template-columns:1fr 1fr;gap:.5rem}.sa-main{padding:.85rem}.sh h4{font-size:.9rem}.btn-p,.btn-g,.btn-d{font-size:.75rem;padding:.4rem .75rem}.fg2{grid-template-columns:1fr!important}}
 @media(max-width:360px){.kpis{grid-template-columns:1fr 1fr;gap:.4rem}.sa-main{padding:.6rem}}
+/* ── CORRECTIF FILTRE PRODUIT ADMIN : évite reset animation ── */
+.pcard.admin-hidden { display:none!important; }
+
+/* ═══════════════════════════════════════════════════════════
+   SHOP ADMIN — AMÉLIORATIONS DESIGN
+═══════════════════════════════════════════════════════════ */
+
+/* ── Nav latérale admin ── */
+.sa-nav {
+    background: linear-gradient(180deg, rgba(0,10,6,.95), var(--secondary-color) 100%) !important;
+    border-right: 1px solid rgba(0,176,116,.15) !important;
+}
+.sa-nb:hover {
+    background: rgba(0,176,116,.08) !important;
+    color: var(--primary-color) !important;
+    border-left-color: rgba(0,176,116,.4) !important;
+    padding-left: 1.35rem !important;
+}
+.sa-nb.on {
+    background: rgba(0,176,116,.1) !important;
+    font-weight: 700 !important;
+}
+.sa-nb { transition: all .18s ease !important; }
+
+/* ── KPIs ── */
+.kpi {
+    border-radius: 18px !important;
+    transition: all .25s cubic-bezier(.25,.46,.45,.94) !important;
+}
+.kpi:hover {
+    border-color: rgba(0,176,116,.4) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 32px rgba(0,176,116,.14) !important;
+}
+.kpi-ico { border-radius: 14px !important; }
+.kpi-num { font-size: 1.8rem !important; font-weight: 900 !important; letter-spacing: -.04em !important; }
+
+/* ── Tables ── */
+.tw {
+    border-radius: 16px !important;
+    border: 1px solid rgba(0,176,116,.12) !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,.1) !important;
+}
+.tw th {
+    padding: .75rem 1rem !important;
+    background: rgba(0,176,116,.06) !important;
+    color: var(--primary-color) !important;
+    font-size: .7rem !important;
+    font-weight: 800 !important;
+    letter-spacing: .07em !important;
+}
+.tw td { padding: .9rem 1rem !important; font-size: .85rem !important; }
+.tw tr:hover td { background: rgba(0,176,116,.05) !important; }
+
+/* ── Product cards admin ── */
+.pcard {
+    border-radius: 16px !important;
+    border: 1px solid rgba(0,176,116,.1) !important;
+    transition: all .25s cubic-bezier(.25,.46,.45,.94) !important;
+}
+.pcard:hover {
+    border-color: rgba(0,176,116,.35) !important;
+    box-shadow: 0 10px 30px rgba(0,176,116,.12) !important;
+    transform: translateY(-4px) !important;
+}
+.pcard-img {
+    border-radius: 14px 14px 0 0 !important;
+    background: linear-gradient(135deg, rgba(0,176,116,.06), rgba(0,143,93,.04)) !important;
+}
+
+/* ── Boutons admin ── */
+.btn-p {
+    background: linear-gradient(135deg, #00b074, #00d48a) !important;
+    color: #fff !important;
+    border-radius: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: .02em !important;
+    transition: all .2s !important;
+    box-shadow: 0 2px 10px rgba(0,176,116,.2) !important;
+}
+.btn-p:hover:not(:disabled) {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 22px rgba(0,176,116,.35) !important;
+}
+.btn-g {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    transition: all .18s !important;
+}
+.btn-g:hover {
+    background: rgba(0,176,116,.1) !important;
+    color: var(--primary-color) !important;
+    border-color: rgba(0,176,116,.35) !important;
+}
+.btn-d { border-radius: 10px !important; transition: all .18s !important; }
+
+/* ── Form cards ── */
+.fcard {
+    border-radius: 16px !important;
+    border: 1px solid rgba(0,176,116,.1) !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08) !important;
+    transition: border-color .2s !important;
+}
+.fcard:hover { border-color: rgba(0,176,116,.2) !important; }
+.fcard-hd {
+    background: rgba(0,176,116,.07) !important;
+    font-size: .73rem !important;
+    font-weight: 800 !important;
+    letter-spacing: .07em !important;
+    color: var(--primary-color) !important;
+    border-bottom: 1px solid rgba(0,176,116,.1) !important;
+}
+.fi {
+    border-radius: 10px !important;
+    transition: all .2s !important;
+    border: 1.5px solid var(--border-color) !important;
+}
+.fi:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(0,176,116,.12) !important;
+}
+
+/* ── Filter chips ── */
+.fchip {
+    border-radius: 22px !important;
+    font-weight: 700 !important;
+    transition: all .18s !important;
+}
+.fchip:hover, .fchip.on {
+    background: var(--primary-color) !important;
+    color: #0f1419 !important;
+    border-color: var(--primary-color) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 10px rgba(0,176,116,.25) !important;
+}
+
+/* ── Section header ── */
+.sh h4 {
+    font-size: 1.05rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -.01em !important;
+}
+
+/* ── sa-main scrollable ── */
+.sa-main {
+    padding: 1.4rem 1.6rem !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(0,176,116,.3) transparent !important;
+}
+.sa-main::-webkit-scrollbar { width: 5px !important; }
+.sa-main::-webkit-scrollbar-thumb { background: rgba(0,176,116,.3) !important; border-radius: 3px !important; }
+.sa-main::-webkit-scrollbar-thumb:hover { background: rgba(0,176,116,.55) !important; }
+
+/* ── Status pills ── */
+.sp {
+    border-radius: 10px !important;
+    font-size: .68rem !important;
+    font-weight: 800 !important;
+    letter-spacing: .02em !important;
+    padding: .22rem .7rem !important;
+}
+
+/* ── KPIs grid ── */
+.kpis { gap: 1.1rem !important; margin-bottom: 1.6rem !important; }
+
+/* ── Detail panel ── */
+.dp { border-radius: 0 16px 16px 0 !important; }
+
+/* ── Toast ── */
+#toast {
+    border-radius: 14px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,.25) !important;
+    border: 1px solid rgba(0,176,116,.3) !important;
+    font-weight: 700 !important;
+}
+
+/* ── Ftabs ── */
+.ftab {
+    font-weight: 700 !important;
+    font-size: .8rem !important;
+    padding: .52rem .9rem !important;
+    border-radius: 8px 8px 0 0 !important;
+    transition: color .15s !important;
+}
+.ftab.on { color: var(--primary-color) !important; font-weight: 800 !important; }
+
+/* ── Section header bar ── */
+.sh {
+    padding-bottom: .8rem !important;
+    border-bottom: 1px solid rgba(0,176,116,.1) !important;
+}
+
+/* ── Animations subtiles ── */
+.sec.on { animation: secFadeIn .2s ease both; }
+@keyframes secFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+/* ── Modal box ── */
+.modal-box { border-radius: 20px !important; box-shadow: 0 28px 70px rgba(0,0,0,.5) !important; }
+
 
 /* ══ AMÉLIORATIONS WHATSAPP-INSPIRED — shop_admin mobile ══ */
 
@@ -2787,7 +2986,8 @@ function applyPF(q=''){
     const nmOk=!s||c.dataset.nm.includes(s);
     const stk=parseInt(c.dataset.stk||'0');
     const stkOk=sf==='all'||(sf==='avail'&&stk>0)||(sf==='low'&&stk>0&&stk<=5)||(sf==='out'&&stk===0);
-    c.style.display=(catOk&&nmOk&&stkOk)?'':'none';
+    /* CORRECTIF : classList évite un reset d'animation sur les cartes */
+    c.classList.toggle('admin-hidden', !(catOk&&nmOk&&stkOk));
   });
 }
 // ── Product Search Autocomplete ──
