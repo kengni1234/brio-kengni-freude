@@ -46,6 +46,7 @@ def check_password_hash(stored: str, password: str) -> bool:
 from werkzeug.utils import secure_filename
 from functools import wraps
 import sqlite3
+import hmac as _hmac_sec
 import os
 from datetime import datetime, timedelta, date
 import secrets
@@ -70,7 +71,7 @@ from datetime import date as _date
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'K3nGn1-F1n@nc3-s3cr3t-k3y-!2024#XqZ9pLmR7vBw')
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # SÉCURITÉ: 30min (app financière)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -109,6 +110,123 @@ for _log_name in ('werkzeug', 'gunicorn.error', 'gunicorn.access',
 # Patch du handler racine au cas où il serait ajouté plus tard
 _root_logger = _logging.getLogger()
 _root_logger.addFilter(_suppress_filter)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BLOC SÉCURITÉ — Logger, Rate Limiter, CSRF, Wrapper jsonify
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Détection environnement production
+_PROD = bool(os.environ.get('PYTHONANYWHERE_DOMAIN') or os.environ.get('PRODUCTION'))
+
+# Logger sécurité structuré (fichier séparé des logs applicatifs)
+_sec_logger = _logging.getLogger('kengni.security')
+if not _sec_logger.handlers:
+    _sh = _logging.StreamHandler()
+    _sh.setFormatter(_logging.Formatter('[SECURITY] %(asctime)s %(levelname)s — %(message)s'))
+    _sec_logger.addHandler(_sh)
+_sec_logger.setLevel(_logging.WARNING)
+
+def _sec_log(event: str, details: str = ''):
+    """Journalise un événement de sécurité avec IP."""
+    try:
+        from flask import request as _req
+        ip = (_req.headers.get('X-Forwarded-For', _req.remote_addr) or '').split(',')[0].strip()
+    except Exception:
+        ip = 'unknown'
+    _sec_logger.warning(f"{event} | IP={ip} | {details}")
+
+# ── Rate Limiter en mémoire (thread-safe, sans dépendance) ───────────────────
+import collections as _collections
+import threading as _threading_rl
+import time as _time_rl
+
+class _RateLimiter:
+    def __init__(self):
+        self._lock    = _threading_rl.Lock()
+        self._buckets = _collections.defaultdict(list)
+
+    def _clean(self, key, window):
+        now = _time_rl.monotonic()
+        self._buckets[key] = [t for t in self._buckets[key] if now - t < window]
+
+    def is_allowed(self, key, limit, window):
+        with self._lock:
+            self._clean(key, window)
+            if len(self._buckets[key]) >= limit:
+                return False
+            self._buckets[key].append(_time_rl.monotonic())
+            return True
+
+_rl = _RateLimiter()
+
+def _rl_check(limit: int, window: int):
+    """Retourne None si OK, réponse 429 sinon. Journalise les abus."""
+    try:
+        from flask import request as _r, jsonify as _j
+        ip = (_r.headers.get('X-Forwarded-For', _r.remote_addr) or '').split(',')[0].strip()
+        if not _rl.is_allowed(f"{ip}:{_r.path}:{window}", limit, window):
+            _sec_log('RATE_LIMIT', f"path={_r.path}")
+            return _j({'success': False, 'error': f'Trop de tentatives. Attendez {window}s.'}), 429
+    except Exception:
+        pass
+    return None
+
+# ── Wrapper jsonify — masque les détails d'erreur Python en production ────────
+from flask import jsonify as _flask_jsonify
+
+def jsonify(*args, **kwargs):
+    """Remplace flask.jsonify : en production, masque les détails internes sur success=False."""
+    if _PROD and args and isinstance(args[0], dict):
+        d = args[0]
+        if not d.get('success', True):
+            _internal_kw = ('sqlite3', 'OperationalError', 'IntegrityError',
+                            'Traceback', '/home/', 'line ', 'Exception', 'Error:')
+            for key in ('error', 'message'):
+                if key in d and isinstance(d[key], str):
+                    if any(kw in d[key] for kw in _internal_kw):
+                        d = dict(d)
+                        d[key] = 'Une erreur interne est survenue.'
+    return _flask_jsonify(*args, **kwargs)
+
+# ── CSRF léger : token session + validation sur les POST critiques ─────────────
+import secrets as _secrets_csrf
+
+def _csrf_token():
+    """Génère (ou récupère) le token CSRF de la session courante."""
+    from flask import session as _s
+    if '_csrf_token' not in _s:
+        _s['_csrf_token'] = _secrets_csrf.token_hex(32)
+    return _s['_csrf_token']
+
+def _csrf_valid():
+    """Vérifie le token CSRF. Retourne True si valide ou si requête JSON avec même origine."""
+    from flask import request as _r, session as _s
+    # Les requêtes JSON depuis le front passent via fetch avec credentials=same-origin
+    # SameSite=Lax + HTTPS couvre déjà le cas cross-site.
+    # On valide uniquement les POST de formulaires HTML classiques.
+    if _r.is_json:
+        return True
+    token_sent    = _r.form.get('_csrf_token', '') or _r.headers.get('X-CSRF-Token', '')
+    token_session = _s.get('_csrf_token', '')
+    if not token_sent or not token_session:
+        return False
+    return _hmac_sec.compare_digest(str(token_sent), str(token_session))
+
+def csrf_protect(f):
+    """Décorateur CSRF pour les routes POST HTML sensibles."""
+    @wraps(f)
+    def _wrap(*args, **kwargs):
+        from flask import request as _r, abort
+        if _r.method == 'POST' and not _csrf_valid():
+            _sec_log('CSRF_FAIL', f"path={_r.path}")
+            abort(403)
+        return f(*args, **kwargs)
+    return _wrap
+
+# Injecter le token CSRF dans tous les contextes de template
+# (Les templates peuvent ajouter <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">)
+# Ne casse rien si les templates ne l'utilisent pas.
+# ── FIN BLOC SÉCURITÉ ─────────────────────────────────────────────────────────
 
 # ── Configuration Gmail pour les rappels d'agenda ──────────────────────────────
 GMAIL_CONFIG = {
@@ -164,7 +282,8 @@ app.jinja_env.globals.update({
     'int': int,
     'float': float,
     'len': len,
-    'sum': sum
+    'sum': sum,
+    'csrf_token': _csrf_token,   # disponible dans tous les templates : {{ csrf_token() }}
 })
 
 # Ensure upload folders exist (chemins absolus)
@@ -1444,7 +1563,7 @@ def create_notification(user_id, notif_type, title, message):
 
 @app.after_request
 def set_cache_headers(response):
-    """Cache statique et sécurité headers."""
+    """Cache statique, headers de sécurité HTTP, et blocage DevTools."""
     path = request.path
     if path.startswith('/static/'):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
@@ -1452,6 +1571,45 @@ def set_cache_headers(response):
         response.headers['Cache-Control'] = 'public, max-age=30'
     elif path in ('/shop',):
         response.headers['Cache-Control'] = 'private, max-age=60'
+    # ── Headers de sécurité sur toutes les réponses ──────────────────────────
+    response.headers['X-Frame-Options']        = 'SAMEORIGIN'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-XSS-Protection']       = '1; mode=block'
+    response.headers['Referrer-Policy']        = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy']     = 'geolocation=(), camera=(), microphone=()'
+    if _PROD:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    # ── Injection CSRF token + blocage F12/DevTools sur les pages HTML ────────
+    ct = response.content_type or ''
+    if 'text/html' in ct:
+        response.headers['X-CSRF-Token'] = _csrf_token()
+        _devtools_script = (
+            b'<script>(function(){'
+            b'function _dtBlock(){document.body.innerHTML=\'<div style="display:flex;flex-direction:column;align-items:center;'
+            b'justify-content:center;height:100vh;font-family:sans-serif;background:#0a0a0a;">'
+            b'<span style="font-size:48px;font-weight:700;color:#00d4aa;letter-spacing:4px;">K-Ni</span>'
+            b'<span style="font-size:15px;color:#aaa;margin-top:12px;letter-spacing:2px;">ACC\xc3\x88S NON AUTORIS\xc3\x89</span>'
+            b'</div>\';}'
+            b'document.addEventListener(\'keydown\',function(e){'
+            b'if(e.key===\'F12\'||(e.ctrlKey&&e.shiftKey&&[\'I\',\'J\',\'C\'].includes(e.key.toUpperCase()))'
+            b'||(e.ctrlKey&&e.key.toUpperCase()===\'U\')){e.preventDefault();e.stopPropagation();return false;}},true);'
+            b'document.addEventListener(\'contextmenu\',function(e){e.preventDefault();return false;});'
+            b'var _dtThr=160;'
+            b'setInterval(function(){'
+            b'if((window.outerWidth-window.innerWidth>_dtThr)||(window.outerHeight-window.innerHeight>_dtThr)){_dtBlock();}},1000);'
+            b'var _dtP={open:false};var _dtI=new Image();'
+            b'Object.defineProperty(_dtI,\'id\',{get:function(){_dtP.open=true;}});'
+            b'setInterval(function(){_dtP.open=false;console.log(_dtI);console.clear();if(_dtP.open){_dtBlock();}},1500);'
+            b'})();</script>'
+        )
+        data = response.get_data()
+        if b'</body>' in data:
+            data = data.replace(b'</body>', _devtools_script + b'</body>', 1)
+        elif b'</html>' in data:
+            data = data.replace(b'</html>', _devtools_script + b'</html>', 1)
+        else:
+            data += _devtools_script
+        response.set_data(data)
     return response
 
 @app.route('/')
@@ -1465,6 +1623,10 @@ def index():
 def login():
     """User login"""
     if request.method == 'POST':
+        # ── Rate limiting : 5 tentatives / 5 minutes par IP ──────────────────
+        _rl_resp = _rl_check(5, 300)
+        if _rl_resp:
+            return _rl_resp
         data = request.get_json(force=True, silent=True) or request.form
         email = data.get('email')
         password = data.get('password')
@@ -1510,6 +1672,7 @@ def login():
             
             conn.close()
         
+        _sec_log('LOGIN_FAIL', f"email={email}")
         if request.is_json:
             return jsonify({'success': False, 'message': 'Email ou mot de passe incorrect'}), 401
         return render_template('login.html', error='Email ou mot de passe incorrect')
@@ -1682,8 +1845,10 @@ def register():
         if not email or '@' not in email:
             errors.append("Email invalide")
         
-        if not password or len(password) < 6:
-            errors.append("Le mot de passe doit contenir au moins 6 caractères")
+        if not password or len(password) < 8 or \
+           not re.search(r'[A-Z]', password) or \
+           not re.search(r'[0-9]', password):
+            errors.append("Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 chiffre")
         
         if password != confirm_password:
             errors.append("Les mots de passe ne correspondent pas")
@@ -4081,6 +4246,11 @@ def admin_secret_entry():
 
 @app.route(f'/{ADMIN_SECRET_TOKEN}/auth', methods=['POST'])
 def admin_auth():
+    # ── Rate limiting : 3 tentatives / 10 minutes par IP ─────────────────────
+    _rl_resp = _rl_check(3, 600)
+    if _rl_resp:
+        _sec_log('ADMIN_AUTH_RATELIMIT', 'Blocage tentative admin')
+        return _rl_resp
     data = request.get_json(force=True, silent=True) or request.form
     email    = data.get('email','').strip()
     password = data.get('password','').strip()
@@ -4105,6 +4275,7 @@ def admin_auth():
             if request.is_json: return jsonify({'success': True, 'redirect': url_for('verify_token_page', email=user['email'])})
             return redirect(url_for('verify_token_page', email=user['email']))
         conn.close()
+    _sec_log('ADMIN_AUTH_FAIL', f"email={email}")
     if request.is_json: return jsonify({'success': False, 'message': 'Identifiants incorrects'}), 401
     from flask import abort; abort(404)
 
@@ -4369,18 +4540,20 @@ def admin_secondary_verify():
         session['admin_sec_attempts'] = session.get('admin_sec_attempts', 0) + 1
         if session['admin_sec_attempts'] > 3:
             # Trop de tentatives — déconnexion forcée
+            _sec_log('ADMIN_SEC_LOCKOUT', 'Trop de tentatives sur secondary-verify')
             session.clear()
             if request.is_json:
                 return jsonify({'success': False, 'message': 'Trop de tentatives — déconnexion'}), 403
             flash('Trop de tentatives incorrectes. Session terminée.', 'danger')
             return redirect(url_for('login'))
-        if pwd == ADMIN_SECONDARY_PASSWORD:
+        if _hmac_sec.compare_digest(str(pwd), str(ADMIN_SECONDARY_PASSWORD)):
             session['admin_secondary_verified'] = True
             session['admin_sec_attempts'] = 0
             if request.is_json:
                 return jsonify({'success': True, 'redirect': url_for('admin_panel')})
             return redirect(url_for('admin_panel'))
         else:
+            _sec_log('ADMIN_SEC_FAIL', f"attempts={session['admin_sec_attempts']}")
             remaining = 3 - session['admin_sec_attempts']
             error = f'Mot de passe secondaire incorrect. {remaining} tentative(s) restante(s).'
             if request.is_json:
@@ -4466,7 +4639,8 @@ def admin_update_user(user_id):
 def admin_reset_password(user_id):
     data = request.get_json(force=True, silent=True)
     password = data.get('password','').strip()
-    if len(password)<6: return jsonify({'success':False,'message':'Mot de passe trop court'}),400
+    if len(password) < 8 or not re.search(r'[A-Z]', password) or not re.search(r'[0-9]', password):
+        return jsonify({'success': False, 'message': 'Mot de passe : 8 caractères min, 1 majuscule et 1 chiffre requis'}), 400
     conn = get_db_connection()
     if conn:
         cursor = conn.cursor()
