@@ -145,7 +145,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 #prodGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.1rem;transition:.3s}
 #prodGrid .pcard{order:0}
 #prodGrid.list-view{grid-template-columns:1fr}
-.pcard{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:.22s;position:relative;animation:fadeUp .4s ease both}
+.pcard{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:.22s;position:relative;animation:fadeUp .4s ease forwards}
 .pcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px)}
 .pcard:hover .pcard-img{transform:scale(1.05)}
 .pcard-imgwrap{overflow:hidden;aspect-ratio:1;background:#f9fafb;position:relative}
@@ -698,6 +698,11 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 0 1.5rem;margin-top:3rem
 /* Masquage par classe — pas de reset d'animation */
 .pcard.filter-hidden{
   display:none!important;
+  animation:none!important;
+}
+/* Garantir visibilité quand la carte redevient visible */
+.pcard:not(.filter-hidden){
+  opacity:1;
 }
 
 /* ── PLEIN ÉCRAN : supprimer toutes les contraintes de largeur max ── */
@@ -2125,7 +2130,7 @@ function applyFilters(){
   /* ── Appliquer l'ordre via CSS order (aucun déplacement DOM) ── */
   sorted.forEach((c, idx) => { c.style.order = idx; });
 
-  /* ── Visibilité uniquement par display (pas de réinsertion) ── */
+  /* ── Visibilité + gel immédiat de l'animation ── */
   cards.forEach(c => {
     const name  = c.dataset.name||'';
     const cat   = c.dataset.cat||'';
@@ -2139,8 +2144,14 @@ function applyFilters(){
                 || (_curAvail==='stock' && stock>0)
                 || (_curAvail==='promo' && badge==='promo');
     const show = matchQ && matchC && matchP && matchA;
-    /* CORRECTIF BUG : utiliser classe au lieu de display inline
-       pour éviter le restart de l'animation fadeUp */
+
+    /* Geler l'animation AVANT de changer display,
+       pour qu'elle ne reparte jamais de zéro au réaffichage */
+    if(!c.hasAttribute('data-anim-done')){
+      c.setAttribute('data-anim-done','');
+      c.style.animationDelay='';
+    }
+
     c.classList.toggle('filter-hidden', !show);
     if(show) visible++;
   });
@@ -3078,25 +3089,38 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  /* ── CORRECTIF ANIMATION ───────────────────────────────────────
-     Après que toutes les animations fadeUp sont terminées, on
-     désactive l'animation via data-anim-done pour éviter qu'elle
-     redémarre à chaque appel d'applyFilters() (display toggle).
-     Délai = délai max (nb_produits × 0.04s) + durée animation (0.4s)
+  /* ── CORRECTIF ANIMATION DÉFINITIF ─────────────────────────────
+     On écoute la fin de l'animation fadeUp sur CHAQUE carte.
+     Dès qu'elle est terminée, on pose data-anim-done + on vide
+     animation-delay pour que le filtrage ne la relance JAMAIS.
+     Fallback: si animationend ne se déclenche pas (display:none etc.)
+     on force data-anim-done après un délai max calculé.
   ─────────────────────────────────────────────────────────────── */
+  function _freezeCard(c){
+    if(c.hasAttribute('data-anim-done')) return;
+    c.setAttribute('data-anim-done', '');
+    c.style.animationDelay = '';
+    c.style.animationDuration = '';
+  }
+
   let maxDelay = 0;
   prodCards.forEach(c => {
     const d = parseFloat(c.style.animationDelay) || 0;
     if(d > maxDelay) maxDelay = d;
+
+    // Écouter la fin de l'animation (fiable sur tous navigateurs)
+    c.addEventListener('animationend', function handler(){
+      _freezeCard(c);
+      c.removeEventListener('animationend', handler);
+    }, {once: true});
   });
-  const totalAnimMs = Math.ceil((maxDelay + 0.45) * 1000);
+
+  // Fallback : si certaines cartes sont cachées (filter-hidden) et
+  // n'ont pas déclenché animationend, on les gèle quand même
+  const fallbackMs = Math.ceil((maxDelay + 0.55) * 1000);
   setTimeout(() => {
-    prodCards.forEach(c => {
-      c.setAttribute('data-anim-done', '');
-      // Aussi nettoyer le style inline animation-delay pour éviter
-      // tout comportement inattendu sur les filtres futurs
-    });
-  }, totalAnimMs);
+    prodCards.forEach(c => _freezeCard(c));
+  }, fallbackMs);
 });
 </script>
 <script>
