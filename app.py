@@ -11596,6 +11596,168 @@ def kni_cdc_dashboard():
         conn.close()
 
 
+# ═══════════════════════════════════════════════════════════════════
+# MODULE POPUPS PROMOTIONNELS — table + routes CRUD + endpoint public
+# ═══════════════════════════════════════════════════════════════════
+def init_popups_db():
+    conn = get_db_connection()
+    if not conn: return
+    try:
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS kni_popups (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            titre           TEXT    NOT NULL DEFAULT '',
+            sous_titre      TEXT    DEFAULT '',
+            contenu         TEXT    DEFAULT '',
+            image_url       TEXT    DEFAULT '',
+            btn_texte       TEXT    DEFAULT 'Voir les offres',
+            btn_lien        TEXT    DEFAULT '/shop',
+            type            TEXT    NOT NULL DEFAULT 'promo',
+            couleur_fond    TEXT    DEFAULT '#00b074',
+            couleur_texte   TEXT    DEFAULT '#ffffff',
+            position        TEXT    DEFAULT 'center',
+            delai_ms        INTEGER DEFAULT 2000,
+            date_debut      TEXT    DEFAULT '',
+            date_fin        TEXT    DEFAULT '',
+            nb_affichages   INTEGER DEFAULT 0,
+            max_par_session INTEGER DEFAULT 1,
+            is_active       INTEGER DEFAULT 1,
+            created_at      TEXT    DEFAULT (datetime('now')),
+            updated_at      TEXT    DEFAULT (datetime('now'))
+        )""")
+        conn.commit()
+    except Exception as e:
+        print(f"[Popups] init error: {e}")
+    finally:
+        conn.close()
+
+try:
+    init_popups_db()
+except Exception:
+    pass
+
+
+@app.route('/shop/api/popup/active', methods=['GET'])
+def kni_popup_active():
+    """Retourne le popup actif à afficher côté shop (public, sans auth)."""
+    conn = get_db_connection()
+    try:
+        now = datetime.now().isoformat()
+        row = conn.execute("""
+            SELECT * FROM kni_popups
+            WHERE is_active = 1
+              AND (date_debut = '' OR date_debut <= ?)
+              AND (date_fin   = '' OR date_fin   >= ?)
+            ORDER BY updated_at DESC LIMIT 1
+        """, (now, now)).fetchone()
+        if not row:
+            return jsonify({'success': True, 'popup': None})
+        p = dict(row)
+        conn.execute(
+            "UPDATE kni_popups SET nb_affichages=nb_affichages+1 WHERE id=?",
+            (p['id'],)
+        )
+        conn.commit()
+        return jsonify({'success': True, 'popup': p})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/popups', methods=['GET'])
+@login_required
+def kni_popups_list():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM kni_popups ORDER BY updated_at DESC"
+        ).fetchall()
+        return jsonify({'success': True, 'popups': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/popups', methods=['POST'])
+@login_required
+def kni_popup_create():
+    d = request.get_json(force=True, silent=True) or {}
+    if not str(d.get('titre', '')).strip():
+        return jsonify({'success': False, 'error': 'Titre requis'}), 400
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO kni_popups
+            (titre, sous_titre, contenu, image_url, btn_texte, btn_lien,
+             type, couleur_fond, couleur_texte, position, delai_ms,
+             date_debut, date_fin, max_par_session, is_active)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            d['titre'].strip(),
+            d.get('sous_titre', ''),
+            d.get('contenu', ''),
+            d.get('image_url', ''),
+            d.get('btn_texte', 'Voir les offres'),
+            d.get('btn_lien',  '/shop'),
+            d.get('type',      'promo'),
+            d.get('couleur_fond',  '#00b074'),
+            d.get('couleur_texte', '#ffffff'),
+            d.get('position',  'center'),
+            int(d.get('delai_ms', 2000) or 2000),
+            d.get('date_debut', ''),
+            d.get('date_fin',   ''),
+            int(d.get('max_par_session', 1) or 1),
+            int(d.get('is_active', 1)),
+        ))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/popups/<int:pid>', methods=['PUT'])
+@login_required
+def kni_popup_update(pid):
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    try:
+        fields = ['titre','sous_titre','contenu','image_url','btn_texte','btn_lien',
+                  'type','couleur_fond','couleur_texte','position','delai_ms',
+                  'date_debut','date_fin','max_par_session','is_active']
+        upd  = [f"{f}=?" for f in fields if f in d]
+        vals = [d[f]    for f in fields if f in d]
+        if not upd:
+            return jsonify({'success': False, 'error': 'Rien à mettre à jour'}), 400
+        upd.append("updated_at=?");  vals.append(datetime.now().isoformat())
+        vals.append(pid)
+        conn.execute(f"UPDATE kni_popups SET {','.join(upd)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/shop/api/admin/popups/<int:pid>', methods=['DELETE'])
+@login_required
+def kni_popup_delete(pid):
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM kni_popups WHERE id=?", (pid,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
 if __name__ == '__main__':
 
     # Démarrer le scheduler d'agenda (rappels email Gmail)

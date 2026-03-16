@@ -424,6 +424,103 @@ button .emoji, span.emoji, [data-emoji]{
 @media(max-width:480px){.kpis{grid-template-columns:1fr 1fr;gap:.5rem}.sa-main{padding:.85rem}.sh h4{font-size:.9rem}.btn-p,.btn-g,.btn-d{font-size:.75rem;padding:.4rem .75rem}.fg2{grid-template-columns:1fr!important}}
 @media(max-width:360px){.kpis{grid-template-columns:1fr 1fr;gap:.4rem}.sa-main{padding:.6rem}}
 
+/* ══ AMÉLIORATIONS WHATSAPP-INSPIRED — shop_admin mobile ══ */
+
+/* Viewport dynamique */
+@supports (height: 100dvh) {
+  .sa-root { height: calc(100dvh - 80px); }
+  @media(max-width:960px) { .sa-root { height: 100dvh; } }
+}
+
+/* Safe area iPhone pour la bottom nav */
+.bnav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: calc(62px + env(safe-area-inset-bottom, 0px));
+}
+@media(max-width:960px){
+  .sa-main { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Bnav améliorée — indicateur actif style WhatsApp */
+.bnav-btn {
+  transition: color .15s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bnav-btn:active { transform: scale(.88); }
+.bnav-btn.on i {
+  filter: drop-shadow(0 0 4px rgba(0,176,116,.4));
+}
+/* Ligne active sous l'icône */
+.bnav-btn.on::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 3px;
+  background: var(--primary-color);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Modales pleine hauteur mobile */
+@media(max-width:768px){
+  .modal-ov { align-items: flex-end !important; padding: 0 !important; }
+  .modal-box {
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 95dvh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .modal-hd { border-radius: 20px 20px 0 0; }
+}
+
+/* Touch feedback sur les éléments interactifs */
+@media(hover:none){
+  .btn-p:active { transform: scale(.95); }
+  .btn-g:active { transform: scale(.95); opacity: .8; }
+  .sa-nb:active { background: rgba(0,176,116,.12); }
+  .kpi:active { transform: scale(.97); }
+  .pcard:active { transform: scale(.98); }
+  .sort-btn:active { background: rgba(0,176,116,.15); }
+  .modal-x:active { transform: scale(.9); }
+}
+
+/* Table responsive mobile — cards */
+@media(max-width:600px){
+  .tw table { min-width: 0 !important; }
+  .tw th { display: none; }
+  .tw td {
+    display: flex; justify-content: space-between;
+    padding: .35rem .5rem; font-size: .8rem;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .tw td::before {
+    content: attr(data-label);
+    font-size: .68rem; color: var(--text-secondary);
+    font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    flex-shrink: 0; min-width: 80px;
+  }
+  .tw td:last-child { border-bottom: none; }
+  .tw tr {
+    display: flex; flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: 12px; margin-bottom: .6rem;
+    background: var(--secondary-color);
+    padding: .4rem;
+  }
+  /* Les cellules actions n'ont pas de label */
+  .tw td:last-child::before { display: none; }
+  .tw td:last-child { justify-content: flex-end; padding-top: .5rem; }
+}
+
+/* Inputs plus grands sur mobile pour faciliter la saisie */
+@media(max-width:480px){
+  .fc { font-size: 16px; min-height: 42px; }
+  .fc[type="date"],
+  .fc[type="datetime-local"],
+  .fc[type="number"] { font-size: 16px; }
+  select.fc { font-size: 16px; }
+}
+
 /* ══ BOUTON IA ══ */
 .ab-ai{background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(99,102,241,.14));color:#a78bfa;border:1px solid rgba(124,58,237,.3)!important}
 .ab-ai:hover{background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(99,102,241,.28));box-shadow:0 0 16px rgba(124,58,237,.25)}
@@ -527,6 +624,7 @@ button .emoji, span.emoji, [data-emoji]{
     <div class="sa-sep"></div>
     <div class="sa-grp">k-Ni Store — CDC</div>
     <button class="sa-nb" id="nb-flash" onclick="go('flash')"><i class="fas fa-bolt"></i> Flash Sales <span id="flashBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#ef4444;color:#fff;border-radius:20px;padding:.05rem .35rem">0</span></button>
+    <button class="sa-nb" id="nb-popup" onclick="go('popup')"><i class="fas fa-comment-dots"></i> Pop-ups boutique <span id="popupBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#6366f1;color:#fff;border-radius:20px;padding:.05rem .35rem">●</span></button>
     <button class="sa-nb" id="nb-zones" onclick="go('zones')"><i class="fas fa-map-marker-alt"></i> Zones Livraison</button>
     <button class="sa-nb" id="nb-fidelite" onclick="go('fidelite')"><i class="fas fa-star"></i> Programme Fidélité</button>
     <button class="sa-nb" id="nb-promos" onclick="go('promos')"><i class="fas fa-tags"></i> Codes Promo</button>
@@ -1288,6 +1386,31 @@ button .emoji, span.emoji, [data-emoji]{
 {% endif %}
 </div><!-- /sa-main -->
 
+<!-- ══ POPUPS BOUTIQUE ══ -->
+<div class="sec" id="sec-popup">
+  <div class="sh">
+    <h4><i class="fas fa-comment-dots" style="color:#6366f1"></i> Pop-ups Promotionnels</h4>
+    <button class="btn-p" onclick="openPopupModal()"><i class="fas fa-plus"></i> Nouveau pop-up</button>
+  </div>
+  <!-- Prévisualisation du popup actif -->
+  <div id="popupPreviewWrap" style="margin-bottom:1.2rem;display:none">
+    <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:14px;padding:1rem 1.2rem;display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+      <div id="popupPreviewBox" style="flex:1;min-width:200px;max-width:320px;border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.2)"></div>
+      <div style="flex:1;min-width:160px">
+        <div style="font-size:.78rem;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Aperçu actif</div>
+        <div id="popupPreviewMeta" style="font-size:.82rem;color:var(--text-secondary);line-height:1.7"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Liste des popups -->
+  <div class="tw" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Titre</th><th>Type</th><th>Position</th><th>Délai</th><th>Affichages</th><th>Période</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="popupBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- ══ FLASH SALES ══ -->
 <div class="sec" id="sec-flash">
   <div class="sh">
@@ -1570,6 +1693,123 @@ button .emoji, span.emoji, [data-emoji]{
 </div>
 
 <!-- ══ INVOICE MODAL ══ -->
+<!-- ══ MODAL POPUP ══ -->
+<div class="modal-ov" id="popupModal">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-hd">
+      <h4 id="popupModalTitle">Nouveau pop-up</h4>
+      <button class="modal-x" onclick="closePopupModal()">&times;</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="popupId">
+
+      <!-- Titre + type -->
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div>
+          <label class="fl">Titre principal *</label>
+          <input class="fc" id="popupTitre" placeholder="Ex: Offre exclusive -20% !" oninput="updatePopupPreview()">
+        </div>
+        <div>
+          <label class="fl">Type</label>
+          <select class="fc" id="popupType" onchange="updatePopupPreview()">
+            <option value="promo">🎁 Promo</option>
+            <option value="flash">⚡ Flash Sale</option>
+            <option value="bienvenue">👋 Bienvenue</option>
+            <option value="fidelite">⭐ Fidélité</option>
+            <option value="alerte">🔔 Alerte stock</option>
+            <option value="info">ℹ️ Info</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sous-titre + contenu -->
+      <div style="margin-bottom:.7rem">
+        <label class="fl">Sous-titre</label>
+        <input class="fc" id="popupSousTitre" placeholder="Valable jusqu'au 31 mars" oninput="updatePopupPreview()">
+      </div>
+      <div style="margin-bottom:.7rem">
+        <label class="fl">Texte de description</label>
+        <textarea class="fc" id="popupContenu" rows="2" placeholder="Profitez de nos meilleures offres…" oninput="updatePopupPreview()"></textarea>
+      </div>
+
+      <!-- CTA -->
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div>
+          <label class="fl">Texte du bouton</label>
+          <input class="fc" id="popupBtnTexte" value="Voir les offres" oninput="updatePopupPreview()">
+        </div>
+        <div>
+          <label class="fl">Lien du bouton</label>
+          <input class="fc" id="popupBtnLien" value="/shop" placeholder="/shop ou https://…">
+        </div>
+      </div>
+
+      <!-- Image + couleurs -->
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div>
+          <label class="fl">URL image (optionnel)</label>
+          <input class="fc" id="popupImageUrl" placeholder="https://…" oninput="updatePopupPreview()">
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <div style="flex:1">
+            <label class="fl">Fond</label>
+            <input class="fc" id="popupCouleurFond" type="color" value="#00b074" style="height:42px;padding:.2rem .4rem;cursor:pointer" oninput="updatePopupPreview()">
+          </div>
+          <div style="flex:1">
+            <label class="fl">Texte</label>
+            <input class="fc" id="popupCouleurTexte" type="color" value="#ffffff" style="height:42px;padding:.2rem .4rem;cursor:pointer" oninput="updatePopupPreview()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Position + délai -->
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div>
+          <label class="fl">Position d'affichage</label>
+          <select class="fc" id="popupPosition">
+            <option value="center">⊙ Centré</option>
+            <option value="bottom-right">↘ Bas droite</option>
+            <option value="bottom-left">↙ Bas gauche</option>
+            <option value="top-right">↗ Haut droite</option>
+          </select>
+        </div>
+        <div>
+          <label class="fl">Délai d'apparition (ms)</label>
+          <input class="fc" id="popupDelai" type="number" value="2000" min="500" max="30000" step="500">
+        </div>
+      </div>
+
+      <!-- Dates validité -->
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div>
+          <label class="fl">Début (optionnel)</label>
+          <input class="fc" id="popupDebut" type="datetime-local">
+        </div>
+        <div>
+          <label class="fl">Fin (optionnel)</label>
+          <input class="fc" id="popupFin" type="datetime-local">
+        </div>
+      </div>
+
+      <!-- Actif -->
+      <label style="display:flex;align-items:center;gap:.6rem;font-size:.84rem;cursor:pointer;margin-bottom:.8rem">
+        <input type="checkbox" id="popupActif" checked style="width:16px;height:16px;accent-color:#6366f1">
+        Activer immédiatement ce pop-up
+      </label>
+
+      <!-- Aperçu live -->
+      <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.18);border-radius:12px;padding:.9rem 1rem">
+        <div style="font-size:.72rem;font-weight:800;color:#818cf8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem">Aperçu en temps réel</div>
+        <div id="livePreview" style="border-radius:14px;overflow:hidden;max-width:280px;box-shadow:0 6px 20px rgba(0,0,0,.2);font-family:inherit"></div>
+      </div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closePopupModal()">Annuler</button>
+      <button class="btn-p" onclick="savePopup()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL FLASH SALE ══ -->
 <div class="modal-ov" id="flashModal">
   <div class="modal-box" style="max-width:460px">
@@ -2037,7 +2277,7 @@ function toast(m, ok=true){
 }
 
 /* ══ NAVIGATION ══ */
-const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','zones','fidelite','promos','pages','messages'];
+const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','zones','fidelite','promos','pages','messages','popup'];
 function go(n){
   SECS.forEach(s=>{
     const el=document.getElementById('sec-'+s);
@@ -2065,6 +2305,7 @@ function go(n){
   if(n==='promos') loadPromos();
   if(n==='pages') loadPages();
   if(n==='messages') loadMessages();
+  if(n==='popup') loadPopups();
 }
 
 /* ══ FORM TABS ══ */
@@ -5676,6 +5917,200 @@ async function genOrderNumbers(){
   const d=await cdcFetch('/shop/api/order/add-number',{method:'POST'});
   if(d.success)toast(`✅ ${d.updated} numéros KNI générés`);else toast(d.error||'Erreur',false);
 }
+
+/* ══ POPUPS PROMOTIONNELS ══════════════════════════════════════ */
+
+const POPUP_TYPE_LABELS = {
+  promo:'🎁 Promo', flash:'⚡ Flash', bienvenue:'👋 Bienvenue',
+  fidelite:'⭐ Fidélité', alerte:'🔔 Alerte', info:'ℹ️ Info'
+};
+const POPUP_POS_LABELS = {
+  center:'⊙ Centré','bottom-right':'↘ Bas droite',
+  'bottom-left':'↙ Bas gauche','top-right':'↗ Haut droite'
+};
+
+async function loadPopups(){
+  const d = await cdcFetch('/shop/api/admin/popups');
+  const tb = document.getElementById('popupBody'); if(!tb) return;
+
+  // Badge sidebar
+  const badge = document.getElementById('popupBadge');
+  const actifs = (d.popups||[]).filter(p=>p.is_active).length;
+  if(badge){ badge.style.display = actifs ? '' : 'none'; }
+
+  if(!d.success||!d.popups?.length){
+    tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun pop-up — créez-en un !</td></tr>';
+    document.getElementById('popupPreviewWrap').style.display='none';
+    return;
+  }
+
+  // Afficher l'aperçu du premier popup actif
+  const first = d.popups.find(p=>p.is_active) || d.popups[0];
+  if(first) renderPopupPreview(first, 'popupPreviewBox', 'popupPreviewMeta');
+  document.getElementById('popupPreviewWrap').style.display = '';
+
+  const now = new Date().toISOString();
+  tb.innerHTML = d.popups.map(p=>{
+    const exp = p.date_fin && p.date_fin < now;
+    const notYet = p.date_debut && p.date_debut > now;
+    const statusLabel = !p.is_active ? '⬛ Inactif'
+      : exp     ? '⏰ Expiré'
+      : notYet  ? '⏳ Planifié'
+      :           '🟢 Actif';
+    const statusBg = !p.is_active ? 'rgba(107,114,128,.15)'
+      : exp     ? 'rgba(239,68,68,.15)'
+      : notYet  ? 'rgba(245,158,11,.15)'
+      :           'rgba(99,102,241,.15)';
+    const statusCol = !p.is_active ? '#9ca3af'
+      : exp     ? '#f87171'
+      : notYet  ? '#fbbf24'
+      :           '#818cf8';
+    return `<tr>
+      <td data-label="Titre"><strong>${p.titre||'—'}</strong></td>
+      <td data-label="Type">${POPUP_TYPE_LABELS[p.type]||p.type}</td>
+      <td data-label="Position">${POPUP_POS_LABELS[p.position]||p.position}</td>
+      <td data-label="Délai"><span style="font-family:monospace;font-size:.8rem">${p.delai_ms||2000}ms</span></td>
+      <td data-label="Vues"><span style="font-size:.85rem;font-weight:700;color:var(--primary-color)">${p.nb_affichages||0}</span></td>
+      <td data-label="Période" style="font-size:.78rem">${p.date_debut?(p.date_debut.slice(0,10)+' → '+(p.date_fin?.slice(0,10)||'∞')):'Toujours'}</td>
+      <td data-label="Statut">
+        <span style="background:${statusBg};color:${statusCol};border-radius:20px;padding:.18rem .55rem;font-size:.72rem;font-weight:700;white-space:nowrap">${statusLabel}</span>
+      </td>
+      <td data-label="Actions">
+        <div style="display:flex;gap:.35rem;flex-wrap:wrap">
+          <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editPopup(${p.id})" title="Modifier"><i class="fas fa-edit"></i></button>
+          <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="togglePopup(${p.id},${p.is_active?0:1})" title="${p.is_active?'Désactiver':'Activer'}">${p.is_active?'⏸':'▶'}</button>
+          <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="deletePopup(${p.id},'${(p.titre||'').replace(/'/g,"\\'")}')"><i class="fas fa-trash" style="color:#f87171"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPopupPreview(p, boxId, metaId){
+  const box = document.getElementById(boxId); if(!box) return;
+  const bg  = p.couleur_fond  || '#00b074';
+  const col = p.couleur_texte || '#ffffff';
+  box.innerHTML = `
+    ${p.image_url?`<img src="${p.image_url}" style="width:100%;max-height:100px;object-fit:cover;display:block" onerror="this.style.display='none'">`:''}
+    <div style="padding:1rem;background:${bg};color:${col};font-family:inherit">
+      <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;opacity:.8;margin-bottom:.4rem">${POPUP_TYPE_LABELS[p.type]||'🎁 Promo'}</div>
+      <div style="font-size:.92rem;font-weight:900;line-height:1.2;margin-bottom:.3rem">${p.titre||'Titre du popup'}</div>
+      ${p.sous_titre?`<div style="font-size:.78rem;opacity:.85;margin-bottom:.2rem">${p.sous_titre}</div>`:''}
+      <div style="margin-top:.7rem">
+        <span style="background:rgba(255,255,255,.9);color:${bg};border-radius:8px;padding:.3rem .8rem;font-size:.75rem;font-weight:800">${p.btn_texte||'Voir les offres'}</span>
+      </div>
+    </div>`;
+  const meta = document.getElementById(metaId); if(!meta) return;
+  const now = new Date().toISOString();
+  meta.innerHTML = `
+    <div>Position : <strong>${POPUP_POS_LABELS[p.position]||p.position}</strong></div>
+    <div>Délai : <strong>${p.delai_ms||2000}ms</strong></div>
+    <div>Vues : <strong>${p.nb_affichages||0}</strong></div>
+    <div>Statut : <strong style="color:${p.is_active?'#818cf8':'#9ca3af'}">${p.is_active?'🟢 Actif':'⬛ Inactif'}</strong></div>
+    ${p.date_fin&&p.date_fin<now?'<div style="color:#f87171;font-size:.78rem">⚠ Expiré</div>':''}`;
+}
+
+function updatePopupPreview(){
+  const p = {
+    titre:          document.getElementById('popupTitre')?.value||'',
+    sous_titre:     document.getElementById('popupSousTitre')?.value||'',
+    type:           document.getElementById('popupType')?.value||'promo',
+    couleur_fond:   document.getElementById('popupCouleurFond')?.value||'#00b074',
+    couleur_texte:  document.getElementById('popupCouleurTexte')?.value||'#ffffff',
+    image_url:      document.getElementById('popupImageUrl')?.value||'',
+    btn_texte:      document.getElementById('popupBtnTexte')?.value||'Voir les offres',
+    position:       document.getElementById('popupPosition')?.value||'center',
+    delai_ms:       document.getElementById('popupDelai')?.value||2000,
+    nb_affichages:  0, is_active: 1,
+  };
+  renderPopupPreview(p, 'livePreview', '');
+}
+
+function openPopupModal(data=null){
+  document.getElementById('popupId').value           = data?.id||'';
+  document.getElementById('popupModalTitle').textContent = data?'Modifier le pop-up':'Nouveau pop-up';
+  document.getElementById('popupTitre').value        = data?.titre||'';
+  document.getElementById('popupSousTitre').value    = data?.sous_titre||'';
+  document.getElementById('popupContenu').value      = data?.contenu||'';
+  document.getElementById('popupType').value         = data?.type||'promo';
+  document.getElementById('popupBtnTexte').value     = data?.btn_texte||'Voir les offres';
+  document.getElementById('popupBtnLien').value      = data?.btn_lien||'/shop';
+  document.getElementById('popupImageUrl').value     = data?.image_url||'';
+  document.getElementById('popupCouleurFond').value  = data?.couleur_fond||'#00b074';
+  document.getElementById('popupCouleurTexte').value = data?.couleur_texte||'#ffffff';
+  document.getElementById('popupPosition').value     = data?.position||'center';
+  document.getElementById('popupDelai').value        = data?.delai_ms||2000;
+  document.getElementById('popupDebut').value        = (data?.date_debut||'').slice(0,16);
+  document.getElementById('popupFin').value          = (data?.date_fin||'').slice(0,16);
+  document.getElementById('popupActif').checked      = data?.is_active !== 0;
+  updatePopupPreview();
+  document.getElementById('popupModal').classList.add('open');
+}
+function closePopupModal(){ document.getElementById('popupModal').classList.remove('open'); }
+
+async function editPopup(id){
+  const d = await cdcFetch('/shop/api/admin/popups');
+  const p = (d.popups||[]).find(x=>x.id===id);
+  if(p) openPopupModal(p);
+  else toast('Pop-up introuvable', false);
+}
+
+async function savePopup(){
+  const id = document.getElementById('popupId').value;
+  const payload = {
+    titre:          document.getElementById('popupTitre').value.trim(),
+    sous_titre:     document.getElementById('popupSousTitre').value.trim(),
+    contenu:        document.getElementById('popupContenu').value.trim(),
+    type:           document.getElementById('popupType').value,
+    btn_texte:      document.getElementById('popupBtnTexte').value.trim(),
+    btn_lien:       document.getElementById('popupBtnLien').value.trim()||'/shop',
+    image_url:      document.getElementById('popupImageUrl').value.trim(),
+    couleur_fond:   document.getElementById('popupCouleurFond').value,
+    couleur_texte:  document.getElementById('popupCouleurTexte').value,
+    position:       document.getElementById('popupPosition').value,
+    delai_ms:       parseInt(document.getElementById('popupDelai').value)||2000,
+    date_debut:     document.getElementById('popupDebut').value||'',
+    date_fin:       document.getElementById('popupFin').value||'',
+    is_active:      document.getElementById('popupActif').checked ? 1 : 0,
+  };
+  if(!payload.titre){ toast('Titre requis', false); return; }
+  const url    = id ? `/shop/api/admin/popups/${id}` : '/shop/api/admin/popups';
+  const method = id ? 'PUT' : 'POST';
+  const d = await cdcFetch(url, { method, body: JSON.stringify(payload) });
+  if(d.success){
+    toast(id ? '✅ Pop-up mis à jour' : `✅ Pop-up "${payload.titre}" créé`);
+    closePopupModal();
+    loadPopups();
+  } else {
+    toast(d.error || 'Erreur lors de la sauvegarde', false);
+  }
+}
+
+async function togglePopup(id, val){
+  const d = await cdcFetch(`/shop/api/admin/popups/${id}`, {
+    method: 'PUT', body: JSON.stringify({is_active: val})
+  });
+  if(d.success){ toast(val ? '▶ Pop-up activé' : '⏸ Pop-up désactivé'); loadPopups(); }
+  else toast(d.error || 'Erreur', false);
+}
+
+async function deletePopup(id, titre){
+  if(!confirm(`Supprimer le pop-up "${titre}" ?`)) return;
+  const d = await cdcFetch(`/shop/api/admin/popups/${id}`, { method: 'DELETE' });
+  if(d.success){ toast('🗑 Pop-up supprimé'); loadPopups(); }
+  else toast(d.error || 'Erreur', false);
+}
+
+/* Injecter popup KPIs dans le dashboard CDC */
+(async()=>{
+  try{
+    const d = await cdcFetch('/shop/api/admin/popups');
+    if(!d.success) return;
+    const actifs = (d.popups||[]).filter(p=>p.is_active).length;
+    const badge = document.getElementById('popupBadge');
+    if(badge){ badge.textContent='●'; badge.style.display = actifs ? '' : 'none'; }
+  }catch(e){}
+})();
 </script>
 
 {% endblock %}

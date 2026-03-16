@@ -145,6 +145,30 @@
           td::before{min-width:70px;font-size:.65rem}
         }
 
+        /* ══ AMÉLIORATIONS MOBILE TOUCH ══ */
+        @supports (height: 100dvh) {
+          .mb { height: 100dvh; }
+        }
+        /* Safe area pour iPhone X+ */
+        .modal {
+          padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+        }
+        /* Touch feedback */
+        @media(hover:none){
+          .btn:active { transform: scale(.95); opacity: .85; }
+          tbody tr:active { background: rgba(255,255,255,.04); }
+          .perm-item:active { border-color: var(--accent); background: rgba(0,176,116,.08); }
+          .tab-btn:active { color: var(--text); }
+        }
+        /* Boutons plus grands sur mobile */
+        @media(max-width:480px){
+          .btn { min-height: 40px; }
+          .btn-xs { min-height: 32px; }
+          .modal { max-height: 95dvh; overflow-y: auto; }
+          /* Scrollbar visible sur mobile */
+          .tab-bar { scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+        }
+
         /* ── Permissions modal ── */
         .modal-perms{max-width:680px}
         .perms-section{margin-bottom:1.25rem}
