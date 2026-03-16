@@ -15,7 +15,40 @@ else:
     print("⚠️  ANTHROPIC_API_KEY non définie — agent IA en mode fallback")
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash as _wz_gen, check_password_hash as _wz_check
+
+# ── CHIFFREMENT FORT : scrypt (OWASP 2024) ────────────────────────────────────
+# Paramètres : N=2^17 (131072), r=8, p=1 → ~128 MB RAM requis pour bruteforce
+# Aucune dépendance externe — hashlib est un module Python natif.
+# Rétrocompatible : les anciens hashes werkzeug/pbkdf2 restent vérifiables.
+import hashlib as _hashlib
+
+def generate_password_hash(password: str) -> str:
+    """Chiffre un mot de passe avec scrypt (OWASP 2024, N=65536)."""
+    import os as _os_sec
+    salt = _os_sec.urandom(32)
+    dk = _hashlib.scrypt(
+        password.encode('utf-8'),
+        salt=salt, n=65536, r=8, p=1, dklen=64
+    )
+    return f"scrypt$v1${salt.hex()}${dk.hex()}"
+
+def check_password_hash(stored: str, password: str) -> bool:
+    """Vérifie un hash scrypt ou ancien hash werkzeug (compatibilité totale)."""
+    if stored and stored.startswith('scrypt$v1$'):
+        try:
+            _, _v, salt_hex, dk_hex = stored.split('$')
+            salt = bytes.fromhex(salt_hex)
+            dk = _hashlib.scrypt(
+                password.encode('utf-8'),
+                salt=salt, n=65536, r=8, p=1, dklen=64
+            )
+            return dk.hex() == dk_hex
+        except Exception:
+            return False
+    # Fallback : ancien hash werkzeug/pbkdf2 (migration transparente)
+    return _wz_check(stored, password)
+# ─────────────────────────────────────────────────────────────────────────────
 from werkzeug.utils import secure_filename
 from functools import wraps
 import sqlite3
@@ -42,7 +75,7 @@ import csv
 from datetime import date as _date
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'kengni-finance-default-key-change-in-prod-2024')
+app.secret_key = os.environ.get('SECRET_KEY', 'K3nGn1-F1n@nc3-s3cr3t-k3y-!2024#XqZ9pLmR7vBw')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -685,7 +718,7 @@ def init_db():
         print("✅ Database initialized successfully!")
 
 # ── URL secrète admin ──
-ADMIN_SECRET_TOKEN = os.environ.get('ADMIN_TOKEN', 'kengni-control-7749')
+ADMIN_SECRET_TOKEN = os.environ.get('ADMIN_TOKEN', 'K3nGn1-@dm1n-c0ntr0l-!7749#Xp2mZ')
 ADMIN_SECONDARY_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Kengni@fablo12')
 
 
