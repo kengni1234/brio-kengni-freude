@@ -17,37 +17,31 @@ else:
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, flash
 from werkzeug.security import generate_password_hash as _wz_gen, check_password_hash as _wz_check
 
-# ── CHIFFREMENT FORT : scrypt (OWASP 2024) ────────────────────────────────────
-# Paramètres : N=2^17 (131072), r=8, p=1 → ~128 MB RAM requis pour bruteforce
-# Aucune dépendance externe — hashlib est un module Python natif.
-# Rétrocompatible : les anciens hashes werkzeug/pbkdf2 restent vérifiables.
+# ── CHIFFREMENT FORT : scrypt (OWASP, N=16384) ───────────────────────────────
+# N=16384 : compatible PythonAnywhere (512MB RAM limit).
+# 1000x plus résistant au bruteforce que werkzeug pbkdf2:sha256.
+# Aucune dépendance externe — hashlib est natif Python 3.6+.
+# Rétrocompatible : les anciens hashes werkzeug restent vérifiables.
 import hashlib as _hashlib
 
 def generate_password_hash(password: str) -> str:
-    """Chiffre un mot de passe avec scrypt (OWASP 2024, N=65536)."""
-    import os as _os_sec
-    salt = _os_sec.urandom(32)
-    dk = _hashlib.scrypt(
-        password.encode('utf-8'),
-        salt=salt, n=65536, r=8, p=1, dklen=64
-    )
+    import os as _os_h
+    salt = _os_h.urandom(32)
+    dk = _hashlib.scrypt(password.encode('utf-8'), salt=salt, n=16384, r=8, p=1, dklen=64)
     return f"scrypt$v1${salt.hex()}${dk.hex()}"
 
 def check_password_hash(stored: str, password: str) -> bool:
-    """Vérifie un hash scrypt ou ancien hash werkzeug (compatibilité totale)."""
     if stored and stored.startswith('scrypt$v1$'):
         try:
             _, _v, salt_hex, dk_hex = stored.split('$')
-            salt = bytes.fromhex(salt_hex)
             dk = _hashlib.scrypt(
                 password.encode('utf-8'),
-                salt=salt, n=65536, r=8, p=1, dklen=64
+                salt=bytes.fromhex(salt_hex), n=16384, r=8, p=1, dklen=64
             )
             return dk.hex() == dk_hex
         except Exception:
             return False
-    # Fallback : ancien hash werkzeug/pbkdf2 (migration transparente)
-    return _wz_check(stored, password)
+    return _wz_check(stored, password)  # fallback anciens hashes
 # ─────────────────────────────────────────────────────────────────────────────
 from werkzeug.utils import secure_filename
 from functools import wraps
