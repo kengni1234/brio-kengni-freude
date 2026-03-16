@@ -63,12 +63,25 @@ class _SuppressWriteErrors(_logging.Filter):
             return False
         exc = record.exc_info
         if exc and exc[1] and isinstance(exc[1], (OSError, BrokenPipeError)):
-            return False
+            # Ne supprimer que les OSError write/pipe, pas les autres
+            err_msg = str(exc[1]).lower()
+            if 'write' in err_msg or 'pipe' in err_msg or 'connection' in err_msg:
+                return False
         return True
 
-for _log_name in ('werkzeug', 'gunicorn.error', 'gunicorn.access', ''):
+_suppress_filter = _SuppressWriteErrors()
+# Couvrir werkzeug, gunicorn, waitress, et le logger racine
+for _log_name in ('werkzeug', 'gunicorn.error', 'gunicorn.access',
+                  'waitress', 'waitress.queue', ''):
     _lg = _logging.getLogger(_log_name)
-    _lg.addFilter(_SuppressWriteErrors())
+    _lg.addFilter(_suppress_filter)
+    # Appliquer aussi sur tous les handlers existants du logger
+    for _h in _lg.handlers:
+        _h.addFilter(_suppress_filter)
+
+# Patch du handler racine au cas où il serait ajouté plus tard
+_root_logger = _logging.getLogger()
+_root_logger.addFilter(_suppress_filter)
 
 # ── Configuration Gmail pour les rappels d'agenda ──────────────────────────────
 GMAIL_CONFIG = {
@@ -1441,8 +1454,11 @@ def login():
 
                 # ── Détecter première connexion (last_login est NULL) ──
                 try:
-                    is_first = (user['last_login'] is None)
-                except (IndexError, KeyError):
+                    # Convertir en dict pour éviter IndexError sur sqlite3.Row
+                    # si la colonne last_login est absente de l'ancienne DB
+                    user_dict = dict(user)
+                    is_first = (user_dict.get('last_login') is None)
+                except Exception:
                     is_first = False
 
                 # Stocker les infos en session en attente de vérification
