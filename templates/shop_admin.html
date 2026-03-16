@@ -7,6 +7,52 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="/static/js/kni-popups.js"></script>
+<script>
+/* ── Patch popup non bloquant : override après chargement kni-popups.js ────
+   Le popup s'affiche en coin (position:fixed), sans overlay ni blur.
+   La boutique reste entièrement utilisable pendant l'affichage du popup.
+   ─────────────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  // Neutraliser l'overlay bloquant si kni-popups en crée un
+  var _origShow = window.showKniPopup || window.kniShowPopup;
+  // Patch global : intercepter toute création d'overlay popup
+  var _mo = new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(node){
+        if(node.nodeType !== 1) return;
+        // Détecter les overlays popup (fond noir plein écran)
+        var style = window.getComputedStyle ? window.getComputedStyle(node) : {};
+        var isOverlay = (
+          node.id && (node.id.toLowerCase().includes('popup') || node.id.toLowerCase().includes('overlay')) ||
+          node.className && typeof node.className === 'string' &&
+          (node.className.includes('popup-overlay') || node.className.includes('kni-popup-overlay'))
+        );
+        if(isOverlay){
+          // Supprimer le fond bloquant, laisser uniquement la carte popup
+          node.style.background    = 'transparent';
+          node.style.backdropFilter = 'none';
+          node.style.pointerEvents  = 'none'; // clics passent à travers l'overlay
+          // Mais la carte popup elle-même reste cliquable
+          var card = node.querySelector('[class*="popup-card"],[class*="popup-box"],[class*="popup-content"],[id*="popup-box"]');
+          if(card){ card.style.pointerEvents = 'auto'; }
+        }
+      });
+    });
+  });
+  _mo.observe(document.body, { childList:true, subtree:true });
+
+  // Patch CSS global : toute règle backdrop-filter sur les overlays popup
+  var styleEl = document.createElement('style');
+  styleEl.textContent = [
+    '[id*="kni-popup"] { backdrop-filter:none !important; background:transparent !important; pointer-events:none !important; }',
+    '[id*="kni-popup"] [class*="card"],[id*="kni-popup"] [class*="box"],[id*="kni-popup"] [class*="content"] { pointer-events:auto !important; }',
+    '[class*="kni-popup-overlay"] { backdrop-filter:none !important; background:transparent !important; pointer-events:none !important; }',
+    '.kni-popup-wrap { pointer-events:none !important; background:transparent !important; backdrop-filter:none !important; }',
+    '.kni-popup-wrap .kni-popup-card, .kni-popup-wrap .kni-popup-box { pointer-events:auto !important; }',
+  ].join('\n');
+  document.head.appendChild(styleEl);
+});
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ══ SYNCHRONISATION k-Ni — Police & couleurs ══ */
@@ -823,7 +869,9 @@ button .emoji, span.emoji, [data-emoji]{
     <div class="sa-sep"></div>
     <div class="sa-grp">k-Ni Store — CDC</div>
     <button class="sa-nb" id="nb-flash" onclick="go('flash')"><i class="fas fa-bolt"></i> Flash Sales <span id="flashBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#ef4444;color:#fff;border-radius:20px;padding:.05rem .35rem">0</span></button>
+    {% if session.get('role') in ('admin','superadmin') %}
     <button class="sa-nb" id="nb-popup" onclick="go('popup')"><i class="fas fa-comment-dots"></i> Pop-ups boutique <span id="popupBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#6366f1;color:#fff;border-radius:20px;padding:.05rem .35rem">●</span></button>
+    {% endif %}
     <button class="sa-nb" id="nb-zones" onclick="go('zones')"><i class="fas fa-map-marker-alt"></i> Zones Livraison</button>
     <button class="sa-nb" id="nb-fidelite" onclick="go('fidelite')"><i class="fas fa-star"></i> Programme Fidélité</button>
     <button class="sa-nb" id="nb-promos" onclick="go('promos')"><i class="fas fa-tags"></i> Codes Promo</button>
@@ -1585,7 +1633,8 @@ button .emoji, span.emoji, [data-emoji]{
 {% endif %}
 </div><!-- /sa-main -->
 
-<!-- ══ POPUPS BOUTIQUE ══ -->
+<!-- ══ POPUPS BOUTIQUE — admin/superadmin uniquement ══ -->
+{% if session.get('role') in ('admin','superadmin') %}
 <div class="sec" id="sec-popup">
   <div class="sh">
     <h4><i class="fas fa-comment-dots" style="color:#6366f1"></i> Pop-ups Promotionnels</h4>
@@ -1609,6 +1658,7 @@ button .emoji, span.emoji, [data-emoji]{
     </table>
   </div>
 </div>
+{% endif %}
 
 <!-- ══ FLASH SALES ══ -->
 <div class="sec" id="sec-flash">
@@ -1946,8 +1996,22 @@ button .emoji, span.emoji, [data-emoji]{
       <!-- Image + couleurs -->
       <div class="fg2" style="margin-bottom:.7rem">
         <div>
-          <label class="fl">URL image (optionnel)</label>
-          <input class="fc" id="popupImageUrl" placeholder="https://…" oninput="updatePopupPreview()">
+          <label class="fl">Image (optionnel)</label>
+          <!-- Zone d'upload + URL -->
+          <div style="border:1.5px dashed var(--border-color);border-radius:10px;padding:.6rem .8rem;background:var(--accent-color)">
+            <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn-g" style="font-size:.78rem;padding:.35rem .75rem;flex-shrink:0" onclick="document.getElementById('popupImgFile').click()">
+                <i class="fas fa-upload"></i> Uploader
+              </button>
+              <input class="fc" id="popupImageUrl" placeholder="… ou coller une URL" oninput="updatePopupPreview()" style="flex:1;min-width:120px;font-size:.8rem">
+              <input type="file" id="popupImgFile" accept="image/*" style="display:none" onchange="popupUploadImg(this)">
+            </div>
+            <div id="popupImgPreview" style="display:none;margin-top:.55rem">
+              <img id="popupImgThumb" src="" style="max-height:70px;border-radius:6px;object-fit:cover;border:1px solid var(--border-color)">
+              <button type="button" onclick="popupClearImg()" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:.75rem;margin-left:.4rem"><i class="fas fa-times"></i> Retirer</button>
+            </div>
+            <div id="popupImgStatus" style="font-size:.73rem;color:var(--text-secondary);margin-top:.3rem"></div>
+          </div>
         </div>
         <div style="display:flex;gap:.5rem">
           <div style="flex:1">
@@ -6243,10 +6307,62 @@ function openPopupModal(data=null){
   document.getElementById('popupDebut').value        = (data?.date_debut||'').slice(0,16);
   document.getElementById('popupFin').value          = (data?.date_fin||'').slice(0,16);
   document.getElementById('popupActif').checked      = data?.is_active !== 0;
+  // Afficher le preview image si une URL existe déjà
+  const imgUrl = data?.image_url||'';
+  const prev = document.getElementById('popupImgPreview');
+  const thumb = document.getElementById('popupImgThumb');
+  if(imgUrl && prev && thumb){ thumb.src=imgUrl; prev.style.display=''; }
+  else if(prev){ prev.style.display='none'; }
+  document.getElementById('popupImgStatus').textContent = '';
+  document.getElementById('popupImgFile').value = '';
   updatePopupPreview();
   document.getElementById('popupModal').classList.add('open');
 }
-function closePopupModal(){ document.getElementById('popupModal').classList.remove('open'); }
+function closePopupModal(){
+  document.getElementById('popupModal').classList.remove('open');
+  document.getElementById('popupImgFile').value = '';
+}
+
+/* ── Upload image popup ─────────────────────────────────── */
+async function popupUploadImg(inp){
+  if(!inp.files.length) return;
+  const file = inp.files[0];
+  const statusEl = document.getElementById('popupImgStatus');
+  const prevEl   = document.getElementById('popupImgPreview');
+  const thumbEl  = document.getElementById('popupImgThumb');
+  statusEl.textContent = '⏳ Upload en cours…';
+  statusEl.style.color = 'var(--text-secondary)';
+  try {
+    const fd = new FormData();
+    fd.append('image', file, file.name);
+    const res = await fetch('/shop/api/admin/popup/upload-image', { method:'POST', body:fd });
+    const d   = await res.json();
+    if(d.success){
+      document.getElementById('popupImageUrl').value = d.url;
+      thumbEl.src = d.url;
+      prevEl.style.display = '';
+      statusEl.textContent = '✅ Image uploadée';
+      statusEl.style.color = '#10b981';
+      updatePopupPreview();
+    } else {
+      statusEl.textContent = '❌ ' + (d.error||'Erreur upload');
+      statusEl.style.color = '#f87171';
+    }
+  } catch(e){
+    statusEl.textContent = '❌ Erreur réseau';
+    statusEl.style.color = '#f87171';
+  }
+  inp.value = '';
+}
+function popupClearImg(){
+  document.getElementById('popupImageUrl').value = '';
+  document.getElementById('popupImgPreview').style.display = 'none';
+  document.getElementById('popupImgThumb').src = '';
+  document.getElementById('popupImgStatus').textContent = '';
+  document.getElementById('popupImgFile').value = '';
+  updatePopupPreview();
+}
+/* ─────────────────────────────────────────────────────────── */
 
 async function editPopup(id){
   const d = await cdcFetch('/shop/api/admin/popups');

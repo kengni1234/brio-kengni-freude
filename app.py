@@ -11882,8 +11882,30 @@ def kni_popup_active():
         conn.close()
 
 
+@app.route('/shop/api/admin/popup/upload-image', methods=['POST'])
+@admin_required
+def kni_popup_upload_image():
+    """Upload d'image pour un popup — réservé admin/superadmin."""
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'Aucun fichier envoyé'}), 400
+    f = request.files['image']
+    if not f or not f.filename:
+        return jsonify({'success': False, 'error': 'Fichier invalide'}), 400
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
+        return jsonify({'success': False, 'error': 'Format non autorisé (png/jpg/jpeg/gif/webp)'}), 400
+    try:
+        upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'popups')
+        os.makedirs(upload_dir, exist_ok=True)
+        fname = secure_filename(f"popup_{int(datetime.now().timestamp()*1000)}.{ext}")
+        f.save(os.path.join(upload_dir, fname))
+        return jsonify({'success': True, 'url': f'/static/uploads/popups/{fname}'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/shop/api/admin/popups', methods=['GET'])
-@login_required
+@admin_required
 def kni_popups_list():
     conn = get_db_connection()
     try:
@@ -11898,7 +11920,7 @@ def kni_popups_list():
 
 
 @app.route('/shop/api/admin/popups', methods=['POST'])
-@login_required
+@admin_required
 def kni_popup_create():
     d = request.get_json(force=True, silent=True) or {}
     if not str(d.get('titre', '')).strip():
@@ -11938,7 +11960,7 @@ def kni_popup_create():
 
 
 @app.route('/shop/api/admin/popups/<int:pid>', methods=['PUT'])
-@login_required
+@admin_required
 def kni_popup_update(pid):
     d = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -11962,7 +11984,7 @@ def kni_popup_update(pid):
 
 
 @app.route('/shop/api/admin/popups/<int:pid>', methods=['DELETE'])
-@login_required
+@admin_required
 def kni_popup_delete(pid):
     conn = get_db_connection()
     try:
