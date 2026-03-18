@@ -27,18 +27,28 @@ import hashlib as _hashlib
 def generate_password_hash(password: str) -> str:
     import os as _os_h
     salt = _os_h.urandom(32)
-    dk = _hashlib.scrypt(password.encode('utf-8'), salt=salt, n=16384, r=8, p=1, dklen=64)
+    # N=4096 : compatible PythonAnywhere free tier (512MB RAM).
+    # Suffisamment résistant au bruteforce tout en restant léger au démarrage.
+    dk = _hashlib.scrypt(password.encode('utf-8'), salt=salt, n=4096, r=8, p=1, dklen=64)
     return f"scrypt$v1${salt.hex()}${dk.hex()}"
 
 def check_password_hash(stored: str, password: str) -> bool:
     if stored and stored.startswith('scrypt$v1$'):
         try:
             _, _v, salt_hex, dk_hex = stored.split('$')
-            dk = _hashlib.scrypt(
-                password.encode('utf-8'),
-                salt=bytes.fromhex(salt_hex), n=16384, r=8, p=1, dklen=64
-            )
-            return dk.hex() == dk_hex
+            # Essayer N=4096 (nouveau) puis N=16384 (ancien) pour rétrocompatibilité
+            salt_bytes = bytes.fromhex(salt_hex)
+            for N in (4096, 16384):
+                try:
+                    dk = _hashlib.scrypt(
+                        password.encode('utf-8'),
+                        salt=salt_bytes, n=N, r=8, p=1, dklen=64
+                    )
+                    if dk.hex() == dk_hex:
+                        return True
+                except Exception:
+                    continue
+            return False
         except Exception:
             return False
     return _wz_check(stored, password)  # fallback anciens hashes
@@ -110,6 +120,14 @@ for _log_name in ('werkzeug', 'gunicorn.error', 'gunicorn.access',
 # Patch du handler racine au cas où il serait ajouté plus tard
 _root_logger = _logging.getLogger()
 _root_logger.addFilter(_suppress_filter)
+
+# Couvrir aussi le logger PythonAnywhere (wsgi.errors / wsgi_errors)
+for _pa_log in ('wsgi.errors', 'wsgi_errors', 'kengni', 'app'):
+    try:
+        _lg2 = _logging.getLogger(_pa_log)
+        _lg2.addFilter(_suppress_filter)
+    except Exception:
+        pass
 
 # ══════════════════════════════════════════════════════════════════════════════
 # BLOC SÉCURITÉ — Logger, Rate Limiter, CSRF, Wrapper jsonify
@@ -759,12 +777,11 @@ def init_db():
                 VALUES (?, ?, ?, ?, ?)
             ''', ('kengni', 'fabrice.kengni@icloud.com', hashed_password, 'admin', datetime.now().isoformat()))
         else:
-            # Ensure admin always has the correct password (double sécurité)
-            hashed_password = generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'Kengni@fablo12'))
-            cursor.execute(
-                "UPDATE users SET password=? WHERE email=? AND role='admin'",
-                (hashed_password, 'fabrice.kengni@icloud.com')
-            )
+            # L'admin existe déjà — NE PAS re-hasher à chaque démarrage.
+            # Le re-hachage à chaque restart consomme trop de mémoire (scrypt)
+            # et provoque un crash sur PythonAnywhere free tier.
+            # Pour changer le mot de passe, utiliser l'interface admin ou un script dédié.
+            pass
         
         # ── Table annonces (Splash Screen post-2FA) ──
         cursor.execute('''
@@ -905,6 +922,27 @@ def admin_required(f):
             from flask import abort; abort(404)
         return f(*args, **kwargs)
     return decorated_function
+
+# ── Décorateur shop staff : retourne JSON 401 pour les appels API ─────────────
+# Utilisé sur toutes les routes /shop/api/* pour éviter les redirects HTML
+# qui font crasher r.json() côté JS.
+# Accepte : admin, superadmin, shop_manager, et tout user avec shop_access.
+def shop_staff_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        uid  = session.get('user_id')
+        role = session.get('role', '')
+        if not uid:
+            return jsonify({'success': False, 'error': 'Session expirée — veuillez vous reconnecter', 'code': 401}), 401
+        if role in ('admin', 'superadmin', 'shop_manager'):
+            return f(*args, **kwargs)
+        # Vérifier les permissions boutique
+        perms = get_shop_perms(uid)
+        if not any(perms.values()):
+            return jsonify({'success': False, 'error': 'Accès boutique non autorisé', 'code': 403}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Page-level access decorator — checks user's allowed_pages JSON
 # If allowed_pages is NULL (not set), user has access to everything.
@@ -1603,12 +1641,18 @@ def set_cache_headers(response):
             b'})();</script>'
         )
         data = response.get_data()
-        if b'</body>' in data:
-            data = data.replace(b'</body>', _devtools_script + b'</body>', 1)
-        elif b'</html>' in data:
-            data = data.replace(b'</html>', _devtools_script + b'</html>', 1)
+        # ⚠️ Utiliser rfind (DERNIER </body>) et non replace() (PREMIER </body>)
+        # car les templates JS contiennent </body></html> dans des template literals
+        # ce qui causait l'injection du script devtools DANS le code JS -> JS visible en clair
+        idx_body = data.rfind(b'</body>')
+        if idx_body >= 0:
+            data = data[:idx_body] + _devtools_script + data[idx_body:]
         else:
-            data += _devtools_script
+            idx_html = data.rfind(b'</html>')
+            if idx_html >= 0:
+                data = data[:idx_html] + _devtools_script + data[idx_html:]
+            else:
+                data += _devtools_script
         response.set_data(data)
     return response
 
@@ -8480,7 +8524,7 @@ def shop_admin():
 
 
 @app.route('/shop/api/product', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_create_product():
     if not can_shop('add'):
         return jsonify({'success': False, 'error': 'Non autorisé — permission Ajouter requise'}), 403
@@ -8513,7 +8557,7 @@ def shop_create_product():
 
 
 @app.route('/shop/api/product/<int:pid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def shop_update_product(pid):
     if not can_shop('edit'):
         return jsonify({'success': False, 'error': 'Non autorisé — permission Modifier requise'}), 403
@@ -8543,7 +8587,7 @@ def shop_update_product(pid):
 
 
 @app.route('/shop/api/product/<int:pid>/toggle', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_toggle_product(pid):
     if not can_shop('edit'):
         return jsonify({'success': False, 'error': 'Non autorisé — permission Modifier requise'}), 403
@@ -8559,7 +8603,7 @@ def shop_toggle_product(pid):
 
 
 @app.route('/shop/api/product/<int:pid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def shop_delete_product(pid):
     if not can_shop('delete'):
         return jsonify({'success': False, 'error': 'Non autorisé — permission Supprimer requise'}), 403
@@ -8587,7 +8631,7 @@ def shop_delete_product(pid):
 
 
 @app.route('/shop/api/product/upload-image', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_upload_product_image():
     """Upload une ou plusieurs images pour un produit.
     Form-data : image (fichier), pid (optionnel, int).
@@ -8643,7 +8687,7 @@ def shop_upload_product_image():
 
 
 @app.route('/shop/api/product/<int:pid>/remove-image', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_remove_product_image(pid):
     """Supprime une image de la galerie d'un produit (+ fichier local si uploadé)."""
     if not can_shop('edit'):
@@ -8689,7 +8733,7 @@ def shop_remove_product_image(pid):
 
 
 @app.route('/shop/api/product/<int:pid>/set-main-image', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_set_main_image(pid):
     """Définit l'image principale d'un produit depuis sa galerie."""
     if session.get('role') not in ('admin', 'superadmin'):
@@ -8713,7 +8757,7 @@ def shop_set_main_image(pid):
 
 
 @app.route('/shop/api/order/<int:oid>/status', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_update_order_status(oid):
     """Met à jour le statut et enregistre qui a géré la commande."""
     perms = get_shop_perms(session.get('user_id'))
@@ -8746,7 +8790,7 @@ def shop_update_order_status(oid):
 
 
 @app.route('/shop/api/order/<int:oid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def shop_delete_order(oid):
     if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -8853,9 +8897,48 @@ def shop_customer_login():
     conn = get_db_connection()
     try:
         cur = conn.cursor()
+
+        # ── Vérifier d'abord si c'est un compte staff (users) avec accès boutique ──
+        cur.execute(
+            "SELECT id,username,email,password,role,theme,shop_access,shop_permissions FROM users WHERE email=? AND status='active'",
+            (email,)
+        )
+        staff = cur.fetchone()
+        if staff:
+            staff = dict(staff)
+            role  = staff.get('role', '')
+            if check_password_hash(staff['password'], pw):
+                has_shop = (
+                    role in ('admin', 'superadmin', 'shop_manager') or
+                    bool(staff.get('shop_access'))
+                )
+                if has_shop:
+                    session['user_id']   = staff['id']
+                    session['username']  = staff['username']
+                    session['email']     = staff['email']
+                    session['role']      = role
+                    session['theme']     = staff.get('theme', 'dark')
+                    session['admin_secondary_verified'] = False
+                    cur.execute(
+                        "UPDATE users SET last_login=? WHERE id=?",
+                        (datetime.now().isoformat(), staff['id'])
+                    )
+                    conn.commit()
+                    return jsonify({
+                        'success':    True,
+                        'is_staff':   True,
+                        'name':       staff['username'],
+                        'role':       role,
+                        'redirect':   '/shop/admin',
+                        'points':     0,
+                        'promo_code': ''
+                    })
+
+        # ── Sinon vérifier dans shop_customers (clients normaux) ──
         cur.execute("SELECT * FROM shop_customers WHERE email=? AND is_active=1", (email,))
         row = cur.fetchone()
-        if not row: return jsonify({'success': False, 'error': 'Email introuvable'})
+        if not row:
+            return jsonify({'success': False, 'error': 'Email introuvable'})
         row = dict(row)
         if row['password_hash'] != _hash_pw(pw):
             return jsonify({'success': False, 'error': 'Mot de passe incorrect'})
@@ -8863,8 +8946,8 @@ def shop_customer_login():
         conn.commit()
         session['shop_cid']   = row['id']
         session['shop_cname'] = row['name']
-        return jsonify({'success': True, 'name': row['name'], 'points': row['points'],
-                        'promo_code': row['promo_code']})
+        return jsonify({'success': True, 'is_staff': False, 'name': row['name'],
+                        'points': row['points'], 'promo_code': row['promo_code']})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
@@ -8872,7 +8955,13 @@ def shop_customer_login():
 
 @app.route('/shop/auth/logout', methods=['POST'])
 def shop_customer_logout():
-    session.pop('shop_cid', None); session.pop('shop_cname', None)
+    # Déconnecter les deux sessions (client ET staff)
+    session.pop('shop_cid',   None)
+    session.pop('shop_cname', None)
+    session.pop('user_id',    None)
+    session.pop('username',   None)
+    session.pop('role',       None)
+    session.pop('email',      None)
     return jsonify({'success': True})
 
 @app.route('/shop/api/customer/me')
@@ -9154,7 +9243,7 @@ with app.app_context():
 
 
 @app.route('/shop/api/banners/all', methods=['GET'])
-@login_required
+@shop_staff_required
 def shop_banners_all():
     """Retourne toutes les bannières, triées par display_order."""
     conn = get_db_connection()
@@ -9171,7 +9260,7 @@ def shop_banners_all():
 
 
 @app.route('/shop/api/banners', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_banner_create():
     """Crée une nouvelle bannière."""
     if not can_shop('add') and not can_shop('edit'):
@@ -9205,7 +9294,7 @@ def shop_banner_create():
 
 
 @app.route('/shop/api/banners/<int:bid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def shop_banner_update(bid):
     """Met à jour une bannière existante."""
     if not can_shop('edit'):
@@ -9239,7 +9328,7 @@ def shop_banner_update(bid):
 
 
 @app.route('/shop/api/banners/<int:bid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def shop_banner_delete(bid):
     """Supprime une bannière."""
     if not can_shop('delete'):
@@ -9265,7 +9354,7 @@ def shop_banner_delete(bid):
 
 
 @app.route('/shop/api/banners/<int:bid>/order', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_banner_order(bid):
     """Met à jour l'ordre d'affichage d'une bannière (drag & drop)."""
     if not can_shop('edit'):
@@ -9287,7 +9376,7 @@ def shop_banner_order(bid):
 
 
 @app.route('/shop/api/banners/upload-image', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_banner_upload_image():
     """Upload une image pour une bannière promotionnelle."""
     if not can_shop('add') and not can_shop('edit'):
@@ -9413,7 +9502,7 @@ def shop_export_products():
 
 # ── Import CSV ──────────────────────────────────────────────────────
 @app.route('/shop/api/products/seed-demos', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_seed_demos():
     """Insère les produits démos en base si absents (par nom exact)."""
     if not can_shop('add'):
@@ -9456,7 +9545,7 @@ def shop_seed_demos():
 
 
 @app.route('/shop/api/products/import', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_import_products():
     """Importe des produits depuis un fichier CSV (mode upsert par SKU)."""
     if not can_shop('add'):
@@ -9569,7 +9658,7 @@ def shop_import_products():
 
 # ── Kanban : ordre drag & drop ──────────────────────────────────────
 @app.route('/shop/api/orders/kanban', methods=['GET'])
-@login_required
+@shop_staff_required
 def shop_kanban_orders():
     """Retourne les commandes groupées par statut pour la vue Kanban."""
     perms = get_shop_perms(session.get('user_id'))
@@ -9673,7 +9762,7 @@ def shop_get_staff():
 
 
 @app.route('/shop/api/staff/all', methods=['GET'])
-@login_required
+@shop_staff_required
 def shop_get_staff_all():
     """Liste complète des agents (admin)."""
     if session.get('role') not in ('admin', 'superadmin'):
@@ -9694,7 +9783,7 @@ def shop_get_staff_all():
 
 
 @app.route('/shop/api/staff', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_create_staff():
     if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -9728,7 +9817,7 @@ def shop_create_staff():
 
 
 @app.route('/shop/api/staff/<int:sid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def shop_update_staff(sid):
     if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -9760,7 +9849,7 @@ def shop_update_staff(sid):
 
 
 @app.route('/shop/api/staff/<int:sid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def shop_delete_staff(sid):
     if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -9785,7 +9874,7 @@ def shop_delete_staff(sid):
 
 
 @app.route('/shop/api/staff/upload-avatar', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_upload_staff_avatar():
     if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -9816,7 +9905,7 @@ def shop_upload_staff_avatar():
 
 
 @app.route('/shop/api/access/set', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_set_access():
     """Définit les permissions boutique granulaires d'un utilisateur.
     Body JSON : { user_id, add, edit, delete }  (booléens)
@@ -9863,7 +9952,7 @@ def shop_set_access():
 # ═══════════════════════════════════════════════════════════════════
 
 @app.route('/shop/api/access/set-v2', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_set_access_v2():
     """Définit accès boutique + permissions granulaires pour N'IMPORTE quel utilisateur.
     Body JSON : { user_id, access, add, edit, delete }
@@ -9902,7 +9991,7 @@ def shop_set_access_v2():
 
 
 @app.route('/shop/api/users/check-inactivity', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_check_inactivity():
     """Passe en statut 'inactive' les users n'ayant pas connecté depuis > 8 jours.
     Retourne la liste des utilisateurs mis à jour.
@@ -9934,7 +10023,7 @@ def shop_check_inactivity():
 
 
 @app.route('/shop/api/activity/log', methods=['GET'])
-@login_required
+@shop_staff_required
 def shop_get_activity():
     """Retourne les données d'activité (commandes gérées) par utilisateur sur 30 jours."""
     if session.get('role') not in ('admin', 'superadmin'):
@@ -10012,7 +10101,7 @@ def _next_invoice_number():
 
 
 @app.route('/shop/api/invoice', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_create_invoice():
     """Crée une facture manuelle ou depuis une commande."""
     perms = get_shop_perms(session.get('user_id'))
@@ -10051,7 +10140,7 @@ def shop_create_invoice():
 
 
 @app.route('/shop/api/invoice/all', methods=['GET'])
-@login_required
+@shop_staff_required
 def shop_get_invoices():
     perms = get_shop_perms(session.get('user_id'))
     if not perms.get('access'):
@@ -10075,7 +10164,7 @@ def shop_get_invoices():
 
 
 @app.route('/shop/api/invoice/<int:iid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def shop_update_invoice(iid):
     perms = get_shop_perms(session.get('user_id'))
     if not perms.get('access'):
@@ -10110,7 +10199,7 @@ def shop_update_invoice(iid):
 
 
 @app.route('/shop/api/invoice/<int:iid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def shop_delete_invoice(iid):
     if session.get('role') not in ('admin', 'superadmin'):
         return jsonify({'success': False, 'error': 'Non autorisé'}), 403
@@ -10126,7 +10215,7 @@ def shop_delete_invoice(iid):
 
 
 @app.route('/shop/api/invoice/from-order/<int:oid>', methods=['POST'])
-@login_required
+@shop_staff_required
 def shop_invoice_from_order(oid):
     """Génère automatiquement une facture à partir d'une commande."""
     perms = get_shop_perms(session.get('user_id'))
@@ -10168,7 +10257,7 @@ def shop_invoice_from_order(oid):
 
 
 @app.route('/shop/api/products/stock-value', methods=['GET'])
-@login_required
+@shop_staff_required
 def shop_stock_value():
     """Calcule la valeur totale du stock."""
     perms = get_shop_perms(session.get('user_id'))
@@ -10513,7 +10602,7 @@ def _erp_next_num(prefix, table, col='numero'):
 # ── CRM Tiers ───────────────────────────────────────────────────────
 
 @app.route('/shop/api/erp/tiers', methods=['GET'])
-@login_required
+@shop_staff_required
 def erp_tiers_list():
     typ    = request.args.get('type', '')
     statut = request.args.get('statut', '')
@@ -10535,7 +10624,7 @@ def erp_tiers_list():
 
 
 @app.route('/shop/api/erp/tiers', methods=['POST'])
-@login_required
+@shop_staff_required
 def erp_tiers_create():
     d    = request.get_json(force=True, silent=True) or {}
     nom  = str(d.get('nom', '')).strip()
@@ -10561,7 +10650,7 @@ def erp_tiers_create():
 
 
 @app.route('/shop/api/erp/tiers/<int:tid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def erp_tiers_update(tid):
     d    = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -10582,7 +10671,7 @@ def erp_tiers_update(tid):
 
 
 @app.route('/shop/api/erp/tiers/<int:tid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def erp_tiers_delete(tid):
     conn = get_db_connection()
     try:
@@ -10596,7 +10685,7 @@ def erp_tiers_delete(tid):
 
 
 @app.route('/shop/api/erp/tiers/<int:tid>/history')
-@login_required
+@shop_staff_required
 def erp_tiers_history(tid):
     """Historique : commandes boutique + devis + tickets liés à ce tiers."""
     conn = get_db_connection()
@@ -10630,7 +10719,7 @@ def erp_tiers_history(tid):
 # ── Devis ───────────────────────────────────────────────────────────
 
 @app.route('/shop/api/erp/devis', methods=['GET'])
-@login_required
+@shop_staff_required
 def erp_devis_list():
     statut = request.args.get('statut', '')
     conn   = get_db_connection()
@@ -10655,7 +10744,7 @@ def erp_devis_list():
 
 
 @app.route('/shop/api/erp/devis', methods=['POST'])
-@login_required
+@shop_staff_required
 def erp_devis_create():
     d       = request.get_json(force=True, silent=True) or {}
     lignes  = d.get('lignes', [])
@@ -10689,7 +10778,7 @@ def erp_devis_create():
 
 
 @app.route('/shop/api/erp/devis/<int:did>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def erp_devis_update(did):
     d    = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -10721,7 +10810,7 @@ def erp_devis_update(did):
 
 
 @app.route('/shop/api/erp/devis/<int:did>/convert', methods=['POST'])
-@login_required
+@shop_staff_required
 def erp_devis_convert(did):
     """Convertit un devis en commande boutique."""
     conn = get_db_connection()
@@ -10762,7 +10851,7 @@ def erp_devis_convert(did):
 # ── Fournisseurs ────────────────────────────────────────────────────
 
 @app.route('/shop/api/erp/fournisseurs', methods=['GET'])
-@login_required
+@shop_staff_required
 def erp_fourn_list():
     conn = get_db_connection()
     try:
@@ -10775,7 +10864,7 @@ def erp_fourn_list():
 
 
 @app.route('/shop/api/erp/fournisseurs', methods=['POST'])
-@login_required
+@shop_staff_required
 def erp_fourn_create():
     d = request.get_json(force=True, silent=True) or {}
     if not d.get('nom','').strip():
@@ -10798,7 +10887,7 @@ def erp_fourn_create():
 
 
 @app.route('/shop/api/erp/fournisseurs/<int:fid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def erp_fourn_update(fid):
     d = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -10817,7 +10906,7 @@ def erp_fourn_update(fid):
 
 
 @app.route('/shop/api/erp/fournisseurs/<int:fid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def erp_fourn_delete(fid):
     conn = get_db_connection()
     try:
@@ -10831,7 +10920,7 @@ def erp_fourn_delete(fid):
 
 
 @app.route('/shop/api/erp/commandes-fourn', methods=['GET'])
-@login_required
+@shop_staff_required
 def erp_cmd_fourn_list():
     conn = get_db_connection()
     try:
@@ -10853,7 +10942,7 @@ def erp_cmd_fourn_list():
 
 
 @app.route('/shop/api/erp/commandes-fourn', methods=['POST'])
-@login_required
+@shop_staff_required
 def erp_cmd_fourn_create():
     d      = request.get_json(force=True, silent=True) or {}
     lignes = d.get('lignes', [])
@@ -10878,7 +10967,7 @@ def erp_cmd_fourn_create():
 
 
 @app.route('/shop/api/erp/commandes-fourn/<int:cid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def erp_cmd_fourn_update(cid):
     d    = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -10921,7 +11010,7 @@ def erp_cmd_fourn_update(cid):
 # ── SAV / Tickets ───────────────────────────────────────────────────
 
 @app.route('/shop/api/erp/tickets', methods=['GET'])
-@login_required
+@shop_staff_required
 def erp_tickets_list():
     statut = request.args.get('statut', '')
     conn   = get_db_connection()
@@ -10944,7 +11033,7 @@ def erp_tickets_list():
 
 
 @app.route('/shop/api/erp/tickets', methods=['POST'])
-@login_required
+@shop_staff_required
 def erp_tickets_create():
     d      = request.get_json(force=True, silent=True) or {}
     titre  = str(d.get('titre','')).strip()
@@ -10974,7 +11063,7 @@ def erp_tickets_create():
 
 
 @app.route('/shop/api/erp/tickets/<int:tid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def erp_tickets_update(tid):
     d    = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -10996,7 +11085,7 @@ def erp_tickets_update(tid):
 
 
 @app.route('/shop/api/erp/tickets/<int:tid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def erp_tickets_delete(tid):
     conn = get_db_connection()
     try:
@@ -11012,7 +11101,7 @@ def erp_tickets_delete(tid):
 # ── Contrats ─────────────────────────────────────────────────────────
 
 @app.route('/shop/api/erp/contrats', methods=['GET'])
-@login_required
+@shop_staff_required
 def erp_contrats_list():
     conn = get_db_connection()
     try:
@@ -11033,7 +11122,7 @@ def erp_contrats_list():
 
 
 @app.route('/shop/api/erp/contrats', methods=['POST'])
-@login_required
+@shop_staff_required
 def erp_contrats_create():
     d      = request.get_json(force=True, silent=True) or {}
     numero = _erp_next_num('CTR', 'erp_contrats')
@@ -11059,7 +11148,7 @@ def erp_contrats_create():
 
 
 @app.route('/shop/api/erp/contrats/<int:cid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def erp_contrats_update(cid):
     d    = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -11083,7 +11172,7 @@ def erp_contrats_update(cid):
 # ── Mouvements stock ─────────────────────────────────────────────────
 
 @app.route('/shop/api/erp/stock-moves', methods=['GET'])
-@login_required
+@shop_staff_required
 def erp_stock_moves():
     pid  = request.args.get('product_id', type=int)
     conn = get_db_connection()
@@ -11104,7 +11193,7 @@ def erp_stock_moves():
 
 
 @app.route('/shop/api/erp/stock-moves', methods=['POST'])
-@login_required
+@shop_staff_required
 def erp_stock_move_create():
     d   = request.get_json(force=True, silent=True) or {}
     pid = d.get('product_id')
@@ -11132,7 +11221,7 @@ def erp_stock_move_create():
 # ── Dashboard ERP (KPIs enrichis) ───────────────────────────────────
 
 @app.route('/shop/api/erp/dashboard')
-@login_required
+@shop_staff_required
 def erp_dashboard():
     conn = get_db_connection()
     try:
@@ -11230,7 +11319,7 @@ def kni_flash_sales_public():
 
 
 @app.route('/shop/api/admin/flash-sales', methods=['GET'])
-@login_required
+@shop_staff_required
 def kni_flash_sales_admin():
     conn = get_db_connection()
     try:
@@ -11247,7 +11336,7 @@ def kni_flash_sales_admin():
 
 
 @app.route('/shop/api/admin/flash-sales', methods=['POST'])
-@login_required
+@shop_staff_required
 def kni_flash_sale_create():
     d = request.get_json(force=True, silent=True) or {}
     if not d.get('product_id') or not d.get('prix_flash') or not d.get('date_fin'):
@@ -11270,7 +11359,7 @@ def kni_flash_sale_create():
 
 
 @app.route('/shop/api/admin/flash-sales/<int:fid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def kni_flash_sale_update(fid):
     d = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -11290,7 +11379,7 @@ def kni_flash_sale_update(fid):
 
 
 @app.route('/shop/api/admin/flash-sales/<int:fid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def kni_flash_sale_delete(fid):
     conn = get_db_connection()
     try:
@@ -11326,7 +11415,7 @@ def kni_zones_public():
 
 
 @app.route('/shop/api/admin/zones-livraison', methods=['GET'])
-@login_required
+@shop_staff_required
 def kni_zones_admin():
     conn = get_db_connection()
     try:
@@ -11345,7 +11434,7 @@ def kni_zones_admin():
 
 
 @app.route('/shop/api/admin/zones-livraison', methods=['POST'])
-@login_required
+@shop_staff_required
 def kni_zone_create():
     d = request.get_json(force=True, silent=True) or {}
     if not d.get('nom') or d.get('frais') is None:
@@ -11367,7 +11456,7 @@ def kni_zone_create():
 
 
 @app.route('/shop/api/admin/zones-livraison/<int:zid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def kni_zone_update(zid):
     d = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -11390,7 +11479,7 @@ def kni_zone_update(zid):
 
 
 @app.route('/shop/api/admin/zones-livraison/<int:zid>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def kni_zone_delete(zid):
     conn = get_db_connection()
     try:
@@ -11406,7 +11495,7 @@ def kni_zone_delete(zid):
 # ── Programme Fidélité ───────────────────────────────────────────
 
 @app.route('/shop/api/admin/loyalty/history', methods=['GET'])
-@login_required
+@shop_staff_required
 def kni_loyalty_history():
     cid = request.args.get('customer_id', type=int)
     conn = get_db_connection()
@@ -11426,7 +11515,7 @@ def kni_loyalty_history():
 
 
 @app.route('/shop/api/admin/loyalty/add-points', methods=['POST'])
-@login_required
+@shop_staff_required
 def kni_loyalty_add():
     d = request.get_json(force=True, silent=True) or {}
     cid = d.get('customer_id')
@@ -11458,7 +11547,7 @@ def _loyalty_tier(points):
 
 
 @app.route('/shop/api/admin/loyalty/stats', methods=['GET'])
-@login_required
+@shop_staff_required
 def kni_loyalty_stats():
     conn = get_db_connection()
     try:
@@ -11502,7 +11591,7 @@ def kni_page_public(slug):
 
 
 @app.route('/shop/api/admin/pages', methods=['GET'])
-@login_required
+@shop_staff_required
 def kni_pages_admin():
     conn = get_db_connection()
     try:
@@ -11515,7 +11604,7 @@ def kni_pages_admin():
 
 
 @app.route('/shop/api/admin/pages/<slug>', methods=['GET'])
-@login_required
+@shop_staff_required
 def kni_page_get(slug):
     conn = get_db_connection()
     try:
@@ -11529,7 +11618,7 @@ def kni_page_get(slug):
 
 
 @app.route('/shop/api/admin/pages/<slug>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def kni_page_update(slug):
     d = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -11576,7 +11665,7 @@ def kni_contact_submit():
 
 
 @app.route('/shop/api/admin/contacts', methods=['GET'])
-@login_required
+@shop_staff_required
 def kni_contacts_admin():
     statut = request.args.get('statut', '')
     conn = get_db_connection()
@@ -11594,7 +11683,7 @@ def kni_contacts_admin():
 
 
 @app.route('/shop/api/admin/contacts/<int:cid>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def kni_contact_update(cid):
     d = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -11667,7 +11756,7 @@ def _patch_shop_order_number():
 
 
 @app.route('/shop/api/order/add-number', methods=['POST'])
-@login_required
+@shop_staff_required
 def kni_add_order_numbers():
     """Patch en masse : génère les numéros manquants sur les commandes existantes."""
     conn = get_db_connection()
@@ -11693,7 +11782,7 @@ def kni_add_order_numbers():
 # ── Promos avancées (expiration, usage unique) ───────────────────
 
 @app.route('/shop/api/admin/promos', methods=['GET'])
-@login_required
+@shop_staff_required
 def kni_promos_list():
     conn = get_db_connection()
     try:
@@ -11714,7 +11803,7 @@ def kni_promos_list():
 
 
 @app.route('/shop/api/admin/promos', methods=['POST'])
-@login_required
+@shop_staff_required
 def kni_promo_create():
     d = request.get_json(force=True, silent=True) or {}
     code = str(d.get('code', '')).strip().upper()
@@ -11739,7 +11828,7 @@ def kni_promo_create():
 
 
 @app.route('/shop/api/admin/promos/<string:code>', methods=['PUT'])
-@login_required
+@shop_staff_required
 def kni_promo_update(code):
     d = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -11760,7 +11849,7 @@ def kni_promo_update(code):
 
 
 @app.route('/shop/api/admin/promos/<string:code>', methods=['DELETE'])
-@login_required
+@shop_staff_required
 def kni_promo_delete(code):
     conn = get_db_connection()
     try:
@@ -11776,7 +11865,7 @@ def kni_promo_delete(code):
 # ── Dashboard CDC (KPIs enrichis pour shop_admin) ────────────────
 
 @app.route('/shop/api/admin/cdc-dashboard')
-@login_required
+@shop_staff_required
 def kni_cdc_dashboard():
     conn = get_db_connection()
     try:
@@ -11883,7 +11972,7 @@ def kni_popup_active():
 
 
 @app.route('/shop/api/admin/popup/upload-image', methods=['POST'])
-@admin_required
+@shop_staff_required
 def kni_popup_upload_image():
     """Upload d'image pour un popup — réservé admin/superadmin."""
     if 'image' not in request.files:
@@ -11905,7 +11994,7 @@ def kni_popup_upload_image():
 
 
 @app.route('/shop/api/admin/popups', methods=['GET'])
-@admin_required
+@shop_staff_required
 def kni_popups_list():
     conn = get_db_connection()
     try:
@@ -11920,7 +12009,7 @@ def kni_popups_list():
 
 
 @app.route('/shop/api/admin/popups', methods=['POST'])
-@admin_required
+@shop_staff_required
 def kni_popup_create():
     d = request.get_json(force=True, silent=True) or {}
     if not str(d.get('titre', '')).strip():
@@ -11960,7 +12049,7 @@ def kni_popup_create():
 
 
 @app.route('/shop/api/admin/popups/<int:pid>', methods=['PUT'])
-@admin_required
+@shop_staff_required
 def kni_popup_update(pid):
     d = request.get_json(force=True, silent=True) or {}
     conn = get_db_connection()
@@ -11984,7 +12073,7 @@ def kni_popup_update(pid):
 
 
 @app.route('/shop/api/admin/popups/<int:pid>', methods=['DELETE'])
-@admin_required
+@shop_staff_required
 def kni_popup_delete(pid):
     conn = get_db_connection()
     try:

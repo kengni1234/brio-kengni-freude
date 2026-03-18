@@ -3488,6 +3488,7 @@ async function printInv(id){
   if(!inv){await loadInvoices();inv=invoices.find(x=>x.id===id);}
   if(inv) printInvDirect(inv);
 }
+{% raw %}
 function printInvDirect(inv){
   const items=(inv.items||[]).map(it=>`
     <tr>
@@ -3604,7 +3605,8 @@ function printInvDirect(inv){
     .inv-num{font-size:.85rem;color:#6b7280;margin-top:.25rem;font-family:monospace}
     .inv-badge{display:inline-block;padding:.25rem .75rem;border-radius:20px;font-size:.72rem;font-weight:800;text-transform:uppercase;margin-top:.35rem;
       background:${_statusBg};
-      color:${_statusColor}}
+      color:${_statusColor};
+    }
     .parties{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:2rem}
     .party h3{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;margin-bottom:.65rem}
     .party .name{font-size:1rem;font-weight:700;margin-bottom:.25rem}
@@ -3688,10 +3690,11 @@ function printInvDirect(inv){
       <i class="fas fa-print"></i> Imprimer / Télécharger PDF
     </button>
   </div>
-  </body></html>`;
+  <\/body><\/html>`;
 
   const w=window.open('','_blank','width=960,height=820'); w.document.write(html); w.document.close(); w.focus();
 }
+{% endraw %}
 
 /* ══ STOCK VALUE ══ */
 async function loadStockValue(){
@@ -4186,6 +4189,7 @@ setTimeout(()=>{ if(Object.keys(ACT_DATA).length>0){ /* already have server data
 </div>
 
 <script>
+{% raw %}
 // ════════════════════════════════════════════════════════
 //  IMPORT / EXPORT CATALOGUE
 // ════════════════════════════════════════════════════════
@@ -5212,6 +5216,7 @@ function initGbStars(){
   }
 }
 
+{% endraw %}
 </script>
 
 
@@ -5286,6 +5291,7 @@ function initGbStars(){
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════
+{% raw %}
    MODULE ERP — CRM / Devis / Fournisseurs / SAV / Contrats
 ═══════════════════════════════════════════════════════════════════ */
 const fmtXAF = n => new Intl.NumberFormat('fr-CM').format(Math.round(n||0)) + ' XAF';
@@ -6427,6 +6433,7 @@ async function deletePopup(id, titre){
     if(badge){ badge.textContent='●'; badge.style.display = actifs ? '' : 'none'; }
   }catch(e){}
 })();
+{% endraw %}
 </script>
 
 {% endblock %}

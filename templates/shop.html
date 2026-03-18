@@ -2818,7 +2818,13 @@ async function doLogin(){
   btn.disabled=false;
   btn.innerHTML='<i class="fas fa-sign-in-alt"></i> Se connecter';
   if(d.success){
-    CUST.logged=true; CUST.name=d.name; CUST.points=d.points; CUST.promo_code=d.promo_code;
+    // Compte staff (admin/shop_manager) → rediriger vers shop_admin
+    if(d.is_staff){
+      toast(`Bienvenue ${d.name} ! Redirection...`,'ok');
+      setTimeout(()=>{ location.href = d.redirect || '/shop/admin'; }, 800);
+      return;
+    }
+    CUST.logged=true; CUST.name=d.name; CUST.points=d.points||0; CUST.promo_code=d.promo_code||'';
     updateAccountBtn();
     closeAuth();
     toast(`Bienvenue ${d.name} ! 🎉`,'ok');
