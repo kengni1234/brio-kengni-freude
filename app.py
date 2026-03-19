@@ -6766,7 +6766,8 @@ init_documents_db()
 # HELPERS DOCUMENTS
 # ─────────────────────────────────────────────────────────────────
 
-DOCS_UPLOAD_FOLDER = os.path.join('static', 'uploads', 'documents')
+# Chemin ABSOLU — indépendant du répertoire courant de Gunicorn/PythonAnywhere
+DOCS_UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', 'documents')
 os.makedirs(DOCS_UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_DOC_EXTENSIONS = {
@@ -6783,20 +6784,29 @@ def _doc_is_admin():
     return 'user_id' in session and session.get('role') in ('admin', 'superadmin')
 
 
-def _get_purchased_ids(user_id=None):
-    if not user_id:
+def _get_purchased_ids(user_id=None, buyer_email=None):
+    """Retourne les IDs des documents auxquels l'utilisateur a accès (achat confirmé ou accès admin accordé)."""
+    if not user_id and not buyer_email:
         return []
     conn = get_db_connection()
     if not conn:
         return []
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT document_id FROM document_purchases WHERE user_id=? AND status='confirmed'",
-        (user_id,)
-    )
-    ids = [r[0] for r in cursor.fetchall()]
+    ids = set()
+    if user_id:
+        cursor.execute(
+            "SELECT document_id FROM document_purchases WHERE user_id=? AND status='confirmed'",
+            (user_id,)
+        )
+        ids.update(r[0] for r in cursor.fetchall())
+    if buyer_email:
+        cursor.execute(
+            "SELECT document_id FROM document_purchases WHERE buyer_email=? AND status='confirmed'",
+            (buyer_email.lower(),)
+        )
+        ids.update(r[0] for r in cursor.fetchall())
     conn.close()
-    return ids
+    return list(ids)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -6889,8 +6899,8 @@ def documents_shop():
         cursor.execute("SELECT DISTINCT category FROM documents WHERE is_published=1 ORDER BY category")
     categories = [r[0] for r in cursor.fetchall()]
 
-    # ── IDs achetés ─────────────────────────────────────────────
-    purchased_ids = _get_purchased_ids(user_id)
+    # ── IDs achetés (par user_id ET par email pour les prospects) ──
+    purchased_ids = _get_purchased_ids(user_id, viewer_mail)
 
     # ── Achats en attente (admin) ───────────────────────────────
     purchases = []
@@ -6907,9 +6917,11 @@ def documents_shop():
     stats = {}
     if is_admin:
         cursor.execute("SELECT COUNT(*) FROM documents")
-        stats['total_docs'] = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM documents WHERE is_published=1")
-        stats['published'] = cursor.fetchone()[0]
+        stats['total'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM documents WHERE is_free=1 AND is_published=1")
+        stats['free'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM documents WHERE is_free=0 AND is_published=1")
+        stats['paid'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM document_purchases WHERE status='pending'")
         stats['pending_purchases'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM document_purchases WHERE status='confirmed'")
@@ -6919,6 +6931,11 @@ def documents_shop():
         stats['active_sessions'] = 1
 
     conn.close()
+
+    # ✅ viewer_name : nom affiché dans la barre de connexion
+    viewer_name = viewer_mail or session.get('username', 'Visiteur')
+    if user_id and not viewer_mail:
+        viewer_name = session.get('username', viewer_name)
 
     return render_template('documents.html',
                            docs=docs,
@@ -6930,6 +6947,7 @@ def documents_shop():
                            search_q=search_q,
                            current_category=current_category,
                            viewer_mail=viewer_mail,
+                           viewer_name=viewer_name,
                            payment_info=PAYMENT_INFO)
 
 
@@ -6951,13 +6969,21 @@ def documents_add():
     is_free     = 1 if price == 0 else 0
     tags        = json.dumps([t.strip() for t in tags_raw.split(',') if t.strip()])
 
+    if not title:
+        return jsonify({'success': False, 'error': 'Le titre est requis'}), 400
+
     file_path = None
-    if 'file' in request.files:
-        f = request.files['file']
-        if f and f.filename and _allowed_doc(f.filename):
-            fname     = secure_filename(f"doc_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{f.filename}")
+    file_field = request.files.get('document_file') or request.files.get('file')
+    if file_field and file_field.filename and _allowed_doc(file_field.filename):
+        try:
+            os.makedirs(DOCS_UPLOAD_FOLDER, exist_ok=True)
+            fname     = secure_filename(f"doc_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file_field.filename}")
             file_path = os.path.join(DOCS_UPLOAD_FOLDER, fname)
-            f.save(file_path)
+            file_field.save(file_path)
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Erreur upload fichier : {str(e)}'}), 500
+    elif file_field and file_field.filename and not _allowed_doc(file_field.filename):
+        return jsonify({'success': False, 'error': 'Format de fichier non autorisé'}), 400
 
     has_file = bool(file_path or file_url)
     has_link = bool(link_url)
@@ -6971,24 +6997,31 @@ def documents_add():
     conn = get_db_connection()
     if not conn:
         return jsonify({'success': False, 'error': 'DB error'}), 500
-
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO documents
-        (title, description, category, tags, thumbnail_url, doc_type,
-         file_path, file_url, link_url, link_label,
-         price, currency, is_free, is_published, created_by, created_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    ''', (
-        title, description, category, tags, thumb or None, doc_type,
-        file_path, file_url or None, link_url or None, link_label,
-        price, currency, is_free, is_pub,
-        session['user_id'], datetime.now().isoformat()
-    ))
-    new_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'id': new_id})
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO documents
+            (title, description, category, tags, thumbnail_url, doc_type,
+             file_path, file_url, link_url, link_label,
+             price, currency, is_free, is_published, created_by, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ''', (
+            title, description, category, tags, thumb or None, doc_type,
+            file_path, file_url or None, link_url or None, link_label,
+            price, currency, is_free, is_pub,
+            session['user_id'], datetime.now().isoformat()
+        ))
+        new_id = cursor.lastrowid
+        conn.commit()
+        return jsonify({'success': True, 'id': new_id, 'message': f'Document "{title}" ajouté avec succès !'})
+    except Exception as e:
+        # Si l'insertion DB échoue, supprimer le fichier déjà uploadé
+        if file_path and os.path.exists(file_path):
+            try: os.remove(file_path)
+            except Exception: pass
+        return jsonify({'success': False, 'error': f'Erreur base de données : {str(e)}'}), 500
+    finally:
+        conn.close()
 
 
 @app.route('/documents/update/<int:doc_id>', methods=['POST'])
@@ -7051,11 +7084,13 @@ def documents_delete(doc_id):
     cursor = conn.cursor()
     cursor.execute("SELECT file_path FROM documents WHERE id=?", (doc_id,))
     row = cursor.fetchone()
-    if row and row['file_path'] and os.path.exists(row['file_path']):
-        try:
-            os.remove(row['file_path'])
-        except Exception:
-            pass
+    if row and row['file_path']:
+        fp = row['file_path']
+        if not os.path.isabs(fp):
+            fp = os.path.join(os.path.dirname(os.path.abspath(__file__)), fp)
+        if os.path.exists(fp):
+            try: os.remove(fp)
+            except Exception: pass
     cursor.execute("DELETE FROM documents WHERE id=?", (doc_id,))
     cursor.execute("DELETE FROM document_purchases WHERE document_id=?", (doc_id,))
     conn.commit()
@@ -7081,30 +7116,44 @@ def documents_download(doc_id):
     if not conn:
         return "Erreur DB", 500
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM documents WHERE id=? AND is_published=1", (doc_id,))
+    is_admin  = _doc_is_admin()
+    # ✅ L'admin peut télécharger même les docs non publiés
+    if is_admin:
+        cursor.execute("SELECT * FROM documents WHERE id=?", (doc_id,))
+    else:
+        cursor.execute("SELECT * FROM documents WHERE id=? AND is_published=1", (doc_id,))
     doc = cursor.fetchone()
     if not doc:
         conn.close()
         return "Document introuvable", 404
 
-    doc       = dict(doc)
-    is_admin  = _doc_is_admin()
-    user_id   = session.get('user_id')
-    purchased = _get_purchased_ids(user_id)
+    doc        = dict(doc)
+    user_id    = session.get('user_id')
+    viewer_mail = session.get('doc_viewer_email', '')
+    purchased  = _get_purchased_ids(user_id, viewer_mail)
 
     if not doc['is_free'] and not is_admin and doc_id not in purchased:
         conn.close()
-        return "Accès refusé — achetez ce document d'abord", 403
+        return "Accès refusé — achetez ce document ou demandez l'accès à l'administrateur", 403
 
     conn.execute("UPDATE documents SET download_count=download_count+1 WHERE id=?", (doc_id,))
     conn.commit()
     conn.close()
 
-    if doc.get('file_path') and os.path.exists(doc['file_path']):
-        return send_file(doc['file_path'], as_attachment=True)
+    # Résoudre le chemin absolu (compatible chemins relatifs anciens ET nouveaux absolus)
+    file_path = doc.get('file_path')
+    if file_path:
+        if not os.path.isabs(file_path):
+            file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), file_path)
+        if os.path.exists(file_path):
+            try:
+                fname = os.path.basename(file_path)
+                return send_file(file_path, as_attachment=True, download_name=fname)
+            except Exception as e:
+                return f"Erreur lors du téléchargement : {str(e)}", 500
     if doc.get('file_url'):
         return redirect(doc['file_url'])
-    return "Aucun fichier disponible", 404
+    return "Aucun fichier disponible pour ce document", 404
 
 
 @app.route('/documents/purchase/<int:doc_id>', methods=['POST'])
@@ -7192,6 +7241,54 @@ def documents_purchase_reject(purchase_id):
     conn.commit()
     conn.close()
     return jsonify({'success': True})
+
+
+@app.route('/documents/grant', methods=['POST'])
+@admin_required
+def documents_grant_access():
+    """
+    Accorder l'accès gratuit à un document à un prospect par email (admin uniquement).
+    Body JSON : { doc_id, email, note }
+    """
+    data    = request.get_json(force=True, silent=True) or {}
+    doc_id  = data.get('doc_id')
+    email   = (data.get('email') or '').strip().lower()
+    note    = data.get('note', 'Accès accordé par l\'administrateur')
+
+    if not doc_id or not email or '@' not in email:
+        return jsonify({'success': False, 'error': 'doc_id et email valide requis'}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB error'}), 500
+    cursor = conn.cursor()
+
+    # Vérifier que le document existe
+    cursor.execute("SELECT title FROM documents WHERE id=?", (doc_id,))
+    doc_row = cursor.fetchone()
+    if not doc_row:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Document introuvable'}), 404
+
+    # Vérifier si accès déjà accordé
+    cursor.execute(
+        "SELECT id FROM document_purchases WHERE document_id=? AND buyer_email=? AND status='confirmed'",
+        (doc_id, email)
+    )
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'success': False, 'error': f'Accès déjà accordé à {email} pour ce document'})
+
+    now = datetime.now().isoformat()
+    cursor.execute('''
+        INSERT INTO document_purchases
+        (document_id, user_id, buyer_email, buyer_name, payment_method, payment_ref,
+         amount, currency, status, notes, created_at, updated_at)
+        VALUES (?, NULL, ?, ?, 'admin_grant', 'GRATUIT', 0, 'XAF', 'confirmed', ?, ?, ?)
+    ''', (doc_id, email, email, note, now, now))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': f'✅ Accès accordé à {email} pour "{doc_row["title"]}"'})
 
 
 # ─── NAS Admin ────────────────────────────────────────────────
