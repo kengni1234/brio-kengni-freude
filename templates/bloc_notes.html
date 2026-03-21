@@ -896,7 +896,7 @@ table.bn-table tbody tr:hover { background: rgba(0,212,170,.04); }
   <div class="word-titlebar">
     <span style="font-size:1.2rem">📄</span>
     <input type="text" class="word-doc-title" id="wordDocTitle" placeholder="Titre du document..." value=""
-           onchange="setUnsaved ? setUnsaved() : null">
+           oninput="onTitleInput()">
     <div style="display:flex;gap:.3rem;margin-left:auto;flex-wrap:wrap;align-items:center">
       <!-- Export menu -->
       <div style="position:relative">
@@ -1439,7 +1439,7 @@ const editor = document.getElementById('wordEditor');
 const DOCS_KEY       = 'kf_docs_v3';
 const CURRENT_KEY    = 'kf_word_current_v3';
 const IDLE_DELAY     = 5 * 60 * 1000;   // 5 min
-const AUTOSAVE_DELAY = 3 * 1000;        // 3 sec après frappe
+const AUTOSAVE_DELAY = 1 * 1000;        // 1 sec après frappe
 
 // ── État ────────────────────────────────────────────────────────
 let autoSaveTimer = null;
@@ -1845,6 +1845,17 @@ function wordRedo() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  ON TITLE INPUT — crée le fichier dès qu'un titre est saisi
+// ══════════════════════════════════════════════════════════════════
+
+function onTitleInput() {
+  setUnsaved();
+  _saveToLocalStorage();            // Sauvegarde locale immédiate
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => _silentAutoSave(), AUTOSAVE_DELAY);
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  ON EDITOR INPUT
 // ══════════════════════════════════════════════════════════════════
 
@@ -1853,18 +1864,37 @@ function onEditorInput() {
   updateRibbonState();
   setUnsaved();
   pushUndo();
+  _saveToLocalStorage();           // ✅ Sauvegarde localStorage immédiate à chaque frappe
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => _silentAutoSave(), AUTOSAVE_DELAY);
   resetIdleTimer();
 }
 
-// ── Auto-save silencieuse 3s — crée ou met à jour dans le tableau de bord ──
+// ── Sauvegarde locale immédiate (sans appel serveur) ──────────────
+function _saveToLocalStorage() {
+  try {
+    const titleEl = document.getElementById('wordDocTitle');
+    const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
+    const content = editor.innerHTML;
+    if (!title && (!content || content === '<br>')) return;
+    localStorage.setItem(CURRENT_KEY, JSON.stringify({
+      id: currentDocId, title, content, savedAt: new Date().toISOString()
+    }));
+  } catch(e) {}
+}
+
+// ── Auto-save silencieuse 1s — crée ou met à jour dans le tableau de bord ──
 function _silentAutoSave() {
   const titleEl = document.getElementById('wordDocTitle');
-  const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
+  const title   = (titleEl ? titleEl.value.trim() : '');
   const content = editor.innerHTML;
-  if (!content || content === '<br>') return;
 
+  // ✅ Besoin d'au moins un titre OU un contenu réel pour sauvegarder
+  const hasTitle   = title.length > 0;
+  const hasContent = content && content !== '<br>' && content.trim() !== '';
+  if (!hasTitle && !hasContent) return;
+
+  const docTitle = hasTitle ? title : 'Sans titre';
   const now  = new Date().toISOString();
   const docs = getDocs();
 
@@ -1872,24 +1902,24 @@ function _silentAutoSave() {
     // Mettre à jour le doc existant dans le tableau de bord
     const idx = docs.findIndex(d => d.id === currentDocId);
     if (idx >= 0) {
-      docs[idx] = { ...docs[idx], title, content, updatedAt: now };
+      docs[idx] = { ...docs[idx], title: docTitle, content, updatedAt: now };
       setDocs(docs);
-      syncDocToServer(currentDocId, title, content, docs[idx].createdAt);
+      syncDocToServer(currentDocId, docTitle, content, docs[idx].createdAt);
     }
   } else {
-    // Créer automatiquement un nouveau fichier dans le tableau de bord
+    // ✅ Créer automatiquement dès qu'il y a un titre (même sans contenu)
     const id  = 'doc_' + Date.now();
-    docs.unshift({ id, title, content, createdAt: now, updatedAt: now });
+    docs.unshift({ id, title: docTitle, content, createdAt: now, updatedAt: now });
     setDocs(docs);
     currentDocId = id;
-    syncDocToServer(id, title, content, now);
+    syncDocToServer(id, docTitle, content, now);
     refreshDocsModal();
-    showBNToast('📂 Fichier créé automatiquement dans le tableau de bord', 'success');
+    showBNToast('📂 Fichier "' + docTitle + '" créé automatiquement', 'success');
   }
 
   // Persister le document courant dans localStorage
   localStorage.setItem(CURRENT_KEY, JSON.stringify({
-    id: currentDocId, title, content, savedAt: now
+    id: currentDocId, title: docTitle, content, savedAt: now
   }));
 
   wordDocDirty = false;

@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>k-Ni Store — Boutique en ligne Yaoundé</title>
+
+<!-- ══ PWA — Progressive Web App ══ -->
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#00b074">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="k-Ni Store">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/icon-192.png">
+<meta name="application-name" content="k-Ni Store">
+<meta name="msapplication-TileColor" content="#00b074">
+<meta name="msapplication-TileImage" content="/static/icons/icon-192.png">
+<!-- ══ / PWA ══ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -58,7 +72,7 @@ body{font-family:var(--font);background:#fff;color:var(--ink);font-size:var(--fs
 header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:sticky;top:0;z-index:900;width:100%}
 .header-main{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem 1.5rem;max-width:1400px;width:100%;margin:0 auto}
 .logo{display:flex;align-items:flex-end;gap:.5rem;text-decoration:none;flex-shrink:0;padding-bottom:.1rem}
-.logo-img{width:42px;height:42px;border-radius:10px;object-fit:cover}
+.logo-img{width:62px;height:62px;border-radius:14px;object-fit:cover;box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .logo-text{font-size:var(--fs-xl);font-weight:900;color:var(--ink);letter-spacing:-1px}
 .logo-text span{color:var(--orange)}
 .header-search{flex:1;max-width:520px;position:relative;margin:0 1.5rem}
@@ -92,6 +106,9 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .cart-badge{position:absolute;top:-7px;right:-7px;background:var(--red);color:#fff;border-radius:50%;width:19px;height:19px;font-size:.93rem;font-weight:800;display:flex;align-items:center;justify-content:center;animation:badgePop .3s ease;border:2px solid #fff}
 .hbtn-account{background:var(--ink);color:#fff!important;border-color:var(--ink)}
 .hbtn-account:hover{background:var(--orange)!important;border-color:var(--orange)}
+.hbtn-staff{display:flex;align-items:center;gap:.4rem;padding:.45rem .9rem;border-radius:10px;font-size:.82rem;border:2px solid #00b074;transition:.18s}
+.hbtn-staff:hover{background:#009060!important;border-color:#009060!important;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,176,116,.3)}
+@media(max-width:600px){.staff-btn-lbl{display:none}}
 .hbtn-search-toggle{display:none}
 .mobile-search-bar{display:none;padding:.5rem 1rem;background:var(--white);border-top:1px solid var(--border)}
 .mobile-search-inner{display:flex;align-items:center;gap:.5rem;background:#f3f4f6;border-radius:12px;padding:.4rem .8rem;border:2px solid transparent}
@@ -150,7 +167,12 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .pcard:hover .pcard-img{transform:scale(1.05)}
 .pcard-imgwrap{overflow:hidden;aspect-ratio:1;background:#f9fafb;position:relative}
 .pcard-img{width:100%;height:100%;object-fit:cover;transition:.35s}
-.pcard-no-img{display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);height:100%}
+
+/* ── Watermark k-Ni sur les vraies images produit ── */
+/* image par défaut → badge k-Ni */
+.pcard-no-img{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;background:linear-gradient(135deg,#e8f8f2,#d1f0e6);height:100%;color:#00b074}
+.pcard-no-img::before{content:'k-Ni';font-size:1.55rem;font-weight:900;background:#00b074;color:#fff;padding:.2rem .65rem;border-radius:8px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,176,116,.3)}
+.pcard-no-img::after{content:'Image à venir';font-size:.65rem;font-weight:600;color:#009060;opacity:.75}
 /* ══ IMAGE DE FOND PRODUIT — faible opacité ══════════════════════
    L'image propre du produit OU l'image de sa catégorie s'affiche
    en arrière-plan de la CARTE ENTIÈRE à faible opacité.
@@ -181,12 +203,24 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .pcard:hover[style*="--pcard-bg"]::before{opacity:.32;}
 
 /* Images par catégorie (fallback si pas d'image produit) */
-.pcard[data-cat="electronique"]::before{background-image:url("https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=70&auto=format&fit=crop")}
-.pcard[data-cat="mode"]::before{background-image:url("https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=600&q=70&auto=format&fit=crop")}
-.pcard[data-cat="maison"]::before{background-image:url("https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600&q=70&auto=format&fit=crop")}
-.pcard[data-cat="sport"]::before{background-image:url("https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="smartphone"]::before,.pcard[data-cat="electronique"]::before{background-image:url("https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="ordinateur-portable"]::before,.pcard[data-cat="ordinateur-bureau"]::before{background-image:url("https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="tablette"]::before{background-image:url("https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="router"]::before,.pcard[data-cat="equipement-info"]::before,.pcard[data-cat="composants"]::before{background-image:url("https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="accessoires-info"]::before,.pcard[data-cat="cle-usb"]::before,.pcard[data-cat="imprimante"]::before,.pcard[data-cat="ecran-moniteur"]::before{background-image:url("https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="smartwatch"]::before{background-image:url("https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="casque-audio"]::before,.pcard[data-cat="enceinte"]::before{background-image:url("https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="camera"]::before,.pcard[data-cat="tv-video"]::before{background-image:url("https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="ventilateur"]::before,.pcard[data-cat="electromenager"]::before,.pcard[data-cat="energie"]::before{background-image:url("https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="mode"]::before,.pcard[data-cat="chaussures"]::before,.pcard[data-cat="sacs"]::before{background-image:url("https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="bijoux"]::before,.pcard[data-cat="parfum"]::before{background-image:url("https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&q=70&auto=format&fit=crop")}
 .pcard[data-cat="beaute"]::before{background-image:url("https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="maison"]::before,.pcard[data-cat="cuisine"]::before{background-image:url("https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="sport"]::before,.pcard[data-cat="jeux"]::before{background-image:url("https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&q=70&auto=format&fit=crop")}
 .pcard[data-cat="alimentation"]::before{background-image:url("https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="vehicule"]::before{background-image:url("https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="sante"]::before{background-image:url("https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&q=70&auto=format&fit=crop")}
+.pcard[data-cat="papeterie"]::before{background-image:url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=600&q=70&auto=format&fit=crop")}
 .pcard[data-cat="autre"]::before{background-image:url("https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=70&auto=format&fit=crop")}
 
 /* Contenu au-dessus du fond */
@@ -206,6 +240,21 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .pcard-wish{position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:1rem;transition:.18s;z-index:2;backdrop-filter:blur(4px)}
 .pcard-wish:hover,.pcard-wish.wished{color:var(--red);animation:heartBeat .4s ease}
 .pcard-wish.wished{background:#fef2f2}
+.pcard-staff-edit{position:absolute;bottom:.5rem;right:.5rem;background:rgba(0,176,116,.92);color:#fff;border:none;border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.78rem;transition:.18s;z-index:3;text-decoration:none;backdrop-filter:blur(4px)}
+.pcard-staff-edit:hover{background:#007a50;transform:scale(1.1)}
+/* ── Filigrane k-Ni sur les images produit ── */
+.pcard-watermark{
+  position:absolute;bottom:.55rem;left:.55rem;z-index:2;
+  background:#00b074;color:#fff;
+  font-family:'Outfit',sans-serif;
+  font-size:1rem;font-weight:900;letter-spacing:1px;
+  padding:.22rem .65rem;border-radius:8px;
+  opacity:.85;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+  pointer-events:none;
+  line-height:1.2;
+}
+.pcard-watermark .wm-n{color:#f97316}
 .stock-warn{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(239,68,68,.9));color:#fff;font-size:.94rem;font-weight:700;padding:.4rem .6rem;text-align:center}
 .pcard-body{padding:.85rem}
 .pcard-cat{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--orange);font-weight:700;margin-bottom:.25rem}
@@ -530,6 +579,48 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 0 1.5rem;margin-top:3rem
 /* ─── SEARCH HIGHLIGHT ─── */
 .hl{background:rgba(0,176,116,.2);color:var(--orange2);border-radius:3px;padding:0 1px}
 
+/* ─── DEALS SUCRÉS ─── */
+.deals-section{width:100%;padding:2rem 0 1rem;background:linear-gradient(135deg,#0f1e14 0%,#0a2518 50%,#0f2e1a 100%);margin-bottom:0}
+.deals-section-inner{max-width:1400px;margin:0 auto;padding:0 1rem}
+.deals-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:.6rem}
+.deals-title{display:flex;align-items:center;gap:.7rem}
+.deals-title-icon{font-size:1.8rem;animation:pulse 1.5s infinite}
+.deals-title h2{font-size:var(--fs-xl);font-weight:900;color:#fff;letter-spacing:-.5px}
+.deals-title h2 span{color:#f59e0b}
+.deals-subtitle{font-size:.88rem;color:rgba(255,255,255,.6);margin-top:.1rem}
+.deals-global-timer{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:.35rem .9rem;display:flex;align-items:center;gap:.5rem;color:#f59e0b;font-weight:700;font-size:.9rem}
+.deals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.1rem}
+.deal-card{background:linear-gradient(145deg,#1a2e20,#142318);border:1px solid rgba(245,158,11,.2);border-radius:16px;overflow:hidden;position:relative;transition:.25s;cursor:pointer}
+.deal-card:hover{transform:translateY(-4px);border-color:rgba(245,158,11,.5);box-shadow:0 12px 40px rgba(245,158,11,.15)}
+.deal-badge-wrap{position:absolute;top:.6rem;left:.6rem;z-index:2}
+.deal-badge{background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-size:.72rem;font-weight:900;padding:.22rem .55rem;border-radius:6px;letter-spacing:.05em;animation:pulse 2s infinite}
+.deal-img-wrap{aspect-ratio:1;overflow:hidden;background:#0d1f14}
+.deal-img-wrap img{width:100%;height:100%;object-fit:cover;transition:.35s}
+.deal-card:hover .deal-img-wrap img{transform:scale(1.06)}
+.deal-body{padding:.9rem}
+.deal-name{font-size:.95rem;font-weight:700;color:#fff;margin-bottom:.5rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.deal-prices{display:flex;align-items:center;gap:.55rem;margin-bottom:.5rem;flex-wrap:wrap}
+.deal-price-new{font-size:1.25rem;font-weight:900;color:#f59e0b}
+.deal-price-old{font-size:.88rem;color:rgba(255,255,255,.45);text-decoration:line-through}
+.deal-economy{font-size:.75rem;background:rgba(239,68,68,.2);color:#f87171;border-radius:5px;padding:.1rem .35rem;font-weight:700}
+.deal-stock-bar{margin-bottom:.6rem}
+.deal-stock-label{display:flex;justify-content:space-between;font-size:.75rem;color:rgba(255,255,255,.5);margin-bottom:.3rem}
+.deal-stock-label span{color:#f59e0b;font-weight:700}
+.deal-progress{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.deal-progress-fill{height:100%;background:linear-gradient(90deg,#00b074,#f59e0b);border-radius:3px;transition:.5s}
+.deal-progress-fill.low{background:linear-gradient(90deg,#ef4444,#f97316)}
+.deal-timer{display:flex;align-items:center;gap:.35rem;font-size:.78rem;color:rgba(255,255,255,.55);margin-bottom:.65rem}
+.deal-timer i{color:#f59e0b;font-size:.75rem}
+.deal-timer-countdown{font-weight:700;color:#f59e0b;font-family:monospace}
+.deal-actions{display:flex;gap:.5rem}
+.deal-btn-cart{flex:1;padding:.55rem;background:linear-gradient(135deg,#00b074,#059669);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:.88rem;font-weight:700;font-family:var(--font);transition:.15s;display:flex;align-items:center;justify-content:center;gap:.35rem}
+.deal-btn-cart:hover{background:linear-gradient(135deg,#059669,#047857);transform:scale(1.02)}
+.deal-btn-wa{padding:.55rem .65rem;background:rgba(37,211,102,.15);border:1.5px solid rgba(37,211,102,.4);color:#4ade80;border-radius:9px;cursor:pointer;font-size:.9rem;transition:.15s;display:flex;align-items:center;justify-content:center}
+.deal-btn-wa:hover{background:rgba(37,211,102,.3)}
+.deals-empty{text-align:center;padding:2.5rem;color:rgba(255,255,255,.3);font-size:.95rem}
+@media(max-width:768px){.deals-grid{grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:.7rem}}
+@keyframes dealGlow{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0)}50%{box-shadow:0 0 20px 4px rgba(245,158,11,.25)}}
+
 /* ─── SSE NOTIF ─── */
 #sseNotif{position:fixed;top:5rem;left:50%;transform:translateX(-50%);background:var(--orange);color:#fff;border-radius:12px;padding.6rem 1.2rem;font-size:.94rem;font-weight:700;z-index:3000;display:none;align-items:center;gap.5rem;box-shadow:var(--shadow-lg);animation:slideDown .3s ease}
 
@@ -557,7 +648,7 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 0 1.5rem;margin-top:3rem
   .carousel-slide .slide-overlay{padding:1.2rem 1.4rem}
   .footer-grid{grid-template-columns:1fr}
   .mobile-search-bar.open{display:block}
-  #prodGrid{grid-template-columns:repeat(auto-fill,minmax(min(160px,45vw),1fr));gap:.7rem}
+  #prodGrid{grid-template-columns:repeat(2,1fr)!important;gap:.7rem}
   /* Modals plein écran mobile */
   .detail-modal{max-width:100%;border-radius:20px 20px 0 0;max-height:96dvh}
   .modal-bg{align-items:flex-end;padding:0}
@@ -565,7 +656,7 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 0 1.5rem;margin-top:3rem
 @media(max-width:480px){
   .header-main{padding:.55rem .75rem;gap:.4rem}
   .logo-text{font-size:var(--fs-lg)}
-  #prodGrid{grid-template-columns:repeat(2,1fr);gap:.55rem}
+  #prodGrid{grid-template-columns:repeat(2,1fr)!important;gap:.55rem}
   .pcard-body{padding:.7rem}
   .carousel-arrow{display:none}
   .checkout-modal,.auth-modal,.account-modal{border-radius:20px 20px 0 0;max-height:96dvh}
@@ -579,13 +670,16 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 0 1.5rem;margin-top:3rem
   .pcard-price .price{font-size:var(--fs-md)}
 }
 @media(max-width:360px){
-  #prodGrid{grid-template-columns:1fr 1fr;gap:.45rem}
+  #prodGrid{grid-template-columns:repeat(2,1fr)!important;gap:.4rem}
   .pcard-name{font-size:var(--fs-xs)}
   .header-main{padding:.45rem .6rem}
 }
 /* Mobile filter toggle */
 .filter-toggle-btn{display:none;align-items:center;gap:.4rem;padding:.45rem .9rem;background:var(--white);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-size:var(--fs-sm);font-weight:600;color:var(--ink);font-family:var(--font)}
 @media(max-width:768px){.filter-toggle-btn{display:flex}}
+@media(max-width:768px){
+  #prodGrid.list-view{grid-template-columns:1fr!important}
+}
 
 /* ══ AMÉLIORATIONS WHATSAPP-INSPIRED — Mobile-first ══ */
 
@@ -665,16 +759,13 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 0 1.5rem;margin-top:3rem
 
 @media(max-width:480px){
   .header-main { padding: .5rem .75rem; }
-  /* Grille 2 colonnes serrée */
-  #prodGrid { grid-template-columns: 1fr 1fr; gap: .6rem; }
+  #prodGrid { grid-template-columns: repeat(2,1fr)!important; gap: .5rem; }
   .pcard-name { font-size: .82rem; }
   .pcard-price .price { font-size: .95rem; }
-  /* Pagination / filtres pleine largeur */
+  .pcard-body { padding: .6rem .65rem !important; }
   .prod-header { flex-direction: column; align-items: flex-start; gap: .5rem; }
-  /* Flash Sales section */
   .inline-promo { padding: 1rem 1.2rem; }
   .inline-promo h3 { font-size: 1rem; }
-  /* Checkout bottom-sheet total */
   .cart-total-row { font-size: 1rem; }
 }
 
@@ -734,12 +825,25 @@ header{
   -webkit-backdrop-filter:blur(12px);
 }
 .logo-text{
-  background:linear-gradient(135deg,#00b074,#009060);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-  font-size:clamp(1.4rem,3vw,1.9rem)!important;
+  font-size:clamp(1.1rem,2.5vw,1.35rem)!important;
+  font-weight:900!important;
+  background:#00b074!important;
+  -webkit-background-clip:unset!important;
+  -webkit-text-fill-color:unset!important;
+  background-clip:unset!important;
+  color:#fff!important;
+  letter-spacing:1px!important;
+  padding:.28rem .75rem .28rem .65rem!important;
+  border-radius:10px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:0!important;
+  box-shadow:0 2px 10px rgba(0,176,116,.35)!important;
 }
-.logo-text span{-webkit-text-fill-color:transparent}
+.logo-text .logo-n{
+  color:#f97316!important;
+  -webkit-text-fill-color:#f97316!important;
+}
 
 /* Barre de recherche plus élégante */
 .search-wrap{
@@ -886,7 +990,32 @@ header{
   border-radius:0!important;
   overflow:hidden!important;
   background:linear-gradient(135deg,#f8fafc,#f1f5f9)!important;
+  position:relative!important;
 }
+/* ── Watermark k-Ni injecté via JS — identique au logo header ── */
+.kni-watermark{
+  position:absolute;
+  bottom:8px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#00b074;
+  color:#fff;
+  font-family:'Outfit',system-ui,sans-serif;
+  font-size:1.75rem;
+  font-weight:900;
+  letter-spacing:1px;
+  padding:.32rem 1rem .32rem .9rem;
+  border-radius:10px;
+  box-shadow:0 3px 14px rgba(0,176,116,.45);
+  opacity:.85;
+  z-index:4;
+  pointer-events:none;
+  white-space:nowrap;
+  display:inline-flex;
+  align-items:center;
+  line-height:1.3;
+}
+.kni-watermark .wm-n{color:#f97316}
 .pcard-img{
   transition:transform .45s cubic-bezier(.25,.46,.45,.94)!important;
 }
@@ -1166,16 +1295,28 @@ html{scroll-behavior:smooth}
 <!-- TOP BAR -->
 <div class="top-bar">
   <div class="top-bar-inner" id="topTicker">
-    <span class="top-item"><i class="fas fa-truck"></i> Livraison Yaoundé & environs</span>
-    <span class="top-item"><i class="fas fa-phone"></i> Orange: 695 072 759</span>
-    <span class="top-item"><i class="fas fa-phone"></i> MTN: 670 695 946</span>
+    <span class="top-item"><i class="fas fa-globe-africa"></i> Expéditions dans tout le Cameroun 🇨🇲</span>
+    <span class="top-item"><i class="fas fa-map-marker-alt"></i> Yaoundé : Centre-Ville · Biyem-Assi · Bastos · Mvan · Essos · Ngousso</span>
+    <span class="top-item"><i class="fas fa-map-marker-alt"></i> Yaoundé : Mendong · Mimboman · Nkol-Eton · Simbock · Omnisports · Mvog-Ada</span>
+    <span class="top-item"><i class="fas fa-map-marker-alt"></i> Yaoundé : Étoug-Ebe · Cité-Verte · Nkoldongo · Kondengui · Olembe · Nkolbisson</span>
+    <span class="top-item"><i class="fas fa-truck"></i> Douala · Bafoussam · Kribi · Limbe · Buea · Garoua · Maroua — On livre !</span>
+    <span class="top-item"><i class="fas fa-phone"></i> Orange Money : 695 072 759</span>
+    <span class="top-item"><i class="fas fa-phone"></i> MTN MoMo : 670 695 946</span>
     <span class="top-item"><i class="fas fa-shield-alt"></i> Paiement sécurisé Mobile Money</span>
-    <span class="top-item"><i class="fas fa-gift"></i> Inscrivez-vous pour vos codes promo !</span>
-    <span class="top-item"><i class="fas fa-truck"></i> Livraison Yaoundé & environs</span>
-    <span class="top-item"><i class="fas fa-phone"></i> Orange: 695 072 759</span>
-    <span class="top-item"><i class="fas fa-phone"></i> MTN: 670 695 946</span>
+    <span class="top-item"><i class="fas fa-gift"></i> Inscrivez-vous et obtenez votre code promo personnel !</span>
+    <span class="top-item"><i class="fas fa-clock"></i> Livraison 3-7 jours ouvrés · Offerte sur toute commande</span>
+    <span class="top-item"><i class="fas fa-headset"></i> Support WhatsApp disponible 7j/7</span>
+    <span class="top-item"><i class="fas fa-globe-africa"></i> Expéditions dans tout le Cameroun 🇨🇲</span>
+    <span class="top-item"><i class="fas fa-map-marker-alt"></i> Yaoundé : Centre-Ville · Biyem-Assi · Bastos · Mvan · Essos · Ngousso</span>
+    <span class="top-item"><i class="fas fa-map-marker-alt"></i> Yaoundé : Mendong · Mimboman · Nkol-Eton · Simbock · Omnisports · Mvog-Ada</span>
+    <span class="top-item"><i class="fas fa-map-marker-alt"></i> Yaoundé : Étoug-Ebe · Cité-Verte · Nkoldongo · Kondengui · Olembe · Nkolbisson</span>
+    <span class="top-item"><i class="fas fa-truck"></i> Douala · Bafoussam · Kribi · Limbe · Buea · Garoua · Maroua — On livre !</span>
+    <span class="top-item"><i class="fas fa-phone"></i> Orange Money : 695 072 759</span>
+    <span class="top-item"><i class="fas fa-phone"></i> MTN MoMo : 670 695 946</span>
     <span class="top-item"><i class="fas fa-shield-alt"></i> Paiement sécurisé Mobile Money</span>
-    <span class="top-item"><i class="fas fa-gift"></i> Inscrivez-vous pour vos codes promo !</span>
+    <span class="top-item"><i class="fas fa-gift"></i> Inscrivez-vous et obtenez votre code promo personnel !</span>
+    <span class="top-item"><i class="fas fa-clock"></i> Livraison 3-7 jours ouvrés · Offerte sur toute commande</span>
+    <span class="top-item"><i class="fas fa-headset"></i> Support WhatsApp disponible 7j/7</span>
   </div>
   <div class="top-bar-right">
     <div class="font-ctrl">
@@ -1198,7 +1339,7 @@ html{scroll-behavior:smooth}
   <div class="header-main">
     <a href="/shop" class="logo">
       <img src="/static/img/logo.jpeg" alt="k-Ni" class="logo-img" onerror="this.style.display='none'">
-      <span class="logo-text">k<span>-Ni</span></span>
+      <span class="logo-text">k-<span class="logo-n">N</span>i</span>
     </a>
     <div class="header-search">
       <div class="search-wrap">
@@ -1218,6 +1359,11 @@ html{scroll-behavior:smooth}
         <i class="fab fa-whatsapp"></i><span>WhatsApp</span>
       </a>
       <button class="hbtn hbtn-search-toggle" id="mobileSearchToggle" onclick="toggleMobileSearch()"><i class="fas fa-search"></i></button>
+      {% if is_staff %}
+      <a href="/shop/admin" class="hbtn hbtn-staff" title="Gérer la boutique — {{ staff_name }}" style="background:#00b074;color:#fff;border-color:#00b074;text-decoration:none;font-weight:700;gap:.4rem">
+        <i class="fas fa-tools"></i><span class="staff-btn-lbl">Gérer</span>
+      </a>
+      {% endif %}
       <button class="hbtn hbtn-account" id="accountBtn" onclick="openAccount()">
         <i class="fas fa-user"></i><span id="accountBtnLabel">Connexion</span>
       </button>
@@ -1238,17 +1384,70 @@ html{scroll-behavior:smooth}
     </div>
   </div>
 </header>
+{% if is_staff %}
+<div id="staffBanner" style="background:linear-gradient(90deg,#00b074,#007a50);color:#fff;padding:.55rem 1.2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:.82rem;font-weight:600;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,176,116,.3)">
+  <span style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+    <span><i class="fas fa-tools" style="margin-right:.4rem"></i>Mode gestionnaire — {{ staff_name }}</span>
+    {% if staff_perms.add %}
+    <button onclick="staffOpenAdd()" style="background:#fff;color:#00b074;border:none;padding:.25rem .75rem;border-radius:20px;font-size:.78rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;transition:.15s" onmouseover="this.style.background='#e8f8f2'" onmouseout="this.style.background='#fff'">
+      <i class="fas fa-plus"></i> Ajouter
+    </button>
+    {% endif %}
+    {% if staff_perms.edit %}
+    <button onclick="staffOpenEdit()" id="staffEditBtn" disabled style="background:rgba(255,255,255,.25);color:#fff;border:1.5px solid rgba(255,255,255,.5);padding:.25rem .75rem;border-radius:20px;font-size:.78rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;transition:.15s;opacity:.6" title="Sélectionnez un produit d'abord">
+      <i class="fas fa-edit"></i> Modifier
+    </button>
+    {% endif %}
+    {% if staff_perms.delete %}
+    <button onclick="staffDeleteProduct()" id="staffDeleteBtn" disabled style="background:rgba(239,68,68,.25);color:#fff;border:1.5px solid rgba(239,68,68,.5);padding:.25rem .75rem;border-radius:20px;font-size:.78rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;transition:.15s;opacity:.6" title="Sélectionnez un produit d'abord">
+      <i class="fas fa-trash"></i> Supprimer
+    </button>
+    {% endif %}
+  </span>
+  <a href="/shop/admin" style="background:#fff;color:#00b074;padding:.3rem .9rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:.8rem;white-space:nowrap">
+    <i class="fas fa-tachometer-alt"></i> Ouvrir le CDC
+  </a>
+</div>
+{% endif %}
 
 <!-- CATEGORY NAV -->
 <nav class="cat-nav" id="catNav">
   <div class="cat-nav-inner" id="catNavInner">
     <div class="cat-pill active" data-cat="all" onclick="filterCat('all')"><span class="em">🏪</span> Tout</div>
-    <div class="cat-pill" data-cat="electronique" onclick="filterCat('electronique')"><span class="em">📱</span> Électronique</div>
+    <div class="cat-pill" data-cat="smartphone" onclick="filterCat('smartphone')"><span class="em">📱</span> Smartphones</div>
+    <div class="cat-pill" data-cat="ordinateur-portable" onclick="filterCat('ordinateur-portable')"><span class="em">💻</span> Ordinateurs Portables</div>
+    <div class="cat-pill" data-cat="ordinateur-bureau" onclick="filterCat('ordinateur-bureau')"><span class="em">🖥️</span> Ordinateurs de Bureau</div>
+    <div class="cat-pill" data-cat="tablette" onclick="filterCat('tablette')"><span class="em">📟</span> Tablettes</div>
+    <div class="cat-pill" data-cat="router" onclick="filterCat('router')"><span class="em">📡</span> Routeurs & Réseaux</div>
+    <div class="cat-pill" data-cat="equipement-info" onclick="filterCat('equipement-info')"><span class="em">🖨️</span> Équipements Info</div>
+    <div class="cat-pill" data-cat="accessoires-info" onclick="filterCat('accessoires-info')"><span class="em">⌨️</span> Accessoires Info</div>
+    <div class="cat-pill" data-cat="cle-usb" onclick="filterCat('cle-usb')"><span class="em">🔌</span> Clés USB & Stockage</div>
+    <div class="cat-pill" data-cat="imprimante" onclick="filterCat('imprimante')"><span class="em">🖨</span> Imprimantes</div>
+    <div class="cat-pill" data-cat="ecran-moniteur" onclick="filterCat('ecran-moniteur')"><span class="em">🖵</span> Écrans</div>
+    <div class="cat-pill" data-cat="composants" onclick="filterCat('composants')"><span class="em">🔧</span> Composants PC</div>
+    <div class="cat-pill" data-cat="smartwatch" onclick="filterCat('smartwatch')"><span class="em">⌚</span> Montres Connectées</div>
+    <div class="cat-pill" data-cat="casque-audio" onclick="filterCat('casque-audio')"><span class="em">🎧</span> Casques & Écouteurs</div>
+    <div class="cat-pill" data-cat="enceinte" onclick="filterCat('enceinte')"><span class="em">🔊</span> Enceintes & Son</div>
+    <div class="cat-pill" data-cat="camera" onclick="filterCat('camera')"><span class="em">📷</span> Caméras</div>
+    <div class="cat-pill" data-cat="tv-video" onclick="filterCat('tv-video')"><span class="em">📺</span> TV & Vidéo</div>
+    <div class="cat-pill" data-cat="ventilateur" onclick="filterCat('ventilateur')"><span class="em">🌀</span> Ventilateurs</div>
+    <div class="cat-pill" data-cat="electronique" onclick="filterCat('electronique')"><span class="em">⚡</span> Électronique</div>
+    <div class="cat-pill" data-cat="electromenager" onclick="filterCat('electromenager')"><span class="em">🏠</span> Électroménager</div>
+    <div class="cat-pill" data-cat="energie" onclick="filterCat('energie')"><span class="em">🔋</span> Énergie & Batteries</div>
     <div class="cat-pill" data-cat="mode" onclick="filterCat('mode')"><span class="em">👗</span> Mode</div>
-    <div class="cat-pill" data-cat="maison" onclick="filterCat('maison')"><span class="em">🏠</span> Maison</div>
-    <div class="cat-pill" data-cat="sport" onclick="filterCat('sport')"><span class="em">⚽</span> Sport</div>
+    <div class="cat-pill" data-cat="chaussures" onclick="filterCat('chaussures')"><span class="em">👟</span> Chaussures</div>
+    <div class="cat-pill" data-cat="sacs" onclick="filterCat('sacs')"><span class="em">👜</span> Sacs</div>
+    <div class="cat-pill" data-cat="bijoux" onclick="filterCat('bijoux')"><span class="em">💍</span> Bijoux</div>
     <div class="cat-pill" data-cat="beaute" onclick="filterCat('beaute')"><span class="em">💄</span> Beauté</div>
+    <div class="cat-pill" data-cat="parfum" onclick="filterCat('parfum')"><span class="em">🌸</span> Parfums</div>
+    <div class="cat-pill" data-cat="maison" onclick="filterCat('maison')"><span class="em">🛋️</span> Maison</div>
+    <div class="cat-pill" data-cat="cuisine" onclick="filterCat('cuisine')"><span class="em">🍳</span> Cuisine</div>
+    <div class="cat-pill" data-cat="sport" onclick="filterCat('sport')"><span class="em">⚽</span> Sport</div>
+    <div class="cat-pill" data-cat="jeux" onclick="filterCat('jeux')"><span class="em">🎮</span> Jeux & Loisirs</div>
     <div class="cat-pill" data-cat="alimentation" onclick="filterCat('alimentation')"><span class="em">🍎</span> Alimentation</div>
+    <div class="cat-pill" data-cat="vehicule" onclick="filterCat('vehicule')"><span class="em">🚗</span> Auto & Moto</div>
+    <div class="cat-pill" data-cat="sante" onclick="filterCat('sante')"><span class="em">💊</span> Santé</div>
+    <div class="cat-pill" data-cat="papeterie" onclick="filterCat('papeterie')"><span class="em">📚</span> Papeterie</div>
     <div class="cat-pill" data-cat="autre" onclick="filterCat('autre')"><span class="em">📦</span> Autre</div>
   </div>
 </nav>
@@ -1294,8 +1493,8 @@ html{scroll-behavior:smooth}
       </div>
       <div class="carousel-slide" style="background:linear-gradient(135deg,rgba(30,64,175,.85),rgba(29,78,216,.80));background-image:url('https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=1200&q=75&auto=format&fit=crop');background-size:cover;background-position:center;background-blend-mode:overlay">
         <div class="slide-overlay">
-          <span class="slide-badge">📦 LIVRAISON</span>
-          <h2>Livraison rapide<br>Yaoundé & environs</h2>
+          <span class="slide-badge">📦 EXPÉDITION CAMEROUN</span>
+          <h2>Expéditions partout<br>au Cameroun 🇨🇲</h2>
           <p>Orange Money · MTN Mobile Money · Espèces</p>
           <button class="slide-btn" onclick="openAccount()"><i class="fas fa-user-plus"></i> S'inscrire</button>
         </div>
@@ -1306,6 +1505,27 @@ html{scroll-behavior:smooth}
     <div class="carousel-dots" id="carouselDots"></div>
   </div>
 </div>
+
+<!-- DEALS SUCRÉS -->
+<section class="deals-section" id="dealsSucresSection" style="display:none">
+  <div class="deals-section-inner">
+    <div class="deals-header">
+      <div class="deals-title">
+        <span class="deals-title-icon">🍬</span>
+        <div>
+          <h2>Deals <span>Sucrés</span></h2>
+          <div class="deals-subtitle">Offres flash — stocks limités, prix imbattables</div>
+        </div>
+      </div>
+      <div class="deals-global-timer" id="dealsGlobalTimer" style="display:none">
+        <i class="fas fa-clock"></i> Prochain deal expire dans <span id="dealsTimerGlobal">--:--:--</span>
+      </div>
+    </div>
+    <div class="deals-grid" id="dealsGrid">
+      <div class="deals-empty"><i class="fas fa-tag" style="font-size:2rem;margin-bottom:.5rem;display:block"></i>Aucun deal actif pour le moment</div>
+    </div>
+  </div>
+</section>
 
 <!-- MAIN -->
 <div class="main-wrap">
@@ -1376,6 +1596,7 @@ html{scroll-behavior:smooth}
         {% for p in products %}
         <article class="pcard"
                  data-id="{{ p.id }}"
+                 data-id="{{ p.id }}"
                  data-name="{{ p.name|lower }}"
                  data-cat="{{ p.category }}"
                  data-price="{{ p.price }}"
@@ -1386,9 +1607,10 @@ html{scroll-behavior:smooth}
           <div class="pcard-imgwrap">
             {% if p.image_url %}
             <img class="pcard-img" src="{{ p.image_url }}" alt="{{ p.name }}" loading="lazy"
-                 onerror="this.parentNode.innerHTML='<div class=\'pcard-no-img\'>📦</div>'">
+                 onerror="this.parentNode.innerHTML='<div class=\'pcard-no-img\'></div>'">
+            <span class="pcard-watermark">k-<span class="wm-n">N</span>i</span>
             {% else %}
-            <div class="pcard-no-img">📦</div>
+            <div class="pcard-no-img"></div>
             {% endif %}
             {% if p.badge == 'hot' %}<span class="pbadge pb-hot">🔥 Populaire</span>{% endif %}
             {% if p.badge == 'new' %}<span class="pbadge pb-new">✨ Nouveau</span>{% endif %}
@@ -1398,6 +1620,13 @@ html{scroll-behavior:smooth}
                     title="Ajouter aux favoris">
               <i class="{% if p.id in customer_wishlist %}fas{% else %}far{% endif %} fa-heart"></i>
             </button>
+            {% if is_staff and staff_perms.edit %}
+            <button onclick="event.stopPropagation();staffSelectProduct({{ p.id }})"
+               class="pcard-staff-edit"
+               title="Sélectionner ce produit pour Modifier/Supprimer">
+              <i class="fas fa-edit"></i>
+            </button>
+            {% endif %}
             {% if p.stock > 0 and p.stock <= 5 %}
             <div class="stock-warn">⚠ Plus que {{ p.stock }} en stock !</div>
             {% endif %}
@@ -1463,23 +1692,26 @@ html{scroll-behavior:smooth}
 <footer>
   <div class="footer-grid">
     <div class="footer-brand">
-      <span class="logo-text">k<span>-Ni</span> Store</span>
-      <p>Votre boutique de confiance à Yaoundé. Qualité garantie, livraison rapide, paiement Mobile Money.</p>
+      <span class="logo-text" style="margin-bottom:.7rem;display:inline-flex">k-<span class="logo-n">N</span>i Store</span>
+      <p>Votre boutique de confiance à Yaoundé. Qualité garantie, expéditions partout au Cameroun 🇨🇲, paiement Mobile Money.</p>
       <div class="footer-contacts">
         <div class="footer-contact"><i class="fas fa-phone"></i> Orange: 695 072 759</div>
         <div class="footer-contact"><i class="fas fa-phone"></i> MTN: 670 695 946</div>
         <div class="footer-contact"><i class="fab fa-whatsapp"></i> WhatsApp: 695 072 759</div>
         <div class="footer-contact"><i class="fas fa-map-marker-alt"></i> Yaoundé, Cameroun</div>
+        <div class="footer-contact"><i class="fas fa-globe-africa"></i> Expéditions dans tout le Cameroun</div>
       </div>
     </div>
     <div class="footer-section">
       <h4>Navigation</h4>
       <ul>
         <li><a href="#" onclick="filterCat('all')">Tous les produits</a></li>
-        <li><a href="#" onclick="filterCat('electronique')">Électronique</a></li>
-        <li><a href="#" onclick="filterCat('mode')">Mode</a></li>
-        <li><a href="#" onclick="filterCat('maison')">Maison</a></li>
-        <li><a href="#" onclick="filterCat('sport')">Sport</a></li>
+        <li><a href="#" onclick="filterCat('smartphone')">📱 Smartphones</a></li>
+        <li><a href="#" onclick="filterCat('ordinateur-portable')">💻 Ordinateurs</a></li>
+        <li><a href="#" onclick="filterCat('router')">📡 Routeurs</a></li>
+        <li><a href="#" onclick="filterCat('cle-usb')">🔌 Clés USB</a></li>
+        <li><a href="#" onclick="filterCat('ventilateur')">🌀 Ventilateurs</a></li>
+        <li><a href="#" onclick="filterCat('electronique')">⚡ Électronique</a></li>
       </ul>
     </div>
     <div class="footer-section">
@@ -1499,6 +1731,7 @@ html{scroll-behavior:smooth}
         <li><a href="#">Livraison & retours</a></li>
         <li><a href="#">Comment commander</a></li>
         <li><a href="#">Paiement Mobile Money</a></li>
+        <li><a href="#" style="color:var(--orange)"><i class="fas fa-globe-africa" style="margin-right:.3rem"></i>Expéditions Cameroun</a></li>
       </ul>
     </div>
   </div>
@@ -1508,8 +1741,9 @@ html{scroll-behavior:smooth}
       <span class="pay-badge"><i class="fas fa-mobile-alt"></i> MTN MoMo</span>
       <span class="pay-badge"><i class="fas fa-money-bill"></i> Espèces</span>
       <span class="pay-badge"><i class="fas fa-shield-alt"></i> Paiement sécurisé</span>
+      <span class="pay-badge" style="background:linear-gradient(135deg,var(--orange),#059669);color:#fff"><i class="fas fa-globe-africa"></i> Expéditions Cameroun 🇨🇲</span>
     </div>
-    <p>© 2025 k-Ni Store — Fabrice Kengni · Yaoundé, Cameroun</p>
+    <p>© 2026 k-Ni Store — Fabrice Kengni · Yaoundé, Cameroun · Expéditions dans tout le Cameroun</p>
   </div>
 </footer>
 
@@ -1754,12 +1988,21 @@ html{scroll-behavior:smooth}
     <button class="ai-close" onclick="toggleAI()"><i class="fas fa-times"></i></button>
   </div>
   <div class="ai-msgs" id="aiMsgs">
-    <div class="ai-msg bot">Bonjour ! 👋 Je suis <strong>Keni</strong>, votre assistant.<br>Comment puis-je vous aider ?</div>
+    <div class="ai-msg bot">Bonjour ! 👋 Je suis <strong>Keni</strong>, votre assistante k-Ni Store.<br>Je peux vous aider sur les produits, livraisons, et paiements.<br>Comment puis-je vous aider ?</div>
   </div>
   <div class="ai-qrs" id="aiQrs">
     <span class="ai-qr" onclick="askAI('Quels sont vos produits phares ?')">🔥 Produits phares</span>
     <span class="ai-qr" onclick="askAI('Comment commander ?')">🛒 Commander</span>
-    <span class="ai-qr" onclick="askAI('Livraison et paiement ?')">🚚 Livraison</span>
+    <span class="ai-qr" onclick="askAI('Livraison et paiement ?')">🚚 Livraison & paiement</span>
+    <span class="ai-qr" onclick="askAI('Livrez-vous dans tout le Cameroun ?')">🇨🇲 Tout le Cameroun ?</span>
+    <span class="ai-qr" onclick="askAI('Je veux parler à un conseiller humain')">👤 Parler à un conseiller</span>
+  </div>
+  <!-- Bouton escalade — visible après réponse d'escalade -->
+  <div id="aiEscaladeBar" style="display:none;padding:.5rem .8rem;background:#e8f8f2;border-top:1px solid var(--border)">
+    <p style="font-size:.82rem;color:var(--ink2);margin-bottom:.4rem"><i class="fas fa-headset" style="color:var(--orange);margin-right:.3rem"></i>Un conseiller personnel est disponible pour vous :</p>
+    <a id="aiWaBtn" href="#" target="_blank" style="display:flex;align-items:center;gap:.5rem;background:#25d366;color:#fff;padding:.45rem .9rem;border-radius:9px;font-weight:700;font-size:.88rem;text-decoration:none;width:fit-content">
+      <i class="fab fa-whatsapp"></i> Continuer sur WhatsApp
+    </a>
   </div>
   <div class="ai-input-row">
     <input id="aiInput" type="text" placeholder="Votre question…" onkeyup="if(event.key==='Enter')sendAI()">
@@ -2407,7 +2650,7 @@ function openDetail(id){
   document.getElementById('detailBody').innerHTML = `
     <div class="detail-imgs">
       ${mainImg?`<img class="detail-main-img" id="detailMainImg" src="${mainImg}" alt="${p.name}">`
-               :`<div class="detail-main-img" style="display:flex;align-items:center;justify-content:center;font-size:5rem;background:#f9fafb">📦</div>`}
+               :`<div class="detail-main-img" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:linear-gradient(135deg,#e8f8f2,#d1f0e6);font-size:2rem"><span style='background:#00b074;color:#fff;padding:.25rem .8rem;border-radius:10px;font-size:1.8rem;font-weight:900;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,176,116,.3)'>k-Ni</span><span style='font-size:.75rem;color:#009060;font-weight:600'>Image à venir</span></div>`}
       <div class="detail-thumbs">${thumbsHtml}</div>
     </div>
     <div class="detail-info">
@@ -2924,7 +3167,7 @@ async function loadAccountData(){
   } else {
     document.getElementById('wishGrid').innerHTML = items.map(i=>`
       <div class="wish-item" onclick="openDetail(${i.id})">
-        ${i.image_url?`<img src="${i.image_url}" alt="${i.name}">`:'<div style="height:100px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:2rem">📦</div>'}
+        ${i.image_url?`<img src="${i.image_url}" alt="${i.name}">`:'<div style="height:100px;background:linear-gradient(135deg,#e8f8f2,#d1f0e6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem"><span style=\'background:#00b074;color:#fff;padding:.15rem .5rem;border-radius:7px;font-size:1rem;font-weight:900;letter-spacing:1px\'>k-Ni</span></div>'}
         <div class="wish-item-body">
           <div class="wish-item-name">${i.name}</div>
           <div class="wish-item-price">${fmt(i.price)}</div>
@@ -2983,6 +3226,122 @@ async function saveProfile(){
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   DEALS SUCRÉS
+═══════════════════════════════════════════════════════════════ */
+let _dealsTimers = {};
+
+async function loadDealsSucres(){
+  try {
+    const r = await fetch('/shop/api/deals-sucres');
+    const d = await r.json();
+    if(!d.success) return;
+    const section = document.getElementById('dealsSucresSection');
+    const grid    = document.getElementById('dealsGrid');
+    if(!d.deals || d.deals.length === 0){ section.style.display='none'; return; }
+    section.style.display='block';
+    grid.innerHTML = d.deals.map(deal => _renderDealCard(deal)).join('');
+    // Démarrer les timers
+    d.deals.forEach(deal => _startDealTimer(deal));
+    // Timer global (deal qui expire le plus tôt)
+    const earliest = d.deals.reduce((a,b) => a.date_fin < b.date_fin ? a : b);
+    _startGlobalTimer(earliest.date_fin);
+  } catch(e){}
+}
+
+function _renderDealCard(deal){
+  const pct = deal.stock_allocated > 0
+    ? Math.round((deal.stock_remaining / deal.stock_allocated) * 100)
+    : 0;
+  const economy = deal.original_price > 0
+    ? Math.round((1 - deal.deal_price / deal.original_price) * 100)
+    : 0;
+  const isLow = pct < 20;
+  const img = deal.product_image
+    ? `<img src="${deal.product_image}" alt="${deal.product_name}" loading="lazy">`
+    : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:3rem;background:#142318">🏷️</div>`;
+  const wa = encodeURIComponent(`Bonjour k-Ni Store ! Je suis intéressé(e) par le Deal Sucré : *${deal.product_name}* à ${new Intl.NumberFormat('fr-CM').format(deal.deal_price)} XAF. Est-il encore disponible ?`);
+  return `
+  <div class="deal-card" id="deal-${deal.id}" onclick="openDealProduct(${deal.product_id})">
+    <div class="deal-badge-wrap"><span class="deal-badge">🍬 ${deal.badge_label||'Deal Sucré'}</span></div>
+    <div class="deal-img-wrap">${img}</div>
+    <div class="deal-body" onclick="event.stopPropagation()">
+      <div class="deal-name">${deal.product_name}</div>
+      <div class="deal-prices">
+        <span class="deal-price-new">${new Intl.NumberFormat('fr-CM').format(deal.deal_price)} XAF</span>
+        <span class="deal-price-old">${new Intl.NumberFormat('fr-CM').format(deal.original_price)} XAF</span>
+        ${economy > 0 ? `<span class="deal-economy">-${economy}%</span>` : ''}
+      </div>
+      <div class="deal-stock-bar">
+        <div class="deal-stock-label">
+          <span>Stock</span><span>${deal.stock_remaining} / ${deal.stock_allocated} restants</span>
+        </div>
+        <div class="deal-progress"><div class="deal-progress-fill ${isLow?'low':''}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="deal-timer">
+        <i class="fas fa-hourglass-half"></i> Expire dans
+        <span class="deal-timer-countdown" id="deal-timer-${deal.id}">--:--:--</span>
+      </div>
+      <div class="deal-actions">
+        <button class="deal-btn-cart" onclick="addDealToCart(${deal.product_id}, ${deal.deal_price}, '${deal.product_name.replace(/'/g,"\\'")}')">
+          <i class="fas fa-cart-plus"></i> Saisir ce deal
+        </button>
+        <a href="https://wa.me/237695072759?text=${wa}" target="_blank" class="deal-btn-wa" title="Partager sur WhatsApp">
+          <i class="fab fa-whatsapp"></i>
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function _startDealTimer(deal){
+  const el = () => document.getElementById(`deal-timer-${deal.id}`);
+  const end = new Date(deal.date_fin).getTime();
+  if(_dealsTimers[deal.id]) clearInterval(_dealsTimers[deal.id]);
+  _dealsTimers[deal.id] = setInterval(()=>{
+    const diff = end - Date.now();
+    if(diff <= 0){ clearInterval(_dealsTimers[deal.id]); if(el()) el().textContent='Expiré'; return; }
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    if(el()) el().textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+}
+
+function _startGlobalTimer(dateStr){
+  const gEl = document.getElementById('dealsTimerGlobal');
+  const gBar = document.getElementById('dealsGlobalTimer');
+  if(!gEl || !gBar) return;
+  gBar.style.display='flex';
+  const end = new Date(dateStr).getTime();
+  setInterval(()=>{
+    const diff = end - Date.now();
+    if(diff <= 0){ gEl.textContent='Expiré'; return; }
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    gEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+}
+
+function openDealProduct(pid){
+  // Ouvrir la fiche produit si disponible dans _prods
+  const p = (window._prods||{})[pid];
+  if(p && typeof openDetail === 'function') openDetail(p);
+}
+
+function addDealToCart(productId, dealPrice, productName){
+  const p = (window._prods||{})[productId];
+  if(!p){ toast('Produit introuvable', 'err'); return; }
+  // Ajouter au panier avec le prix deal
+  const dealProduct = {...p, price: dealPrice, badge: '🍬 Deal Sucré', _is_deal: true};
+  if(typeof addToCart === 'function') addToCart(dealProduct);
+  else toast(`${productName} ajouté au panier ! 🍬`, 'ok');
+}
+
+// Charger les deals au démarrage
+document.addEventListener('DOMContentLoaded', ()=>{ loadDealsSucres(); });
+
+/* ═══════════════════════════════════════════════════════════════
    AI CHAT
 ═══════════════════════════════════════════════════════════════ */
 let _aiOpen=false, _aiHistory=[];
@@ -3007,16 +3366,32 @@ async function askAI(msg){
   document.getElementById('aiMsgs').appendChild(typing);
   scrollAI();
   _aiHistory.push({role:'user',content:msg});
+
+  // Construire le catalogue depuis les produits chargés
+  const catalog = Object.values(window._prods||{}).slice(0,40).map(p=>({
+    id:p.id, name:p.name, category:p.category,
+    price:p.price, stock:p.stock, badge:p.badge||''
+  }));
+
   try{
     const r = await fetch('/shop/api/ai/chat',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({message:msg, history:_aiHistory.slice(-6)})
+      body: JSON.stringify({message:msg, history:_aiHistory.slice(-6), catalog})
     });
     const d = await r.json();
     typing.remove();
     const reply = d.reply||'Désolé, je rencontre un problème. Contactez-nous via WhatsApp.';
     appendAIMsg(reply,'bot');
     _aiHistory.push({role:'assistant',content:reply});
+
+    // Gérer l'escalade vers un conseiller humain
+    if(d.escalade && d.wa_text){
+      const escaladeBar = document.getElementById('aiEscaladeBar');
+      const waBtn = document.getElementById('aiWaBtn');
+      const waUrl = 'https://wa.me/237695072759?text=' + encodeURIComponent(d.wa_text);
+      waBtn.href = waUrl;
+      escaladeBar.style.display = 'block';
+    }
   }catch(e){
     typing.remove();
     appendAIMsg('Erreur de connexion. Contactez-nous via <a href="https://wa.me/237695072759" target="_blank" style="color:var(--orange)">WhatsApp</a>.','bot');
@@ -3266,5 +3641,421 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 })();
 </script>
+<!-- ══════════════════════════════════════════════════════════
+     MODAL GESTIONNAIRE — Ajouter / Modifier produit
+══════════════════════════════════════════════════════════ -->
+<div id="staffModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.3)">
+    <!-- Header -->
+    <div style="padding:1.1rem 1.4rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2;border-radius:20px 20px 0 0">
+      <h3 id="staffModalTitle" style="font-size:1.05rem;font-weight:800;margin:0;display:flex;align-items:center;gap:.5rem">
+        <i class="fas fa-plus-circle" style="color:#00b074"></i> Nouveau produit
+      </h3>
+      <button onclick="staffCloseModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#6b7280;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">&times;</button>
+    </div>
+    <!-- Body -->
+    <div style="padding:1.25rem 1.4rem">
+      <input type="hidden" id="staffProdId">
+
+      <!-- Nom + Catégorie -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+        <div>
+          <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem">Nom du produit *</label>
+          <input id="sfName" class="sfi" placeholder="Ex: iPhone 15 Pro" style="width:100%;padding:.65rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.93rem;font-family:inherit;outline:none;transition:.2s" onfocus="this.style.borderColor='#00b074'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+        <div>
+          <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem">Catégorie *</label>
+          <select id="sfCat" style="width:100%;padding:.65rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.93rem;font-family:inherit;outline:none;background:#fff;transition:.2s" onfocus="this.style.borderColor='#00b074'" onblur="this.style.borderColor='#e5e7eb'">
+            <option value="smartphone">📱 Smartphones</option>
+            <option value="ordinateur-portable">💻 Ordinateurs Portables</option>
+            <option value="ordinateur-bureau">🖥️ Ordinateurs de Bureau</option>
+            <option value="tablette">📟 Tablettes</option>
+            <option value="router">📡 Routeurs & Réseaux</option>
+            <option value="accessoires-info">⌨️ Accessoires Info</option>
+            <option value="cle-usb">🔌 Clés USB & Stockage</option>
+            <option value="imprimante">🖨️ Imprimantes</option>
+            <option value="ecran-moniteur">🖵 Écrans</option>
+            <option value="smartwatch">⌚ Montres Connectées</option>
+            <option value="casque-audio">🎧 Casques & Écouteurs</option>
+            <option value="enceinte">🔊 Enceintes & Son</option>
+            <option value="camera">📷 Caméras</option>
+            <option value="tv-video">📺 TV & Vidéo</option>
+            <option value="electronique">⚡ Électronique</option>
+            <option value="electromenager">🏠 Électroménager</option>
+            <option value="energie">🔋 Énergie & Batteries</option>
+            <option value="mode">👗 Mode</option>
+            <option value="chaussures">👟 Chaussures</option>
+            <option value="beaute">💄 Beauté</option>
+            <option value="sport">⚽ Sport</option>
+            <option value="autre">📦 Autre</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Prix + Prix original + Stock -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+        <div>
+          <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem">Prix (XAF) *</label>
+          <input id="sfPrice" type="number" min="0" placeholder="25000" style="width:100%;padding:.65rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.93rem;font-family:inherit;outline:none;transition:.2s" onfocus="this.style.borderColor='#00b074'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+        <div>
+          <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem">Ancien prix (XAF)</label>
+          <input id="sfOldPrice" type="number" min="0" placeholder="30000" style="width:100%;padding:.65rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.93rem;font-family:inherit;outline:none;transition:.2s" onfocus="this.style.borderColor='#00b074'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+        <div>
+          <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem">Stock *</label>
+          <input id="sfStock" type="number" min="0" placeholder="10" style="width:100%;padding:.65rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.93rem;font-family:inherit;outline:none;transition:.2s" onfocus="this.style.borderColor='#00b074'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+      </div>
+
+      <!-- URL image + Badge -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:.75rem;margin-bottom:.75rem;align-items:end">
+        <div>
+          <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem">URL Image</label>
+          <input id="sfImg" placeholder="https://… ou laisser vide" style="width:100%;padding:.65rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.88rem;font-family:inherit;outline:none;transition:.2s" onfocus="this.style.borderColor='#00b074'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+        <div>
+          <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem">Badge</label>
+          <select id="sfBadge" style="padding:.65rem .75rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.88rem;font-family:inherit;outline:none;background:#fff">
+            <option value="">Aucun</option>
+            <option value="new">✨ Nouveau</option>
+            <option value="hot">🔥 Populaire</option>
+            <option value="promo">🏷 Promo</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div style="margin-bottom:.75rem">
+        <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem">Description</label>
+        <textarea id="sfDesc" rows="3" placeholder="Description du produit…" style="width:100%;padding:.65rem .9rem;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.88rem;font-family:inherit;outline:none;resize:vertical;transition:.2s" onfocus="this.style.borderColor='#00b074'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+      </div>
+
+      <!-- Actif -->
+      <label style="display:flex;align-items:center;gap:.6rem;font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:1rem">
+        <input type="checkbox" id="sfActive" checked style="width:16px;height:16px;accent-color:#00b074;cursor:pointer">
+        Produit visible sur la boutique
+      </label>
+
+      <!-- Message erreur -->
+      <div id="sfError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:.6rem .85rem;font-size:.85rem;color:#dc2626;margin-bottom:.75rem"></div>
+
+      <!-- Actions -->
+      <div style="display:flex;gap:.6rem;justify-content:flex-end">
+        <button onclick="staffCloseModal()" style="padding:.6rem 1.2rem;border:1.5px solid #e5e7eb;border-radius:10px;background:none;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;color:#374151">Annuler</button>
+        <button id="sfSaveBtn" onclick="staffSaveProduct()" style="padding:.6rem 1.4rem;background:linear-gradient(135deg,#00b074,#009060);color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:.5rem;transition:.2s">
+          <i class="fas fa-save"></i> <span id="sfSaveLbl">Enregistrer</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCRIPT GESTIONNAIRE ══ -->
+<script>
+(function(){
+'use strict';
+
+/* ── Watermark k-Ni sur toutes les images produit ── */
+function injectKniWatermarks(){
+  document.querySelectorAll('.pcard-imgwrap').forEach(function(wrap){
+    // Seulement si une vraie image est chargée (pas la div no-img)
+    const img = wrap.querySelector('.pcard-img');
+    if(!img) return;
+    // Éviter le doublon
+    if(wrap.querySelector('.kni-watermark')) return;
+    const wm = document.createElement('span');
+    wm.className = 'kni-watermark';
+    wm.innerHTML = 'k-<span class="wm-n">N</span>i';
+    wrap.appendChild(wm);
+  });
+}
+// Lancer au chargement initial
+document.addEventListener('DOMContentLoaded', injectKniWatermarks);
+// Relancer si la grille est rechargée dynamiquement (filtres, recherche)
+const _wmObs = new MutationObserver(function(muts){
+  muts.forEach(function(m){
+    if(m.addedNodes.length) injectKniWatermarks();
+  });
+});
+const _prodGrid = document.getElementById('prodGrid');
+if(_prodGrid) _wmObs.observe(_prodGrid, {childList:true, subtree:true});
+
+/* Watermark sur la grande image de la fiche détail */
+function injectDetailWatermark(){
+  const wrap = document.querySelector('.detail-imgs');
+  if(!wrap) return;
+  const img = wrap.querySelector('.detail-main-img');
+  if(!img || img.tagName !== 'IMG') return;
+  if(wrap.querySelector('.kni-watermark-detail')) return;
+  const wm = document.createElement('span');
+  wm.className = 'kni-watermark kni-watermark-detail';
+  wm.style.cssText = 'font-size:1.8rem;padding:.4rem 1.3rem;border-radius:13px;bottom:14px';
+  wm.innerHTML = 'k-<span class="wm-n">N</span>i';
+  wrap.style.position = 'relative';
+  wrap.appendChild(wm);
+}
+/* Observer ouverture fiche détail */
+const _detailObs = new MutationObserver(function(){
+  setTimeout(injectDetailWatermark, 120);
+});
+const _detailBg = document.getElementById('detailBg');
+if(_detailBg) _detailObs.observe(_detailBg, {childList:true, subtree:true, attributes:true});
+
+
+
+/* ── Sélectionner un produit depuis la carte (bouton crayon) ── */
+window.staffSelectProduct = function(id){
+  _staffSelectedId = id;
+  const p = (PRODS||{})[id];
+  if(!p) return;
+
+  // Activer les boutons Modifier / Supprimer
+  const btnEdit = document.getElementById('staffEditBtn');
+  const btnDel  = document.getElementById('staffDeleteBtn');
+  if(btnEdit){
+    btnEdit.disabled = false;
+    btnEdit.style.opacity = '1';
+    btnEdit.style.cursor  = 'pointer';
+    btnEdit.title = `Modifier : ${p.name}`;
+  }
+  if(btnDel){
+    btnDel.disabled = false;
+    btnDel.style.opacity = '1';
+    btnDel.style.cursor  = 'pointer';
+    btnDel.title = `Supprimer : ${p.name}`;
+  }
+
+  // Feedback visuel : mettre en surbrillance la carte sélectionnée
+  document.querySelectorAll('.pcard-selected').forEach(c => c.classList.remove('pcard-selected'));
+  const card = document.querySelector(`article[data-id="${id}"]`);
+  if(card) card.classList.add('pcard-selected');
+
+  showToast(`✏️ Produit sélectionné : <strong>${p.name}</strong>`, 'ok');
+};
+
+/* ── Ouvrir modal AJOUTER ── */
+window.staffOpenAdd = function(){
+  _staffSelectedId = null;
+  document.getElementById('staffProdId').value = '';
+  document.getElementById('sfName').value    = '';
+  document.getElementById('sfCat').value     = 'smartphone';
+  document.getElementById('sfPrice').value   = '';
+  document.getElementById('sfOldPrice').value= '';
+  document.getElementById('sfStock').value   = '';
+  document.getElementById('sfImg').value     = '';
+  document.getElementById('sfDesc').value    = '';
+  document.getElementById('sfBadge').value   = '';
+  document.getElementById('sfActive').checked= true;
+  document.getElementById('sfError').style.display = 'none';
+  document.getElementById('staffModalTitle').innerHTML = '<i class="fas fa-plus-circle" style="color:#00b074"></i> Nouveau produit';
+  document.getElementById('sfSaveLbl').textContent = 'Enregistrer';
+  document.getElementById('staffModalBg').style.display = 'flex';
+};
+
+/* ── Ouvrir modal MODIFIER ── */
+window.staffOpenEdit = function(){
+  if(!_staffSelectedId){
+    showToast('⚠️ Cliquez d\'abord sur le crayon ✏️ d\'un produit', 'err');
+    return;
+  }
+  const p = (PRODS||{})[_staffSelectedId];
+  if(!p){ showToast('Produit introuvable', 'err'); return; }
+
+  document.getElementById('staffProdId').value = p.id;
+  document.getElementById('sfName').value      = p.name || '';
+  document.getElementById('sfCat').value       = p.category || 'autre';
+  document.getElementById('sfPrice').value     = p.price || '';
+  document.getElementById('sfOldPrice').value  = p.original_price || '';
+  document.getElementById('sfStock').value     = p.stock ?? '';
+  document.getElementById('sfImg').value       = p.image_url || '';
+  document.getElementById('sfDesc').value      = p.description || '';
+  document.getElementById('sfBadge').value     = p.badge || '';
+  document.getElementById('sfActive').checked  = true;
+  document.getElementById('sfError').style.display = 'none';
+  document.getElementById('staffModalTitle').innerHTML = `<i class="fas fa-edit" style="color:#00b074"></i> Modifier : ${p.name}`;
+  document.getElementById('sfSaveLbl').textContent = 'Mettre à jour';
+  document.getElementById('staffModalBg').style.display = 'flex';
+};
+
+/* ── Fermer modal ── */
+window.staffCloseModal = function(){
+  document.getElementById('staffModalBg').style.display = 'none';
+};
+// Fermer en cliquant sur le fond
+document.getElementById('staffModalBg').addEventListener('click', function(e){
+  if(e.target === this) staffCloseModal();
+});
+// Fermer avec Escape
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') staffCloseModal();
+});
+
+/* ── Enregistrer (Ajouter OU Modifier) ── */
+window.staffSaveProduct = async function(){
+  const id      = document.getElementById('staffProdId').value;
+  const name    = document.getElementById('sfName').value.trim();
+  const cat     = document.getElementById('sfCat').value;
+  const price   = parseInt(document.getElementById('sfPrice').value) || 0;
+  const oldP    = parseInt(document.getElementById('sfOldPrice').value) || 0;
+  const stock   = parseInt(document.getElementById('sfStock').value) || 0;
+  const img     = document.getElementById('sfImg').value.trim();
+  const desc    = document.getElementById('sfDesc').value.trim();
+  const badge   = document.getElementById('sfBadge').value;
+  const active  = document.getElementById('sfActive').checked;
+
+  const errEl = document.getElementById('sfError');
+  if(!name){ errEl.style.display='block'; errEl.textContent='Le nom du produit est obligatoire.'; return; }
+  if(!price){ errEl.style.display='block'; errEl.textContent='Le prix est obligatoire.'; return; }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('sfSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement…';
+
+  const payload = { name, category: cat, price, original_price: oldP, stock,
+                    image_url: img, description: desc, badge, is_active: active };
+
+  try {
+    const isEdit = !!id;
+    const url    = isEdit ? `/shop/api/admin/products/${id}` : '/shop/api/admin/products';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const r = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+
+    if(d.success){
+      showToast(isEdit ? '✅ Produit mis à jour !' : '✅ Produit ajouté !', 'ok');
+      staffCloseModal();
+      setTimeout(() => location.reload(), 900);
+    } else {
+      errEl.style.display = 'block';
+      errEl.textContent   = d.error || 'Erreur inconnue.';
+    }
+  } catch(e){
+    errEl.style.display = 'block';
+    errEl.textContent   = 'Erreur réseau. Vérifiez votre connexion.';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> <span id="sfSaveLbl">Enregistrer</span>';
+  }
+};
+
+/* ── Supprimer ── */
+window.staffDeleteProduct = async function(){
+  if(!_staffSelectedId){
+    showToast('⚠️ Cliquez d\'abord sur le crayon ✏️ d\'un produit', 'err');
+    return;
+  }
+  const p = (PRODS||{})[_staffSelectedId];
+  if(!p) return;
+
+  // Confirmation visuelle
+  const ok = confirm(`⚠️ Supprimer définitivement :\n« ${p.name} » ?\n\nCette action est irréversible.`);
+  if(!ok) return;
+
+  try {
+    const r = await fetch(`/shop/api/admin/products/${_staffSelectedId}`, { method: 'DELETE' });
+    const d = await r.json();
+    if(d.success){
+      showToast('🗑️ Produit supprimé.', 'ok');
+      // Masquer la carte sans recharger
+      const card = document.querySelector(`article[data-id="${_staffSelectedId}"]`);
+      if(card){ card.style.transition='.3s'; card.style.opacity='0'; card.style.transform='scale(.9)'; setTimeout(()=>card.remove(),300); }
+      _staffSelectedId = null;
+      const btnEdit = document.getElementById('staffEditBtn');
+      const btnDel  = document.getElementById('staffDeleteBtn');
+      if(btnEdit){ btnEdit.disabled=true; btnEdit.style.opacity='.6'; }
+      if(btnDel){  btnDel.disabled=true;  btnDel.style.opacity='.6'; }
+    } else {
+      showToast('❌ ' + (d.error || 'Erreur suppression'), 'err');
+    }
+  } catch(e){
+    showToast('❌ Erreur réseau', 'err');
+  }
+};
+
+/* ── Surbrillance carte sélectionnée ── */
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+  .pcard-selected{ outline:3px solid #00b074!important; outline-offset:2px; box-shadow:0 0 0 6px rgba(0,176,116,.15)!important; }
+  #staffEditBtn:not([disabled]):hover{ background:rgba(255,255,255,.4)!important; }
+  #staffDeleteBtn:not([disabled]):hover{ background:rgba(239,68,68,.45)!important; }
+`;
+document.head.appendChild(styleEl);
+
+})();
+</script>
+
+<!-- ══ PWA — Enregistrement Service Worker ══ -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/static/sw.js')
+      .then(function(reg){
+        console.log('[k-Ni PWA] Service Worker enregistré ✅', reg.scope);
+      })
+      .catch(function(err){
+        console.warn('[k-Ni PWA] Erreur SW :', err);
+      });
+  });
+}
+
+/* ── Bannière d'installation PWA (Android / Desktop) ── */
+let _pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  _pwaPrompt = e;
+  const banner = document.getElementById('pwaBanner');
+  if(banner) banner.style.display = 'flex';
+});
+window.kniInstallPWA = function(){
+  if(!_pwaPrompt) return;
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then(function(r){
+    if(r.outcome === 'accepted'){
+      const b = document.getElementById('pwaBanner');
+      if(b) b.style.display = 'none';
+    }
+    _pwaPrompt = null;
+  });
+};
+window.kniDismissPWA = function(){
+  const b = document.getElementById('pwaBanner');
+  if(b) b.style.display = 'none';
+  sessionStorage.setItem('kni_pwa_dismissed','1');
+};
+</script>
+
+<!-- Bannière d'installation PWA -->
+<div id="pwaBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+     background:linear-gradient(135deg,#0f2e1a,#00b074);
+     border-top:2px solid rgba(0,176,116,.5);
+     padding:.9rem 1.2rem;align-items:center;gap:.85rem;
+     box-shadow:0 -4px 24px rgba(0,0,0,.3)">
+  <img src="/static/icons/icon-192.png" alt="k-Ni"
+       style="width:44px;height:44px;border-radius:10px;flex-shrink:0"
+       onerror="this.style.display='none'">
+  <div style="flex:1;min-width:0">
+    <div style="font-size:.93rem;font-weight:800;color:#fff">Installer k-Ni Store</div>
+    <div style="font-size:.77rem;color:rgba(255,255,255,.75);margin-top:.1rem">
+      Accès rapide depuis votre écran d'accueil, fonctionne hors ligne
+    </div>
+  </div>
+  <button onclick="kniInstallPWA()"
+          style="flex-shrink:0;background:#fff;color:#00b074;border:none;
+                 padding:.55rem 1.1rem;border-radius:9px;font-weight:800;
+                 font-size:.88rem;cursor:pointer;font-family:inherit;transition:.15s">
+    <i class="fas fa-download"></i> Installer
+  </button>
+  <button onclick="kniDismissPWA()"
+          style="flex-shrink:0;background:rgba(255,255,255,.15);color:#fff;border:none;
+                 width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer">×</button>
+</div>
+<!-- ══ / PWA ══ -->
 </body>
 </html>

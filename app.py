@@ -939,7 +939,7 @@ def shop_staff_required(f):
         # Vérifier les permissions boutique
         perms = get_shop_perms(uid)
         if not any(perms.values()):
-            return jsonify({'success': False, 'error': 'Accès boutique non autorisé', 'code': 403}), 403
+            return jsonify({'success': False, 'error': 'Session invalide', 'code': 403}), 403
         return f(*args, **kwargs)
     return decorated_function
 # ─────────────────────────────────────────────────────────────────────────────
@@ -7969,7 +7969,7 @@ def init_shop_db():
             name           TEXT    NOT NULL,
             description    TEXT    DEFAULT '',
             features       TEXT    DEFAULT '',
-            category       TEXT    NOT NULL DEFAULT 'electronique',
+            category       TEXT    NOT NULL DEFAULT 'smartphone',
             price          REAL    NOT NULL DEFAULT 0,
             original_price REAL    DEFAULT 0,
             stock          INTEGER DEFAULT 10,
@@ -8135,6 +8135,24 @@ def init_kni_cdc_db():
             is_active   INTEGER DEFAULT 1
         );
 
+        -- ── Deals Sucrés ──
+        CREATE TABLE IF NOT EXISTS kni_deals_sucres (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id       INTEGER NOT NULL,
+            deal_price       REAL    NOT NULL,
+            original_price   REAL    NOT NULL,
+            stock_allocated  INTEGER DEFAULT 0,
+            stock_remaining  INTEGER DEFAULT 0,
+            nb_ventes        INTEGER DEFAULT 0,
+            date_debut       TEXT    NOT NULL,
+            date_fin         TEXT    NOT NULL,
+            is_active        INTEGER DEFAULT 1,
+            badge_label      TEXT    DEFAULT 'Deal Sucré',
+            created_by       INTEGER,
+            created_at       TEXT    DEFAULT (datetime('now')),
+            FOREIGN KEY (product_id) REFERENCES shop_products(id)
+        );
+
         -- ── Programme fidélité ──
         CREATE TABLE IF NOT EXISTS kni_loyalty_history (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -8199,11 +8217,58 @@ def init_kni_cdc_db():
         # Seed zones de livraison par défaut
         try:
             zones = [
-                ('Centre-Ville / Ngousso', '["Centre-Ville","Ngousso","Mfandena","Bastos"]', 500, 1, 2),
-                ('Biyem-Assi / Étoug-Ebe', '["Biyem-Assi","Étoug-Ebe","Melen","Cité-Verte"]', 1000, 2, 3),
-                ('Mendong / Mimboman', '["Mendong","Mimboman","Nkol-Eton","Nkol-Bisson"]', 1500, 2, 4),
-                ('Yaoundé Banlieue', '["Obala","Nkolmesseng","Soa","Mbankomo"]', 2500, 3, 5),
-                ('Douala & autres villes', '["Douala","Bafoussam","Kribi","Limbe"]', 5000, 5, 7),
+                # Zone 1 — Yaoundé Centre
+                ('Centre-Ville / Bastos / Ngousso',
+                 '["Centre-Ville","Bastos","Ngousso","Mfandena","Lac","Hippodrome","Nlongkak","Elig-Essono","Quartier-du-Lac"]',
+                 500, 1, 2),
+                # Zone 2 — Yaoundé Ouest
+                ('Biyem-Assi / Étoug-Ebe / Melen',
+                 '["Biyem-Assi","Étoug-Ebe","Melen","Cité-Verte","Damas","Tsinga","Mvog-Ada","Mvog-Mbi","Ekounou"]',
+                 1000, 1, 2),
+                # Zone 3 — Yaoundé Nord
+                ('Omnisports / Nkol-Eton / Essos',
+                 '["Omnisports","Nkol-Eton","Mballa-II","Obili","Biscuiterie","Manguier","Essos","Nkomo","Ntougou"]',
+                 1000, 1, 2),
+                # Zone 4 — Yaoundé Sud
+                ('Simbock / Nkoldongo / Mvan',
+                 '["Simbock","Nkoldongo","Mvan","Odza","Elig-Effa","Nsimeyong","Nkolbisson","Ngousso-Ntem"]',
+                 1200, 2, 3),
+                # Zone 5 — Yaoundé Est
+                ('Mendong / Mimboman / Kondengui',
+                 '["Mendong","Mimboman","Kondengui","Nkol-Bikok","Oyomabang","Ngoulmekong","Ekié","Mvog-Betsi"]',
+                 1200, 2, 3),
+                # Zone 6 — Grande Périphérie Yaoundé
+                ('Olembe / Nkolmesseng / Soa',
+                 '["Olembe","Nkolmesseng","Soa","Nkol-Afamba","Mbankomo","Ngoumou","Biyouha","Awae"]',
+                 2000, 2, 4),
+                # Zone 7 — Banlieue éloignée
+                ('Yaoundé Banlieue Éloignée',
+                 '["Obala","Nkolfamba","Mfou","Akonolinga","Mbalmayo","Saa","Monatelé","Okola"]',
+                 2500, 3, 5),
+                # Zone 8 — Douala
+                ('Douala — Toutes zones',
+                 '["Akwa","Bonanjo","Bonapriso","Bonamoussadi","Makepe","Deido","Ndokotti","Logbessou","New-Bell","Bonaberi","Kotto"]',
+                 4500, 3, 5),
+                # Zone 9 — Ouest Cameroun
+                ('Bafoussam / Dschang / Foumban',
+                 '["Bafoussam","Dschang","Mbouda","Bangangté","Foumban","Baham","Mfou","Bafang"]',
+                 5000, 4, 7),
+                # Zone 10 — Sud Cameroun
+                ('Kribi / Ebolowa / Sangmélima',
+                 '["Kribi","Ebolowa","Sangmélima","Lolodorf","Nkongsamba","Mbalmayo"]',
+                 5000, 4, 7),
+                # Zone 11 — SW/NW Cameroun
+                ('Limbe / Buea / Kumba / Bamenda',
+                 '["Limbe","Buea","Kumba","Bamenda","Nkongsamba","Mamfe","Batibo","Tiko"]',
+                 5500, 5, 7),
+                # Zone 12 — Grand Nord
+                ('Garoua / Ngaoundéré / Maroua',
+                 '["Garoua","Ngaoundéré","Maroua","Bertoua","Guider","Mora","Kaélé","Meiganga"]',
+                 6000, 5, 7),
+                # Zone 13 — Est Cameroun / zones reculées
+                ('Est Cameroun / Zones éloignées',
+                 '["Bertoua","Batouri","Yokadouma","Abong-Mbang","Zone rurale","Village","Commune éloignée"]',
+                 7000, 5, 7),
             ]
             conn.executemany(
                 "INSERT OR IGNORE INTO kni_zones_livraison (nom,quartiers,frais,delai_min,delai_max) VALUES (?,?,?,?,?)",
@@ -8431,8 +8496,17 @@ def shop():
         except Exception: pass
         finally:
             if _c2: _c2.close()
+    # ── Staff connecté via /shop (admin / shop_manager / user avec shop_access) ──
+    uid        = session.get('user_id')
+    role       = session.get('role', '')
+    is_staff   = bool(uid and role in ('admin', 'superadmin', 'shop_manager') or
+                      (uid and get_shop_perms(uid).get('access')))
+    staff_perms = get_shop_perms(uid) if (uid and is_staff) else {'add': False, 'edit': False, 'delete': False, 'access': False}
+    staff_name  = session.get('username', '') if is_staff else ''
+
     return render_template('shop.html', products=products, orders_count=orders_count,
-                           customer=customer, customer_wishlist=customer_wishlist)
+                           customer=customer, customer_wishlist=customer_wishlist,
+                           is_staff=is_staff, staff_perms=staff_perms, staff_name=staff_name)
 
 
 @app.route('/shop/order', methods=['POST'])
@@ -8639,7 +8713,7 @@ def shop_create_product():
              stock,image_url,images,badge,delivery_info,is_active)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         """, (name, d.get('description', ''), d.get('features', ''),
-              d.get('category', 'electronique'),
+              d.get('category', 'smartphone'),
               float(d.get('price', 0) or 0), float(d.get('original_price', 0) or 0),
               int(d.get('stock', 10)), d.get('image_url', ''),
               images_json,
@@ -10389,6 +10463,17 @@ def shop_stock_value():
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 ANTHROPIC_URL     = 'https://api.anthropic.com/v1/messages'
+
+SHOP_CATEGORIES = [
+    'smartphone','ordinateur-portable','ordinateur-bureau','tablette',
+    'router','equipement-info','accessoires-info','cle-usb','imprimante',
+    'ecran-moniteur','composants','smartwatch','casque-audio','enceinte',
+    'camera','tv-video','ventilateur','electronique','electromenager','energie',
+    'mode','chaussures','sacs','bijoux','beaute','parfum',
+    'maison','cuisine','sport','jeux','alimentation',
+    'vehicule','sante','papeterie','autre'
+]
+
 CLAUDE_MODEL      = 'claude-sonnet-4-5'
 
 # Rate limiting simple en mémoire
@@ -10470,31 +10555,38 @@ def shop_ai_chat():
         for p in catalog[:40]
     ) or '(catalogue non chargé)'
 
-    SYSTEM = f"""Tu es Keni, l'assistante IA de k-ni Store — boutique en ligne de qualité basée à Yaoundé, Cameroun.
+    SYSTEM = f"""Tu es Keni, l'assistante IA de k-Ni Store — boutique en ligne de qualité basée à Yaoundé, Cameroun.
 Tu parles français. Tu es chaleureuse, efficace et professionnelle.
 
 CATALOGUE ACTUEL (produits disponibles) :
 {cat_lines}
 
 INFORMATIONS BOUTIQUE :
+- Nom : k-Ni Store | Propriétaire : Fabrice Kengni
 - Paiements : Orange Money 695 072 759 | MTN MoMo 670 695 946 (nom : Fabrice Kengni)
-- Livraison : 3-7 jours ouvrés partout au Cameroun. Offerte sur toute commande.
-- Retours : 7 jours si produit défectueux, avec preuve d'achat.
-- Support WhatsApp : +237 695 072 759 (réponse en moins d'1h)
+- Expéditions : Partout au Cameroun 🇨🇲 — Yaoundé, Douala, Bafoussam, Limbe, Buea, Kribi, Garoua, Maroua, Ngaoundéré, Bamenda, Kumba, Ebolowa, Bertoua et toutes villes du Cameroun.
+- Délais livraison : 1-2 jours Yaoundé centre | 2-4 jours Yaoundé périphérie | 3-5 jours Douala | 4-7 jours autres villes.
+- Frais livraison : offerts sur toute commande passée en boutique (selon zone).
+- Retours : 7 jours si produit défectueux ou non-conforme, avec preuve d'achat.
+- Support WhatsApp : +237 695 072 759 (réponse en moins d'1h, 7j/7)
 - Garantie constructeur sur tous les produits électroniques.
+- Points fidélité : cumulés à chaque achat validé.
+- Code promo personnel : chaque client inscrit reçoit un code unique.
 
 TES RÈGLES :
 1. Réponds toujours en français, sois concise (max 3 phrases par réponse sauf si on demande des détails).
 2. Si un client demande un produit, vérifie dans le catalogue et propose le(s) meilleur(s) choix avec le prix.
-3. Pour les questions de paiement/livraison, donne les infos directement.
-4. Si le client a un problème (retour, réclamation, article manquant, défectueux), collecte :
+3. Pour les questions de paiement/livraison, donne les infos précises selon la ville du client.
+4. Si le client demande si on livre dans sa ville — la réponse est OUI pour tout le Cameroun.
+5. Si le client a un problème (retour, réclamation, article manquant, défectueux), collecte :
    - Nom du produit concerné
    - Numéro de commande si disponible
    - Description du problème
-   Puis indique qu'un conseiller va le contacter.
-5. Après avoir collecté les infos d'un problème, génère un résumé WhatsApp avec le préfixe [ESCALADE].
-6. Si le client dit "parler à quelqu'un", "agent", "humain", "support" → génère directement [ESCALADE].
-7. N'invente jamais de prix ou de produits absents du catalogue.
+   Puis indique qu'un conseiller personnel va le contacter rapidement.
+6. Après avoir collecté les infos d'un problème, génère un résumé WhatsApp avec le préfixe [ESCALADE].
+7. Si le client dit "parler à quelqu'un", "conseiller", "agent", "humain", "support", "aide" → génère directement [ESCALADE] avec un message d'accueil chaleureux vers le conseiller.
+8. N'invente jamais de prix ou de produits absents du catalogue.
+9. Sois enthousiaste sur les expéditions Cameroun — c'est un point fort de la boutique.
 
 FORMAT ESCALADE (quand nécessaire) :
 [ESCALADE]
@@ -10540,21 +10632,25 @@ Réponds UNIQUEMENT avec le texte de ta réponse (sans préfixe ni balise sauf [
 def _ai_chat_fallback(message: str, catalog: list) -> str:
     """Réponses de fallback si l'API Claude n'est pas configurée."""
     msg = message.lower()
-    if any(w in msg for w in ['livraison', 'délai', 'délais']):
-        return "Nous livrons partout au Cameroun en 3 à 7 jours ouvrés. La livraison est offerte sur toute commande. 🚚"
-    if any(w in msg for w in ['paiement', 'payer', 'orange', 'mtn']):
-        return "Vous pouvez payer par Orange Money (695 072 759) ou MTN MoMo (670 695 946) au nom de Fabrice Kengni. 💳"
-    if any(w in msg for w in ['retour', 'remboursement', 'défectueux', 'problème']):
-        return "Pour tout retour ou problème, contactez-nous sur WhatsApp +237 695 072 759. Retours acceptés sous 7 jours. 🔄"
-    if any(w in msg for w in ['prix', 'combien', 'coût']):
-        return "Les prix varient selon le produit. Consultez notre catalogue ou posez-moi une question sur un article précis ! 💰"
+    if any(w in msg for w in ['livraison', 'délai', 'délais', 'expédition', 'livrer', 'envoyer']):
+        return "Nous expédions partout au Cameroun 🇨🇲 — Yaoundé (1-2j), Douala (3-5j), Bafoussam, Kribi, Limbe, Garoua et toutes les villes (4-7j). Livraison offerte sur toute commande ! 🚚"
+    if any(w in msg for w in ['cameroun', 'douala', 'bafoussam', 'kribi', 'limbe', 'buea', 'bamenda', 'garoua', 'maroua', 'bertoua']):
+        return "Oui ! k-Ni Store expédie partout au Cameroun 🇨🇲. Yaoundé, Douala, Bafoussam, Kribi, Limbe, Garoua… nous vous livrons quelle que soit votre ville ! Délais : 3-7 jours ouvrés. 🚚"
+    if any(w in msg for w in ['paiement', 'payer', 'orange', 'mtn', 'momo']):
+        return "Paiement par Orange Money (695 072 759) ou MTN MoMo (670 695 946) au nom de Fabrice Kengni. Vous pouvez aussi payer en espèces à la livraison. 💳"
+    if any(w in msg for w in ['retour', 'remboursement', 'défectueux', 'problème', 'réclamation']):
+        return "Pour tout retour ou problème, contactez notre conseiller WhatsApp au +237 695 072 759. Retours acceptés sous 7 jours avec preuve d'achat. 🔄"
+    if any(w in msg for w in ['conseiller', 'agent', 'humain', 'support', 'aide', 'parler']):
+        return "Je vous transfère vers notre conseiller personnel ! 👤 Cliquez sur 'Continuer sur WhatsApp' ci-dessous pour un suivi immédiat par notre équipe."
+    if any(w in msg for w in ['prix', 'combien', 'coût', 'tarif']):
+        return "Les prix varient selon le produit. Consultez notre catalogue ou précisez l'article qui vous intéresse pour que je vous donne le prix exact ! 💰"
     # Chercher un produit par mot-clé
     for p in catalog[:20]:
         name = (p.get('name') or '').lower()
         if any(w in name for w in msg.split() if len(w) > 3):
             price = p.get('price', 0)
             return f"Nous avons **{p['name']}** à {price:,} XAF. Stock disponible. Souhaitez-vous commander ?"
-    return "Bonjour ! Je suis Keni, votre assistante k-ni Store. Posez-moi vos questions sur nos produits, livraisons ou paiements ! 😊"
+    return "Bonjour ! Je suis Keni, votre assistante k-Ni Store. Je peux vous aider sur les produits, livraisons partout au Cameroun 🇨🇲 et paiements. Comment puis-je vous aider ? 😊"
 
 
 # ── Route : Recommandations IA ───────────────────────────────────────
@@ -12182,8 +12278,398 @@ def kni_popup_delete(pid):
     finally:
         conn.close()
 
+# ═══════════════════════════════════════════════════════════════════
+#  DEALS SUCRÉS — API publique + Admin
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/shop/api/deals-sucres', methods=['GET'])
+def shop_deals_sucres_public():
+    """Retourne les deals actifs et non expirés pour la boutique publique."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT ds.*, sp.name AS product_name, sp.image_url AS product_image,
+                   sp.category AS product_category
+            FROM kni_deals_sucres ds
+            JOIN shop_products sp ON sp.id = ds.product_id
+            WHERE ds.is_active = 1
+              AND datetime(ds.date_debut) <= datetime('now')
+              AND datetime(ds.date_fin)   >= datetime('now')
+              AND ds.stock_remaining > 0
+            ORDER BY ds.created_at DESC
+        """).fetchall()
+        return jsonify({'success': True, 'deals': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/admin/deals-sucres', methods=['GET'])
+@shop_staff_required
+def shop_deals_sucres_admin_list():
+    """Liste tous les deals pour l'admin."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT ds.*, sp.name AS product_name, sp.image_url AS product_image
+            FROM kni_deals_sucres ds
+            JOIN shop_products sp ON sp.id = ds.product_id
+            ORDER BY ds.created_at DESC
+        """).fetchall()
+        return jsonify({'success': True, 'deals': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/admin/deals-sucres', methods=['POST'])
+@shop_staff_required
+def shop_deals_sucres_create():
+    """Créer un nouveau Deal Sucré."""
+    d = request.get_json(force=True, silent=True) or {}
+    required = ['product_id', 'deal_price', 'original_price', 'stock_allocated', 'date_debut', 'date_fin']
+    for field in required:
+        if not d.get(field):
+            return jsonify({'success': False, 'error': f'Champ requis : {field}'}), 400
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO kni_deals_sucres
+            (product_id, deal_price, original_price, stock_allocated, stock_remaining,
+             date_debut, date_fin, is_active, badge_label, created_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
+        """, (
+            int(d['product_id']),
+            float(d['deal_price']),
+            float(d['original_price']),
+            int(d['stock_allocated']),
+            int(d['stock_allocated']),   # stock_remaining = stock_allocated à la création
+            d['date_debut'],
+            d['date_fin'],
+            int(d.get('is_active', 1)),
+            d.get('badge_label', 'Deal Sucré'),
+            session.get('user_id')
+        ))
+        conn.commit()
+        return jsonify({'success': True, 'id': cur.lastrowid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/admin/deals-sucres/<int:did>', methods=['PUT'])
+@shop_staff_required
+def shop_deals_sucres_update(did):
+    """Modifier ou activer/désactiver un deal."""
+    d = request.get_json(force=True, silent=True) or {}
+    conn = get_db_connection()
+    updatable = ['deal_price', 'original_price', 'stock_allocated', 'stock_remaining',
+                 'date_debut', 'date_fin', 'is_active', 'badge_label']
+    upd, vals = [], []
+    for k in updatable:
+        if k in d:
+            upd.append(f'{k}=?')
+            vals.append(d[k])
+    if not upd:
+        return jsonify({'success': False, 'error': 'Rien à modifier'}), 400
+    try:
+        vals.append(did)
+        conn.execute(f"UPDATE kni_deals_sucres SET {','.join(upd)} WHERE id=?", vals)
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/admin/deals-sucres/<int:did>', methods=['DELETE'])
+@shop_staff_required
+def shop_deals_sucres_delete(did):
+    """Supprimer un deal."""
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM kni_deals_sucres WHERE id=?", (did,))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  AGENT IA — Rôle 1 : Noms SEO | Rôle 2 : Descriptions SEO
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/shop/api/ai/suggest-name', methods=['POST'])
+@shop_staff_required
+def shop_ai_suggest_name():
+    """
+    Agent IA Rôle 1 — Génère 5 noms produit optimisés SEO pour le marché camerounais.
+    Entrée : { name, category, keywords }
+    """
+    # Rate limiting par utilisateur
+    uid = str(session.get('user_id', 'anon'))
+    cache_key = f'ai_rate_{uid}'
+    # Simple in-memory rate limiting (20 req/h)
+    if not hasattr(app, '_ai_user_rates'):
+        app._ai_user_rates = {}
+    import time
+    now = time.time()
+    hits = [t for t in app._ai_user_rates.get(cache_key, []) if now - t < 3600]
+    if len(hits) >= 20:
+        return jsonify({'success': False, 'error': 'Limite atteinte — 20 suggestions/heure.'}), 429
+    hits.append(now)
+    app._ai_user_rates[cache_key] = hits
+
+    d = request.get_json(force=True, silent=True) or {}
+    name     = (d.get('name') or '').strip()
+    category = (d.get('category') or '').strip()
+    keywords = (d.get('keywords') or '').strip()
+
+    if not name:
+        return jsonify({'success': False, 'error': 'Nom du produit requis'}), 400
+
+    system = """Tu es un expert SEO e-commerce spécialisé dans le marché camerounais.
+Tu génères des noms de produits optimisés pour Google Shopping et les boutiques en ligne camerounaises.
+Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks."""
+
+    prompt = f"""Génère 5 noms optimisés SEO pour ce produit vendu au Cameroun :
+
+Nom brut : {name}
+Catégorie : {category or 'Non précisée'}
+Mots-clés : {keywords or 'Aucun'}
+
+Critères :
+- 50-65 caractères idéalement
+- Mot-clé principal en début de titre
+- Mentionner le marché camerounais si pertinent (ex: "Cameroun", "Yaoundé", "Prix Cameroun")
+- Lisible et engageant pour le client
+- Adapté à Google Shopping
+
+Réponds UNIQUEMENT avec ce JSON :
+{{
+  "suggestions": [
+    {{"nom": "...", "score": 92, "explication": "..."}} ,
+    {{"nom": "...", "score": 88, "explication": "..."}} ,
+    {{"nom": "...", "score": 85, "explication": "..."}} ,
+    {{"nom": "...", "score": 82, "explication": "..."}} ,
+    {{"nom": "...", "score": 78, "explication": "..."}}
+  ]
+}}"""
+
+    result = _call_anthropic(system, [{'role': 'user', 'content': prompt}], max_tokens=800)
+
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+
+    try:
+        import json as _json
+        raw = result['text'].strip()
+        # Nettoyer les backticks si présents
+        raw = raw.replace('```json', '').replace('```', '').strip()
+        data = _json.loads(raw)
+        return jsonify({'success': True, 'suggestions': data.get('suggestions', [])})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Erreur parsing IA : {str(e)}', 'raw': result.get('text', '')}), 500
+
+
+@app.route('/shop/api/ai/suggest-description', methods=['POST'])
+@shop_staff_required
+def shop_ai_suggest_description():
+    """
+    Agent IA Rôle 2 — Génère une description SEO complète pour un produit.
+    Entrée : { name, specs, tone }
+    """
+    uid = str(session.get('user_id', 'anon'))
+    cache_key = f'ai_desc_rate_{uid}'
+    import time
+    if not hasattr(app, '_ai_user_rates'):
+        app._ai_user_rates = {}
+    now = time.time()
+    hits = [t for t in app._ai_user_rates.get(cache_key, []) if now - t < 3600]
+    if len(hits) >= 20:
+        return jsonify({'success': False, 'error': 'Limite atteinte — 20 descriptions/heure.'}), 429
+    hits.append(now)
+    app._ai_user_rates[cache_key] = hits
+
+    d = request.get_json(force=True, silent=True) or {}
+    name  = (d.get('name') or '').strip()
+    specs = (d.get('specs') or '').strip()
+    tone  = d.get('tone', 'professionnel')   # 'professionnel' ou 'décontracté'
+
+    if not name:
+        return jsonify({'success': False, 'error': 'Nom du produit requis'}), 400
+
+    system = """Tu es un rédacteur SEO expert pour le e-commerce camerounais.
+Tu génères des descriptions de produits optimisées pour Google et engageantes pour les acheteurs camerounais.
+Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks."""
+
+    prompt = f"""Génère une description SEO complète pour ce produit :
+
+Nom : {name}
+Caractéristiques techniques : {specs or 'Non précisées'}
+Ton souhaité : {tone}
+
+Structure attendue :
+- description : 150-250 mots (accroche → caractéristiques → bénéfices client → appel à l'action)
+- bullet_points : 3 points forts courts et percutants
+- meta_description : exactement 150-155 caractères, mot-clé + appel à l'action + localisation Cameroun
+
+Réponds UNIQUEMENT avec ce JSON :
+{{
+  "description": "...",
+  "bullet_points": ["...", "...", "..."],
+  "meta_description": "..."
+}}"""
+
+    result = _call_anthropic(system, [{'role': 'user', 'content': prompt}], max_tokens=1500)
+
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+
+    try:
+        import json as _json
+        raw = result['text'].strip().replace('```json', '').replace('```', '').strip()
+        data = _json.loads(raw)
+        return jsonify({'success': True, **data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Erreur parsing IA : {str(e)}', 'raw': result.get('text', '')}), 500
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  JOURNAL D'ACTIVITÉ — Log complet des actions admin
+# ═══════════════════════════════════════════════════════════════════
+
+def shop_log_activity(action: str, entity_type: str, entity_id=None, details: str = ''):
+    """Helper : enregistre une action dans shop_activity_log."""
+    uid = session.get('user_id')
+    if not uid:
+        return
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT INTO shop_activity_log (user_id, action, entity_type, entity_id, details) VALUES (?,?,?,?,?)",
+            (uid, action, entity_type, entity_id, details)
+        )
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/admin/activity-log', methods=['GET'])
+@shop_staff_required
+def shop_activity_log_list():
+    """Journal d'activité avec filtres — accessible admin/superadmin."""
+    role = session.get('role', '')
+    if role not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Réservé aux administrateurs'}), 403
+
+    user_filter   = request.args.get('user_id', '')
+    action_filter = request.args.get('action_type', '')
+    period        = request.args.get('period', '30')   # jours
+    search        = request.args.get('q', '')
+    export_csv    = request.args.get('export', '') == '1'
+
+    conn = get_db_connection()
+    try:
+        sql = """
+            SELECT sal.*, u.username, u.email
+            FROM shop_activity_log sal
+            LEFT JOIN users u ON u.id = sal.user_id
+            WHERE DATE(sal.created_at) >= DATE('now', ?)
+        """
+        params = [f'-{period} days']
+
+        if user_filter:
+            sql += " AND sal.user_id = ?"
+            params.append(user_filter)
+        if action_filter:
+            sql += " AND sal.action LIKE ?"
+            params.append(f'%{action_filter}%')
+        if search:
+            sql += " AND sal.details LIKE ?"
+            params.append(f'%{search}%')
+
+        sql += " ORDER BY sal.created_at DESC LIMIT 500"
+
+        rows = conn.execute(sql, params).fetchall()
+        logs = [dict(r) for r in rows]
+
+        if export_csv:
+            import csv, io
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['Date', 'Utilisateur', 'Action', 'Entité', 'ID', 'Détails'])
+            for log in logs:
+                writer.writerow([
+                    log.get('created_at', ''),
+                    log.get('username', ''),
+                    log.get('action', ''),
+                    log.get('entity_type', ''),
+                    log.get('entity_id', ''),
+                    log.get('details', '')
+                ])
+            from flask import Response
+            return Response(
+                output.getvalue(),
+                mimetype='text/csv',
+                headers={'Content-Disposition': 'attachment; filename=activite_boutique.csv'}
+            )
+
+        return jsonify({'success': True, 'logs': logs, 'total': len(logs)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/admin/activity-log/stats', methods=['GET'])
+@shop_staff_required
+def shop_activity_log_stats():
+    """Statistiques du journal (badge sidebar)."""
+    conn = get_db_connection()
+    try:
+        # Actions depuis les dernières 24h
+        count = conn.execute(
+            "SELECT COUNT(*) FROM shop_activity_log WHERE created_at >= datetime('now', '-1 day')"
+        ).fetchone()[0]
+        return jsonify({'success': True, 'new_actions_24h': count})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  PWA — Service Worker & Manifest (scope global)
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/sw.js')
+def service_worker():
+    """Sert le service worker depuis la racine pour un scope PWA global."""
+    from flask import send_from_directory
+    return send_from_directory('static', 'sw.js',
+                               mimetype='application/javascript')
+
+@app.route('/manifest.json')
+def manifest():
+    """Sert le manifest PWA depuis la racine."""
+    from flask import send_from_directory
+    return send_from_directory('static', 'manifest.json',
+                               mimetype='application/manifest+json')
+
 
 if __name__ == '__main__':
+
 
     # Démarrer le scheduler d'agenda (rappels email Gmail)
     start_agenda_scheduler()

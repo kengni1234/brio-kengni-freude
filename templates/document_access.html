@@ -464,6 +464,16 @@
 </div>
 {% endif %}
 
+<!-- ✅ BOUTON ACCORDER L'ACCÈS (admin) -->
+{% if is_admin %}
+<div style="margin-top:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  <button class="tbtn tbtn-add" onclick="openGrantModal()" style="background:linear-gradient(135deg,#4a9eff,#7c6aff);box-shadow:0 0 18px rgba(74,158,255,.25)">
+    <i class="fas fa-key"></i> Accorder l'accès à un prospect
+  </button>
+  <span style="font-size:12px;color:var(--dm)">Donnez accès à un document (gratuit ou payant) à n'importe quel email sans paiement</span>
+</div>
+{% endif %}
+
 </div><!-- /.doc-page -->
 
 
@@ -639,6 +649,46 @@
   </div>
 </div>
 
+
+<!-- ══ MODALE ACCORDER L'ACCÈS (admin) ══════════════════════ -->
+<div class="moverlay" id="grantModal">
+  <div class="mbox" style="max-width:430px">
+    <div class="mhdr">
+      <div class="mtitle">🔑 Accorder l'accès à un prospect</div>
+      <button class="mclose" onclick="closeModal('grantModal')">✕</button>
+    </div>
+    <div class="mbody">
+      <div style="background:rgba(74,158,255,.08);border:1px solid rgba(74,158,255,.25);border-radius:10px;padding:11px 14px;font-size:12px;color:var(--db2);margin-bottom:4px">
+        📧 Le prospect recevra immédiatement l'accès au téléchargement via son email, sans paiement.
+      </div>
+      <div class="mg">
+        <div class="mlbl">Document *</div>
+        <select class="msel" id="g_doc_id">
+          {% if is_admin %}
+          {% for d in docs %}
+          <option value="{{ d.id }}">{{ d.title }} {% if d.is_free %}(Gratuit){% else %}({{ d.price|int }} {{ d.currency }}){% endif %}</option>
+          {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+      <div class="mg">
+        <div class="mlbl">Email du prospect *</div>
+        <input class="minp" id="g_email" type="email" placeholder="prospect@email.com">
+      </div>
+      <div class="mg">
+        <div class="mlbl">Note interne (optionnel)</div>
+        <input class="minp" id="g_note" placeholder="Ex : Client VIP, accès offert suite à…">
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="mbtn mbtn-cancel" onclick="closeModal('grantModal')">Annuler</button>
+      <button class="mbtn mbtn-save" id="grantBtn" onclick="submitGrant()"
+              style="background:linear-gradient(135deg,#4a9eff,#7c6aff);box-shadow:0 0 18px rgba(74,158,255,.25)">
+        🔑 Accorder l'accès
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ SCRIPTS ═══════════════════════════════════════════════ -->
 <script>
@@ -830,6 +880,28 @@ async function rejectPurchase(id){
     row.querySelector('.sp').className='sp sp-rejected';row.querySelector('.sp').textContent='❌ Rejeté';
     row.querySelectorAll('.pa').forEach(b=>b.remove());toast('Commande rejetée','err');
   }
+}
+
+/* Accorder l'accès admin */
+function openGrantModal(){
+  document.getElementById('g_email').value='';
+  document.getElementById('g_note').value='';
+  document.getElementById('grantModal').classList.add('open');
+}
+async function submitGrant(){
+  const doc_id=document.getElementById('g_doc_id').value;
+  const email=document.getElementById('g_email').value.trim();
+  const note=document.getElementById('g_note').value.trim()||"Accès accordé par l'administrateur";
+  if(!email||!email.includes('@')){toast('Email invalide','err');return}
+  const btn=document.getElementById('grantBtn');btn.disabled=true;btn.textContent='…';
+  try{
+    const res=await fetch('/documents/grant',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({doc_id:parseInt(doc_id),email,note})});
+    const data=await res.json();
+    if(data.success){closeModal('grantModal');toast(data.message||'✅ Accès accordé !','ok')}
+    else{toast(data.error||'Erreur','err')}
+  }catch(e){toast('Erreur réseau','err')}
+  btn.disabled=false;btn.textContent='🔑 Accorder l\'accès';
 }
 
 /* Logout boutique */
