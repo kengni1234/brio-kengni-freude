@@ -8281,6 +8281,7 @@ def init_kni_cdc_db():
                 ('a-propos', 'À propos de k-Ni Store', '## k-Ni Store — Votre boutique de confiance à Yaoundé\n\nFondé en 2023, k-Ni Store est une boutique e-commerce spécialisée dans l\'électronique, la mode et les accessoires de qualité.\n\n**Notre mission :** Rendre les produits de qualité accessibles à tous les camerounais, avec une livraison rapide et un service client irréprochable.\n\n**Nos valeurs :** Confiance · Qualité · Proximité · Service client\n\n**Contact :** 695 072 759 · 670 695 946\n**Email :** kni.store@gmail.com\n**Adresse :** Yaoundé, Cameroun'),
                 ('contact-sav', 'Contact & SAV', '## Contact & Service Après-Vente\n\n📞 **Téléphones :** 695 072 759 (Orange) | 670 695 946 (MTN)\n📱 **WhatsApp :** wa.me/237695072759\n✉️ **Email :** kni.store@gmail.com\n📍 **Adresse :** Ongola Market A18, Yaoundé\n\n**Horaires :** Lundi – Samedi, 8h – 20h\n\n**Pour un retour ou une réclamation :**\nContactez-nous par WhatsApp avec votre numéro de commande et une description du problème.'),
                 ('cgv', 'Conditions Générales de Vente', '## Conditions Générales de Vente\n\nLes présentes CGV régissent les relations entre k-Ni Store et ses clients.\n\n**Commandes :** Toute commande vaut acceptation des présentes CGV.\n\n**Prix :** Les prix sont en Francs CFA (XAF), TTC, hors frais de livraison.\n\n**Livraison :** Limitée à Yaoundé et environs. Délais indicatifs non contractuels.\n\n**Paiement :** Mobile Money (Orange, MTN), espèces à la livraison.\n\n**Retours :** Voir notre politique de retour (7 jours, article intact).\n\n**Responsabilité :** k-Ni Store ne peut être tenu responsable de dommages indirects.\n\n© 2026 k-Ni Store — Yaoundé, Cameroun'),
+                ('apropos', 'À Propos & Services', '{"presentation": "k-Ni Store est votre boutique de confiance à Yaoundé. Électronique, mode, maison, alimentation — nous livrons partout au Cameroun avec un service client disponible 7j/7 sur WhatsApp.", "services": [{"icon": "📈", "titre": "Formation Trading", "desc": "Apprenez le trading Forex, indices et cryptos avec la Kengni Trading Academy.", "prix": "À partir de 25 000 XAF", "lien": "https://wa.me/237695072759?text=Formation trading", "lien_label": "S\'inscrire"}, {"icon": "💰", "titre": "Gestion Financière", "desc": "Suivi de portefeuille, journal de trading, analyse IA de vos finances.", "prix": "Application gratuite", "lien": "", "lien_label": ""}, {"icon": "📦", "titre": "Livraison Cameroun", "desc": "Livraison dans tout le Cameroun. Yaoundé, Douala, Bafoussam.", "prix": "Selon la zone", "lien": "", "lien_label": ""}, {"icon": "📱", "titre": "Mobile Money", "desc": "Paiement MTN MoMo et Orange Money. Simple, rapide, sécurisé.", "prix": "Sans frais supplémentaires", "lien": "", "lien_label": ""}, {"icon": "💬", "titre": "Support WhatsApp 7j/7", "desc": "Notre équipe répond à toutes vos questions du lundi au dimanche.", "prix": "Gratuit", "lien": "https://wa.me/237695072759", "lien_label": "Nous écrire"}, {"icon": "🤖", "titre": "Analyse IA", "desc": "Assistant intelligent pour analyser vos trades et vos finances.", "prix": "Inclus dans l\'app", "lien": "", "lien_label": ""}], "valeurs": ["Qualité garantie — Chaque produit est vérifié avant expédition.", "Prix transparents — Pas de frais cachés.", "Proximité locale — Nous connaissons les besoins du marché camerounais.", "Innovation continue — Application modernisée régulièrement."], "contacts": [{"icon": "fab fa-whatsapp", "couleur": "#25d366", "titre": "WhatsApp", "detail": "695 072 759", "lien": "https://wa.me/237695072759", "lien_label": "Écrire"}, {"icon": "fas fa-phone", "couleur": "#00b074", "titre": "Orange Money", "detail": "695 072 759 — Fabrice Kengni", "lien": "", "lien_label": ""}, {"icon": "fas fa-phone", "couleur": "#f59e0b", "titre": "MTN MoMo", "detail": "670 695 946 — Fabrice Kengni", "lien": "", "lien_label": ""}, {"icon": "fas fa-map-marker-alt", "couleur": "#ef4444", "titre": "Localisation", "detail": "Yaoundé, Cameroun", "lien": "", "lien_label": ""}], "formations": [{"niveau": "Débutant", "prix": "25 000 XAF", "couleur": "#3b82f6", "lien": "https://wa.me/237695072759?text=Formation Débutant"}, {"niveau": "Intermédiaire", "prix": "50 000 XAF", "couleur": "#00b074", "lien": "https://wa.me/237695072759?text=Formation Intermédiaire"}, {"niveau": "Avancé", "prix": "100 000 XAF", "couleur": "#8b5cf6", "lien": "https://wa.me/237695072759?text=Formation Avancé"}, {"niveau": "Pro / Mentoring", "prix": "200 000 XAF", "couleur": "#d97706", "lien": "https://wa.me/237695072759?text=Formation Pro"}], "formation_cta_lien": "https://wa.me/237695072759?text=Je veux m\'inscrire à la formation trading.", "formation_cta_label": "S\'inscrire à une formation"}'),
             ]
             conn.executemany(
                 "INSERT OR IGNORE INTO kni_pages (slug,titre,contenu) VALUES (?,?,?)",
@@ -12666,6 +12667,27 @@ def manifest():
     from flask import send_from_directory
     return send_from_directory('static', 'manifest.json',
                                mimetype='application/manifest+json')
+
+
+
+@app.route('/shop/api/apropos', methods=['GET'])
+def shop_apropos_public():
+    """Retourne le contenu éditable du panneau À Propos (public)."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute("SELECT contenu FROM kni_pages WHERE slug='apropos'").fetchone()
+        if not row:
+            return jsonify({'success': True, 'content': None})
+        import json as _json
+        try:
+            content = _json.loads(row['contenu'])
+        except Exception:
+            content = {'presentation': row['contenu']}
+        return jsonify({'success': True, 'content': content})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
 
 
 if __name__ == '__main__':

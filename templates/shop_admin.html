@@ -957,6 +957,13 @@ button .emoji, span.emoji, [data-emoji]{
 /* SSE notification */
 .sse-dot{width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;animation:ssePulse 1s ease-in-out infinite}
 @keyframes ssePulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.7}}
+.ap-tab{background:none;border:1.5px solid var(--border-color);border-radius:8px;padding:.4rem .85rem;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text-secondary);transition:.15s;display:flex;align-items:center;gap:.35rem}
+.ap-tab:hover{border-color:rgba(139,92,246,.4);color:#8b5cf6}
+.ap-tab.active{background:rgba(139,92,246,.1);border-color:#8b5cf6;color:#8b5cf6}
+.ap-service-row,.ap-formation-row,.ap-contact-row,.ap-valeur-row{background:var(--secondary-color);border:1px solid var(--border-color);border-radius:10px;padding:.8rem 1rem;display:flex;flex-direction:column;gap:.5rem}
+.ap-row-head{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:.85rem}
+.ap-row-fields{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.ap-del{background:none;border:none;cursor:pointer;color:#f87171;font-size:.85rem;margin-left:auto;padding:.2rem .4rem}
 </style>
 
 <div class="sa-root">
@@ -1000,10 +1007,12 @@ button .emoji, span.emoji, [data-emoji]{
     {% if session.get('role') in ('admin','superadmin') %}
     <button class="sa-nb" id="nb-popup" onclick="go('popup')"><i class="fas fa-comment-dots"></i> Pop-ups boutique <span id="popupBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#6366f1;color:#fff;border-radius:20px;padding:.05rem .35rem">●</span></button>
     {% endif %}
+    <button class="sa-nb" id="nb-categories" onclick="go('categories')" style="border-left:3px solid #3b82f6"><i class="fas fa-sitemap" style="color:#3b82f6"></i> Catégories</button>
     <button class="sa-nb" id="nb-zones" onclick="go('zones')"><i class="fas fa-map-marker-alt"></i> Zones Livraison</button>
     <button class="sa-nb" id="nb-fidelite" onclick="go('fidelite')"><i class="fas fa-star"></i> Programme Fidélité</button>
     <button class="sa-nb" id="nb-promos" onclick="go('promos')"><i class="fas fa-tags"></i> Codes Promo</button>
     <button class="sa-nb" id="nb-pages" onclick="go('pages')"><i class="fas fa-file-alt"></i> Pages du site</button>
+    <button class="sa-nb" id="nb-apropos" onclick="go('apropos')" style="border-left:3px solid #8b5cf6"><i class="fas fa-info-circle" style="color:#8b5cf6"></i> À Propos &amp; Services</button>
     <button class="sa-nb" id="nb-messages" onclick="go('messages')"><i class="fas fa-envelope"></i> Messages SAV <span id="msgBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#ef4444;color:#fff;border-radius:20px;padding:.05rem .35rem">0</span></button>
     <div class="sa-sep"></div>
     <div class="sa-grp">Équipe</div>
@@ -2073,6 +2082,90 @@ button .emoji, span.emoji, [data-emoji]{
   </div>
 </div>
 
+<!-- ══ CATÉGORIES & SOUS-CATÉGORIES ══ -->
+<div class="sec" id="sec-categories">
+  <div class="sh">
+    <h4><i class="fas fa-sitemap" style="color:#3b82f6"></i> Catégories &amp; Sous-catégories</h4>
+    <button class="btn-p" onclick="openCatModal()" style="background:#3b82f6;border-color:#3b82f6"><i class="fas fa-plus"></i> Nouvelle catégorie</button>
+  </div>
+  <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.82rem;color:var(--text-secondary)">
+    <i class="fas fa-info-circle" style="color:#3b82f6;margin-right:.4rem"></i>
+    Les catégories créées ici apparaissent automatiquement dans la boutique. Les <strong style="color:var(--text-primary)">sous-catégories</strong> s'affichent dans le menu déroulant de leur parente.
+  </div>
+  <div id="catTree" style="display:flex;flex-direction:column;gap:.5rem"></div>
+</div>
+
+<!-- ══ À PROPOS & SERVICES — Éditeur ══ -->
+<div class="sec" id="sec-apropos">
+  <div class="sh">
+    <h4><i class="fas fa-info-circle" style="color:#8b5cf6"></i> À Propos &amp; Services</h4>
+    <button class="btn-p" onclick="saveApropos()" style="background:#8b5cf6;border-color:#8b5cf6"><i class="fas fa-save"></i> Enregistrer tout</button>
+  </div>
+  <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:.75rem 1rem;margin-bottom:1.2rem;font-size:.82rem;color:var(--text-secondary)">
+    <i class="fas fa-info-circle" style="color:#8b5cf6;margin-right:.4rem"></i>
+    Ce contenu s'affiche dans le panneau <strong style="color:#8b5cf6">À Propos</strong> de la boutique publique. Modifiez les services, ajoutez des liens de formation, et enregistrez.
+  </div>
+
+  <!-- Onglets -->
+  <div style="display:flex;gap:.4rem;margin-bottom:1.2rem;flex-wrap:wrap">
+    <button class="ap-tab active" data-tab="tab-presentation" onclick="switchApTab(this,'tab-presentation')"><i class="fas fa-store"></i> Présentation</button>
+    <button class="ap-tab" data-tab="tab-services" onclick="switchApTab(this,'tab-services')"><i class="fas fa-concierge-bell"></i> Services</button>
+    <button class="ap-tab" data-tab="tab-formations" onclick="switchApTab(this,'tab-formations')"><i class="fas fa-graduation-cap"></i> Formations</button>
+    <button class="ap-tab" data-tab="tab-contacts" onclick="switchApTab(this,'tab-contacts')"><i class="fas fa-phone"></i> Contacts</button>
+    <button class="ap-tab" data-tab="tab-valeurs" onclick="switchApTab(this,'tab-valeurs')"><i class="fas fa-star"></i> Valeurs</button>
+  </div>
+
+  <!-- Onglet Présentation -->
+  <div class="ap-tab-body" id="tab-presentation">
+    <div style="margin-bottom:.8rem">
+      <label class="fl">Texte de présentation (affiché sous le logo)</label>
+      <textarea class="fc" id="ap-presentation" rows="4" placeholder="Votre boutique de confiance..."></textarea>
+    </div>
+  </div>
+
+  <!-- Onglet Services -->
+  <div class="ap-tab-body" id="tab-services" style="display:none">
+    <div id="ap-services-list" style="display:flex;flex-direction:column;gap:.75rem"></div>
+    <button class="btn-g" onclick="addApService()" style="margin-top:.75rem;width:100%;justify-content:center">
+      <i class="fas fa-plus" style="color:#00b074"></i> Ajouter un service
+    </button>
+  </div>
+
+  <!-- Onglet Formations -->
+  <div class="ap-tab-body" id="tab-formations" style="display:none">
+    <div style="margin-bottom:.8rem">
+      <label class="fl">Lien du bouton principal "S'inscrire"</label>
+      <input class="fc" id="ap-formation-cta-lien" placeholder="https://wa.me/237695072759?text=...">
+    </div>
+    <div style="margin-bottom:1rem">
+      <label class="fl">Texte du bouton principal</label>
+      <input class="fc" id="ap-formation-cta-label" placeholder="S'inscrire à une formation">
+    </div>
+    <label class="fl" style="margin-bottom:.5rem">Niveaux de formation</label>
+    <div id="ap-formations-list" style="display:flex;flex-direction:column;gap:.6rem"></div>
+    <button class="btn-g" onclick="addApFormation()" style="margin-top:.6rem;width:100%;justify-content:center">
+      <i class="fas fa-plus" style="color:#8b5cf6"></i> Ajouter un niveau
+    </button>
+  </div>
+
+  <!-- Onglet Contacts -->
+  <div class="ap-tab-body" id="tab-contacts" style="display:none">
+    <div id="ap-contacts-list" style="display:flex;flex-direction:column;gap:.6rem"></div>
+    <button class="btn-g" onclick="addApContact()" style="margin-top:.6rem;width:100%;justify-content:center">
+      <i class="fas fa-plus" style="color:#00b074"></i> Ajouter un contact
+    </button>
+  </div>
+
+  <!-- Onglet Valeurs -->
+  <div class="ap-tab-body" id="tab-valeurs" style="display:none">
+    <div id="ap-valeurs-list" style="display:flex;flex-direction:column;gap:.5rem"></div>
+    <button class="btn-g" onclick="addApValeur()" style="margin-top:.6rem;width:100%;justify-content:center">
+      <i class="fas fa-plus" style="color:#00b074"></i> Ajouter une valeur
+    </button>
+  </div>
+
+</div>
+
 <div class="sec" id="sec-flash">
   <div class="sh">
     <h4><i class="fas fa-bolt" style="color:#f59e0b"></i> Flash Sales — Ventes Flash</h4>
@@ -2481,6 +2574,53 @@ button .emoji, span.emoji, [data-emoji]{
     <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
       <button class="btn-g" onclick="closePopupModal()">Annuler</button>
       <button class="btn-p" onclick="savePopup()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CATÉGORIE ══ -->
+<div class="modal-ov" id="catModal">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-hd">
+      <h4 id="catModalTitle">Nouvelle catégorie</h4>
+      <button class="modal-x" onclick="closeCatModal()">&times;</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="catId">
+      <div style="margin-bottom:.7rem">
+        <label class="fl">Label (nom affiché) *</label>
+        <input class="fc" id="catLabel" placeholder="Ex : Électronique" oninput="autoCatSlug()">
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div>
+          <label class="fl">Slug (URL) *</label>
+          <input class="fc" id="catSlug" placeholder="electronique" style="font-family:monospace;font-size:.85rem">
+        </div>
+        <div>
+          <label class="fl">Emoji</label>
+          <input class="fc" id="catEmoji" placeholder="📦" maxlength="4" style="font-size:1.3rem;text-align:center">
+        </div>
+      </div>
+      <div style="margin-bottom:.7rem">
+        <label class="fl">Catégorie parente (laisser vide = catégorie principale)</label>
+        <select class="fc" id="catParent">
+          <option value="">— Catégorie principale —</option>
+        </select>
+      </div>
+      <div class="fg2" style="margin-bottom:.7rem">
+        <div>
+          <label class="fl">Position (ordre d'affichage)</label>
+          <input class="fc" id="catPosition" type="number" value="0" min="0">
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;padding-top:1.4rem">
+          <input type="checkbox" id="catActive" checked style="width:16px;height:16px;accent-color:#3b82f6">
+          <label for="catActive" style="font-size:.85rem;font-weight:600;cursor:pointer">Visible en boutique</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closeCatModal()">Annuler</button>
+      <button class="btn-p" onclick="saveCat()" style="background:#3b82f6;border-color:#3b82f6"><i class="fas fa-save"></i> Enregistrer</button>
     </div>
   </div>
 </div>
@@ -2952,7 +3092,7 @@ function toast(m, ok=true){
 }
 
 /* ══ NAVIGATION ══ */
-const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','zones','fidelite','promos','pages','messages','popup'];
+const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','deals','categories','zones','fidelite','promos','pages','apropos','messages','popup','activity'];
 function go(n){
   SECS.forEach(s=>{
     const el=document.getElementById('sec-'+s);
@@ -2983,6 +3123,8 @@ function go(n){
   if(n==='messages') loadMessages();
   if(n==='popup') loadPopups();
   if(n==='activity') loadActivityLog();
+  if(n==='categories') loadCategories();
+  if(n==='apropos') loadAproposAdmin();
 }
 
 /* ══ FORM TABS ══ */
@@ -7232,6 +7374,300 @@ async function deletePopup(id, titre){
   }catch(e){}
 })();
 {% endraw %}
+
+/* ══════════════════════════════════════════════════════════════
+   CATÉGORIES & SOUS-CATÉGORIES — JS complet
+══════════════════════════════════════════════════════════════ */
+let _catEditId = null;
+
+async function loadCategories(){
+  const d = await cdcFetch('/shop/api/admin/categories');
+  const tree = document.getElementById('catTree');
+  if(!tree) return;
+  if(!d.success || !d.categories?.length){
+    tree.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-sitemap" style="font-size:2rem;opacity:.2;display:block;margin-bottom:.5rem"></i>Aucune catégorie — créez-en une !</div>';
+    return;
+  }
+  tree.innerHTML = d.categories.map(parent => `
+    <div style="background:var(--secondary-color);border:1px solid var(--border-color);border-radius:12px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:rgba(59,130,246,.04);border-bottom:1px solid var(--border-color)">
+        <span style="font-size:1.4rem">${parent.emoji||'📦'}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.95rem">${parent.label}</div>
+          <div style="font-size:.72rem;font-family:monospace;color:var(--text-secondary)">${parent.slug}</div>
+        </div>
+        <span style="font-size:.7rem;padding:.15rem .5rem;border-radius:20px;background:${parent.is_active?'rgba(0,176,116,.15)':'rgba(107,114,128,.15)'};color:${parent.is_active?'var(--primary-color)':'var(--text-secondary)'}">${parent.is_active?'Visible':'Masqué'}</span>
+        <span style="font-size:.72rem;color:var(--text-secondary)">${(parent.children||[]).length} sous-cat.</span>
+        <button class="btn-g" style="padding:.28rem .6rem;font-size:.72rem" onclick="editCat(${parent.id})"><i class="fas fa-edit"></i></button>
+        <button class="btn-g" style="padding:.28rem .6rem;font-size:.72rem" onclick="openCatModal(null,${parent.id})"><i class="fas fa-plus" style="color:#3b82f6"></i></button>
+        <button class="btn-g" style="padding:.28rem .6rem;font-size:.72rem" onclick="deleteCat(${parent.id},'${(parent.label||'').replace(/'/g,"\\'")}')"><i class="fas fa-trash" style="color:#f87171"></i></button>
+      </div>
+      ${(parent.children||[]).length ? `
+      <div style="padding:.5rem .75rem;display:flex;flex-wrap:wrap;gap:.4rem">
+        ${(parent.children||[]).map(ch => `
+          <div style="display:inline-flex;align-items:center;gap:.35rem;background:var(--accent-color);border:1px solid var(--border-color);border-radius:20px;padding:.25rem .65rem;font-size:.78rem">
+            <span>${ch.emoji||'📦'}</span>
+            <span style="font-weight:600">${ch.label}</span>
+            <span style="font-family:monospace;color:var(--text-secondary);font-size:.68rem">${ch.slug}</span>
+            <span style="padding:.1rem .35rem;border-radius:10px;font-size:.65rem;background:${ch.is_active?'rgba(0,176,116,.12)':'rgba(107,114,128,.12)'};color:${ch.is_active?'var(--primary-color)':'var(--text-secondary)'}">${ch.is_active?'✓':'✗'}</span>
+            <button style="background:none;border:none;cursor:pointer;padding:0;color:var(--text-secondary);font-size:.7rem" onclick="editCat(${ch.id})" title="Modifier"><i class="fas fa-edit"></i></button>
+            <button style="background:none;border:none;cursor:pointer;padding:0;color:#f87171;font-size:.7rem" onclick="deleteCat(${ch.id},'${(ch.label||'').replace(/'/g,"\\'")}')"><i class="fas fa-times"></i></button>
+          </div>`).join('')}
+      </div>` : '<div style="padding:.5rem 1rem;font-size:.78rem;color:var(--text-secondary);font-style:italic">Aucune sous-catégorie</div>'}
+    </div>`).join('');
+}
+
+function autoCatSlug(){
+  if(_catEditId) return; // ne pas écraser en mode édition
+  const label = document.getElementById('catLabel').value;
+  const slug = label.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  document.getElementById('catSlug').value = slug;
+}
+
+async function openCatModal(data=null, defaultParentId=null){
+  _catEditId = data?.id || null;
+  document.getElementById('catModalTitle').textContent = data ? 'Modifier la catégorie' : 'Nouvelle catégorie';
+  document.getElementById('catId').value = data?.id || '';
+  document.getElementById('catLabel').value = data?.label || '';
+  document.getElementById('catSlug').value = data?.slug || '';
+  document.getElementById('catEmoji').value = data?.emoji || '📦';
+  document.getElementById('catPosition').value = data?.position || 0;
+  document.getElementById('catActive').checked = data?.is_active !== 0;
+  // Remplir le select parent
+  const sel = document.getElementById('catParent');
+  const d2 = await cdcFetch('/shop/api/admin/categories');
+  sel.innerHTML = '<option value="">— Catégorie principale —</option>';
+  (d2.flat||[]).filter(c=>!c.parent_id && c.id !== _catEditId).forEach(cat=>{
+    const opt = document.createElement('option');
+    opt.value = cat.id;
+    opt.textContent = cat.emoji + ' ' + cat.label;
+    if(data?.parent_id === cat.id || defaultParentId === cat.id) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  document.getElementById('catModal').classList.add('open');
+}
+
+function closeCatModal(){ document.getElementById('catModal').classList.remove('open'); }
+
+async function saveCat(){
+  const label = document.getElementById('catLabel').value.trim();
+  const slug  = document.getElementById('catSlug').value.trim();
+  if(!label || !slug){ toast('Label et slug requis', false); return; }
+  const payload = {
+    label, slug,
+    emoji:     document.getElementById('catEmoji').value.trim() || '📦',
+    parent_id: document.getElementById('catParent').value || null,
+    position:  parseInt(document.getElementById('catPosition').value)||0,
+    is_active: document.getElementById('catActive').checked ? 1 : 0,
+  };
+  const id = document.getElementById('catId').value;
+  const url    = id ? `/shop/api/admin/categories/${id}` : '/shop/api/admin/categories';
+  const method = id ? 'PUT' : 'POST';
+  const d = await cdcFetch(url, { method, body: JSON.stringify(payload) });
+  if(d.success){
+    toast(id ? '✅ Catégorie mise à jour' : '✅ Catégorie créée');
+    closeCatModal();
+    loadCategories();
+  } else {
+    toast('❌ ' + (d.error||'Erreur'), false);
+  }
+}
+
+async function editCat(id){
+  const d = await cdcFetch('/shop/api/admin/categories');
+  const cat = (d.flat||[]).find(c=>c.id===id);
+  if(cat) openCatModal(cat);
+  else toast('Catégorie introuvable', false);
+}
+
+async function deleteCat(id, label){
+  if(!confirm(`Supprimer "${label}" et toutes ses sous-catégories ?`)) return;
+  const d = await cdcFetch(`/shop/api/admin/categories/${id}`, { method:'DELETE' });
+  if(d.success){ toast('🗑 Catégorie supprimée'); loadCategories(); }
+  else toast('❌ ' + (d.error||'Erreur'), false);
+}
+/* ══════════════════════════════════════════════════════════════ */
+
+
+/* ══════════════════════════════════════════════════════════════
+   À PROPOS — Éditeur admin (shop_admin)
+══════════════════════════════════════════════════════════════ */
+let _apData = null;
+
+function switchApTab(btn, tabId){
+  document.querySelectorAll('.ap-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.ap-tab-body').forEach(b => b.style.display = 'none');
+  btn.classList.add('active');
+  const el = document.getElementById(tabId);
+  if(el) el.style.display = '';
+}
+
+async function loadAproposAdmin(){
+  const d = await cdcFetch('/shop/api/admin/pages/apropos');
+  if(!d.success){ toast('Impossible de charger le contenu À Propos', false); return; }
+  let content;
+  try { content = JSON.parse(d.page.contenu); } catch(e) { content = {}; }
+  _apData = content;
+  // Remplir présentation
+  document.getElementById('ap-presentation').value = content.presentation || '';
+  // Remplir services
+  renderApServices(content.services || []);
+  // Remplir formations
+  renderApFormations(content.formations || []);
+  document.getElementById('ap-formation-cta-lien').value = content.formation_cta_lien || '';
+  document.getElementById('ap-formation-cta-label').value = content.formation_cta_label || "S'inscrire à une formation";
+  // Remplir contacts
+  renderApContacts(content.contacts || []);
+  // Remplir valeurs
+  renderApValeurs(content.valeurs || []);
+}
+
+/* ── SERVICES ── */
+function renderApServices(services){
+  const list = document.getElementById('ap-services-list');
+  if(!list) return;
+  list.innerHTML = services.map((s, i) => `
+    <div class="ap-service-row" id="apsvc-${i}">
+      <div class="ap-row-head">
+        <input style="width:50px;font-size:1.2rem;text-align:center;background:none;border:1px solid var(--border-color);border-radius:6px;padding:.15rem" value="${s.icon||'📦'}" oninput="apSvcUpdate(${i},'icon',this.value)">
+        <input class="fc" style="flex:1;font-weight:700" value="${s.titre||''}" placeholder="Titre du service" oninput="apSvcUpdate(${i},'titre',this.value)">
+        <button class="ap-del" onclick="delApService(${i})" title="Supprimer"><i class="fas fa-trash"></i></button>
+      </div>
+      <textarea class="fc" rows="2" placeholder="Description du service" oninput="apSvcUpdate(${i},'desc',this.value)">${s.desc||''}</textarea>
+      <div class="ap-row-fields">
+        <div><label class="fl">Prix / Tarif</label><input class="fc" value="${s.prix||''}" placeholder="25 000 XAF" oninput="apSvcUpdate(${i},'prix',this.value)"></div>
+        <div><label class="fl">Label du lien (optionnel)</label><input class="fc" value="${s.lien_label||''}" placeholder="S'inscrire" oninput="apSvcUpdate(${i},'lien_label',this.value)"></div>
+      </div>
+      <div><label class="fl">Lien URL (optionnel — WhatsApp, site externe…)</label><input class="fc" value="${s.lien||''}" placeholder="https://wa.me/237..." oninput="apSvcUpdate(${i},'lien',this.value)"></div>
+    </div>`).join('');
+}
+function apSvcUpdate(i, field, val){
+  if(!_apData.services) _apData.services = [];
+  if(!_apData.services[i]) _apData.services[i] = {};
+  _apData.services[i][field] = val;
+}
+function addApService(){
+  if(!_apData) _apData = {};
+  if(!_apData.services) _apData.services = [];
+  _apData.services.push({icon:'📦', titre:'Nouveau service', desc:'', prix:'', lien:'', lien_label:''});
+  renderApServices(_apData.services);
+}
+function delApService(i){
+  _apData.services.splice(i,1);
+  renderApServices(_apData.services);
+}
+
+/* ── FORMATIONS ── */
+function renderApFormations(formations){
+  const list = document.getElementById('ap-formations-list');
+  if(!list) return;
+  list.innerHTML = formations.map((f, i) => `
+    <div class="ap-formation-row">
+      <div class="ap-row-head">
+        <input class="fc" style="flex:1;font-weight:700" value="${f.niveau||''}" placeholder="Niveau (ex: Débutant)" oninput="apFrmUpdate(${i},'niveau',this.value)">
+        <button class="ap-del" onclick="delApFormation(${i})"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="ap-row-fields">
+        <div><label class="fl">Prix (ex: 25 000 XAF)</label><input class="fc" value="${f.prix||''}" oninput="apFrmUpdate(${i},'prix',this.value)"></div>
+        <div><label class="fl">Couleur badge (hex)</label><input class="fc" type="color" value="${f.couleur||'#3b82f6'}" style="height:38px" oninput="apFrmUpdate(${i},'couleur',this.value)"></div>
+      </div>
+      <div><label class="fl">Lien inscription (WhatsApp ou URL)</label><input class="fc" value="${f.lien||''}" placeholder="https://wa.me/237695072759?text=Formation..." oninput="apFrmUpdate(${i},'lien',this.value)"></div>
+    </div>`).join('');
+}
+function apFrmUpdate(i, field, val){
+  if(!_apData.formations) _apData.formations = [];
+  if(!_apData.formations[i]) _apData.formations[i] = {};
+  _apData.formations[i][field] = val;
+}
+function addApFormation(){
+  if(!_apData) _apData = {};
+  if(!_apData.formations) _apData.formations = [];
+  _apData.formations.push({niveau:'Nouveau niveau', prix:'', couleur:'#3b82f6', lien:''});
+  renderApFormations(_apData.formations);
+}
+function delApFormation(i){ _apData.formations.splice(i,1); renderApFormations(_apData.formations); }
+
+/* ── CONTACTS ── */
+function renderApContacts(contacts){
+  const list = document.getElementById('ap-contacts-list');
+  if(!list) return;
+  list.innerHTML = contacts.map((ct, i) => `
+    <div class="ap-contact-row">
+      <div class="ap-row-head">
+        <input class="fc" style="flex:1;font-weight:700" value="${ct.titre||''}" placeholder="Titre (ex: WhatsApp)" oninput="apCtUpdate(${i},'titre',this.value)">
+        <input type="color" value="${ct.couleur||'#00b074'}" style="width:34px;height:34px;border:none;cursor:pointer;border-radius:6px" oninput="apCtUpdate(${i},'couleur',this.value)">
+        <button class="ap-del" onclick="delApContact(${i})"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="ap-row-fields">
+        <div><label class="fl">Détail affiché</label><input class="fc" value="${ct.detail||''}" placeholder="695 072 759" oninput="apCtUpdate(${i},'detail',this.value)"></div>
+        <div><label class="fl">Icône Font Awesome</label><input class="fc" value="${ct.icon||''}" placeholder="fab fa-whatsapp" oninput="apCtUpdate(${i},'icon',this.value)"></div>
+      </div>
+      <div class="ap-row-fields">
+        <div><label class="fl">Lien URL (optionnel)</label><input class="fc" value="${ct.lien||''}" placeholder="https://wa.me/..." oninput="apCtUpdate(${i},'lien',this.value)"></div>
+        <div><label class="fl">Label du bouton</label><input class="fc" value="${ct.lien_label||''}" placeholder="Écrire" oninput="apCtUpdate(${i},'lien_label',this.value)"></div>
+      </div>
+    </div>`).join('');
+}
+function apCtUpdate(i, field, val){
+  if(!_apData.contacts) _apData.contacts = [];
+  if(!_apData.contacts[i]) _apData.contacts[i] = {};
+  _apData.contacts[i][field] = val;
+}
+function addApContact(){
+  if(!_apData) _apData = {};
+  if(!_apData.contacts) _apData.contacts = [];
+  _apData.contacts.push({titre:'', detail:'', icon:'fas fa-phone', couleur:'#00b074', lien:'', lien_label:''});
+  renderApContacts(_apData.contacts);
+}
+function delApContact(i){ _apData.contacts.splice(i,1); renderApContacts(_apData.contacts); }
+
+/* ── VALEURS ── */
+function renderApValeurs(valeurs){
+  const list = document.getElementById('ap-valeurs-list');
+  if(!list) return;
+  list.innerHTML = valeurs.map((v, i) => `
+    <div class="ap-valeur-row" style="flex-direction:row;align-items:center;gap:.5rem">
+      <input class="fc" style="flex:1" value="${v||''}" placeholder="Ex: Qualité garantie — description" oninput="apValUpdate(${i},this.value)">
+      <button class="ap-del" onclick="delApValeur(${i})"><i class="fas fa-trash"></i></button>
+    </div>`).join('');
+}
+function apValUpdate(i, val){
+  if(!_apData.valeurs) _apData.valeurs = [];
+  _apData.valeurs[i] = val;
+}
+function addApValeur(){
+  if(!_apData) _apData = {};
+  if(!_apData.valeurs) _apData.valeurs = [];
+  _apData.valeurs.push('');
+  renderApValeurs(_apData.valeurs);
+}
+function delApValeur(i){ _apData.valeurs.splice(i,1); renderApValeurs(_apData.valeurs); }
+
+/* ── SAUVEGARDE ── */
+async function saveApropos(){
+  if(!_apData){ toast('Aucune donnée à sauvegarder', false); return; }
+  // Récupérer présentation
+  _apData.presentation = document.getElementById('ap-presentation').value.trim();
+  _apData.formation_cta_lien  = document.getElementById('ap-formation-cta-lien').value.trim();
+  _apData.formation_cta_label = document.getElementById('ap-formation-cta-label').value.trim();
+  const payload = {
+    titre: 'À Propos & Services',
+    contenu: JSON.stringify(_apData)
+  };
+  const d = await cdcFetch('/shop/api/admin/pages/apropos', {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  });
+  if(d.success){
+    toast('✅ À Propos sauvegardé — visible en boutique immédiatement');
+  } else {
+    toast('❌ ' + (d.error||'Erreur'), false);
+  }
+}
+/* ══════════════════════════════════════════════════════════════ */
+
 </script>
 
 {% endblock %}
