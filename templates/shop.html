@@ -286,7 +286,20 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .pcard-staff-edit{position:absolute;bottom:.5rem;right:.5rem;background:rgba(0,176,116,.92);color:#fff;border:none;border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.78rem;transition:.18s;z-index:3;text-decoration:none;backdrop-filter:blur(4px)}
 .pcard-staff-edit:hover{background:#007a50;transform:scale(1.1)}
 /* ── Filigrane k-Ni sur les images produit ── */
+<<<<<<< Updated upstream
 /* watermark supprimé */
+=======
+.pcard-watermark{
+  position:absolute;bottom:.5rem;right:.5rem;z-index:2;
+  background:#00b074;
+  width:38px;height:16px;border-radius:8px;
+  opacity:.92;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+  pointer-events:none;
+  font-size:0;
+}
+.pcard-watermark .wm-n{font-size:0}
+>>>>>>> Stashed changes
 .stock-warn{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(239,68,68,.9));color:#fff;font-size:.94rem;font-weight:700;padding:.4rem .6rem;text-align:center}
 .pcard-body{padding:.85rem}
 .pcard-cat{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--orange);font-weight:700;margin-bottom:.25rem}
