@@ -108,8 +108,8 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 /* ── À PROPOS — Panneau déroulant ── */
 .apropos-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;opacity:0;pointer-events:none;transition:opacity .3s}
 .apropos-overlay.open{opacity:1;pointer-events:all}
-.apropos-panel{position:fixed;bottom:0;left:0;right:0;max-height:92dvh;background:var(--white);border-radius:22px 22px 0 0;z-index:1101;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,1.1,.64,1);overflow-y:auto;scrollbar-width:thin}
-.apropos-panel.open{transform:translateY(0)}
+.apropos-panel{position:fixed;bottom:0;left:0;right:0;max-height:92dvh;background:var(--white);border-radius:22px 22px 0 0;z-index:1101;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,1.1,.64,1);overflow-y:auto;scrollbar-width:thin;pointer-events:none}
+.apropos-panel.open{transform:translateY(0);pointer-events:auto}
 .apropos-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0}
 .apropos-header{padding:1.2rem 1.5rem .6rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:2;border-bottom:1px solid var(--border)}
 .apropos-header h2{font-size:1.2rem;font-weight:900;display:flex;align-items:center;gap:.5rem}
@@ -162,7 +162,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .cat-group.open .cat-group-btn{border-bottom-color:var(--orange)}
 .cg-arrow{font-size:.65rem;transition:transform .2s;margin-left:.2rem}
 .cat-group.open .cg-arrow{transform:rotate(180deg)}
-.cat-group-dropdown{display:none;position:absolute;top:100%;left:0;min-width:220px;background:var(--white);border:1px solid var(--border);border-radius:0 0 12px 12px;box-shadow:0 8px 28px rgba(0,0,0,.12);z-index:500;padding:.4rem 0}
+.cat-group-dropdown{display:none;position:absolute;top:100%;left:0;min-width:220px;background:var(--white);border:1px solid var(--border);border-radius:0 0 12px 12px;box-shadow:0 8px 28px rgba(0,0,0,.12);z-index:600;padding:.4rem 0}
 .cat-group.open .cat-group-dropdown{display:block}
 .cat-pill.sub{border-bottom:none;padding:.5rem 1.1rem;font-size:var(--fs-xs);font-weight:600;color:var(--ink2);width:100%;display:flex}
 .cat-pill.sub:hover,.cat-pill.sub.active{color:var(--orange);background:#e8f8f2;border-bottom:none}
@@ -204,7 +204,7 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 .prod-count span{color:var(--orange);font-weight:700}
 .view-btns{display:flex;gap:.3rem}
 #prodGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.1rem;transition:.3s}
-#prodGrid .pcard{order:0}
+#prodGrid .pcard{order:0;position:relative;z-index:1}
 #prodGrid.list-view{grid-template-columns:1fr}
 .pcard{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:.22s;position:relative;animation:fadeUp .4s ease forwards}
 .pcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px)}
@@ -2397,7 +2397,7 @@ function applyFilters(){
       if(cat && cat !== lastCat){
         const sep = document.createElement('div');
         sep.className = 'cat-separator';
-        sep.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:.75rem;padding:.5rem 0 .2rem;margin-top:.6rem';
+        sep.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:.75rem;padding:.5rem 0 .2rem;margin-top:.6rem;pointer-events:none';
         sep.innerHTML = \`<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);white-space:nowrap">\${_catLabel(cat)}</span><span style="flex:1;height:1px;background:var(--border)"></span>\`;
         sep.style.order = idx - 0.5;
         document.getElementById('prodGrid').appendChild(sep);
