@@ -2398,7 +2398,7 @@ function applyFilters(){
         const sep = document.createElement('div');
         sep.className = 'cat-separator';
         sep.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:.75rem;padding:.5rem 0 .2rem;margin-top:.6rem;pointer-events:none';
-        sep.innerHTML = \`<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);white-space:nowrap">\${_catLabel(cat)}</span><span style="flex:1;height:1px;background:var(--border)"></span>\`;
+        sep.innerHTML = `<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);white-space:nowrap">\${_catLabel(cat)}</span><span style="flex:1;height:1px;background:var(--border)"></span>`;
         sep.style.order = idx - 0.5;
         document.getElementById('prodGrid').appendChild(sep);
         lastCat = cat;
@@ -4285,35 +4285,35 @@ function buildAproposHTML(ct){
       ${f.lien ? `<a href="${f.lien}" target="_blank" rel="noopener" style="display:inline-block;margin-top:.35rem;background:${f.couleur||'#3b82f6'};color:#fff;padding:.25rem .7rem;border-radius:8px;text-decoration:none;font-size:.72rem;font-weight:700">S'inscrire →</a>` : ''}
     </div>`).join('');
 
-  return \`
+  return `
     <div style="background:linear-gradient(135deg,#e8f8f2,#d1f0e6);border-radius:14px;padding:1.1rem 1.2rem;margin-bottom:1rem;display:flex;gap:.9rem">
       <span style="font-size:2.2rem;flex-shrink:0">🇨🇲</span>
-      <div style="font-size:.88rem;color:var(--ink2);line-height:1.6">\${presentation}</div>
+      <div style="font-size:.88rem;color:var(--ink2);line-height:1.6">${presentation}</div>
     </div>
-    \${services.length ? \`
+    ${services.length ? `
     <div class="ap-section open">
       <div class="ap-section-head"><span class="ap-icon">⚡</span><div><div>Nos Services</div><div style="font-size:.72rem;font-weight:400;color:var(--muted)">Ce que nous proposons</div></div><i class="fas fa-chevron-down ap-arrow"></i></div>
-      <div class="ap-section-body"><div class="ap-section-content"><div class="ap-services">\${svcCards}</div></div></div>
-    </div>\` : ''}
-    \${valeurs.length ? \`
+      <div class="ap-section-body"><div class="ap-section-content"><div class="ap-services">${svcCards}</div></div></div>
+    </div>` : ''}
+    ${valeurs.length ? `
     <div class="ap-section">
       <div class="ap-section-head"><span class="ap-icon">🌟</span><div><div>Nos Valeurs</div></div><i class="fas fa-chevron-down ap-arrow"></i></div>
-      <div class="ap-section-body"><div class="ap-section-content"><ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:.5rem">\${valeursHTML}</ul></div></div>
-    </div>\` : ''}
-    \${contacts.length ? \`
+      <div class="ap-section-body"><div class="ap-section-content"><ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:.5rem">${valeursHTML}</ul></div></div>
+    </div>` : ''}
+    ${contacts.length ? `
     <div class="ap-section">
       <div class="ap-section-head"><span class="ap-icon">📍</span><div><div>Contact &amp; Localisation</div></div><i class="fas fa-chevron-down ap-arrow"></i></div>
-      <div class="ap-section-body"><div class="ap-section-content"><div style="display:flex;flex-direction:column;gap:.6rem">\${contactsHTML}</div></div></div>
-    </div>\` : ''}
-    \${formations.length ? \`
+      <div class="ap-section-body"><div class="ap-section-content"><div style="display:flex;flex-direction:column;gap:.6rem">${contactsHTML}</div></div></div>
+    </div>` : ''}
+    ${formations.length ? `
     <div class="ap-section">
       <div class="ap-section-head"><span class="ap-icon">🎓</span><div><div>Kengni Trading Academy</div><div style="font-size:.72rem;font-weight:400;color:var(--muted)">Formations en trading</div></div><i class="fas fa-chevron-down ap-arrow"></i></div>
       <div class="ap-section-body"><div class="ap-section-content">
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:.9rem">\${frmCards}</div>
-        \${ctaLien ? \`<a href="\${ctaLien}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:.5rem;background:var(--orange);color:#fff;padding:.75rem;border-radius:12px;text-decoration:none;font-weight:800;font-size:.9rem"><i class="fab fa-whatsapp"></i> \${ctaLabel}</a>\` : ''}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:.9rem">${frmCards}</div>
+        ${ctaLien ? `<a href="${ctaLien}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:.5rem;background:var(--orange);color:#fff;padding:.75rem;border-radius:12px;text-decoration:none;font-weight:800;font-size:.9rem"><i class="fab fa-whatsapp"></i> ${ctaLabel}</a>` : ''}
       </div></div>
-    </div>\` : ''}
-  \`;
+    </div>` : ''}
+  `;
 }
 function closeApropos(){
   document.getElementById('aproposOverlay').classList.remove('open');

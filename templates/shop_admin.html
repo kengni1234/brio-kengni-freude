@@ -1024,6 +1024,12 @@ button .emoji, span.emoji, [data-emoji]{
     <div class="sa-sep"></div>
     <div class="sa-grp">Admin</div>
     <button class="sa-nb" id="nb-acc" onclick="go('acc')"><i class="fas fa-user-shield"></i> Accès boutique</button>
+    <div class="sa-sep"></div>
+    <div class="sa-grp">WordPress & SEO</div>
+    <button class="sa-nb" id="nb-wordpress" onclick="go('wordpress')" style="border-left:3px solid #21759b"><i class="fab fa-wordpress" style="color:#21759b"></i> WordPress</button>
+    <button class="sa-nb" id="nb-seo" onclick="go('seo')" style="border-left:3px solid #10b981"><i class="fas fa-search" style="color:#10b981"></i> SEO & Contenu IA</button>
+    <button class="sa-nb" id="nb-keywords" onclick="go('keywords')" style="border-left:3px solid #8b5cf6"><i class="fas fa-key" style="color:#8b5cf6"></i> Mots-clés</button>
+    <button class="sa-nb" id="nb-calendar" onclick="go('calendar')" style="border-left:3px solid #f59e0b"><i class="fas fa-calendar-alt" style="color:#f59e0b"></i> Calendrier éditorial</button>
     <button class="sa-nb" id="nb-activity" onclick="go('activity')" style="border-left:3px solid #8b5cf6"><i class="fas fa-history" style="color:#8b5cf6"></i> Journal Activité <span id="activityBadge" style="display:none;margin-left:auto;font-size:.65rem;background:#8b5cf6;color:#fff;border-radius:20px;padding:.05rem .35rem">0</span></button>
     {% endif %}
     <div class="sa-sep"></div>
@@ -1060,7 +1066,7 @@ button .emoji, span.emoji, [data-emoji]{
         <span class="sa-name">{{ p.name[:44] }}{% if p.name|length>44 %}…{% endif %}</span>
         <div style="display:flex;align-items:center;gap:.5rem">
           <span class="sa-stock {{ 'out' if p.stock==0 else 'low' }}">{{ 'RUPTURE' if p.stock==0 else p.stock~' restants' }}</span>
-          {% if user_perms.edit %}<button class="ab ab-ed" onclick="loadEdit({{ p.id }})" style="padding:.22rem .5rem;font-size:.66rem;flex:none">Modifier</button>{% endif %}
+          {% if user_perms.edit %}<button class="ab ab-ed" onclick="event.stopPropagation();loadEdit({{ p.id }})" style="padding:.22rem .5rem;font-size:.66rem;flex:none">Modifier</button>{% endif %}
         </div>
       </div>
       {% endfor %}
@@ -1159,12 +1165,12 @@ button .emoji, span.emoji, [data-emoji]{
         </div>
         <div class="pacts">
           <button class="ab ab-vw" onclick="showProd({{ p.id }})"><i class="fas fa-eye"></i></button>
-          {% if user_perms.edit %}<button class="ab ab-img" onclick="openQuickImg({{ p.id }},'{{ p.name|replace("'","\\'") }}','{{ p.image_url or '' }}')" title="Changer l'image rapidement"><i class="fas fa-camera"></i></button>{% endif %}
-          {% if user_perms.edit %}<button class="ab ab-ed" onclick="loadEdit({{ p.id }})"><i class="fas fa-edit"></i> Modifier</button>{% endif %}
-          <button class="ab ab-inv" onclick="genInvFromProduct({{ p.id }})" title="Facture rapide"><i class="fas fa-file-invoice"></i></button>
-          {% if user_perms.edit %}<button class="ab ab-tg" onclick="toggleP({{ p.id }})"><i class="fas fa-{{ 'eye-slash' if p.is_active else 'eye' }}"></i></button>{% endif %}
-          {% if user_perms.delete %}<button class="ab ab-dl" onclick="delProd({{ p.id }},'{{ p.name|replace("'","\\'") }}')"><i class="fas fa-trash"></i></button>{% endif %}
-          <button class="ab ab-ai" onclick="openAIModal({{ p.id }})" title="Analyser avec l'IA"><i class="fas fa-robot"></i></button>
+          {% if user_perms.edit %}<button class="ab ab-img" onclick="event.stopPropagation();openQuickImg({{ p.id }},'{{ p.name|replace("'","\\'") }}','{{ p.image_url or '' }}')" title="Changer l'image rapidement"><i class="fas fa-camera"></i></button>{% endif %}
+          {% if user_perms.edit %}<button class="ab ab-ed" onclick="event.stopPropagation();loadEdit({{ p.id }})"><i class="fas fa-edit"></i> Modifier</button>{% endif %}
+          <button class="ab ab-inv" onclick="event.stopPropagation();genInvFromProduct({{ p.id }})" title="Facture rapide"><i class="fas fa-file-invoice"></i></button>
+          {% if user_perms.edit %}<button class="ab ab-tg" onclick="event.stopPropagation();toggleP({{ p.id }})"><i class="fas fa-{{ 'eye-slash' if p.is_active else 'eye' }}"></i></button>{% endif %}
+          {% if user_perms.delete %}<button class="ab ab-dl" onclick="event.stopPropagation();delProd({{ p.id }},'{{ p.name|replace("'","\\'") }}')"><i class="fas fa-trash"></i></button>{% endif %}
+          <button class="ab ab-ai" onclick="event.stopPropagation();openAIModal({{ p.id }})" title="Analyser avec l'IA"><i class="fas fa-robot"></i></button>
         </div>
       </div>
     </div>
@@ -1309,7 +1315,7 @@ button .emoji, span.emoji, [data-emoji]{
   </div>
   <div style="display:flex;gap:.6rem;margin-top:.85rem;flex-wrap:wrap">
     <button class="btn-p" id="saveBtn" onclick="saveProd()" style="flex:1;justify-content:center;padding:.78rem;font-size:.9rem;min-width:160px"><i class="fas fa-save"></i> Enregistrer</button>
-    <button class="btn-ai" onclick="openAIModal(null,'form')" title="L'IA analyse et optimise votre fiche produit"><i class="fas fa-robot"></i> Analyser IA</button>
+    <button class="btn-ai" onclick="event.stopPropagation();openAIModal(null,'form')" title="L'IA analyse et optimise votre fiche produit"><i class="fas fa-robot"></i> Analyser IA</button>
     <button class="btn-ai" onclick="openAISuggestName()" title="Générer des noms SEO avec l'IA" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)"><i class="fas fa-tag"></i> Noms SEO</button>
     <button class="btn-ai" onclick="openAISuggestDesc()" title="Générer une description SEO avec l'IA" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)"><i class="fas fa-align-left"></i> Description SEO</button>
   </div>
@@ -1827,6 +1833,231 @@ button .emoji, span.emoji, [data-emoji]{
   <div id="activityCount" style="text-align:center;font-size:.82rem;color:var(--text-secondary);padding:.6rem 0;margin-top:.3rem"></div>
 </div>
 {% endif %}
+
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION WORDPRESS — Connexion & Gestion
+══════════════════════════════════════════════════════ -->
+<div class="sec" id="sec-wordpress">
+  <div class="sh">
+    <h4><i class="fab fa-wordpress" style="color:#21759b"></i> WordPress — Connexion & Gestion</h4>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn-g" onclick="checkWPStatus()"><i class="fas fa-plug"></i> Tester connexion</button>
+      <button class="btn-g" onclick="syncProducts()"><i class="fas fa-sync"></i> Sync produits → WooCommerce</button>
+    </div>
+  </div>
+
+  <!-- Statut connexion -->
+  <div id="wpStatusBanner" style="display:none;padding:.8rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:.85rem"></div>
+
+  <!-- Config WordPress -->
+  <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem;margin-bottom:1.2rem">
+    <h5 style="font-size:.88rem;font-weight:700;margin-bottom:1rem;color:var(--text-primary);display:flex;align-items:center;gap:.5rem">
+      <i class="fas fa-cog" style="color:#21759b"></i> Configuration WordPress
+    </h5>
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:.82rem;color:var(--text-secondary)">
+      <i class="fas fa-info-circle" style="color:#f59e0b;margin-right:.35rem"></i>
+      En production, configurez ces valeurs via des <strong style="color:var(--text-primary)">variables d'environnement</strong> sur PythonAnywhere :<br>
+      <code style="font-size:.78rem;background:var(--bg-main);padding:.1rem .3rem;border-radius:4px;margin-top:.3rem;display:inline-block">WP_SITE_URL · WP_USERNAME · WP_APP_PASSWORD · WP_JWT_TOKEN</code>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
+      <div class="fg">
+        <label class="fl">URL du site WordPress *</label>
+        <input class="fi" type="url" id="wpSiteUrl" placeholder="https://votre-site.com">
+      </div>
+      <div class="fg">
+        <label class="fl">Username WordPress</label>
+        <input class="fi" type="text" id="wpUsername" placeholder="admin">
+      </div>
+      <div class="fg">
+        <label class="fl">Application Password</label>
+        <input class="fi" type="password" id="wpAppPassword" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx">
+      </div>
+      <div class="fg">
+        <label class="fl">JWT Token (WordPress MCP)</label>
+        <input class="fi" type="password" id="wpJwtToken" placeholder="eyJhbGci...">
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem">
+      <button class="btn-p" onclick="saveWPConfig()"><i class="fas fa-save"></i> Sauvegarder (session)</button>
+      <button class="btn-g" onclick="checkWPStatus()"><i class="fas fa-check-circle"></i> Tester la connexion</button>
+    </div>
+  </div>
+
+  <!-- Articles WordPress -->
+  <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem;margin-bottom:1.2rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h5 style="font-size:.88rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:.5rem">
+        <i class="fas fa-file-alt" style="color:#21759b"></i> Articles WordPress
+      </h5>
+      <button class="btn-p" style="font-size:.78rem" onclick="loadWPPosts()"><i class="fas fa-refresh"></i> Actualiser</button>
+    </div>
+    <div id="wpPostsList" style="min-height:80px;font-size:.83rem;color:var(--text-secondary);text-align:center;padding:1rem">
+      Cliquez sur Actualiser pour charger les articles.
+    </div>
+  </div>
+
+  <!-- MCP Tools -->
+  <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h5 style="font-size:.88rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:.5rem">
+        <i class="fas fa-robot" style="color:#8b5cf6"></i> Outils MCP WordPress disponibles
+        <span style="font-size:.72rem;color:var(--text-secondary);font-weight:400">(nécessite JWT Token)</span>
+      </h5>
+      <button class="btn-g" style="font-size:.78rem" onclick="loadMCPTools()"><i class="fas fa-list"></i> Lister les outils</button>
+    </div>
+    <div id="mcpToolsList" style="min-height:60px;font-size:.82rem;color:var(--text-secondary);text-align:center;padding:.5rem">
+      Les outils MCP s'affichent ici après connexion JWT.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION SEO IA — Audit, Génération, Optimisation
+══════════════════════════════════════════════════════ -->
+<div class="sec" id="sec-seo">
+  <div class="sh">
+    <h4><i class="fas fa-search" style="color:#10b981"></i> SEO & Contenu IA — Propulsé par Claude</h4>
+  </div>
+
+  <!-- Tabs SEO -->
+  <div style="display:flex;gap:.4rem;margin-bottom:1.2rem;border-bottom:1px solid var(--border-color);padding-bottom:.5rem">
+    <button class="btn-g" id="seoTab1" onclick="showSEOTab(1)" style="border-color:var(--primary-color);color:var(--primary-color)">🔍 Audit SEO</button>
+    <button class="btn-g" id="seoTab2" onclick="showSEOTab(2)">✍️ Générer article</button>
+    <button class="btn-g" id="seoTab3" onclick="showSEOTab(3)">⚡ Optimiser article</button>
+    <button class="btn-g" id="seoTab4" onclick="showSEOTab(4)">🏷️ Meta Tags</button>
+  </div>
+
+  <!-- Tab 1: Audit SEO -->
+  <div id="seoTabContent1">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem">
+      <h5 style="font-size:.88rem;font-weight:700;margin-bottom:1rem;color:var(--text-primary)">Audit SEO complet avec Claude</h5>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
+        <div class="fg"><label class="fl">URL à auditer</label><input class="fi" type="url" id="auditUrl" placeholder="https://votre-site.com/page"></div>
+        <div class="fg"><label class="fl">Titre de la page</label><input class="fi" type="text" id="auditTitle" placeholder="Titre actuel de la page"></div>
+        <div class="fg" style="grid-column:1/-1"><label class="fl">Contenu (extrait optionnel)</label><textarea class="fi" id="auditContent" rows="3" placeholder="Collez le contenu de la page ou laissez vide..."></textarea></div>
+      </div>
+      <button class="btn-p" id="auditBtn" onclick="runSEOAudit()"><i class="fas fa-search"></i> Lancer l\'audit IA</button>
+      <div id="auditResult" style="margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Générer article -->
+  <div id="seoTabContent2" style="display:none">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem">
+      <h5 style="font-size:.88rem;font-weight:700;margin-bottom:1rem;color:var(--text-primary)">Générer un article SEO avec Claude</h5>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
+        <div class="fg" style="grid-column:1/-1"><label class="fl">Sujet de l'article *</label><input class="fi" type="text" id="artSujet" placeholder="ex: Comment choisir un bon smartphone à Yaoundé"></div>
+        <div class="fg"><label class="fl">Mots-clés cibles</label><input class="fi" type="text" id="artKeywords" placeholder="smartphone, Yaoundé, prix..."></div>
+        <div class="fg"><label class="fl">Catégorie WordPress</label><input class="fi" type="text" id="artCategorie" placeholder="Technologie"></div>
+        <div class="fg"><label class="fl">Ton</label>
+          <select class="fi" id="artTon"><option value="professionnel">Professionnel</option><option value="décontracté">Décontracté</option><option value="expert">Expert</option></select>
+        </div>
+        <div class="fg"><label class="fl">Longueur</label>
+          <select class="fi" id="artLongueur"><option value="court">Court (~400 mots)</option><option value="moyen" selected>Moyen (~800 mots)</option><option value="long">Long (~1500 mots)</option></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.8rem">
+        <label style="display:flex;align-items:center;gap:.4rem;font-size:.83rem;cursor:pointer">
+          <input type="checkbox" id="artAutoPublish"> Envoyer comme brouillon WordPress
+        </label>
+      </div>
+      <button class="btn-p" id="artBtn" onclick="generateArticle()"><i class="fas fa-magic"></i> Générer avec Claude</button>
+      <div id="artResult" style="margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Optimiser article -->
+  <div id="seoTabContent3" style="display:none">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem">
+      <h5 style="font-size:.88rem;font-weight:700;margin-bottom:1rem;color:var(--text-primary)">Optimiser un article WordPress existant</h5>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:.8rem;margin-bottom:.8rem;align-items:end">
+        <div class="fg" style="margin-bottom:0"><label class="fl">ID de l'article WordPress</label><input class="fi" type="number" id="optPostId" placeholder="ex: 42"></div>
+        <button class="btn-g" onclick="loadWPPosts(); showSEOTab(3)"><i class="fas fa-list"></i> Voir articles</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:.4rem;font-size:.83rem;cursor:pointer;margin-bottom:.8rem">
+        <input type="checkbox" id="optPushWP"> Appliquer les optimisations sur WordPress
+      </label>
+      <button class="btn-p" id="optBtn" onclick="optimizePost()"><i class="fas fa-bolt"></i> Optimiser avec Claude</button>
+      <div id="optResult" style="margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Meta Tags -->
+  <div id="seoTabContent4" style="display:none">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem">
+      <h5 style="font-size:.88rem;font-weight:700;margin-bottom:1rem;color:var(--text-primary)">Générer Meta Tags SEO</h5>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
+        <div class="fg"><label class="fl">Titre de la page</label><input class="fi" type="text" id="metaTitle" placeholder="Titre de votre page"></div>
+        <div class="fg"><label class="fl">Type de page</label>
+          <select class="fi" id="metaType"><option value="article">Article</option><option value="product">Produit</option><option value="page">Page</option><option value="homepage">Accueil</option></select>
+        </div>
+        <div class="fg" style="grid-column:1/-1"><label class="fl">Contenu principal</label><textarea class="fi" id="metaContent" rows="3" placeholder="Collez le contenu de votre page..."></textarea></div>
+      </div>
+      <button class="btn-p" id="metaBtn" onclick="generateMetaTags()"><i class="fas fa-tags"></i> Générer les meta tags</button>
+      <div id="metaResult" style="margin-top:1rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION MOTS-CLÉS IA
+══════════════════════════════════════════════════════ -->
+<div class="sec" id="sec-keywords">
+  <div class="sh">
+    <h4><i class="fas fa-key" style="color:#8b5cf6"></i> Recherche de Mots-clés IA — Cameroun</h4>
+  </div>
+  <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
+      <div class="fg"><label class="fl">Thème / Produit *</label><input class="fi" type="text" id="kwTheme" placeholder="ex: ordinateur portable, smartphone..."></div>
+      <div class="fg"><label class="fl">Secteur</label>
+        <select class="fi" id="kwSecteur">
+          <option value="e-commerce">E-commerce</option>
+          <option value="informatique">Informatique</option>
+          <option value="mode">Mode & Beauté</option>
+          <option value="electronique">Électronique</option>
+          <option value="alimentation">Alimentation</option>
+          <option value="services">Services</option>
+          <option value="finance">Finance & Investissement</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-p" id="kwBtn" onclick="searchKeywords()"><i class="fas fa-search"></i> Analyser avec Claude</button>
+    <div id="kwResult" style="margin-top:1.2rem"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION CALENDRIER ÉDITORIAL IA
+══════════════════════════════════════════════════════ -->
+<div class="sec" id="sec-calendar">
+  <div class="sh">
+    <h4><i class="fas fa-calendar-alt" style="color:#f59e0b"></i> Calendrier Éditorial IA</h4>
+  </div>
+  <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-bottom:.8rem">
+      <div class="fg"><label class="fl">Secteur</label><input class="fi" type="text" id="calSecteur" placeholder="e-commerce, tech..." value="e-commerce"></div>
+      <div class="fg"><label class="fl">Objectif</label>
+        <select class="fi" id="calObjectif">
+          <option value="trafic organique">Trafic organique</option>
+          <option value="conversions">Conversions</option>
+          <option value="notoriété marque">Notoriété</option>
+          <option value="fidélisation">Fidélisation</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Nombre d'articles</label>
+        <select class="fi" id="calNb">
+          <option value="4">4 articles (hebdo)</option>
+          <option value="8" selected>8 articles (2/sem)</option>
+          <option value="12">12 articles (3/sem)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-p" id="calBtn" onclick="generateCalendar()"><i class="fas fa-magic"></i> Générer le planning IA</button>
+    <div id="calResult" style="margin-top:1.2rem"></div>
+  </div>
+</div>
+
 
 <!-- ══ ACCÈS BOUTIQUE ══ -->
 {% if session.get('role') in ('admin','superadmin') %}
@@ -3090,9 +3321,40 @@ function toast(m, ok=true){
   t.classList.add('show'); clearTimeout(t._t);
   t._t=setTimeout(()=>t.classList.remove('show'),3200);
 }
+/* KniUI POLYFILL — active si kni-popups.js absent */
+if (typeof KniUI === 'undefined') {
+  window.KniUI = {
+    toast: Object.assign(
+      function(opts){ toast(typeof opts==='string' ? opts : (opts.msg||opts.message||''), opts.type!=='error'); },
+      {
+        success: function(m,t){ toast((t?t+' \u2014 ':'')+m, true); },
+        error:   function(m,t){ toast((t?t+' \u2014 ':'')+m, false); },
+        warning: function(m,t){ toast((t?t+' \u2014 ':'')+m, false); }
+      }
+    ),
+    danger:  function(m,o){ return Promise.resolve(confirm((o&&o.title?o.title+'\n\n':'')+m.replace(/<[^>]+>/g,''))); },
+    confirm: function(m,o){ return Promise.resolve(confirm((o&&o.title?o.title+'\n\n':'')+m.replace(/<[^>]+>/g,''))); },
+    warning: function(m,o){ return Promise.resolve(confirm((o&&o.title?o.title+'\n\n':'')+m.replace(/<[^>]+>/g,''))); },
+    loading: {
+      show: function(m){
+        var e=document.getElementById('kniLoadOverlay');
+        if(!e){ e=document.createElement('div'); e.id='kniLoadOverlay';
+          e.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:.8rem';
+          e.innerHTML='<div style="width:44px;height:44px;border:4px solid rgba(255,255,255,.2);border-top:4px solid #00b074;border-radius:50%;animation:spin 1s linear infinite"></div><div id="kniLoadMsg" style="color:#fff;font-size:.9rem;font-weight:600">Chargement…</div>';
+          document.body.appendChild(e);
+        }
+        e.style.display='flex';
+        var t=e.querySelector('#kniLoadMsg'); if(t) t.textContent=m||'Chargement…';
+      },
+      hide: function(){ var e=document.getElementById('kniLoadOverlay'); if(e) e.style.display='none'; }
+    }
+  };
+}
+/* FIN KniUI POLYFILL */
+
 
 /* ══ NAVIGATION ══ */
-const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','deals','categories','zones','fidelite','promos','pages','apropos','messages','popup','activity'];
+const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','deals','categories','zones','fidelite','promos','pages','apropos','messages','popup','activity','wordpress','seo','keywords','calendar'];
 function go(n){
   SECS.forEach(s=>{
     const el=document.getElementById('sec-'+s);
@@ -3125,6 +3387,11 @@ function go(n){
   if(n==='activity') loadActivityLog();
   if(n==='categories') loadCategories();
   if(n==='apropos') loadAproposAdmin();
+
+  if(n==='wordpress') { if(typeof loadWordPress==='function') loadWordPress(); }
+  if(n==='seo')        { if(typeof initSEOPanel==='function') initSEOPanel(); }
+  if(n==='keywords')   { if(typeof initKeywordsPanel==='function') initKeywordsPanel(); }
+  if(n==='calendar')   { if(typeof initCalendarPanel==='function') initCalendarPanel(); }
 }
 
 /* ══ FORM TABS ══ */
@@ -3518,8 +3785,8 @@ function showProd(id){
       <span style="color:var(--text-secondary)">Badge</span><span>${p.badge||'—'}</span>
     </div>
     <div style="display:flex;gap:.45rem;margin-top:.9rem">
-      <button class="btn-p" style="font-size:.75rem;padding:.45rem .8rem" onclick="loadEdit(${id})"><i class="fas fa-edit"></i> Modifier</button>
-      <button class="btn-g" style="font-size:.75rem;padding:.45rem .8rem" onclick="genInvFromProduct(${id})"><i class="fas fa-file-invoice"></i> Facture</button>
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem .8rem" onclick="event.stopPropagation();loadEdit(${id})"><i class="fas fa-edit"></i> Modifier</button>
+      <button class="btn-g" style="font-size:.75rem;padding:.45rem .8rem" onclick="event.stopPropagation();genInvFromProduct(${id})"><i class="fas fa-file-invoice"></i> Facture</button>
     </div>`;
   document.getElementById('dpanel').classList.remove('closed');
 }
@@ -4721,6 +4988,357 @@ function setVal(id, val){
 
 /* ══ INIT ══ */
 addSpecRow('Bluetooth','5.3'); addSpecRow('Couleur','Noir'); addSpecRow('Garantie','1 an');
+
+/* ═══════════════════════════════════════════════════════════════
+   WORDPRESS MCP INTEGRATION — JavaScript
+═══════════════════════════════════════════════════════════════ */
+
+// ── SEO Tabs ───────────────────────────────────────────────────
+function showSEOTab(n) {
+  for(let i=1;i<=4;i++){
+    const t=document.getElementById(`seoTabContent${i}`);
+    const b=document.getElementById(`seoTab${i}`);
+    if(t) t.style.display = i===n ? 'block' : 'none';
+    if(b) { b.style.borderColor = i===n ? 'var(--primary-color)' : '';
+             b.style.color      = i===n ? 'var(--primary-color)' : ''; }
+  }
+}
+function initSEOPanel()   { showSEOTab(1); }
+function initKeywordsPanel() { /* already shown */ }
+function initCalendarPanel() { /* already shown */ }
+
+// ── WordPress Status ───────────────────────────────────────────
+async function checkWPStatus() {
+  const banner = document.getElementById('wpStatusBanner');
+  if(banner){ banner.style.display='block'; banner.style.background='rgba(245,158,11,.1)'; banner.style.border='1px solid rgba(245,158,11,.3)'; banner.innerHTML='<i class="fas fa-spinner fa-spin" style="color:#f59e0b"></i> Test de connexion...'; }
+  const d = await cdcFetch('/wp/status');
+  if(!banner) return;
+  if(!d.configured) {
+    banner.style.background='rgba(239,68,68,.1)'; banner.style.border='1px solid rgba(239,68,68,.3)';
+    banner.innerHTML=`<i class="fas fa-times-circle" style="color:#ef4444"></i> <strong>Non configuré</strong> — Ajoutez WP_SITE_URL dans les variables d'environnement PythonAnywhere.`;
+  } else if(d.success) {
+    const mcp = d.mcp_available ? '✅ MCP actif' : '⚠️ MCP non disponible (JWT Token requis)';
+    const auth = d.has_jwt ? '🔑 JWT' : d.has_app_password ? '🔐 App Password' : "❌ Pas d'auth";
+    banner.style.background='rgba(0,176,116,.08)'; banner.style.border='1px solid rgba(0,176,116,.25)';
+    banner.innerHTML=`<i class="fas fa-check-circle" style="color:#00b074"></i> <strong>Connecté</strong> — ${d.url} · Auth: ${auth} · ${mcp}`;
+  } else {
+    banner.style.background='rgba(239,68,68,.08)'; banner.style.border='1px solid rgba(239,68,68,.2)';
+    banner.innerHTML=`<i class="fas fa-exclamation-triangle" style="color:#ef4444"></i> Erreur: ${d.error || 'Connexion impossible'}`;
+  }
+}
+
+async function saveWPConfig() {
+  const d = await cdcFetch('/wp/config', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      site_url:     document.getElementById('wpSiteUrl').value,
+      username:     document.getElementById('wpUsername').value,
+      app_password: document.getElementById('wpAppPassword').value,
+      jwt_token:    document.getElementById('wpJwtToken').value,
+    })
+  });
+  if(d.success) { toast('✅ Configuration sauvegardée'); checkWPStatus(); }
+  else toast('❌ '+d.error, false);
+}
+
+// ── Articles WordPress ─────────────────────────────────────────
+async function loadWPPosts() {
+  const el = document.getElementById('wpPostsList');
+  if(el) el.innerHTML='<i class="fas fa-spinner fa-spin"></i> Chargement...';
+  const d = await cdcFetch('/wp/api/posts?per_page=15');
+  if(!el) return;
+  if(!d.success || !d.posts?.length) {
+    el.innerHTML='<div style="color:var(--text-secondary);padding:1rem;text-align:center">'+
+      (d.error || 'Aucun article. Vérifiez la connexion WordPress.')+'</div>';
+    return;
+  }
+  el.innerHTML = d.posts.map(p => {
+    const status = p.status==='publish' ? '<span style="color:#00b074;font-size:.7rem">● Publié</span>'
+                 : p.status==='draft'   ? '<span style="color:#f59e0b;font-size:.7rem">● Brouillon</span>'
+                 : `<span style="font-size:.7rem;color:var(--text-secondary)">● ${p.status}</span>`;
+    const titre = p.title?.rendered || '(sans titre)';
+    const date  = p.date ? new Date(p.date).toLocaleDateString('fr-CM') : '';
+    return `<div style="display:flex;align-items:center;gap:.75rem;padding:.55rem .7rem;border-bottom:1px solid var(--border-color)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.84rem;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${titre}</div>
+        <div style="font-size:.72rem;color:var(--text-secondary)">#${p.id} · ${date}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+        ${status}
+        <button onclick="document.getElementById('optPostId').value=${p.id};showSEOTab(3)" class="btn-g" style="padding:.2rem .5rem;font-size:.72rem;min-height:auto"><i class="fas fa-magic"></i> Opt.</button>
+        ${p.link ? `<a href="${p.link}" target="_blank" class="btn-g" style="padding:.2rem .5rem;font-size:.72rem;min-height:auto"><i class="fas fa-external-link-alt"></i></a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MCP Tools ──────────────────────────────────────────────────
+async function loadMCPTools() {
+  const el = document.getElementById('mcpToolsList');
+  if(el) el.innerHTML='<i class="fas fa-spinner fa-spin"></i> Chargement des outils MCP...';
+  const d = await cdcFetch('/wp/mcp/tools');
+  if(!el) return;
+  if(!d.success) {
+    el.innerHTML=`<div style="color:var(--text-secondary);font-size:.82rem;padding:.5rem">${d.error || 'Erreur. JWT Token configuré ?'}</div>`;
+    return;
+  }
+  const tools = d.tools || [];
+  el.innerHTML = tools.length === 0 ? '<div style="color:var(--text-secondary);font-size:.82rem">Aucun outil disponible.</div>'
+    : `<div style="display:flex;flex-wrap:wrap;gap:.4rem">` +
+      tools.map(t => `<span style="font-size:.75rem;padding:.2rem .55rem;background:rgba(33,117,155,.1);color:#21759b;border-radius:5px;border:1px solid rgba(33,117,155,.2)" title="${t.description || ''}">${t.name}</span>`).join('') +
+      `</div><div style="font-size:.75rem;color:var(--text-secondary);margin-top:.5rem">${tools.length} outil(s) disponible(s)</div>`;
+}
+
+async function syncProducts() {
+  if(!await KniUI.danger('Synchroniser les produits k-Ni → WooCommerce ?', {title:'Sync produits'})) return;
+  toast('Synchronisation en cours...');
+  const d = await cdcFetch('/wp/mcp/sync-products', {method:'POST'});
+  if(d.success) {
+    toast(`✅ ${d.synced_count} produit(s) synchronisé(s)${d.error_count ? ' · '+d.error_count+' erreur(s)' : ''}`);
+  } else toast('❌ '+d.error, false);
+}
+
+// ── SEO Audit ─────────────────────────────────────────────────
+async function runSEOAudit() {
+  const btn = document.getElementById('auditBtn');
+  const res = document.getElementById('auditResult');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Analyse...';
+  if(res) res.innerHTML='';
+  const d = await cdcFetch('/wp/api/ai/seo-audit', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      url:     document.getElementById('auditUrl').value,
+      title:   document.getElementById('auditTitle').value,
+      content: document.getElementById('auditContent').value,
+    })
+  });
+  btn.disabled=false; btn.innerHTML='<i class="fas fa-search"></i> Lancer l\'audit IA';
+  if(!d.success || !res){ if(res) res.innerHTML=`<div style="color:#f87171;font-size:.83rem">❌ ${d.error}</div>`; return; }
+  const a = d.audit;
+  const scoreColor = a.score_global>=80?'#00b074':a.score_global>=60?'#f59e0b':'#ef4444';
+  res.innerHTML = `
+    <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;padding:1rem;margin-top:.5rem">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.8rem">
+        <div style="font-size:2rem;font-weight:900;color:${scoreColor}">${a.score_global}<span style="font-size:1rem">/100</span></div>
+        <div><div style="font-weight:700;font-size:.9rem;color:var(--text-primary)">Score SEO Global</div><div style="font-size:.82rem;color:var(--text-secondary)">${a.resume||''}</div></div>
+      </div>
+      ${a.titre ? `<div style="margin-bottom:.6rem"><div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em">Titre</div>
+        <div style="font-size:.83rem;color:var(--text-primary)"><strong>Optimisé :</strong> ${a.titre.optimise||''} <span style="color:#f59e0b">(score ${a.titre.score}/100)</span></div></div>` : ''}
+      ${a.meta_description ? `<div style="margin-bottom:.6rem"><div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em">Meta description</div>
+        <div style="font-size:.82rem;color:var(--text-primary)">${a.meta_description.proposee||''}</div>
+        <div style="font-size:.75rem;color:#8b5cf6;margin-top:.2rem">Mots-clés: ${(a.meta_description.mots_cles||[]).join(', ')}</div></div>` : ''}
+      ${a.actions_prioritaires?.length ? `<div><div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">Actions prioritaires</div>
+        ${a.actions_prioritaires.map(ac => {
+          const c = ac.priorite==='critique'?'#ef4444':ac.priorite==='haute'?'#f59e0b':'#10b981';
+          return `<div style="display:flex;gap:.5rem;align-items:flex-start;margin-bottom:.3rem;font-size:.82rem">
+            <span style="color:${c};font-weight:700;min-width:60px">${ac.priorite||''}</span>
+            <span style="color:var(--text-primary)">${ac.action||''}</span>
+            <span style="color:var(--text-secondary);font-size:.75rem;margin-left:auto">${ac.impact||''}</span>
+          </div>`;
+        }).join('')}</div>` : ''}
+    </div>`;
+}
+
+// ── Générer Article ────────────────────────────────────────────
+async function generateArticle() {
+  const btn = document.getElementById('artBtn');
+  const res = document.getElementById('artResult');
+  const sujet = document.getElementById('artSujet').value.trim();
+  if(!sujet){ toast('❌ Saisissez un sujet', false); return; }
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Génération...';
+  if(res) res.innerHTML='';
+  const d = await cdcFetch('/wp/api/ai/generate-article', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      sujet,
+      mots_cles:    document.getElementById('artKeywords').value,
+      categorie:    document.getElementById('artCategorie').value,
+      ton:          document.getElementById('artTon').value,
+      longueur:     document.getElementById('artLongueur').value,
+      auto_publish: document.getElementById('artAutoPublish').checked,
+    })
+  });
+  btn.disabled=false; btn.innerHTML='<i class="fas fa-magic"></i> Générer avec Claude';
+  if(!d.success || !res){ if(res) res.innerHTML=`<div style="color:#f87171;font-size:.83rem">❌ ${d.error}</div>`; return; }
+  const art = d.article;
+  const wpBadge = d.wp_draft ? `<span style="background:rgba(0,176,116,.15);color:#00b074;border-radius:5px;padding:.15rem .45rem;font-size:.72rem">✅ Brouillon WP #${d.wp_draft.id} créé</span>` : '';
+  res.innerHTML = `
+    <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.8rem;flex-wrap:wrap;gap:.4rem">
+        <h4 style="font-size:.9rem;font-weight:700;color:var(--text-primary);margin:0">${art.titre_seo||sujet}</h4>
+        ${wpBadge}
+      </div>
+      <div style="font-size:.78rem;color:#8b5cf6;margin-bottom:.5rem">Slug : /${art.slug||''}</div>
+      <div style="font-size:.83rem;color:var(--text-secondary);margin-bottom:.8rem;padding:.5rem;background:rgba(0,176,116,.05);border-radius:6px"><strong style="color:var(--text-primary)">Meta :</strong> ${art.meta_description||''}</div>
+      <div style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.8rem"><strong style="color:var(--text-primary)">Extrait :</strong> ${art.extrait||''}</div>
+      <div style="font-size:.78rem;color:var(--text-secondary)">Tags : ${(art.tags||[]).join(', ')}</div>
+      ${art.schema_faq?.length ? `<div style="margin-top:.7rem"><div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);margin-bottom:.35rem">FAQ SEO (Schema)</div>
+        ${art.schema_faq.map(f=>`<div style="padding:.4rem 0;border-bottom:1px solid var(--border-color)"><div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">${f.question}</div><div style="font-size:.8rem;color:var(--text-secondary)">${f.reponse}</div></div>`).join('')}</div>` : ''}
+      <div style="margin-top:.8rem;padding:.5rem;background:var(--bg-card);border-radius:6px;font-size:.78rem;color:var(--text-secondary)">
+        <strong>Contenu HTML généré :</strong> ${(art.contenu_html||'').length} caractères
+        <button onclick="navigator.clipboard.writeText(${JSON.stringify(art.contenu_html||'')})" class="btn-g" style="margin-left:.5rem;font-size:.72rem;padding:.15rem .45rem;min-height:auto"><i class="fas fa-copy"></i> Copier</button>
+      </div>
+    </div>`;
+}
+
+// ── Optimiser Post ─────────────────────────────────────────────
+async function optimizePost() {
+  const btn = document.getElementById('optBtn');
+  const res = document.getElementById('optResult');
+  const pid = document.getElementById('optPostId').value;
+  if(!pid){ toast("❌ Entrez un ID d'article", false); return; }
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Optimisation...';
+  if(res) res.innerHTML='';
+  const d = await cdcFetch('/wp/api/ai/optimize-post', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ post_id:parseInt(pid), push_to_wordpress: document.getElementById('optPushWP').checked })
+  });
+  btn.disabled=false; btn.innerHTML='<i class="fas fa-bolt"></i> Optimiser avec Claude';
+  if(!d.success || !res){ if(res) res.innerHTML=`<div style="color:#f87171;font-size:.83rem">❌ ${d.error}</div>`; return; }
+  const opt = d.optimisation;
+  res.innerHTML = `
+    <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;padding:1rem">
+      <div style="display:flex;gap:1.5rem;margin-bottom:.8rem">
+        <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:#ef4444">${opt.score_avant||'?'}</div><div style="font-size:.72rem;color:var(--text-secondary)">Avant</div></div>
+        <div style="display:flex;align-items:center;color:var(--text-secondary);font-size:1.5rem">→</div>
+        <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:#00b074">${opt.score_apres||'?'}</div><div style="font-size:.72rem;color:var(--text-secondary)">Après</div></div>
+        <div style="flex:1;padding-left:.8rem">
+          <div style="font-size:.84rem;font-weight:700;color:var(--text-primary)">Titre optimisé</div>
+          <div style="font-size:.82rem;color:var(--text-secondary)">${opt.titre_optimise||''}</div>
+          ${d.wp_updated ? '<span style="font-size:.72rem;color:#00b074">✅ Appliqué sur WordPress</span>' : ''}
+        </div>
+      </div>
+      <div style="font-size:.8rem;color:var(--text-secondary);margin-bottom:.5rem"><strong style="color:var(--text-primary)">Meta :</strong> ${opt.meta_description||''}</div>
+      ${opt.ameliorations?.length ? `<div style="margin-top:.5rem"><div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);margin-bottom:.3rem">Améliorations</div>
+        ${opt.ameliorations.map(a=>`<div style="font-size:.8rem;color:var(--text-secondary);margin-bottom:.2rem">• ${a}</div>`).join('')}</div>` : ''}
+    </div>`;
+}
+
+// ── Meta Tags ──────────────────────────────────────────────────
+async function generateMetaTags() {
+  const btn = document.getElementById('metaBtn');
+  const res = document.getElementById('metaResult');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Génération...';
+  if(res) res.innerHTML='';
+  const d = await cdcFetch('/wp/api/ai/meta-tags', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      titre:   document.getElementById('metaTitle').value,
+      type:    document.getElementById('metaType').value,
+      contenu: document.getElementById('metaContent').value,
+    })
+  });
+  btn.disabled=false; btn.innerHTML='<i class="fas fa-tags"></i> Générer les meta tags';
+  if(!d.success || !res){ if(res) res.innerHTML=`<div style="color:#f87171;font-size:.83rem">❌ ${d.error}</div>`; return; }
+  const m = d.meta_tags;
+  const row = (label, val, color='var(--text-primary)') =>
+    `<div style="display:grid;grid-template-columns:150px 1fr;gap:.5rem;margin-bottom:.4rem;align-items:flex-start">
+      <span style="font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;padding-top:.1rem">${label}</span>
+      <span style="font-size:.82rem;color:${color}">${val||''}</span>
+    </div>`;
+  res.innerHTML = `<div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;padding:1rem;margin-top:.5rem;font-family:var(--font-mono)">
+    ${row('title tag',         m.title_tag)}
+    ${row('meta description',  m.meta_description, '#8b5cf6')}
+    ${row('og:title',          m.og_title)}
+    ${row('og:description',    m.og_description)}
+    ${row('twitter:title',     m.twitter_title)}
+    ${row('robots',            m.robots, '#00b074')}
+    ${row('schema type',       m.schema_type, '#f59e0b')}
+    <div style="margin-top:.5rem">
+      <button onclick="copyMetaTags(${JSON.stringify(m)})" class="btn-p" style="font-size:.78rem"><i class="fas fa-copy"></i> Copier HTML</button>
+    </div>
+  </div>`;
+}
+
+function copyMetaTags(m) {
+  const html = `<title>${m.title_tag||''}</title>
+<meta name="description" content="${m.meta_description||''}">
+<meta name="robots" content="${m.robots||'index, follow'}">
+<meta property="og:title" content="${m.og_title||''}">
+<meta property="og:description" content="${m.og_description||''}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${m.twitter_title||''}">
+<meta name="twitter:description" content="${m.twitter_description||''}">`;
+  navigator.clipboard.writeText(html).then(()=>toast('✅ Meta tags copiés !'));
+}
+
+// ── Mots-clés ─────────────────────────────────────────────────
+async function searchKeywords() {
+  const btn = document.getElementById('kwBtn');
+  const res = document.getElementById('kwResult');
+  const theme = document.getElementById('kwTheme').value.trim();
+  if(!theme){ toast('❌ Entrez un thème', false); return; }
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Analyse...';
+  if(res) res.innerHTML='';
+  const d = await cdcFetch('/wp/api/ai/keywords', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ theme, secteur: document.getElementById('kwSecteur').value })
+  });
+  btn.disabled=false; btn.innerHTML='<i class="fas fa-search"></i> Analyser avec Claude';
+  if(!d.success || !res){ if(res) res.innerHTML=`<div style="color:#f87171;font-size:.83rem">❌ ${d.error}</div>`; return; }
+  const kw = d.keywords;
+  const badge = (t, color) => `<span style="font-size:.75rem;padding:.18rem .5rem;background:${color}18;color:${color};border-radius:5px;border:1px solid ${color}30;margin:.2rem;display:inline-block">${t}</span>`;
+  res.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.5rem">
+    <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;padding:.9rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:.5rem">Mots-clés principaux</div>
+      ${(kw.mots_cles_principaux||[]).map(k=>`<div style="margin-bottom:.4rem">
+        ${badge(k.mot,'#21759b')}
+        <span style="font-size:.72rem;color:var(--text-secondary)">Vol: ${k.volume_estime||'?'} · Dif: ${k.difficulte||'?'} · ${k.intention||''}</span>
+      </div>`).join('')}
+    </div>
+    <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;padding:.9rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:.5rem">Longue traîne</div>
+      ${(kw.mots_cles_longue_traine||[]).map(k=>badge(k,'#8b5cf6')).join('')}
+      <div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin:.7rem 0 .4rem">Mots-clés locaux Cameroun</div>
+      ${(kw.mots_cles_locaux||[]).map(k=>badge(k,'#00b074')).join('')}
+    </div>
+    <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;padding:.9rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:.5rem">Questions Google</div>
+      ${(kw.questions_google||[]).map(q=>`<div style="font-size:.81rem;color:var(--text-primary);margin-bottom:.3rem">❓ ${q}</div>`).join('')}
+    </div>
+    <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px;padding:.9rem">
+      <div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:.5rem">Opportunités</div>
+      ${(kw.opportunites||[]).map(o=>`<div style="font-size:.81rem;color:var(--text-primary);margin-bottom:.3rem">💡 ${o}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ── Calendrier éditorial ──────────────────────────────────────
+async function generateCalendar() {
+  const btn = document.getElementById('calBtn');
+  const res = document.getElementById('calResult');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Génération...';
+  if(res) res.innerHTML='';
+  const d = await cdcFetch('/wp/api/ai/content-calendar', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      secteur:     document.getElementById('calSecteur').value,
+      objectif:    document.getElementById('calObjectif').value,
+      nb_articles: parseInt(document.getElementById('calNb').value),
+    })
+  });
+  btn.disabled=false; btn.innerHTML='<i class="fas fa-magic"></i> Générer le planning IA';
+  if(!d.success || !res){ if(res) res.innerHTML=`<div style="color:#f87171;font-size:.83rem">❌ ${d.error}</div>`; return; }
+  const cal = d.calendar;
+  const typeColor = {'article':'#21759b','guide':'#00b074','liste':'#8b5cf6','comparatif':'#f59e0b','actualite':'#ef4444'};
+  res.innerHTML = `<div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem">
+    ${(cal.calendrier||[]).map((item,i)=>`
+      <div style="display:grid;grid-template-columns:auto 1fr auto;gap:.75rem;align-items:center;padding:.75rem 1rem;background:var(--bg-main);border:1px solid var(--border-color);border-radius:10px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(33,117,155,.12);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;color:#21759b">${i+1}</div>
+        <div>
+          <div style="font-size:.85rem;font-weight:600;color:var(--text-primary)">${item.titre||''}</div>
+          <div style="font-size:.75rem;color:var(--text-secondary);margin-top:.15rem">${item.mot_cle_principal||''} · ${item.audience||''} · ${item.intention||''}</div>
+          ${item.notes ? `<div style="font-size:.75rem;color:var(--text-secondary);margin-top:.1rem;font-style:italic">${item.notes}</div>` : ''}
+        </div>
+        <div><span style="font-size:.72rem;padding:.2rem .5rem;background:${(typeColor[item.type]||'#888')}18;color:${typeColor[item.type]||'#888'};border-radius:5px;border:1px solid ${(typeColor[item.type]||'#888')}30">${item.type||''}</span></div>
+      </div>`).join('')}
+  </div>
+  ${cal.conseils_strategie?.length ? `<div style="margin-top:.8rem;padding:.8rem;background:rgba(0,176,116,.05);border:1px solid rgba(0,176,116,.15);border-radius:8px">
+    <div style="font-size:.78rem;font-weight:700;color:var(--primary-color);margin-bottom:.4rem">Conseils stratégiques</div>
+    ${cal.conseils_strategie.map(c=>`<div style="font-size:.81rem;color:var(--text-secondary);margin-bottom:.25rem">💡 ${c}</div>`).join('')}
+  </div>` : ''}`;
+}
+
 initGallery();
 setTimeout(()=>{ if(Object.keys(ACT_DATA).length>0){ /* already have server data */ } },300);
 </script>
@@ -5860,7 +6478,7 @@ async function qimgSave(){
     if(!r.ok){
       let errMsg = r.status===401 ? 'Session expirée — rechargez la page' : 'Erreur serveur '+r.status;
       toast('❌ '+errMsg, false);
-      btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> Appliquer l'image';
+      btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> Appliquer l\'image';
       return;
     }
     const res = await r.json();
@@ -5881,7 +6499,7 @@ async function qimgSave(){
     } else { toast('❌ '+(res.error||'Erreur inconnue'), false); }
   } catch(e){ toast('❌ Erreur réseau', false); console.error('[QuickImg Save]', e); }
   btn.disabled=false;
-  btn.innerHTML='<i class="fas fa-check"></i> Appliquer l'image';
+  btn.innerHTML='<i class="fas fa-check"></i> Appliquer l\'image';
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('qimgOverlay')?.addEventListener('click', e=>{ if(e.target.id==='qimgOverlay') closeQuickImg(); });
@@ -7188,7 +7806,7 @@ async function loadPopups(){
       <td data-label="Actions">
         <div style="display:flex;gap:.35rem;flex-wrap:wrap">
           <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="editPopup(${p.id})" title="Modifier"><i class="fas fa-edit"></i></button>
-          <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="togglePopup(${p.id},${p.is_active?0:1})" title="${p.is_active?'Désactiver':'Activer'}">${p.is_active?'⏸':'▶'}</button>
+          <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="event.stopPropagation();togglePopup(${p.id},${p.is_active?0:1})" title="${p.is_active?'Désactiver':'Activer'}">${p.is_active?'⏸':'▶'}</button>
           <button class="btn-g" style="padding:.28rem .6rem;font-size:.75rem" onclick="deletePopup(${p.id},'${(p.titre||'').replace(/'/g,"\\'")}')"><i class="fas fa-trash" style="color:#f87171"></i></button>
         </div>
       </td>
@@ -7668,6 +8286,11 @@ async function saveApropos(){
 }
 /* ══════════════════════════════════════════════════════════════ */
 
+
+function loadWordPress(){if(typeof checkWPStatus==='function')checkWPStatus();if(typeof loadWPPosts==='function')loadWPPosts();}
+function initSEOPanel(){if(typeof showSEOTab==='function')showSEOTab(1);}
+function initKeywordsPanel(){}
+function initCalendarPanel(){}
 </script>
 
 {% endblock %}
