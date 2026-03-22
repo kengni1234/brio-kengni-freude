@@ -220,112 +220,106 @@ button .emoji, span.emoji, [data-emoji]{
 
 /* ══ QUICK IMAGE MODAL ══════════════════════════════════════════════ */
 .qimg-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:3000;
+  position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;
   display:none;align-items:center;justify-content:center;padding:1rem;
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(6px);
 }
 .qimg-overlay.open{display:flex}
 .qimg-modal{
-  background:var(--bg-card,#1a2332);
-  border:1px solid rgba(0,176,116,.25);
-  border-radius:20px;width:100%;max-width:500px;
-  box-shadow:0 32px 80px rgba(0,0,0,.55),0 0 0 1px rgba(0,176,116,.08);
-  animation:qmIn .3s cubic-bezier(.34,1.2,.64,1);overflow:hidden;
+  background:#1a2332;border:1px solid rgba(0,176,116,.2);
+  border-radius:18px;width:100%;max-width:480px;
+  box-shadow:0 24px 80px rgba(0,0,0,.5),0 0 40px rgba(0,176,116,.08);
+  animation:qmIn .28s cubic-bezier(.34,1.3,.64,1);overflow:hidden;
 }
-@keyframes qmIn{from{transform:scale(.88) translateY(20px);opacity:0}}
+@keyframes qmIn{from{transform:scale(.9) translateY(16px);opacity:0}}
 .qimg-head{
   display:flex;align-items:center;justify-content:space-between;
-  padding:1.1rem 1.35rem;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  background:linear-gradient(135deg,rgba(0,176,116,.12),rgba(0,176,116,.02));
+  padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(135deg,rgba(0,176,116,.1),rgba(0,0,0,0));
 }
 .qimg-head h4{
-  color:#fff;font-size:1rem;font-weight:800;
-  display:flex;align-items:center;gap:.5rem;margin:0;
+  color:#fff;font-size:.95rem;font-weight:800;
+  display:flex;align-items:center;gap:.5rem;
 }
 .qimg-head h4 i{color:var(--primary-color)}
-.qimg-pname{font-size:.75rem;color:rgba(255,255,255,.5);margin-top:.18rem;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qimg-pname{font-size:.72rem;color:var(--text-secondary);margin-top:.1rem}
 .qimg-close{
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.5);width:32px;height:32px;border-radius:50%;
-  cursor:pointer;font-size:.85rem;
-  display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;
+  background:rgba(255,255,255,.08);border:none;color:var(--text-secondary);
+  width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.82rem;
+  display:flex;align-items:center;justify-content:center;transition:.15s;
 }
-.qimg-close:hover{background:rgba(239,68,68,.25);color:#f87171;border-color:rgba(239,68,68,.3)}
+.qimg-close:hover{background:rgba(239,68,68,.3);color:#f87171}
 .qimg-body{padding:1.25rem}
-/* Preview images side by side */
-.qimg-previews{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
-.qimg-preview-box{border-radius:12px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);position:relative;aspect-ratio:4/3}
-.qimg-preview-box img{width:100%;height:100%;object-fit:cover;display:none}
-.qimg-preview-box.has-image img{display:block}
+/* Current image preview */
+.qimg-current{
+  width:100%;height:160px;border-radius:12px;overflow:hidden;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:1rem;position:relative;
+}
+.qimg-current img{width:100%;height:100%;object-fit:cover;display:block}
 .qimg-current-placeholder{
-  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;
+  display:flex;flex-direction:column;align-items:center;gap:.4rem;
   color:rgba(255,255,255,.15);
 }
-.qimg-current-placeholder i{font-size:2rem}
-.qimg-current-placeholder span{font-size:.68rem;letter-spacing:.03em}
-.qimg-preview-label{position:absolute;top:.45rem;left:.45rem;font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:.15rem .45rem;border-radius:5px;pointer-events:none}
-.qimg-preview-label.current{background:rgba(0,0,0,.5);color:rgba(255,255,255,.5)}
-.qimg-preview-label.new{background:rgba(0,176,116,.85);color:#fff}
+.qimg-current-placeholder i{font-size:2.5rem}
+.qimg-current-placeholder span{font-size:.72rem}
+.qimg-current-badge{
+  position:absolute;top:.5rem;left:.5rem;
+  background:rgba(0,0,0,.6);color:rgba(255,255,255,.6);
+  font-size:.62rem;font-weight:700;padding:.15rem .5rem;border-radius:6px;
+}
 /* Drop zone */
 .qimg-drop{
-  position:relative;
-  border:2px dashed rgba(0,176,116,.4);border-radius:14px;
-  padding:1.1rem 1rem;text-align:center;cursor:pointer;transition:.2s;
-  background:rgba(0,176,116,.04);margin-bottom:.65rem;overflow:hidden;
+  position:relative;  /* nécessaire pour l'input en overlay absolu */
+  border:2px dashed rgba(0,176,116,.35);border-radius:12px;
+  padding:1.25rem;text-align:center;cursor:pointer;transition:.2s;
+  background:rgba(0,176,116,.03);margin-bottom:.75rem;
+  overflow:hidden;
 }
 .qimg-drop:hover,.qimg-drop.drag-over{
-  border-color:#00b074;background:rgba(0,176,116,.1);transform:scale(1.01);
+  border-color:var(--primary-color);background:rgba(0,176,116,.08);
 }
-.qimg-drop i{font-size:1.6rem;color:var(--primary-color);display:block;margin-bottom:.3rem}
-.qimg-drop-txt{font-size:.82rem;color:rgba(255,255,255,.75);font-weight:600;margin-bottom:.2rem}
-.qimg-drop-sub{font-size:.68rem;color:rgba(255,255,255,.3)}
+.qimg-drop i{font-size:1.5rem;color:var(--primary-color);opacity:.6;display:block;margin-bottom:.35rem}
+.qimg-drop-txt{font-size:.78rem;color:var(--text-secondary);margin-bottom:.3rem}
+.qimg-drop-sub{font-size:.68rem;color:rgba(255,255,255,.2)}
 .qimg-drop input[type=file]{
   position:absolute;inset:0;width:100%;height:100%;
   opacity:0;cursor:pointer;z-index:2;
+  /* Ne pas mettre display:none — bloque le click sur iOS/Safari */
 }
-/* Boutons galerie/caméra */
-.qimg-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.75rem}
-.qimg-btn-label{
-  display:flex;align-items:center;justify-content:center;gap:.5rem;
-  background:rgba(0,176,116,.08);border:1.5px solid rgba(0,176,116,.2);
-  border-radius:11px;padding:.6rem .8rem;cursor:pointer;font-size:.82rem;
-  color:var(--primary-color);font-weight:700;transition:.2s;user-select:none;
-}
-.qimg-btn-label:hover{background:rgba(0,176,116,.18);border-color:rgba(0,176,116,.4)}
 /* URL input */
-.qimg-url-row{display:flex;gap:.45rem;margin-bottom:.85rem}
+.qimg-url-row{display:flex;gap:.5rem;margin-bottom:.85rem}
 .qimg-url-row input{
-  flex:1;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);
-  border-radius:10px;padding:.58rem .9rem;color:#fff;font-size:.83rem;
+  flex:1;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:9px;padding:.55rem .85rem;color:#fff;font-size:.82rem;
   font-family:inherit;outline:none;transition:.15s;
 }
-.qimg-url-row input:focus{border-color:var(--primary-color);box-shadow:0 0 0 3px rgba(0,176,116,.12)}
-.qimg-url-row input::placeholder{color:rgba(255,255,255,.2)}
+.qimg-url-row input:focus{border-color:var(--primary-color);box-shadow:0 0 0 3px rgba(0,176,116,.1)}
+.qimg-url-row input::placeholder{color:rgba(255,255,255,.25)}
 .qimg-url-row button{
   background:rgba(0,176,116,.15);color:var(--primary-color);
-  border:1.5px solid rgba(0,176,116,.3);border-radius:10px;
-  padding:.55rem .9rem;cursor:pointer;font-size:.82rem;font-weight:700;
+  border:1.5px solid rgba(0,176,116,.3);border-radius:9px;
+  padding:.5rem .85rem;cursor:pointer;font-size:.8rem;font-weight:700;
   white-space:nowrap;transition:.15s;font-family:inherit;
 }
-.qimg-url-row button:hover{background:rgba(0,176,116,.28);border-color:#00b074}
+.qimg-url-row button:hover{background:rgba(0,176,116,.28)}
 /* Progress */
 .qimg-progress{
-  height:4px;background:rgba(255,255,255,.07);border-radius:3px;
-  margin-bottom:.85rem;display:none;overflow:hidden;
+  height:3px;background:rgba(255,255,255,.06);border-radius:2px;
+  margin-bottom:.85rem;display:none;
 }
-.qimg-progress-bar{height:100%;background:linear-gradient(90deg,#00b074,#00d48a);border-radius:3px;width:0;transition:width .3s ease}
+.qimg-progress-bar{height:100%;background:var(--primary-color);border-radius:2px;width:0;transition:width .25s}
 /* Save button */
 .qimg-save{
-  width:100%;padding:.8rem;border-radius:12px;
-  background:linear-gradient(135deg,#00a87e,#00b074);
-  border:none;color:#fff;font-size:.95rem;font-weight:800;
+  width:100%;padding:.7rem;border-radius:11px;
+  background:linear-gradient(135deg,#00a87e,var(--primary-color));
+  border:none;color:#fff;font-size:.9rem;font-weight:800;
   cursor:pointer;transition:.2s;font-family:inherit;
-  display:flex;align-items:center;justify-content:center;gap:.55rem;
-  letter-spacing:.01em;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
 }
-.qimg-save:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,176,116,.35)}
-.qimg-save:disabled{opacity:.4;transform:none;cursor:not-allowed;background:rgba(255,255,255,.1)}
+.qimg-save:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,176,116,.3)}
+.qimg-save:disabled{opacity:.5;transform:none;cursor:not-allowed}
 .ab-inv{background:rgba(245,158,11,.1);color:#fbbf24}.ab-inv:hover{background:rgba(245,158,11,.2)}
 /* ══ DETAIL PANEL ══ */
 .dp{width:350px;flex-shrink:0;border-left:1px solid var(--border-color);background:var(--secondary-color);display:flex;flex-direction:column;overflow-y:auto;transition:width .25s;border-radius:0 16px 16px 0}
@@ -6370,69 +6364,40 @@ let _qimgNewUrl = '';
 
 function openQuickImg(id, name, currentUrl){
   _qimgId = id;
-  _qimgNewUrl = '';
-  /* Nom du produit */
-  const nameEl = document.getElementById('qimgProductName');
-  if(nameEl) nameEl.textContent = name || '';
-  /* Image actuelle */
-  const currentImg = document.getElementById('qimgCurrentImg');
-  const currentBox = document.getElementById('qimgCurrentBox');
+  _qimgNewUrl = currentUrl;
+  document.getElementById('qimgProductName').textContent = name;
+  const preview = document.getElementById('qimgCurrentImg');
   const placeholder = document.getElementById('qimgPlaceholder');
-  if(currentUrl && currentImg){
-    currentImg.src = currentUrl;
-    currentImg.style.display = 'block';
-    if(currentBox) currentBox.classList.add('has-image');
+  if(currentUrl){
+    preview.src = currentUrl;
+    preview.style.display = 'block';
     if(placeholder) placeholder.style.display = 'none';
   } else {
-    if(currentImg){ currentImg.src = ''; currentImg.style.display = 'none'; }
-    if(currentBox) currentBox.classList.remove('has-image');
+    preview.style.display = 'none';
     if(placeholder) placeholder.style.display = 'flex';
   }
-  /* Reset la preview nouvelle image */
-  const newPreview = document.getElementById('qimgNewPreview');
-  const newBox     = document.getElementById('qimgNewBox');
-  const newPhld    = document.getElementById('qimgNewPlaceholder');
-  if(newPreview){ newPreview.src = ''; newPreview.style.display = 'none'; }
-  if(newBox) newBox.classList.remove('has-image');
-  if(newPhld) newPhld.style.display = 'flex';
-  /* Reset autres champs */
-  const urlInp = document.getElementById('qimgUrlInput');
-  if(urlInp) urlInp.value = '';
-  const prog = document.getElementById('qimgProgress');
-  if(prog) prog.style.display = 'none';
-  const saveBtn = document.getElementById('qimgSaveBtn');
-  if(saveBtn) saveBtn.disabled = true;
-  /* Ouvrir */
+  document.getElementById('qimgUrlInput').value = '';
+  document.getElementById('qimgNewPreview').src = '';
+  document.getElementById('qimgNewPreview').style.display = 'none';
+  document.getElementById('qimgNewPlaceholder').style.display = 'flex';
+  document.getElementById('qimgProgress').style.display = 'none';
+  document.getElementById('qimgProgressBar').style.width = '0';
+  document.getElementById('qimgSaveBtn').disabled = true;
   document.getElementById('qimgOverlay').classList.add('open');
 }
 function closeQuickImg(){
   document.getElementById('qimgOverlay').classList.remove('open');
-  /* Reset complet de l'état */
   _qimgId = null; _qimgNewUrl = '';
-  const newPrev = document.getElementById('qimgNewPreview');
-  if(newPrev){ newPrev.src = ''; newPrev.style.display = 'none'; }
-  const newPhld = document.getElementById('qimgNewPlaceholder');
-  if(newPhld) newPhld.style.display = 'flex';
-  const urlInp = document.getElementById('qimgUrlInput');
-  if(urlInp) urlInp.value = '';
-  const prog = document.getElementById('qimgProgress');
-  if(prog) prog.style.display = 'none';
-  const saveBtn = document.getElementById('qimgSaveBtn');
-  if(saveBtn){ saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-check"></i> Appliquer l\'image'; }
 }
 function qimgApplyUrl(){
   const url = document.getElementById('qimgUrlInput').value.trim();
-  if(!url || !url.startsWith('http')){ toast('❌ Entrez une URL valide (https://…)', false); return; }
+  if(!url){ toast('Entrez une URL image valide', false); return; }
   _qimgNewUrl = url;
-  const img  = document.getElementById('qimgNewPreview');
-  const box  = document.getElementById('qimgNewBox');
-  const phld = document.getElementById('qimgNewPlaceholder');
-  img.src = url;
-  img.style.display = 'block';
-  img.onload  = () => { if(box) box.classList.add('has-image'); if(phld) phld.style.display='none'; };
-  img.onerror = () => { toast('❌ Image non accessible à cette URL', false); img.src=''; _qimgNewUrl=''; };
+  const img = document.getElementById('qimgNewPreview');
+  img.src = url; img.style.display = 'block';
+  document.getElementById('qimgNewPlaceholder').style.display = 'none';
   document.getElementById('qimgSaveBtn').disabled = false;
-  toast('👁 Aperçu mis à jour');
+  toast('Aperçu mis à jour');
 }
 function qimgHandleDrop(e){
   e.preventDefault();
@@ -6447,13 +6412,11 @@ async function qimgUploadFile(file){
   const bar = document.getElementById('qimgProgress');
   const barFill = document.getElementById('qimgProgressBar');
   bar.style.display = 'block'; barFill.style.width = '15%';
-  /* Appliquer le watermark k-Ni avant envoi (fallback silencieux) */
+  // Appliquer le watermark k-Ni avant envoi (fallback silencieux)
   let fileToSend = file;
   try { fileToSend = await applyKniWatermark(file); } catch(e){ fileToSend = file; }
   const fd = new FormData();
-  fd.append('image', fileToSend, fileToSend.name || ('kni_prod_' + Date.now() + '.jpg'));
-  /* ── Envoyer le pid pour que la DB soit mise à jour directement ── */
-  if(_qimgId) fd.append('pid', String(_qimgId));
+  fd.append('image', fileToSend, fileToSend.name || ('kni_' + Date.now() + '.jpg'));
   barFill.style.width = '40%';
   try {
     const r = await fetch('/shop/api/product/upload-image', {
@@ -6462,11 +6425,12 @@ async function qimgUploadFile(file){
       credentials: 'same-origin'
     });
     barFill.style.width = '80%';
+    // Vérification statut HTTP avant parsing JSON
     if(!r.ok){
       bar.style.display = 'none';
       let errMsg = 'Erreur serveur ' + r.status;
       if(r.status === 401) errMsg = 'Session expirée — rechargez la page et reconnectez-vous';
-      else if(r.status === 403){ window.location.href = '/shop'; return; }
+      else if(r.status === 403) { window.location.href = '/shop'; return; }
       else if(r.status === 413) errMsg = 'Image trop volumineuse (max 16 Mo côté serveur)';
       toast('❌ ' + errMsg, false);
       return;
@@ -6480,8 +6444,7 @@ async function qimgUploadFile(file){
       img.src = res.url; img.style.display = 'block';
       document.getElementById('qimgNewPlaceholder').style.display = 'none';
       document.getElementById('qimgSaveBtn').disabled = false;
-      /* Si pid envoyé → image déjà en DB, activer le bouton "Appliquer" */
-      toast('✅ Image chargée — cliquez sur "Appliquer l\'image"');
+      toast('✅ Image chargée — cliquez sur "Appliquer"');
     } else {
       bar.style.display = 'none';
       toast('❌ ' + (res.error || 'Upload échoué — réessayez'), false);
@@ -6493,72 +6456,50 @@ async function qimgUploadFile(file){
   }
 }
 async function qimgSave(){
-  if(!_qimgId || !_qimgNewUrl){ toast('Aucune image à enregistrer', false); return; }
+  if(!_qimgId || !_qimgNewUrl){ toast('Aucune image', false); return; }
   const btn = document.getElementById('qimgSaveBtn');
   btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement…';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement...';
   try {
-    /* ── Utiliser l'endpoint dédié (ne touche QUE image_url en DB) ── */
-    const r = await fetch('/shop/api/product/set-image-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ pid: _qimgId, url: _qimgNewUrl })
+    const p = PRODS[_qimgId];
+    if(!p){ toast('Produit introuvable', false); btn.disabled=false; return; }
+    const body = {
+      name:p.name, category:p.category, price:p.price, original_price:p.original_price,
+      stock:p.stock, description:p.description, features:p.features, badge:p.badge,
+      is_active:p.is_active, delivery_info:p.delivery_info, reviews_count:p.reviews_count,
+      image_url:_qimgNewUrl
+    };
+    const r = await fetch(`/shop/api/product/${_qimgId}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body),
+      credentials:'same-origin'
     });
     if(!r.ok){
-      const errMsg = r.status === 401
-        ? 'Session expirée — rechargez la page'
-        : r.status === 403
-          ? 'Permission insuffisante'
-          : 'Erreur serveur ' + r.status;
-      toast('❌ ' + errMsg, false);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-check"></i> Appliquer l\'image';
+      let errMsg = r.status===401 ? 'Session expirée — rechargez la page' : 'Erreur serveur '+r.status;
+      toast('❌ '+errMsg, false);
+      btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> Appliquer l\'image';
       return;
     }
     const res = await r.json();
-    if(res.success){
-      /* ── Mettre à jour PRODS en mémoire ── */
+    if(res.success || res.id){
       if(PRODS[_qimgId]) PRODS[_qimgId].image_url = _qimgNewUrl;
-
-      /* ── Mettre à jour la carte produit dans la grille ── */
-      const card = document.getElementById('pc-' + _qimgId);
+      const card = document.getElementById(`pc-${_qimgId}`);
       if(card){
-        const imgWrap = card.querySelector('.pcard-img');
-        if(imgWrap){
-          /* Chercher ou créer le tag <img> */
-          let imgEl = imgWrap.querySelector('img');
-          if(!imgEl){
-            imgEl = document.createElement('img');
-            imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover';
-            imgWrap.insertBefore(imgEl, imgWrap.firstChild);
-          }
-          imgEl.src = _qimgNewUrl;
-          imgEl.style.display = 'block';
-          imgEl.onerror = function(){ this.style.display='none'; };
-          /* Cacher l'icône placeholder */
-          const ico = imgWrap.querySelector('i.fas');
-          if(ico) ico.style.display = 'none';
-          /* Retirer badge MASQUÉ si présent */
-          const mask = imgWrap.querySelector('.pcard-mask');
-          if(mask) mask.style.display = 'none';
-          /* Animation flash verte pour confirmer */
-          card.style.transition = 'box-shadow .3s';
-          card.style.boxShadow = '0 0 0 3px #00b074';
-          setTimeout(() => { card.style.boxShadow = ''; }, 1200);
-        }
+        let img = card.querySelector('.pcard-img img');
+        if(!img){ img = document.createElement('img'); card.querySelector('.pcard-img').prepend(img); }
+        img.src = _qimgNewUrl; img.style.display='block';
+        const ico = card.querySelector('.pcard-img i'); if(ico) ico.style.display='none';
+        // Mettre à jour la miniature de la carte produit
+        const mask = card.querySelector('.pcard-mask');
+        if(mask) mask.style.display='none';
       }
-      toast('✅ Image enregistrée avec succès !');
+      toast('✅ Image mise à jour avec succès !');
       closeQuickImg();
-    } else {
-      toast('❌ ' + (res.error || 'Erreur lors de la sauvegarde'), false);
-    }
-  } catch(e){
-    toast('❌ Erreur réseau — vérifiez votre connexion', false);
-    console.error('[QuickImg Save]', e);
-  }
-  btn.disabled = false;
-  btn.innerHTML = '<i class="fas fa-check"></i> Appliquer l\'image';
+    } else { toast('❌ '+(res.error||'Erreur inconnue'), false); }
+  } catch(e){ toast('❌ Erreur réseau', false); console.error('[QuickImg Save]', e); }
+  btn.disabled=false;
+  btn.innerHTML='<i class="fas fa-check"></i> Appliquer l\'image';
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('qimgOverlay')?.addEventListener('click', e=>{ if(e.target.id==='qimgOverlay') closeQuickImg(); });
@@ -6612,85 +6553,68 @@ function initGbStars(){
 <!-- ══ QUICK IMAGE MODAL ══ -->
 <div class="qimg-overlay" id="qimgOverlay">
   <div class="qimg-modal">
-    <!-- Header -->
     <div class="qimg-head">
-      <div style="min-width:0">
-        <h4><i class="fas fa-camera-retro"></i> Changer l'image</h4>
+      <div>
+        <h4><i class="fas fa-camera"></i> Image rapide</h4>
         <div class="qimg-pname" id="qimgProductName"></div>
       </div>
-      <button class="qimg-close" onclick="closeQuickImg()" title="Fermer"><i class="fas fa-times"></i></button>
+      <button class="qimg-close" onclick="closeQuickImg()"><i class="fas fa-times"></i></button>
     </div>
-
-    <!-- Body -->
     <div class="qimg-body">
-
-      <!-- Aperçus côte à côte -->
-      <div class="qimg-previews">
-        <!-- Actuelle -->
-        <div class="qimg-preview-box" id="qimgCurrentBox">
-          <span class="qimg-preview-label current">Actuelle</span>
-          <img id="qimgCurrentImg" src="" alt="Image actuelle"
-               onload="this.closest('.qimg-preview-box').classList.add('has-image')"
-               onerror="this.closest('.qimg-preview-box').classList.remove('has-image')">
-          <div class="qimg-current-placeholder" id="qimgPlaceholder">
-            <i class="fas fa-image"></i><span>Aucune image</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
+        <div>
+          <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:.4rem">Actuelle</div>
+          <div class="qimg-current" style="height:120px">
+            <img id="qimgCurrentImg" src="" style="display:none">
+            <div id="qimgPlaceholder" class="qimg-current-placeholder"><i class="fas fa-image"></i><span>Aucune image</span></div>
           </div>
         </div>
-        <!-- Nouvelle -->
-        <div class="qimg-preview-box" id="qimgNewBox">
-          <span class="qimg-preview-label new">Nouvelle</span>
-          <img id="qimgNewPreview" src="" alt="Aperçu nouvelle image"
-               onload="this.closest('.qimg-preview-box').classList.add('has-image')"
-               onerror="this.closest('.qimg-preview-box').classList.remove('has-image')">
-          <div class="qimg-current-placeholder" id="qimgNewPlaceholder">
-            <i class="fas fa-plus-circle"></i><span>Aperçu ici</span>
+        <div>
+          <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-color);margin-bottom:.4rem">Nouvelle</div>
+          <div class="qimg-current" style="height:120px;border-color:rgba(0,176,116,.3)">
+            <img id="qimgNewPreview" src="" style="display:none">
+            <div id="qimgNewPlaceholder" class="qimg-current-placeholder"><i class="fas fa-plus"></i><span>Apercu ici</span></div>
           </div>
         </div>
       </div>
-
-      <!-- Zone de dépôt / clic -->
       <div class="qimg-drop" id="qimgDropZone"
            ondragover="event.preventDefault();this.classList.add('drag-over')"
            ondragleave="this.classList.remove('drag-over')"
            ondrop="qimgHandleDrop(event)">
         <i class="fas fa-cloud-upload-alt"></i>
-        <div class="qimg-drop-txt">Glissez une image ici ou cliquez pour choisir</div>
-        <div class="qimg-drop-sub">JPG · PNG · WEBP · GIF — max 8 Mo</div>
+        <div class="qimg-drop-txt">Appuyez pour choisir une image</div>
+        <div class="qimg-drop-sub">Galerie · Appareil photo · JPG PNG WEBP — max 5 Mo</div>
+        <!-- overlay transparent — tap direct = ouverture sélecteur fichier/caméra sur mobile -->
         <input type="file" id="qimgFileInput" accept="image/*"
                onchange="qimgUploadFile(this.files[0]); this.value=''">
       </div>
-
-      <!-- Boutons Galerie + Caméra (mobile-first) -->
-      <div class="qimg-btn-row">
-        <label class="qimg-btn-label">
+      <!-- Boutons explicites galerie + caméra (mobile) -->
+      <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;
+                       background:rgba(0,176,116,.1);border:1.5px solid rgba(0,176,116,.25);
+                       border-radius:10px;padding:.55rem;cursor:pointer;font-size:.8rem;
+                       color:var(--primary-color);font-weight:700;transition:.15s">
           <i class="fas fa-images"></i> Galerie
           <input type="file" accept="image/*" style="display:none"
                  onchange="qimgUploadFile(this.files[0]); this.value=''">
         </label>
-        <label class="qimg-btn-label">
-          <i class="fas fa-camera"></i> Appareil photo
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;
+                       background:rgba(0,176,116,.1);border:1.5px solid rgba(0,176,116,.25);
+                       border-radius:10px;padding:.55rem;cursor:pointer;font-size:.8rem;
+                       color:var(--primary-color);font-weight:700;transition:.15s">
+          <i class="fas fa-camera"></i> Caméra
           <input type="file" accept="image/*" capture="environment" style="display:none"
                  onchange="qimgUploadFile(this.files[0]); this.value=''">
         </label>
       </div>
-
-      <!-- Barre de progression -->
-      <div class="qimg-progress" id="qimgProgress">
-        <div class="qimg-progress-bar" id="qimgProgressBar"></div>
-      </div>
-
-      <!-- URL externe -->
+      <div class="qimg-progress" id="qimgProgress"><div class="qimg-progress-bar" id="qimgProgressBar"></div></div>
       <div class="qimg-url-row">
-        <input type="url" id="qimgUrlInput" placeholder="Ou collez une URL d'image (https://…)"
-               onkeydown="if(event.key==='Enter') qimgApplyUrl()">
-        <button onclick="qimgApplyUrl()"><i class="fas fa-eye"></i> Aperçu</button>
+        <input type="url" id="qimgUrlInput" placeholder="... ou collez une URL (https://...)">
+        <button onclick="qimgApplyUrl()"><i class="fas fa-link"></i> Apercu</button>
       </div>
-
-      <!-- Bouton Appliquer -->
       <button class="qimg-save" id="qimgSaveBtn" onclick="qimgSave()" disabled>
-        <i class="fas fa-check-circle"></i> Appliquer l'image
+        <i class="fas fa-check"></i> Appliquer l image
       </button>
-
     </div>
   </div>
 </div>

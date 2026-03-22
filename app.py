@@ -25,25 +25,31 @@ from werkzeug.security import generate_password_hash as _wz_gen, check_password_
 import hashlib as _hashlib
 
 def generate_password_hash(password: str) -> str:
-    import os as _os_h
+    import os as _os_h, hashlib as _hl
     salt = _os_h.urandom(32)
-    # N=4096 : compatible PythonAnywhere free tier (512MB RAM).
-    # Suffisamment résistant au bruteforce tout en restant léger au démarrage.
-    dk = _hashlib.scrypt(password.encode('utf-8'), salt=salt, n=4096, r=8, p=1, dklen=64)
-    return f"scrypt$v1${salt.hex()}${dk.hex()}"
+    # pbkdf2 : compatible PythonAnywhere free tier, aucune limite memoire
+    dk = _hl.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations=260000, dklen=64)
+    return f"pbkdf2$v1${salt.hex()}${dk.hex()}"
 
 def check_password_hash(stored: str, password: str) -> bool:
+    import hashlib as _hl2
+    # Format pbkdf2 (nouveau - sans limite memoire)
+    if stored and stored.startswith('pbkdf2$v1$'):
+        try:
+            _, _v, salt_hex, dk_hex = stored.split('$')
+            salt_bytes = bytes.fromhex(salt_hex)
+            dk = _hl2.pbkdf2_hmac('sha256', password.encode('utf-8'), salt_bytes, iterations=260000, dklen=64)
+            return dk.hex() == dk_hex
+        except Exception:
+            return False
+    # Format scrypt (ancien - retrocompatibilite)
     if stored and stored.startswith('scrypt$v1$'):
         try:
             _, _v, salt_hex, dk_hex = stored.split('$')
-            # Essayer N=4096 (nouveau) puis N=16384 (ancien) pour rétrocompatibilité
             salt_bytes = bytes.fromhex(salt_hex)
             for N in (4096, 16384):
                 try:
-                    dk = _hashlib.scrypt(
-                        password.encode('utf-8'),
-                        salt=salt_bytes, n=N, r=8, p=1, dklen=64
-                    )
+                    dk = _hashlib.scrypt(password.encode('utf-8'), salt=salt_bytes, n=N, r=8, p=1, dklen=64)
                     if dk.hex() == dk_hex:
                         return True
                 except Exception:
@@ -51,7 +57,7 @@ def check_password_hash(stored: str, password: str) -> bool:
             return False
         except Exception:
             return False
-    return _wz_check(stored, password)  # fallback anciens hashes
+    return _wz_check(stored, password)  # fallback werkzeug
 # ─────────────────────────────────────────────────────────────────────────────
 from werkzeug.utils import secure_filename
 from functools import wraps
@@ -64,7 +70,12 @@ import random
 import json
 # pandas : lazy import dans les fonctions export (gain 3-5s démarrage)
 from io import BytesIO
-import yfinance as yf
+try:
+    import yfinance as yf
+    _YF_OK = True
+except ImportError:
+    yf = None
+    _YF_OK = False
 # numpy  : lazy import dans les fonctions de calcul
 import base64
 # PIL    : lazy import (QR codes uniquement)
@@ -81,10 +92,10 @@ from datetime import date as _date
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'K3nGn1-F1n@nc3-s3cr3t-k3y-!2024#XqZ9pLmR7vBw')
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # SÉCURITÉ: 30min (app financière)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # 8h pour les admins boutique
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max file size
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 
 # ── Suppression des OSError "write error" dans les logs ───────────────────────
@@ -1406,6 +1417,7 @@ def _normalize_yf_symbol(symbol: str) -> str:
 def trading_recommendation(symbol, timeframe='1mo'):
     """AI trading recommendations based on market data"""
     try:
+        if not _YF_OK: raise ImportError('yfinance non disponible')
         ticker = yf.Ticker(_normalize_yf_symbol(symbol))
         hist = ticker.history(period=timeframe)
         
@@ -2598,6 +2610,7 @@ def add_position():
         # Obtenir le prix actuel avec yfinance
         current_price = avg_price
         try:
+            if not _YF_OK: raise ImportError('yfinance non disponible')
             ticker = yf.Ticker(_normalize_yf_symbol(data['symbol']))
             hist = ticker.history(period='1d')
             if not hist.empty:
@@ -8858,6 +8871,32 @@ def shop_upload_product_image():
         return jsonify({'success': False, 'error': str(e)})
 
 
+
+
+@app.route('/shop/api/product/set-image-url', methods=['POST'])
+@shop_staff_required  
+def shop_set_image_url():
+    """Définit l'image d'un produit depuis une URL externe — rapide, sans upload."""
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    pid = d.get('pid')
+    url = (d.get('url') or '').strip()
+    if not pid or not url:
+        return jsonify({'success': False, 'error': 'pid et url requis'}), 400
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE shop_products SET image_url=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (url, pid)
+        )
+        conn.commit()
+        return jsonify({'success': True, 'url': url})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
 @app.route('/shop/api/product/<int:pid>/remove-image', methods=['POST'])
 @shop_staff_required
 def shop_remove_product_image(pid):
@@ -11901,7 +11940,10 @@ def kni_contact_update(cid):
 @app.route('/shop/suivi')
 def kni_order_tracking():
     """Page de suivi de commande par numéro KNI-..."""
-    return render_template('shop_tracking.html')
+    # Template manquant - retourner une page simple
+    return '''<!DOCTYPE html><html><head><title>Suivi commande</title></head>
+    <body><h2>Suivi de commande</h2><p>Entrez votre numéro de commande pour le suivi.</p>
+    <a href="/shop">← Retour à la boutique</a></body></html>'''
 
 
 @app.route('/shop/api/suivi', methods=['POST'])
