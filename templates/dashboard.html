@@ -86,10 +86,10 @@
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th>Symbole</th>
+                    <th>Description</th>
                     <th>Type</th>
-                    <th>Quantité</th>
-                    <th>Prix</th>
+                    <th>Catégorie</th>
+                    <th>Devise</th>
                     <th>Montant</th>
                     <th>Statut</th>
                 </tr>
@@ -97,20 +97,20 @@
             <tbody>
                 {% for transaction in transactions %}
                 <tr>
-                    <td>{{ transaction.created_at[:19] }}</td>
-                    <td><strong>{{ transaction.symbol }}</strong></td>
+                    <td>{{ (transaction.date or transaction.get('created_at','')[:10]) }}</td>
+                    <td><strong>{{ transaction.description or transaction.category or '—' }}</strong></td>
                     <td>
-                        <span class="status-badge {% if transaction.type == 'buy' %}info{% else %}warning{% endif %}">
-                            {{ transaction.type }}
+                        <span class="status-badge {% if transaction.type == 'revenue' %}success{% elif transaction.type == 'expense' %}danger{% else %}info{% endif %}">
+                            {{ {'revenue':'💰 Revenu','expense':'💸 Dépense','buy':'📈 Achat','sell':'📉 Vente'}.get(transaction.type, transaction.type) }}
                         </span>
                     </td>
-                    <td>{{ transaction.quantity }}</td>
-                    <td>{{ "%.2f"|format(transaction.price) }}€</td>
-                    <td class="{% if transaction.amount > 0 %}text-success{% else %}text-danger{% endif %}">
-                        {{ "%.2f"|format(transaction.amount) }}€
+                    <td>{{ transaction.category or '—' }}</td>
+                    <td>{{ transaction.currency or 'XAF' }}</td>
+                    <td class="{% if transaction.type == 'revenue' %}text-success{% else %}text-danger{% endif %}" style="font-weight:700">
+                        {% if transaction.type == 'expense' %}−{% endif %}{{ "{:,.0f}".format(transaction.amount|float) }}
                     </td>
                     <td>
-                        <span class="status-badge success">{{ transaction.status }}</span>
+                        <span class="status-badge success">✓</span>
                     </td>
                 </tr>
                 {% else %}
@@ -286,133 +286,184 @@ loadDashWordDocs();
 </script>
 
 <script>
-// ── Données injectées depuis Flask ──────────────────────────────────────────
-const chartLabels    = {{ chart_labels   | tojson }};
-const chartRevenus   = {{ chart_revenus  | tojson }};
-const chartDepenses  = {{ chart_depenses | tojson }};
-const chartSolde     = {{ chart_solde    | tojson }};
-const donutLabels    = {{ donut_labels   | tojson }};
-const donutData      = {{ donut_data     | tojson }};
+/* ── Graphiques Dashboard k-Ni Finance ──────────────────────────────────── */
+// Données injectées par Flask (SSR)
+const _DASH = {
+  labels   : {{ chart_labels   | tojson }},
+  revenus  : {{ chart_revenus  | tojson }},
+  depenses : {{ chart_depenses | tojson }},
+  solde    : {{ chart_solde    | tojson }},
+  dLabels  : {{ donut_labels   | tojson }},
+  dData    : {{ donut_data     | tojson }}
+};
 
-// Fallback si aucune donnée disponible
-const perfLabels   = chartLabels.length   ? chartLabels   : ['Jan','Fév','Mar','Avr','Mai','Juin'];
-const perfRevenus  = chartRevenus.length  ? chartRevenus  : [0,0,0,0,0,0];
-const perfDepenses = chartDepenses.length ? chartDepenses : [0,0,0,0,0,0];
-const perfSolde    = chartSolde.length    ? chartSolde    : [0,0,0,0,0,0];
-const pieLabels    = donutLabels.length   ? donutLabels   : ['Aucune donnée'];
-const pieData      = donutData.length     ? donutData     : [1];
+let _perfChart = null;
+let _donutChart = null;
 
-// ── Graphique Performance Mensuelle (Revenus / Dépenses / Solde) ────────────
-const ctx1 = document.getElementById('performanceChart').getContext('2d');
-new Chart(ctx1, {
-    type: 'line',
-    data: {
-        labels: perfLabels,
+function buildCharts(d) {
+  const labels   = (d.labels   || _DASH.labels).length   ? (d.labels   || _DASH.labels)   : ['Jan','Fév','Mar','Avr','Mai','Juin'];
+  const revenus  = (d.revenus  || _DASH.revenus).length  ? (d.revenus  || _DASH.revenus)  : [0,0,0,0,0,0];
+  const depenses = (d.depenses || _DASH.depenses).length ? (d.depenses || _DASH.depenses) : [0,0,0,0,0,0];
+  const solde    = (d.solde    || _DASH.solde).length    ? (d.solde    || _DASH.solde)    : [0,0,0,0,0,0];
+  const dLabels  = (d.dLabels  || _DASH.dLabels).length  ? (d.dLabels  || _DASH.dLabels)  : ['Aucune donnée'];
+  const dData    = (d.dData    || _DASH.dData).length    ? (d.dData    || _DASH.dData)    : [1];
+
+  // ── Graphique Performance mensuelle ──
+  const c1 = document.getElementById('performanceChart');
+  if (c1) {
+    if (_perfChart) { _perfChart.destroy(); }
+    _perfChart = new Chart(c1.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels,
         datasets: [
-            {
-                label: 'Revenus',
-                data: perfRevenus,
-                borderColor: 'rgb(0, 212, 170)',
-                backgroundColor: 'rgba(0, 212, 170, 0.08)',
-                tension: 0.4,
-                fill: false,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-            },
-            {
-                label: 'Dépenses',
-                data: perfDepenses,
-                borderColor: 'rgb(255, 71, 87)',
-                backgroundColor: 'rgba(255, 71, 87, 0.08)',
-                tension: 0.4,
-                fill: false,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-            },
-            {
-                label: 'Solde',
-                data: perfSolde,
-                borderColor: 'rgb(255, 215, 0)',
-                backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                borderDash: [5, 3],
-            }
+          {
+            label: 'Revenus',
+            data: revenus,
+            borderColor: 'rgb(0,212,170)',
+            backgroundColor: 'rgba(0,212,170,0.08)',
+            tension: 0.4, fill: false,
+            pointRadius: 5, pointHoverRadius: 8,
+            pointBackgroundColor: 'rgb(0,212,170)',
+          },
+          {
+            label: 'Dépenses',
+            data: depenses,
+            borderColor: 'rgb(255,71,87)',
+            backgroundColor: 'rgba(255,71,87,0.08)',
+            tension: 0.4, fill: false,
+            pointRadius: 5, pointHoverRadius: 8,
+            pointBackgroundColor: 'rgb(255,71,87)',
+          },
+          {
+            label: 'Solde',
+            data: solde,
+            borderColor: 'rgb(255,215,0)',
+            backgroundColor: 'rgba(255,215,0,0.12)',
+            tension: 0.4, fill: true,
+            borderDash: [6,3],
+            pointRadius: 4, pointHoverRadius: 7,
+            pointBackgroundColor: 'rgb(255,215,0)',
+          }
         ]
-    },
-    options: {
+      },
+      options: {
         responsive: true,
         maintainAspectRatio: true,
+        animation: { duration: 600, easing: 'easeInOutQuart' },
         interaction: { mode: 'index', intersect: false },
         plugins: {
-            legend: {
-                display: true,
-                labels: { color: '#a8b2d1', font: { size: 11 } }
-            },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ` ${ctx.dataset.label} : ${ctx.parsed.y.toLocaleString('fr-FR')} €`
-                }
+          legend: { display: true, labels: { color: '#a8b2d1', font: { size: 11 }, usePointStyle: true } },
+          tooltip: {
+            backgroundColor: 'rgba(15,20,40,0.92)',
+            titleColor: '#e2e8f0',
+            bodyColor: '#a8b2d1',
+            borderColor: 'rgba(0,212,170,0.3)',
+            borderWidth: 1,
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label} : ${ctx.parsed.y.toLocaleString('fr-FR')} XAF`
             }
+          }
         },
         scales: {
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255,255,255,0.06)' },
-                ticks: {
-                    color: '#a8b2d1',
-                    callback: v => v.toLocaleString('fr-FR') + ' €'
-                }
-            },
-            x: {
-                grid: { color: 'rgba(255,255,255,0.06)' },
-                ticks: { color: '#a8b2d1' }
-            }
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#a8b2d1', callback: v => v.toLocaleString('fr-FR') + ' XAF' }
+          },
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#a8b2d1' } }
         }
-    }
-});
+      }
+    });
+  }
 
-// ── Graphique Répartition Dépenses par Catégorie ────────────────────────────
-const ctx2 = document.getElementById('distributionChart').getContext('2d');
-const DONUT_COLORS = [
-    'rgb(0, 212, 170)', 'rgb(0, 255, 136)', 'rgb(255, 215, 0)',
-    'rgb(255, 71, 87)',  'rgb(74, 158, 255)', 'rgb(168, 85, 247)'
-];
-new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-        labels: pieLabels,
+  // ── Graphique Donut catégories ──
+  const c2 = document.getElementById('distributionChart');
+  if (c2) {
+    if (_donutChart) { _donutChart.destroy(); }
+    const COLORS = [
+      'rgb(0,212,170)','rgb(0,255,136)','rgb(255,215,0)',
+      'rgb(255,71,87)','rgb(74,158,255)','rgb(168,85,247)',
+      'rgb(251,146,60)','rgb(52,211,153)'
+    ];
+    _donutChart = new Chart(c2.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: dLabels,
         datasets: [{
-            data: pieData,
-            backgroundColor: DONUT_COLORS.slice(0, pieLabels.length),
-            borderWidth: 2,
-            borderColor: 'rgba(0,0,0,0.2)',
+          data: dData,
+          backgroundColor: COLORS.slice(0, dLabels.length),
+          borderWidth: 2,
+          borderColor: '#0f1428',
+          hoverOffset: 8
         }]
-    },
-    options: {
+      },
+      options: {
         responsive: true,
         maintainAspectRatio: true,
+        animation: { duration: 700, easing: 'easeInOutBack' },
+        cutout: '68%',
         plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    color: '#a8b2d1',
-                    font: { size: 11 },
-                    padding: 12
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: ctx => {
-                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                        const pct   = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
-                        return ` ${ctx.label} : ${ctx.parsed.toLocaleString('fr-FR')} € (${pct}%)`;
-                    }
-                }
+          legend: {
+            position: 'bottom',
+            labels: { color: '#a8b2d1', font: { size: 11 }, padding: 14, usePointStyle: true }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15,20,40,0.92)',
+            titleColor: '#e2e8f0',
+            bodyColor: '#a8b2d1',
+            borderColor: 'rgba(0,212,170,0.3)',
+            borderWidth: 1,
+            callbacks: {
+              label: ctx => {
+                const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                const pct   = total > 0 ? ((ctx.parsed/total)*100).toFixed(1) : 0;
+                return ` ${ctx.label} : ${ctx.parsed.toLocaleString('fr-FR')} XAF (${pct}%)`;
+              }
             }
+          }
         }
-    }
+      }
+    });
+  }
+}
+
+/* ── Init : attend que Chart.js soit disponible ── */
+function waitForChartJS(cb, tries=0) {
+  if (typeof Chart !== 'undefined') { cb(); return; }
+  if (tries > 40) { console.warn('[Dashboard] Chart.js non chargé'); return; }
+  setTimeout(() => waitForChartJS(cb, tries+1), 100);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  waitForChartJS(() => buildCharts({}));
 });
+
+/* ── Auto-refresh graphiques toutes les 5 min ── */
+function refreshDashCharts() {
+  fetch('/api/dashboard-data', { credentials: 'same-origin' })
+    .then(r => r.ok ? r.json() : null)
+    .then(j => {
+      if (!j || !j.success) return;
+      buildCharts({
+        labels   : j.chart.labels,
+        revenus  : j.chart.revenus,
+        depenses : j.chart.depenses,
+        solde    : j.chart.solde,
+        dLabels  : j.donut.labels,
+        dData    : j.donut.data
+      });
+      // Mettre à jour les stats KPI en direct
+      if (j.stats) {
+        const fmt = v => new Intl.NumberFormat('fr-FR').format(Math.round(v||0)) + ' XAF';
+        document.querySelectorAll('[data-kpi="revenue"]').forEach(el=>el.textContent=fmt(j.stats.total_revenue));
+        document.querySelectorAll('[data-kpi="expenses"]').forEach(el=>el.textContent=fmt(j.stats.total_expenses));
+        document.querySelectorAll('[data-kpi="cashflow"]').forEach(el=>el.textContent=fmt(j.stats.cashflow));
+      }
+    })
+    .catch(() => {});
+}
+// Premier refresh après 30s, puis toutes les 5 min
+setTimeout(refreshDashCharts, 30000);
+setInterval(refreshDashCharts, 300000);
 </script>{% endblock %}

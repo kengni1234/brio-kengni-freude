@@ -5024,7 +5024,7 @@ async function checkWPStatus() {
     banner.innerHTML=`<i class="fas fa-times-circle" style="color:#ef4444"></i> <strong>Non configuré</strong> — Ajoutez WP_SITE_URL dans les variables d'environnement PythonAnywhere.`;
   } else if(d.success) {
     const mcp = d.mcp_available ? '✅ MCP actif' : '⚠️ MCP non disponible (JWT Token requis)';
-    const auth = d.has_jwt ? '🔑 JWT' : d.has_app_password ? '🔐 App Password' : "❌ Pas d'auth";
+    const auth = d.has_jwt ? '🔑 JWT' : d.has_app_password ? '🔐 App Password' : "❌ Pas d\'auth";
     banner.style.background='rgba(0,176,116,.08)'; banner.style.border='1px solid rgba(0,176,116,.25)';
     banner.innerHTML=`<i class="fas fa-check-circle" style="color:#00b074"></i> <strong>Connecté</strong> — ${d.url} · Auth: ${auth} · ${mcp}`;
   } else {
@@ -5192,7 +5192,7 @@ async function optimizePost() {
   const btn = document.getElementById('optBtn');
   const res = document.getElementById('optResult');
   const pid = document.getElementById('optPostId').value;
-  if(!pid){ toast("❌ Entrez un ID d'article", false); return; }
+  if(!pid){ toast("❌ Entrez un ID d\'article", false); return; }
   btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Optimisation...';
   if(res) res.innerHTML='';
   const d = await cdcFetch('/wp/api/ai/optimize-post', {
@@ -6688,7 +6688,7 @@ function initGbStars(){
 
       <!-- Bouton Appliquer -->
       <button class="qimg-save" id="qimgSaveBtn" onclick="qimgSave()" disabled>
-        <i class="fas fa-check-circle"></i> Appliquer l'image
+        <i class="fas fa-check-circle"></i> Appliquer l\'image
       </button>
 
     </div>

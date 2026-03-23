@@ -98,6 +98,14 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max file size
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 
+# ── Créer les sous-dossiers d'upload nécessaires ──────────────────────────────
+try:
+    for _sub in ('shop', 'avatars', 'announcements', 'flyers'):
+        _sd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', _sub)
+        os.makedirs(_sd, exist_ok=True)
+except Exception as _e:
+    print(f'[Init] Impossible de créer les dossiers upload: {_e}')
+
 # ── Suppression des OSError "write error" dans les logs ───────────────────────
 # Ces erreurs surviennent quand un client (navigateur) ferme la connexion SSE
 # avant que le serveur ait fini d'écrire. C'est un comportement normal mais
@@ -329,16 +337,24 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Database Connection Helper
+# Flag : PRAGMAs globaux appliqués une seule fois par processus (gain ~5ms/requête)
+_DB_PRAGMA_DONE = False
+
 def get_db_connection():
     """Connexion DB optimisée : WAL, cache 10Mo, synchronous NORMAL."""
+    global _DB_PRAGMA_DONE
     try:
         conn = sqlite3.connect(DB_FILE, timeout=15, check_same_thread=False)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")      # lectures non bloquées pendant écritures
-        conn.execute("PRAGMA cache_size=-10000")      # 10 Mo de cache pages
-        conn.execute("PRAGMA synchronous=NORMAL")     # moins de fsync, sûr
-        conn.execute("PRAGMA temp_store=MEMORY")      # tables temp en RAM
-        conn.execute("PRAGMA mmap_size=67108864")     # 64 Mo I/O mappée
+        if not _DB_PRAGMA_DONE:
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA cache_size=-10000")
+            conn.execute("PRAGMA synchronous=NORMAL")
+            conn.execute("PRAGMA temp_store=MEMORY")
+            conn.execute("PRAGMA mmap_size=134217728")  # 128 Mo
+            conn.execute("PRAGMA page_size=4096")
+            conn.commit()
+            _DB_PRAGMA_DONE = True
         return conn
     except Exception as e:
         print(f"Database connection error: {e}")
@@ -1613,7 +1629,10 @@ def create_notification(user_id, notif_type, title, message):
 
 @app.after_request
 def set_cache_headers(response):
-    """Cache statique, headers de sécurité HTTP, et blocage DevTools."""
+    """Cache statique, headers sécurité HTTP, performance."""
+    if response.content_type and any(ct in response.content_type
+       for ct in ['text/', 'application/json', 'application/javascript']):
+        response.headers['Vary'] = 'Accept-Encoding'
     path = request.path
     if path.startswith('/static/'):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
@@ -2101,8 +2120,11 @@ def dashboard():
 
         # ── Requête 3 : transactions récentes + formations récentes ─────────
         cur.execute("""
-            SELECT * FROM transactions WHERE user_id = ?
-            ORDER BY created_at DESC LIMIT 10
+            SELECT id, date, time, amount, type, category, description,
+                   currency, tags, created_at
+            FROM financial_transactions
+            WHERE user_id = ?
+            ORDER BY date DESC, time DESC LIMIT 10
         """, (user_id,))
         recent_transactions = [dict(r) for r in cur.fetchall()]
 
@@ -2134,6 +2156,73 @@ def dashboard():
                            training_total=training_total,
                            training_total_min=training_total_min,
                            training_this_month=training_this_month)
+
+@app.route('/api/dashboard-data')
+@login_required
+def api_dashboard_data():
+    """API JSON pour rafraîchir les graphiques du dashboard sans recharger la page."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    try:
+        cur = conn.cursor()
+        # Stats financières 30 jours
+        cur.execute("""
+            SELECT
+                COALESCE(SUM(CASE WHEN type='revenue' THEN amount ELSE 0 END),0) AS rev,
+                COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END),0) AS exp
+            FROM financial_transactions
+            WHERE user_id=? AND date >= date('now','-30 days')
+        """, (user_id,))
+        r = dict(cur.fetchone() or {})
+        rev, exp = r.get('rev',0), r.get('exp',0)
+
+        # Graphique 6 mois
+        cur.execute("""
+            SELECT strftime('%Y-%m', date) AS month,
+                   SUM(CASE WHEN type='revenue' THEN amount ELSE 0 END) AS revenus,
+                   SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS depenses
+            FROM financial_transactions
+            WHERE user_id=? AND date >= date('now','-6 months')
+            GROUP BY month ORDER BY month
+        """, (user_id,))
+        mn = {'01':'Jan','02':'Fév','03':'Mar','04':'Avr','05':'Mai','06':'Juin',
+              '07':'Juil','08':'Août','09':'Sep','10':'Oct','11':'Nov','12':'Déc'}
+        rows = cur.fetchall()
+        labels   = [mn.get(r['month'][-2:], r['month']) for r in rows]
+        revenus  = [round(r['revenus'] or 0, 2) for r in rows]
+        depenses = [round(r['depenses'] or 0, 2) for r in rows]
+        solde    = [round((r['revenus'] or 0)-(r['depenses'] or 0), 2) for r in rows]
+
+        # Donut catégories
+        cur.execute("""
+            SELECT category, SUM(amount) AS total FROM financial_transactions
+            WHERE user_id=? AND type='expense'
+            GROUP BY category ORDER BY total DESC LIMIT 6
+        """, (user_id,))
+        cats = cur.fetchall()
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_revenue': round(rev, 2),
+                'total_expenses': round(exp, 2),
+                'cashflow': round(rev - exp, 2),
+            },
+            'chart': {
+                'labels': labels, 'revenus': revenus,
+                'depenses': depenses, 'solde': solde
+            },
+            'donut': {
+                'labels': [r['category'] for r in cats],
+                'data':   [round(r['total'] or 0, 2) for r in cats]
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @app.route('/finances')
@@ -2708,20 +2797,33 @@ def export_portfolio():
     
     elif export_format == 'csv':
         try:
+            import pandas as pd  # lazy import
             df = pd.DataFrame(positions)
             output = BytesIO()
-            df.to_csv(output, index=False, encoding='utf-8')
+            df.to_csv(output, index=False, encoding='utf-8-sig')  # BOM pour Excel
             output.seek(0)
-            
             return send_file(
                 output,
-                mimetype='text/csv',
+                mimetype='text/csv; charset=utf-8',
                 as_attachment=True,
                 download_name=f'portfolio_{datetime.now().strftime("%Y%m%d")}.csv'
             )
+        except ImportError:
+            # Fallback sans pandas
+            import csv as _csv
+            from io import StringIO
+            si = StringIO()
+            si.write('﻿')
+            if positions:
+                writer = _csv.DictWriter(si, fieldnames=positions[0].keys())
+                writer.writeheader()
+                writer.writerows(positions)
+            output = BytesIO(si.getvalue().encode('utf-8'))
+            return send_file(output, mimetype='text/csv', as_attachment=True,
+                           download_name=f'portfolio_{datetime.now().strftime("%Y%m%d")}.csv')
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
-    
+
     elif export_format == 'pdf':
         try:
             from reportlab.lib.pagesizes import A4
@@ -2864,20 +2966,32 @@ def export_finances():
     
     elif export_format == 'csv':
         try:
+            import pandas as pd  # lazy import
             df = pd.DataFrame(transactions)
             output = BytesIO()
-            df.to_csv(output, index=False, encoding='utf-8')
+            df.to_csv(output, index=False, encoding='utf-8-sig')
             output.seek(0)
-            
             return send_file(
                 output,
-                mimetype='text/csv',
+                mimetype='text/csv; charset=utf-8',
                 as_attachment=True,
                 download_name=f'finances_{datetime.now().strftime("%Y%m%d")}.csv'
             )
+        except ImportError:
+            import csv as _csv
+            from io import StringIO
+            si = StringIO()
+            si.write('﻿')
+            if transactions:
+                writer = _csv.DictWriter(si, fieldnames=transactions[0].keys())
+                writer.writeheader()
+                writer.writerows(transactions)
+            output = BytesIO(si.getvalue().encode('utf-8'))
+            return send_file(output, mimetype='text/csv', as_attachment=True,
+                           download_name=f'finances_{datetime.now().strftime("%Y%m%d")}.csv')
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
-    
+
     elif export_format == 'pdf':
         try:
             from reportlab.lib.pagesizes import A4
@@ -7161,8 +7275,17 @@ def documents_download(doc_id):
         if os.path.exists(file_path):
             try:
                 fname = os.path.basename(file_path)
-                return send_file(file_path, as_attachment=True, download_name=fname)
+                import mimetypes
+                mime, _ = mimetypes.guess_type(file_path)
+                mime = mime or 'application/octet-stream'
+                return send_file(
+                    file_path,
+                    as_attachment=True,
+                    download_name=fname,
+                    mimetype=mime
+                )
             except Exception as e:
+                print(f"[Download] Erreur: {e}")
                 return f"Erreur lors du téléchargement : {str(e)}", 500
     if doc.get('file_url'):
         return redirect(doc['file_url'])
@@ -10514,7 +10637,7 @@ SHOP_CATEGORIES = [
     'vehicule','sante','papeterie','autre'
 ]
 
-CLAUDE_MODEL      = 'claude-sonnet-4-5'
+CLAUDE_MODEL      = 'claude-sonnet-4-5-20251001'
 
 # Rate limiting simple en mémoire
 import collections as _collections
@@ -10532,13 +10655,14 @@ def _ai_rate_ok(ip: str) -> bool:
 
 
 def _call_anthropic(system: str, messages: list, max_tokens: int = 800) -> dict:
-    """Appelle l'API Anthropic et retourne la réponse parsée."""
+    """Appelle l'API Anthropic avec retry automatique et gestion robuste des erreurs."""
     import json as _j
     import urllib.request as _ur
     import urllib.error as _ue
+    import time as _time
 
     if not ANTHROPIC_API_KEY:
-        return {'error': 'Clé API Anthropic non configurée (variable ANTHROPIC_API_KEY)'}
+        return {'error': 'ANTHROPIC_API_KEY non configurée — ajoutez-la dans PythonAnywhere > Web > Environment variables'}
 
     payload = _j.dumps({
         'model': CLAUDE_MODEL,
@@ -10547,21 +10671,64 @@ def _call_anthropic(system: str, messages: list, max_tokens: int = 800) -> dict:
         'messages': messages,
     }).encode('utf-8')
 
-    req = _ur.Request(ANTHROPIC_URL, data=payload, method='POST')
-    req.add_header('Content-Type', 'application/json')
-    req.add_header('x-api-key', ANTHROPIC_API_KEY)
-    req.add_header('anthropic-version', '2023-06-01')
+    last_error = None
+    for attempt in range(3):  # 3 tentatives max
+        if attempt > 0:
+            _time.sleep(2 ** attempt)  # backoff: 2s, 4s
 
-    try:
-        with _ur.urlopen(req, timeout=30) as resp:
-            data = _j.loads(resp.read().decode('utf-8'))
-            text = ''.join(b.get('text', '') for b in data.get('content', []) if b.get('type') == 'text')
-            return {'text': text}
-    except _ue.HTTPError as e:
-        body = e.read().decode('utf-8', errors='replace')
-        return {'error': f'Anthropic HTTP {e.code}: {body[:300]}'}
-    except Exception as ex:
-        return {'error': str(ex)}
+        req = _ur.Request(ANTHROPIC_URL, data=payload, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('x-api-key', ANTHROPIC_API_KEY)
+        req.add_header('anthropic-version', '2023-06-01')
+
+        try:
+            with _ur.urlopen(req, timeout=60) as resp:
+                data = _j.loads(resp.read().decode('utf-8'))
+                # Extraire le texte de la réponse
+                text = ''.join(
+                    b.get('text', '') for b in data.get('content', [])
+                    if b.get('type') == 'text'
+                )
+                if not text and data.get('content'):
+                    text = str(data['content'])
+                return {'text': text}
+
+        except _ue.HTTPError as e:
+            body = ''
+            try: body = e.read().decode('utf-8', errors='replace')
+            except: pass
+
+            if e.code == 401:
+                return {'error': 'Clé API Anthropic invalide — vérifiez ANTHROPIC_API_KEY'}
+            elif e.code == 403:
+                return {'error': 'Accès refusé — vérifiez les permissions de votre clé API'}
+            elif e.code == 429:
+                last_error = 'Trop de requêtes (rate limit) — réessayez dans quelques secondes'
+                continue  # retry
+            elif e.code == 529 or 'overloaded' in body.lower():
+                last_error = 'API surchargée — réessayez dans quelques secondes'
+                continue  # retry
+            elif e.code == 400:
+                return {'error': f'Requête invalide: {body[:200]}'}
+            else:
+                last_error = f'Erreur API {e.code}: {body[:200]}'
+                continue
+
+        except _ue.URLError as e:
+            reason = str(e.reason)
+            if 'timed out' in reason or 'timeout' in reason:
+                last_error = "Timeout — l'API Anthropic ne répond pas (verifiez la connexion reseau PA)"
+            elif 'Connection refused' in reason or 'Name or service not known' in reason:
+                last_error = 'Connexion impossible — vérifiez que api.anthropic.com est dans la whitelist PythonAnywhere'
+            else:
+                last_error = f'Erreur réseau: {reason}'
+            continue
+
+        except Exception as ex:
+            last_error = str(ex)
+            continue
+
+    return {'error': last_error or 'Erreur inconnue après 3 tentatives'}
 
 
 # ── Route : Agent Chat Client ────────────────────────────────────────
@@ -13574,6 +13741,38 @@ addLog('INFO', 'Diagnostic prêt. Heure: ' + new Date().toLocaleTimeString());
 </script>
 </body>
 </html>"""
+
+
+
+# ── Headers pour les fichiers statiques (images uploadées) ────────────────────
+@app.after_request
+def _add_upload_headers(response):
+    if request.path.startswith('/static/uploads/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+
+@app.route('/api/ai/test', methods=['GET'])
+@login_required
+def api_ai_test():
+    """Route de test rapide pour vérifier que l'API Anthropic fonctionne."""
+    if not ANTHROPIC_API_KEY:
+        return jsonify({
+            'success': False,
+            'status': 'not_configured',
+            'message': 'ANTHROPIC_API_KEY non définie',
+            'fix': 'PythonAnywhere > Web > Environment variables > ajouter ANTHROPIC_API_KEY'
+        })
+    result = _call_anthropic(
+        system='Tu es un assistant de test. Réponds toujours en une seule phrase.',
+        messages=[{'role': 'user', 'content': 'Dis juste "API OK" pour confirmer que tu fonctionnes.'}],
+        max_tokens=50
+    )
+    if 'error' in result:
+        return jsonify({'success': False, 'status': 'error', 'error': result['error']})
+    return jsonify({'success': True, 'status': 'ok', 'response': result.get('text', ''), 'model': CLAUDE_MODEL})
 
 
 if __name__ == '__main__':
