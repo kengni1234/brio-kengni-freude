@@ -25,25 +25,31 @@ from werkzeug.security import generate_password_hash as _wz_gen, check_password_
 import hashlib as _hashlib
 
 def generate_password_hash(password: str) -> str:
-    import os as _os_h
+    import os as _os_h, hashlib as _hl
     salt = _os_h.urandom(32)
-    # N=4096 : compatible PythonAnywhere free tier (512MB RAM).
-    # Suffisamment résistant au bruteforce tout en restant léger au démarrage.
-    dk = _hashlib.scrypt(password.encode('utf-8'), salt=salt, n=4096, r=8, p=1, dklen=64)
-    return f"scrypt$v1${salt.hex()}${dk.hex()}"
+    # pbkdf2 : compatible PythonAnywhere free tier, aucune limite memoire
+    dk = _hl.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations=260000, dklen=64)
+    return f"pbkdf2$v1${salt.hex()}${dk.hex()}"
 
 def check_password_hash(stored: str, password: str) -> bool:
+    import hashlib as _hl2
+    # Format pbkdf2 (nouveau - sans limite memoire)
+    if stored and stored.startswith('pbkdf2$v1$'):
+        try:
+            _, _v, salt_hex, dk_hex = stored.split('$')
+            salt_bytes = bytes.fromhex(salt_hex)
+            dk = _hl2.pbkdf2_hmac('sha256', password.encode('utf-8'), salt_bytes, iterations=260000, dklen=64)
+            return dk.hex() == dk_hex
+        except Exception:
+            return False
+    # Format scrypt (ancien - retrocompatibilite)
     if stored and stored.startswith('scrypt$v1$'):
         try:
             _, _v, salt_hex, dk_hex = stored.split('$')
-            # Essayer N=4096 (nouveau) puis N=16384 (ancien) pour rétrocompatibilité
             salt_bytes = bytes.fromhex(salt_hex)
             for N in (4096, 16384):
                 try:
-                    dk = _hashlib.scrypt(
-                        password.encode('utf-8'),
-                        salt=salt_bytes, n=N, r=8, p=1, dklen=64
-                    )
+                    dk = _hashlib.scrypt(password.encode('utf-8'), salt=salt_bytes, n=N, r=8, p=1, dklen=64)
                     if dk.hex() == dk_hex:
                         return True
                 except Exception:
@@ -51,7 +57,7 @@ def check_password_hash(stored: str, password: str) -> bool:
             return False
         except Exception:
             return False
-    return _wz_check(stored, password)  # fallback anciens hashes
+    return _wz_check(stored, password)  # fallback werkzeug
 # ─────────────────────────────────────────────────────────────────────────────
 from werkzeug.utils import secure_filename
 from functools import wraps
@@ -64,7 +70,12 @@ import random
 import json
 # pandas : lazy import dans les fonctions export (gain 3-5s démarrage)
 from io import BytesIO
-import yfinance as yf
+try:
+    import yfinance as yf
+    _YF_OK = True
+except ImportError:
+    yf = None
+    _YF_OK = False
 # numpy  : lazy import dans les fonctions de calcul
 import base64
 # PIL    : lazy import (QR codes uniquement)
@@ -81,11 +92,19 @@ from datetime import date as _date
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'K3nGn1-F1n@nc3-s3cr3t-k3y-!2024#XqZ9pLmR7vBw')
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # SÉCURITÉ: 30min (app financière)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # 8h pour les admins boutique
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max file size
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
+
+# ── Créer les sous-dossiers d'upload nécessaires ──────────────────────────────
+try:
+    for _sub in ('shop', 'avatars', 'announcements', 'flyers'):
+        _sd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads', _sub)
+        os.makedirs(_sd, exist_ok=True)
+except Exception as _e:
+    print(f'[Init] Impossible de créer les dossiers upload: {_e}')
 
 # ── Suppression des OSError "write error" dans les logs ───────────────────────
 # Ces erreurs surviennent quand un client (navigateur) ferme la connexion SSE
@@ -318,16 +337,24 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Database Connection Helper
+# Flag : PRAGMAs globaux appliqués une seule fois par processus (gain ~5ms/requête)
+_DB_PRAGMA_DONE = False
+
 def get_db_connection():
     """Connexion DB optimisée : WAL, cache 10Mo, synchronous NORMAL."""
+    global _DB_PRAGMA_DONE
     try:
         conn = sqlite3.connect(DB_FILE, timeout=15, check_same_thread=False)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")      # lectures non bloquées pendant écritures
-        conn.execute("PRAGMA cache_size=-10000")      # 10 Mo de cache pages
-        conn.execute("PRAGMA synchronous=NORMAL")     # moins de fsync, sûr
-        conn.execute("PRAGMA temp_store=MEMORY")      # tables temp en RAM
-        conn.execute("PRAGMA mmap_size=67108864")     # 64 Mo I/O mappée
+        if not _DB_PRAGMA_DONE:
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA cache_size=-10000")
+            conn.execute("PRAGMA synchronous=NORMAL")
+            conn.execute("PRAGMA temp_store=MEMORY")
+            conn.execute("PRAGMA mmap_size=134217728")  # 128 Mo
+            conn.execute("PRAGMA page_size=4096")
+            conn.commit()
+            _DB_PRAGMA_DONE = True
         return conn
     except Exception as e:
         print(f"Database connection error: {e}")
@@ -1406,6 +1433,7 @@ def _normalize_yf_symbol(symbol: str) -> str:
 def trading_recommendation(symbol, timeframe='1mo'):
     """AI trading recommendations based on market data"""
     try:
+        if not _YF_OK: raise ImportError('yfinance non disponible')
         ticker = yf.Ticker(_normalize_yf_symbol(symbol))
         hist = ticker.history(period=timeframe)
         
@@ -1601,7 +1629,10 @@ def create_notification(user_id, notif_type, title, message):
 
 @app.after_request
 def set_cache_headers(response):
-    """Cache statique, headers de sécurité HTTP, et blocage DevTools."""
+    """Cache statique, headers sécurité HTTP, performance."""
+    if response.content_type and any(ct in response.content_type
+       for ct in ['text/', 'application/json', 'application/javascript']):
+        response.headers['Vary'] = 'Accept-Encoding'
     path = request.path
     if path.startswith('/static/'):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
@@ -2089,8 +2120,11 @@ def dashboard():
 
         # ── Requête 3 : transactions récentes + formations récentes ─────────
         cur.execute("""
-            SELECT * FROM transactions WHERE user_id = ?
-            ORDER BY created_at DESC LIMIT 10
+            SELECT id, date, time, amount, type, category, description,
+                   currency, tags, created_at
+            FROM financial_transactions
+            WHERE user_id = ?
+            ORDER BY date DESC, time DESC LIMIT 10
         """, (user_id,))
         recent_transactions = [dict(r) for r in cur.fetchall()]
 
@@ -2122,6 +2156,73 @@ def dashboard():
                            training_total=training_total,
                            training_total_min=training_total_min,
                            training_this_month=training_this_month)
+
+@app.route('/api/dashboard-data')
+@login_required
+def api_dashboard_data():
+    """API JSON pour rafraîchir les graphiques du dashboard sans recharger la page."""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    try:
+        cur = conn.cursor()
+        # Stats financières 30 jours
+        cur.execute("""
+            SELECT
+                COALESCE(SUM(CASE WHEN type='revenue' THEN amount ELSE 0 END),0) AS rev,
+                COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END),0) AS exp
+            FROM financial_transactions
+            WHERE user_id=? AND date >= date('now','-30 days')
+        """, (user_id,))
+        r = dict(cur.fetchone() or {})
+        rev, exp = r.get('rev',0), r.get('exp',0)
+
+        # Graphique 6 mois
+        cur.execute("""
+            SELECT strftime('%Y-%m', date) AS month,
+                   SUM(CASE WHEN type='revenue' THEN amount ELSE 0 END) AS revenus,
+                   SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS depenses
+            FROM financial_transactions
+            WHERE user_id=? AND date >= date('now','-6 months')
+            GROUP BY month ORDER BY month
+        """, (user_id,))
+        mn = {'01':'Jan','02':'Fév','03':'Mar','04':'Avr','05':'Mai','06':'Juin',
+              '07':'Juil','08':'Août','09':'Sep','10':'Oct','11':'Nov','12':'Déc'}
+        rows = cur.fetchall()
+        labels   = [mn.get(r['month'][-2:], r['month']) for r in rows]
+        revenus  = [round(r['revenus'] or 0, 2) for r in rows]
+        depenses = [round(r['depenses'] or 0, 2) for r in rows]
+        solde    = [round((r['revenus'] or 0)-(r['depenses'] or 0), 2) for r in rows]
+
+        # Donut catégories
+        cur.execute("""
+            SELECT category, SUM(amount) AS total FROM financial_transactions
+            WHERE user_id=? AND type='expense'
+            GROUP BY category ORDER BY total DESC LIMIT 6
+        """, (user_id,))
+        cats = cur.fetchall()
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_revenue': round(rev, 2),
+                'total_expenses': round(exp, 2),
+                'cashflow': round(rev - exp, 2),
+            },
+            'chart': {
+                'labels': labels, 'revenus': revenus,
+                'depenses': depenses, 'solde': solde
+            },
+            'donut': {
+                'labels': [r['category'] for r in cats],
+                'data':   [round(r['total'] or 0, 2) for r in cats]
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @app.route('/finances')
@@ -2598,6 +2699,7 @@ def add_position():
         # Obtenir le prix actuel avec yfinance
         current_price = avg_price
         try:
+            if not _YF_OK: raise ImportError('yfinance non disponible')
             ticker = yf.Ticker(_normalize_yf_symbol(data['symbol']))
             hist = ticker.history(period='1d')
             if not hist.empty:
@@ -2695,20 +2797,33 @@ def export_portfolio():
     
     elif export_format == 'csv':
         try:
+            import pandas as pd  # lazy import
             df = pd.DataFrame(positions)
             output = BytesIO()
-            df.to_csv(output, index=False, encoding='utf-8')
+            df.to_csv(output, index=False, encoding='utf-8-sig')  # BOM pour Excel
             output.seek(0)
-            
             return send_file(
                 output,
-                mimetype='text/csv',
+                mimetype='text/csv; charset=utf-8',
                 as_attachment=True,
                 download_name=f'portfolio_{datetime.now().strftime("%Y%m%d")}.csv'
             )
+        except ImportError:
+            # Fallback sans pandas
+            import csv as _csv
+            from io import StringIO
+            si = StringIO()
+            si.write('﻿')
+            if positions:
+                writer = _csv.DictWriter(si, fieldnames=positions[0].keys())
+                writer.writeheader()
+                writer.writerows(positions)
+            output = BytesIO(si.getvalue().encode('utf-8'))
+            return send_file(output, mimetype='text/csv', as_attachment=True,
+                           download_name=f'portfolio_{datetime.now().strftime("%Y%m%d")}.csv')
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
-    
+
     elif export_format == 'pdf':
         try:
             from reportlab.lib.pagesizes import A4
@@ -2851,20 +2966,32 @@ def export_finances():
     
     elif export_format == 'csv':
         try:
+            import pandas as pd  # lazy import
             df = pd.DataFrame(transactions)
             output = BytesIO()
-            df.to_csv(output, index=False, encoding='utf-8')
+            df.to_csv(output, index=False, encoding='utf-8-sig')
             output.seek(0)
-            
             return send_file(
                 output,
-                mimetype='text/csv',
+                mimetype='text/csv; charset=utf-8',
                 as_attachment=True,
                 download_name=f'finances_{datetime.now().strftime("%Y%m%d")}.csv'
             )
+        except ImportError:
+            import csv as _csv
+            from io import StringIO
+            si = StringIO()
+            si.write('﻿')
+            if transactions:
+                writer = _csv.DictWriter(si, fieldnames=transactions[0].keys())
+                writer.writeheader()
+                writer.writerows(transactions)
+            output = BytesIO(si.getvalue().encode('utf-8'))
+            return send_file(output, mimetype='text/csv', as_attachment=True,
+                           download_name=f'finances_{datetime.now().strftime("%Y%m%d")}.csv')
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
-    
+
     elif export_format == 'pdf':
         try:
             from reportlab.lib.pagesizes import A4
@@ -7148,8 +7275,17 @@ def documents_download(doc_id):
         if os.path.exists(file_path):
             try:
                 fname = os.path.basename(file_path)
-                return send_file(file_path, as_attachment=True, download_name=fname)
+                import mimetypes
+                mime, _ = mimetypes.guess_type(file_path)
+                mime = mime or 'application/octet-stream'
+                return send_file(
+                    file_path,
+                    as_attachment=True,
+                    download_name=fname,
+                    mimetype=mime
+                )
             except Exception as e:
+                print(f"[Download] Erreur: {e}")
                 return f"Erreur lors du téléchargement : {str(e)}", 500
     if doc.get('file_url'):
         return redirect(doc['file_url'])
@@ -7694,7 +7830,7 @@ _BEAR_WORDS = [
 
 
 def _fetch_rss(src):
-    """Récupère et parse un flux RSS, retourne une liste d'articles."""
+    """Récupère et parse un flux RSS, retourne une liste d-articles."""
     articles = []
     try:
         req = _ur.Request(src['url'], headers={
@@ -8857,6 +8993,32 @@ def shop_upload_product_image():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+
+
+
+@app.route('/shop/api/product/set-image-url', methods=['POST'])
+@shop_staff_required  
+def shop_set_image_url():
+    """Définit l'image d'un produit depuis une URL externe — rapide, sans upload."""
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    pid = d.get('pid')
+    url = (d.get('url') or '').strip()
+    if not pid or not url:
+        return jsonify({'success': False, 'error': 'pid et url requis'}), 400
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE shop_products SET image_url=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (url, pid)
+        )
+        conn.commit()
+        return jsonify({'success': True, 'url': url})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
 
 @app.route('/shop/api/product/<int:pid>/remove-image', methods=['POST'])
 @shop_staff_required
@@ -10475,7 +10637,7 @@ SHOP_CATEGORIES = [
     'vehicule','sante','papeterie','autre'
 ]
 
-CLAUDE_MODEL      = 'claude-sonnet-4-5'
+CLAUDE_MODEL      = 'claude-sonnet-4-5-20251001'
 
 # Rate limiting simple en mémoire
 import collections as _collections
@@ -10493,13 +10655,14 @@ def _ai_rate_ok(ip: str) -> bool:
 
 
 def _call_anthropic(system: str, messages: list, max_tokens: int = 800) -> dict:
-    """Appelle l'API Anthropic et retourne la réponse parsée."""
+    """Appelle l'API Anthropic avec retry automatique et gestion robuste des erreurs."""
     import json as _j
     import urllib.request as _ur
     import urllib.error as _ue
+    import time as _time
 
     if not ANTHROPIC_API_KEY:
-        return {'error': 'Clé API Anthropic non configurée (variable ANTHROPIC_API_KEY)'}
+        return {'error': 'ANTHROPIC_API_KEY non configurée — ajoutez-la dans PythonAnywhere > Web > Environment variables'}
 
     payload = _j.dumps({
         'model': CLAUDE_MODEL,
@@ -10508,21 +10671,64 @@ def _call_anthropic(system: str, messages: list, max_tokens: int = 800) -> dict:
         'messages': messages,
     }).encode('utf-8')
 
-    req = _ur.Request(ANTHROPIC_URL, data=payload, method='POST')
-    req.add_header('Content-Type', 'application/json')
-    req.add_header('x-api-key', ANTHROPIC_API_KEY)
-    req.add_header('anthropic-version', '2023-06-01')
+    last_error = None
+    for attempt in range(3):  # 3 tentatives max
+        if attempt > 0:
+            _time.sleep(2 ** attempt)  # backoff: 2s, 4s
 
-    try:
-        with _ur.urlopen(req, timeout=30) as resp:
-            data = _j.loads(resp.read().decode('utf-8'))
-            text = ''.join(b.get('text', '') for b in data.get('content', []) if b.get('type') == 'text')
-            return {'text': text}
-    except _ue.HTTPError as e:
-        body = e.read().decode('utf-8', errors='replace')
-        return {'error': f'Anthropic HTTP {e.code}: {body[:300]}'}
-    except Exception as ex:
-        return {'error': str(ex)}
+        req = _ur.Request(ANTHROPIC_URL, data=payload, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('x-api-key', ANTHROPIC_API_KEY)
+        req.add_header('anthropic-version', '2023-06-01')
+
+        try:
+            with _ur.urlopen(req, timeout=60) as resp:
+                data = _j.loads(resp.read().decode('utf-8'))
+                # Extraire le texte de la réponse
+                text = ''.join(
+                    b.get('text', '') for b in data.get('content', [])
+                    if b.get('type') == 'text'
+                )
+                if not text and data.get('content'):
+                    text = str(data['content'])
+                return {'text': text}
+
+        except _ue.HTTPError as e:
+            body = ''
+            try: body = e.read().decode('utf-8', errors='replace')
+            except: pass
+
+            if e.code == 401:
+                return {'error': 'Clé API Anthropic invalide — vérifiez ANTHROPIC_API_KEY'}
+            elif e.code == 403:
+                return {'error': 'Accès refusé — vérifiez les permissions de votre clé API'}
+            elif e.code == 429:
+                last_error = 'Trop de requêtes (rate limit) — réessayez dans quelques secondes'
+                continue  # retry
+            elif e.code == 529 or 'overloaded' in body.lower():
+                last_error = 'API surchargée — réessayez dans quelques secondes'
+                continue  # retry
+            elif e.code == 400:
+                return {'error': f'Requête invalide: {body[:200]}'}
+            else:
+                last_error = f'Erreur API {e.code}: {body[:200]}'
+                continue
+
+        except _ue.URLError as e:
+            reason = str(e.reason)
+            if 'timed out' in reason or 'timeout' in reason:
+                last_error = "Timeout — l'API Anthropic ne répond pas (verifiez la connexion reseau PA)"
+            elif 'Connection refused' in reason or 'Name or service not known' in reason:
+                last_error = 'Connexion impossible — vérifiez que api.anthropic.com est dans la whitelist PythonAnywhere'
+            else:
+                last_error = f'Erreur réseau: {reason}'
+            continue
+
+        except Exception as ex:
+            last_error = str(ex)
+            continue
+
+    return {'error': last_error or 'Erreur inconnue après 3 tentatives'}
 
 
 # ── Route : Agent Chat Client ────────────────────────────────────────
@@ -11901,7 +12107,10 @@ def kni_contact_update(cid):
 @app.route('/shop/suivi')
 def kni_order_tracking():
     """Page de suivi de commande par numéro KNI-..."""
-    return render_template('shop_tracking.html')
+    # Template manquant - retourner une page simple
+    return '''<!DOCTYPE html><html><head><title>Suivi commande</title></head>
+    <body><h2>Suivi de commande</h2><p>Entrez votre numéro de commande pour le suivi.</p>
+    <a href="/shop">← Retour à la boutique</a></body></html>'''
 
 
 @app.route('/shop/api/suivi', methods=['POST'])
@@ -12688,6 +12897,882 @@ def shop_apropos_public():
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if conn: conn.close()
+
+
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║         INTÉGRATION WORDPRESS + MCP + IA CLAUDE — SEO & Contenu             ║
+# ║                                                                              ║
+# ║  Architecture :                                                              ║
+# ║    Flask (k-Ni) ←→ WordPress REST API ←→ WordPress MCP Plugin ←→ Claude    ║
+# ║                                                                              ║
+# ║  Variables d'environnement requises :                                       ║
+# ║    WP_SITE_URL   = https://votre-site-wordpress.com                          ║
+# ║    WP_USERNAME   = votre-username-wordpress                                  ║
+# ║    WP_APP_PASSWORD = xxxx xxxx xxxx xxxx xxxx xxxx  (Application Password)  ║
+# ║    WP_JWT_TOKEN  = eyJhbGci... (depuis Settings > WordPress MCP > Tokens)   ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+import urllib.request as _wp_ur
+import urllib.error   as _wp_ue
+import base64 as _b64
+import json   as _wpj
+
+# ── Config WordPress (depuis variables d'environnement) ─────────────────────
+WP_SITE_URL    = os.environ.get('WP_SITE_URL',    '').rstrip('/')
+WP_USERNAME    = os.environ.get('WP_USERNAME',    '')
+WP_APP_PASSWORD= os.environ.get('WP_APP_PASSWORD','')
+WP_JWT_TOKEN   = os.environ.get('WP_JWT_TOKEN',   '')
+
+def _wp_auth_headers() -> dict:
+    """Construit les headers d'authentification WordPress.
+    Priorité : JWT Token > Application Password."""
+    if WP_JWT_TOKEN:
+        return {
+            'Authorization': f'Bearer {WP_JWT_TOKEN}',
+            'Content-Type': 'application/json',
+        }
+    elif WP_USERNAME and WP_APP_PASSWORD:
+        creds = _b64.b64encode(f'{WP_USERNAME}:{WP_APP_PASSWORD}'.encode()).decode()
+        return {
+            'Authorization': f'Basic {creds}',
+            'Content-Type': 'application/json',
+        }
+    return {'Content-Type': 'application/json'}
+
+
+def _wp_request(endpoint: str, method: str = 'GET', data: dict = None, timeout: int = 15) -> dict:
+    """Effectue une requête vers l'API REST WordPress."""
+    if not WP_SITE_URL:
+        return {'error': 'WP_SITE_URL non configure. Ajoutez la variable environnement WP_SITE_URL.'}
+    url = f'{WP_SITE_URL}/wp-json{endpoint}'
+    headers = _wp_auth_headers()
+    payload = _wpj.dumps(data).encode() if data else None
+    try:
+        req = _wp_ur.Request(url, data=payload, method=method, headers=headers)
+        with _wp_ur.urlopen(req, timeout=timeout) as r:
+            return _wpj.loads(r.read().decode('utf-8'))
+    except _wp_ue.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        try:
+            err = _wpj.loads(body)
+        except Exception:
+            err = {'message': body[:500]}
+        return {'error': f'HTTP {e.code}', 'details': err}
+    except Exception as ex:
+        return {'error': str(ex)}
+
+
+def _wp_mcp_call(tool_name: str, args: dict = None) -> dict:
+    """Appelle un outil via le endpoint MCP Streamable (JSON-RPC 2.0)."""
+    if not WP_SITE_URL:
+        return {'error': 'WP_SITE_URL non configuré'}
+    if not WP_JWT_TOKEN:
+        return {'error': 'WP_JWT_TOKEN requis pour MCP Streamable. Generez-en un dans Settings > WordPress MCP > Tokens.'}
+    endpoint = f'{WP_SITE_URL}/wp-json/wp/v2/wpmcp/streamable'
+    payload  = _wpj.dumps({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'tools/call',
+        'params': {'name': tool_name, 'arguments': args or {}}
+    }).encode()
+    headers = {
+        'Authorization': f'Bearer {WP_JWT_TOKEN}',
+        'Content-Type':  'application/json',
+        'Accept':        'application/json',
+    }
+    try:
+        req = _wp_ur.Request(endpoint, data=payload, method='POST', headers=headers)
+        with _wp_ur.urlopen(req, timeout=20) as r:
+            return _wpj.loads(r.read().decode('utf-8'))
+    except _wp_ue.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        try: err = _wpj.loads(body)
+        except Exception: err = {'message': body[:300]}
+        return {'error': f'MCP HTTP {e.code}', 'details': err}
+    except Exception as ex:
+        return {'error': str(ex)}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ROUTES WORDPRESS — Dashboard & Config
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/wp/status', methods=['GET'])
+@login_required
+def wp_status():
+    """Vérifie la connexion WordPress et retourne les infos du site."""
+    if not WP_SITE_URL:
+        return jsonify({'success': False, 'configured': False,
+                        'error': 'WP_SITE_URL non configuré'})
+    info = _wp_request('/wp/v2/wpmcp', method='POST',
+                        data={'method': 'tools/list', 'params': {}}) if WP_JWT_TOKEN else {}
+    site = _wp_request('/wp/v2/settings')
+    if 'error' in site:
+        # Essai GET public
+        site = _wp_request('/')
+    return jsonify({
+        'success': True,
+        'configured': bool(WP_SITE_URL),
+        'url': WP_SITE_URL,
+        'has_jwt': bool(WP_JWT_TOKEN),
+        'has_app_password': bool(WP_APP_PASSWORD),
+        'site_info': site if 'error' not in site else None,
+        'mcp_available': 'error' not in info,
+    })
+
+
+@app.route('/wp/config', methods=['POST'])
+@login_required
+def wp_save_config():
+    """Sauvegarde la configuration WordPress dans la session (démo).
+    En production, utiliser des variables d'environnement."""
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Admin requis'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    # Stockage en session (temporaire) — remplacez par variables env en prod
+    session['wp_site_url_temp']     = d.get('site_url', '').rstrip('/')
+    session['wp_jwt_token_temp']    = d.get('jwt_token', '')
+    session['wp_app_password_temp'] = d.get('app_password', '')
+    session['wp_username_temp']     = d.get('username', '')
+    return jsonify({'success': True, 'message': 'Configuration sauvegardee. Redemarrez app pour variables environnement.'})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ROUTES WORDPRESS — Articles & Pages
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/wp/api/posts', methods=['GET'])
+@login_required
+def wp_get_posts():
+    """Liste les articles WordPress."""
+    page     = request.args.get('page', 1)
+    per_page = request.args.get('per_page', 10)
+    status   = request.args.get('status', 'any')
+    result   = _wp_request(f'/wp/v2/posts?page={page}&per_page={per_page}&status={status}&_fields=id,title,status,date,link,excerpt,yoast_head_json')
+    if isinstance(result, list):
+        return jsonify({'success': True, 'posts': result})
+    return jsonify({'success': False, 'error': result.get('error', 'Erreur inconnue')}), 500
+
+
+@app.route('/wp/api/posts', methods=['POST'])
+@login_required
+def wp_create_post():
+    """Crée un article WordPress."""
+    d = request.get_json(force=True, silent=True) or {}
+    result = _wp_request('/wp/v2/posts', method='POST', data={
+        'title':   d.get('title', ''),
+        'content': d.get('content', ''),
+        'status':  d.get('status', 'draft'),
+        'excerpt': d.get('excerpt', ''),
+        'meta':    d.get('meta', {}),
+        'slug':    d.get('slug', ''),
+        'categories': d.get('categories', []),
+        'tags':    d.get('tags', []),
+    })
+    if 'id' in result:
+        return jsonify({'success': True, 'post': result})
+    return jsonify({'success': False, 'error': result.get('error', 'Erreur création')}), 500
+
+
+@app.route('/wp/api/posts/<int:post_id>', methods=['PUT'])
+@login_required
+def wp_update_post(post_id):
+    """Met à jour un article WordPress."""
+    d = request.get_json(force=True, silent=True) or {}
+    result = _wp_request(f'/wp/v2/posts/{post_id}', method='POST', data=d)
+    if 'id' in result:
+        return jsonify({'success': True, 'post': result})
+    return jsonify({'success': False, 'error': result.get('error', 'Erreur mise à jour')}), 500
+
+
+@app.route('/wp/api/posts/<int:post_id>', methods=['DELETE'])
+@login_required
+def wp_delete_post(post_id):
+    """Supprime un article WordPress."""
+    result = _wp_request(f'/wp/v2/posts/{post_id}', method='DELETE')
+    return jsonify({'success': True} if 'deleted' in result or 'id' in result
+                   else {'success': False, 'error': result.get('error', 'Erreur')})
+
+
+@app.route('/wp/api/pages', methods=['GET'])
+@login_required
+def wp_get_pages():
+    """Liste les pages WordPress."""
+    result = _wp_request('/wp/v2/pages?per_page=20&_fields=id,title,status,link,date')
+    if isinstance(result, list):
+        return jsonify({'success': True, 'pages': result})
+    return jsonify({'success': False, 'error': result.get('error', 'Erreur')}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ROUTES WORDPRESS — Médias
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/wp/api/media', methods=['GET'])
+@login_required
+def wp_get_media():
+    """Liste les médias WordPress."""
+    result = _wp_request('/wp/v2/media?per_page=20&_fields=id,title,source_url,alt_text,date,mime_type')
+    if isinstance(result, list):
+        return jsonify({'success': True, 'media': result})
+    return jsonify({'success': False, 'error': result.get('error', 'Erreur')}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ROUTES SEO IA — Génération intelligente avec Claude
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/wp/api/ai/seo-audit', methods=['POST'])
+@login_required
+def wp_ai_seo_audit():
+    """Analyse SEO complète d'une URL ou contenu avec Claude."""
+    d = request.get_json(force=True, silent=True) or {}
+    url     = d.get('url', '')
+    content = d.get('content', '')
+    title   = d.get('title', '')
+    context = d.get('context', 'boutique e-commerce Cameroun')
+
+    system = """Tu es un expert SEO spécialisé dans le marché camerounais et africain francophone.
+Tu analyses le contenu et fournis des recommandations concrètes, actionnables et adaptées au contexte local.
+Réponds UNIQUEMENT en JSON valide sans markdown ni backticks."""
+
+    prompt = f"""Analyse SEO pour :
+URL : {url or "non fournie"}
+Titre : {title or "non fourni"}
+Contexte : {context}
+Contenu (extrait) : {content[:2000] if content else "non fourni"}
+
+Fournis une analyse complète en JSON :
+{{
+  "score_global": 72,
+  "resume": "Résumé en 2 phrases",
+  "titre": {{
+    "score": 80,
+    "actuel": "{title}",
+    "optimise": "Titre SEO optimisé proposé",
+    "problemes": ["Problème 1"],
+    "longueur_chars": 0,
+    "ideal": "50-60 caractères"
+  }},
+  "meta_description": {{
+    "score": 60,
+    "proposee": "Meta description 150-155 chars ciblant le Cameroun",
+    "mots_cles": ["mot1", "mot2", "mot3"]
+  }},
+  "mots_cles": {{
+    "principaux": ["kw1", "kw2"],
+    "secondaires": ["kw3", "kw4"],
+    "manquants": ["kw5"],
+    "densite_recommandee": "1-2%"
+  }},
+  "structure": {{
+    "h1_present": true,
+    "h2_count": 3,
+    "recommandations": ["Rec 1", "Rec 2"]
+  }},
+  "local_seo": {{
+    "score": 55,
+    "recommandations": ["Mentionner Yaoundé/Cameroun", "Ajouter adresse", "Schema LocalBusiness"]
+  }},
+  "actions_prioritaires": [
+    {{"priorite": "critique", "action": "Action 1", "impact": "Fort"}},
+    {{"priorite": "haute",    "action": "Action 2", "impact": "Moyen"}},
+    {{"priorite": "moyenne",  "action": "Action 3", "impact": "Faible"}}
+  ]
+}}"""
+
+    result = _call_anthropic(system, [{'role': 'user', 'content': prompt}], max_tokens=2000)
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+    try:
+        raw  = result['text'].strip().replace('```json','').replace('```','')
+        data = _wpj.loads(raw)
+        return jsonify({'success': True, 'audit': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Parse error: {e}', 'raw': result.get('text','')[:500]}), 500
+
+
+@app.route('/wp/api/ai/generate-article', methods=['POST'])
+@login_required
+def wp_ai_generate_article():
+    """Génère un article WordPress complet optimisé SEO avec Claude."""
+    d       = request.get_json(force=True, silent=True) or {}
+    sujet   = d.get('sujet', '').strip()
+    mots_cl = d.get('mots_cles', '')
+    ton     = d.get('ton', 'professionnel')
+    longueur= d.get('longueur', 'moyen')   # court/moyen/long
+    categorie= d.get('categorie', '')
+    auto_publish = d.get('auto_publish', False)
+
+    if not sujet:
+        return jsonify({'success': False, 'error': 'Sujet requis'}), 400
+
+    nb_mots = {'court': 400, 'moyen': 800, 'long': 1500}.get(longueur, 800)
+
+    system = """Tu es un rédacteur web SEO expert pour le marché camerounais et africain.
+Tu rédiges des articles optimisés pour Google, engageants, en français.
+Réponds UNIQUEMENT en JSON valide sans markdown ni backticks."""
+
+    prompt = f"""Redige un article WordPress complet sur : "{sujet}"
+Categorie : {categorie or "general"}
+Mots-cles : {mots_cl or "a definir"}
+Ton : {ton}
+Longueur : ~{nb_mots} mots
+Marché cible : Cameroun / Afrique francophone
+
+JSON requis :
+{{
+  "titre_seo": "Titre H1 50-60 chars avec mot-clé principal",
+  "slug": "url-lisible-optimisee",
+  "meta_description": "Description 150-155 chars pour Google",
+  "contenu_html": "<h2>Intro</h2><p>...</p><h2>Section 1</h2><p>...</p>...",
+  "extrait": "Résumé 1-2 phrases pour l'aperçu",
+  "tags": ["tag1", "tag2", "tag3"],
+  "schema_faq": [
+    {{"question": "Q1 ?", "reponse": "R1"}},
+    {{"question": "Q2 ?", "reponse": "R2"}}
+  ],
+  "conseils_seo": ["Conseil 1", "Conseil 2"]
+}}"""
+
+    result = _call_anthropic(system, [{'role': 'user', 'content': prompt}], max_tokens=3000)
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+
+    try:
+        raw  = result['text'].strip().replace('```json','').replace('```','')
+        data = _wpj.loads(raw)
+
+        # Publication automatique sur WordPress si demandé
+        wp_result = None
+        if auto_publish and WP_SITE_URL:
+            wp_result = _wp_request('/wp/v2/posts', method='POST', data={
+                'title':   data.get('titre_seo', sujet),
+                'content': data.get('contenu_html', ''),
+                'excerpt': data.get('extrait', ''),
+                'slug':    data.get('slug', ''),
+                'status':  'draft',
+                'tags':    [],
+            })
+
+        return jsonify({
+            'success':    True,
+            'article':    data,
+            'wp_draft':   wp_result if wp_result and 'id' in wp_result else None,
+            'wp_error':   wp_result.get('error') if wp_result and 'error' in wp_result else None,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Parse error: {e}', 'raw': result.get('text','')[:500]}), 500
+
+
+@app.route('/wp/api/ai/meta-tags', methods=['POST'])
+@login_required
+def wp_ai_meta_tags():
+    """Génère les meta tags SEO (title, description, OG, Twitter) pour une page."""
+    d       = request.get_json(force=True, silent=True) or {}
+    titre   = d.get('titre', '')
+    contenu = d.get('contenu', '')
+    type_p  = d.get('type', 'article')  # article | product | page | homepage
+
+    system = "Expert SEO technique. JSON uniquement, sans backticks."
+    prompt = f"""Génère des meta tags SEO complets pour :
+Titre brut : {titre}
+Type : {type_p}
+Contenu (extrait) : {contenu[:1000]}
+Contexte : k-Ni Store · Boutique en ligne · Yaoundé, Cameroun
+
+JSON :
+{{
+  "title_tag": "Titre <60 chars",
+  "meta_description": "Description 150-155 chars",
+  "og_title": "Titre Open Graph",
+  "og_description": "Description OG",
+  "twitter_title": "Titre Twitter Card",
+  "twitter_description": "Description Twitter",
+  "robots": "index, follow",
+  "canonical": "",
+  "schema_type": "Product|Article|WebPage",
+  "keywords": ["kw1", "kw2"]
+}}"""
+
+    result = _call_anthropic(system, [{'role': 'user', 'content': prompt}], max_tokens=800)
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+    try:
+        raw  = result['text'].strip().replace('```json','').replace('```','')
+        data = _wpj.loads(raw)
+        return jsonify({'success': True, 'meta_tags': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/wp/api/ai/keywords', methods=['POST'])
+@login_required
+def wp_ai_keywords():
+    """Recherche de mots-clés SEO ciblés Cameroun avec Claude."""
+    d      = request.get_json(force=True, silent=True) or {}
+    theme  = d.get('theme', '')
+    secteur= d.get('secteur', 'e-commerce')
+
+    system = "Expert SEO camerounais. JSON uniquement."
+    prompt = f"""Recherche de mots-clés SEO pour :
+Thème : {theme}
+Secteur : {secteur}
+Marché cible : Cameroun (Yaoundé, Douala, XAF)
+
+JSON :
+{{
+  "mots_cles_principaux": [
+    {{"mot": "kw1", "volume_estime": "Élevé", "difficulte": "Moyenne", "intention": "commerciale"}},
+    {{"mot": "kw2", "volume_estime": "Moyen", "difficulte": "Faible", "intention": "informationnelle"}}
+  ],
+  "mots_cles_longue_traine": ["phrase 1", "phrase 2", "phrase 3"],
+  "questions_google": ["Question 1 ?", "Question 2 ?"],
+  "mots_cles_locaux": ["kw cameroun", "kw yaoundé"],
+  "saisonnalite": "Notes sur la saisonnalité au Cameroun",
+  "opportunites": ["Opportunité 1", "Opportunité 2"]
+}}"""
+
+    result = _call_anthropic(system, [{'role': 'user', 'content': prompt}], max_tokens=1200)
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+    try:
+        raw  = result['text'].strip().replace('```json','').replace('```','')
+        data = _wpj.loads(raw)
+        return jsonify({'success': True, 'keywords': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/wp/api/ai/optimize-post', methods=['POST'])
+@login_required
+def wp_ai_optimize_post():
+    """Optimise un article WordPress existant pour le SEO avec Claude puis le publie."""
+    d       = request.get_json(force=True, silent=True) or {}
+    post_id = d.get('post_id')
+    push_wp = d.get('push_to_wordpress', False)
+
+    if not post_id:
+        return jsonify({'success': False, 'error': 'post_id requis'}), 400
+
+    # Récupérer l'article depuis WordPress
+    post = _wp_request(f'/wp/v2/posts/{post_id}')
+    if 'error' in post:
+        return jsonify({'success': False, 'error': f'Article WP introuvable: {post["error"]}'}), 404
+
+    titre   = post.get('title', {}).get('rendered', '')
+    contenu = post.get('content', {}).get('rendered', '')
+    extrait = post.get('excerpt', {}).get('rendered', '')
+
+    system = "Expert SEO WordPress. JSON uniquement, sans backticks."
+    prompt = f"""Optimise cet article WordPress pour le SEO :
+Titre actuel : {titre}
+Extrait : {extrait[:300]}
+Contenu (début) : {contenu[:2000]}
+
+Retourne les améliorations en JSON :
+{{
+  "titre_optimise": "Nouveau titre SEO",
+  "slug_optimise": "nouveau-slug",
+  "meta_description": "Description 150-155 chars",
+  "intro_optimisee": "Nouveau paragraphe d'introduction <p>...</p>",
+  "h2_suggeres": ["Titre H2 #1", "Titre H2 #2", "Titre H2 #3"],
+  "mots_cles_ajouter": ["kw1", "kw2"],
+  "cta_suggere": "Appel à l'action recommandé",
+  "score_avant": 55,
+  "score_apres": 85,
+  "ameliorations": ["Amélioration 1", "Amélioration 2"]
+}}"""
+
+    result = _call_anthropic(system, [{'role': 'user', 'content': prompt}], max_tokens=1500)
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+
+    try:
+        raw  = result['text'].strip().replace('```json','').replace('```','')
+        data = _wpj.loads(raw)
+
+        # Pousser les optimisations vers WordPress si demandé
+        wp_result = None
+        if push_wp and WP_SITE_URL:
+            update_payload = {}
+            if data.get('titre_optimise'):
+                update_payload['title']  = data['titre_optimise']
+            if data.get('slug_optimise'):
+                update_payload['slug']   = data['slug_optimise']
+            if data.get('meta_description'):
+                update_payload['excerpt'] = data['meta_description']
+            if update_payload:
+                wp_result = _wp_request(f'/wp/v2/posts/{post_id}', method='POST', data=update_payload)
+
+        return jsonify({
+            'success':    True,
+            'post_id':    post_id,
+            'original':   {'titre': titre},
+            'optimisation': data,
+            'wp_updated': wp_result is not None and 'id' in (wp_result or {}),
+            'wp_error':   wp_result.get('error') if wp_result and 'error' in wp_result else None,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/wp/api/ai/content-calendar', methods=['POST'])
+@login_required
+def wp_ai_content_calendar():
+    """Génère un calendrier éditorial SEO pour les 30 prochains jours."""
+    d       = request.get_json(force=True, silent=True) or {}
+    secteur = d.get('secteur', 'e-commerce')
+    objectif= d.get('objectif', 'trafic organique')
+    nb_articles = d.get('nb_articles', 8)
+
+    system = "Expert content marketing & SEO. JSON uniquement."
+    prompt = f"""Génère un calendrier éditorial SEO pour :
+Secteur : {secteur}
+Objectif : {objectif}
+Nombre d-articles : {nb_articles}
+Marché : Cameroun · Yaoundé · Francophone
+
+JSON :
+{{
+  "calendrier": [
+    {{
+      "semaine": 1,
+      "titre": "Titre article 1",
+      "type": "article|guide|liste|comparatif|actualite",
+      "mot_cle_principal": "kw principal",
+      "intention": "informationnelle|commerciale|navigationnelle",
+      "audience": "débutants|experts|acheteurs",
+      "notes": "Angle ou point unique à couvrir"
+    }}
+  ],
+  "themes_recurrents": ["Thème mensuel 1", "Thème mensuel 2"],
+  "conseils_strategie": ["Conseil 1", "Conseil 2"]
+}}"""
+
+    result = _call_anthropic(system, [{'role': 'user', 'content': prompt}], max_tokens=2500)
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+    try:
+        raw  = result['text'].strip().replace('```json','').replace('```','')
+        data = _wpj.loads(raw)
+        return jsonify({'success': True, 'calendar': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ROUTES MCP — Pont direct vers WordPress MCP Plugin
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/wp/mcp/tools', methods=['GET'])
+@login_required
+def wp_mcp_list_tools():
+    """Liste tous les outils disponibles via WordPress MCP."""
+    if not WP_JWT_TOKEN:
+        return jsonify({'success': False, 'error': 'JWT Token requis pour MCP (WP_JWT_TOKEN)'})
+    endpoint = f'{WP_SITE_URL}/wp-json/wp/v2/wpmcp/streamable'
+    payload  = _wpj.dumps({'jsonrpc':'2.0','id':1,'method':'tools/list','params':{}}).encode()
+    headers  = {'Authorization':f'Bearer {WP_JWT_TOKEN}','Content-Type':'application/json'}
+    try:
+        req = _wp_ur.Request(endpoint, data=payload, method='POST', headers=headers)
+        with _wp_ur.urlopen(req, timeout=15) as r:
+            data = _wpj.loads(r.read().decode())
+            tools = data.get('result', {}).get('tools', [])
+            return jsonify({'success': True, 'tools': tools, 'count': len(tools)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/wp/mcp/call', methods=['POST'])
+@login_required
+def wp_mcp_call_tool():
+    """Exécute un outil MCP WordPress depuis k-Ni."""
+    if session.get('role') not in ('admin', 'superadmin', 'shop_manager'):
+        return jsonify({'success': False, 'error': 'Droits insuffisants'}), 403
+    d    = request.get_json(force=True, silent=True) or {}
+    tool = d.get('tool', '')
+    args = d.get('args', {})
+    if not tool:
+        return jsonify({'success': False, 'error': 'Nom outil requis'}), 400
+    result = _wp_mcp_call(tool, args)
+    if 'error' in result:
+        return jsonify({'success': False, 'error': result['error']}), 500
+    return jsonify({'success': True, 'result': result.get('result', result)})
+
+
+@app.route('/wp/mcp/sync-products', methods=['POST'])
+@login_required
+def wp_mcp_sync_products():
+    """Synchronise les produits k-Ni Store → WooCommerce WordPress."""
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Admin requis'}), 403
+
+    conn = get_db_connection()
+    try:
+        products = conn.execute(
+            "SELECT id,name,description,price,stock,category,image_url,is_active FROM shop_products WHERE is_active=1 LIMIT 50"
+        ).fetchall()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+    synced, errors = [], []
+    for p in products:
+        p = dict(p)
+        # Créer/mettre à jour via WooCommerce REST API
+        woo_data = {
+            'name':             p['name'],
+            'description':      p['description'] or '',
+            'regular_price':    str(int(p['price'])),
+            'stock_quantity':   p['stock'],
+            'manage_stock':     True,
+            'status':           'publish',
+            'categories':       [{'name': p['category']}] if p.get('category') else [],
+            'images':           [{'src': p['image_url']}] if p.get('image_url') else [],
+        }
+        result = _wp_request('/wc/v3/products', method='POST', data=woo_data)
+        if 'id' in result:
+            synced.append({'kni_id': p['id'], 'woo_id': result['id'], 'name': p['name']})
+        else:
+            errors.append({'kni_id': p['id'], 'name': p['name'], 'error': result.get('error','?')})
+
+    return jsonify({
+        'success': True,
+        'synced_count': len(synced),
+        'error_count':  len(errors),
+        'synced':  synced,
+        'errors':  errors,
+    })
+
+
+
+# ═══════════════════════════════════════════════════════
+#  ROUTES SSE + ADMIN — products/all, orders/recent, user/downgrade
+# ═══════════════════════════════════════════════════════
+
+@app.route('/shop/api/products/all', methods=['GET'])
+@shop_staff_required
+def shop_products_all():
+    """Retourne tous les produits pour le rafraichissement memoire SSE."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, name, description, price, original_price, stock, "
+            "category, image_url, images, badge, is_active, "
+            "reviews_count, delivery_info, specifications, features "
+            "FROM shop_products ORDER BY created_at DESC"
+        ).fetchall()
+        products = []
+        for r in rows:
+            p = dict(r)
+            p['all_images'] = _shop_parse_images(p)
+            p['main_image'] = p['all_images'][0] if p['all_images'] else (p.get('image_url') or '')
+            products.append(p)
+        return jsonify({'success': True, 'products': products})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/orders/recent', methods=['GET'])
+@shop_staff_required
+def shop_orders_recent():
+    """Retourne les commandes recentes pour le rafraichissement SSE."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, order_number, customer_name, customer_phone, "
+            "customer_city, total, status, payment_method, "
+            "payment_ref, created_at, updated_at, items "
+            "FROM shop_orders ORDER BY created_at DESC LIMIT 100"
+        ).fetchall()
+        return jsonify({'success': True, 'orders': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/shop/api/user/downgrade', methods=['POST'])
+@login_required
+def shop_user_downgrade():
+    """Retrogrades un admin vers le role user."""
+    if session.get('role') not in ('admin', 'superadmin'):
+        return jsonify({'success': False, 'error': 'Admin requis'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    uid      = d.get('user_id')
+    new_role = d.get('new_role', 'user')
+    if not uid:
+        return jsonify({'success': False, 'error': 'user_id requis'}), 400
+    if str(uid) == str(session.get('user_id')):
+        return jsonify({'success': False, 'error': 'Impossible de se retrograder soi-meme'}), 400
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET role=? WHERE id=?", (new_role, uid))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+
+
+# ══════════════════════════════════════════════════════
+#  ROUTE DIAGNOSTIC JS — visible sans F12
+# ══════════════════════════════════════════════════════
+@app.route('/shop/admin/diag')
+@login_required  
+def shop_admin_diag():
+    """Page de diagnostic JS — affiche les erreurs directement dans le navigateur."""
+    return """<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagnostic k-Ni Admin</title>
+<style>
+  body{font-family:monospace;background:#0d1117;color:#e6edf3;padding:1rem;font-size:13px}
+  h2{color:#58a6ff;border-bottom:1px solid #30363d;padding-bottom:.5rem}
+  .ok{color:#3fb950} .err{color:#f85149} .warn{color:#e3b341}
+  .box{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:.75rem;margin:.5rem 0}
+  button{background:#238636;color:#fff;border:none;padding:.4rem 1rem;border-radius:6px;cursor:pointer;font-size:13px;margin:.3rem}
+  button.danger{background:#da3633}
+  pre{background:#0d1117;padding:.5rem;border-radius:4px;overflow-x:auto;font-size:11px;max-height:200px;overflow-y:auto}
+  #log{max-height:400px;overflow-y:auto}
+  .entry{padding:.3rem .5rem;border-bottom:1px solid #21262d;line-height:1.4}
+</style>
+</head>
+<body>
+<h2>🔍 Diagnostic k-Ni Admin JS</h2>
+
+<div class="box">
+  <b class="ok">✅ Flask OK</b> — Le serveur Python fonctionne correctement.
+</div>
+
+<h2>Tests JavaScript</h2>
+<div class="box" id="results">En cours...</div>
+
+<h2>Log des erreurs JS</h2>
+<div class="box" id="log"><div class="entry warn">Chargement...</div></div>
+
+<h2>Actions</h2>
+<button onclick="testFetch()">🔌 Tester /shop/api/products/all</button>
+<button onclick="testFetch2()">🔌 Tester /shop/admin</button>
+<button onclick="clearLog()">🗑 Effacer log</button>
+<button class="danger" onclick="location.href='/shop/admin'">➜ Aller au Shop Admin</button>
+
+<pre id="fetchResult">Cliquez sur un test...</pre>
+
+<script>
+const log = document.getElementById('log');
+const results = document.getElementById('results');
+
+// Intercepter toutes les erreurs JS globales
+const errors = [];
+window.onerror = function(msg, src, line, col, err) {
+  errors.push({type:'error', msg, src, line, col});
+  addLog('ERR', msg + ' (' + (src||'?') + ':' + line + ')');
+  return false;
+};
+window.addEventListener('unhandledrejection', e => {
+  errors.push({type:'promise', msg: e.reason?.message || String(e.reason)});
+  addLog('PROMISE', e.reason?.message || String(e.reason));
+});
+
+function addLog(type, msg) {
+  const d = document.createElement('div');
+  d.className = 'entry ' + (type==='ERR'||type==='PROMISE' ? 'err' : type==='WARN' ? 'warn' : 'ok');
+  d.textContent = '[' + type + '] ' + msg;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() { log.innerHTML = ''; }
+
+// Tests
+setTimeout(() => {
+  const tests = [
+    ['KniUI défini', typeof KniUI !== 'undefined'],
+    ['fetch disponible', typeof fetch !== 'undefined'],
+    ['PRODS chargé', false], // sera testé via iframe
+  ];
+  
+  results.innerHTML = tests.map(([name, ok]) =>
+    '<div class="entry ' + (ok?'ok':'warn') + '">' + (ok?'✅':'⚠️') + ' ' + name + '</div>'
+  ).join('');
+  
+  addLog('INFO', 'Page de diagnostic chargée. ' + errors.length + ' erreur(s) capturée(s).');
+  if(errors.length === 0) addLog('OK', 'Aucune erreur JS détectée sur cette page.');
+}, 500);
+
+async function testFetch() {
+  const pre = document.getElementById('fetchResult');
+  pre.textContent = 'Chargement...';
+  try {
+    const r = await fetch('/shop/api/products/all');
+    const d = await r.json();
+    pre.textContent = 'Status: ' + r.status + '\nRéponse: ' + JSON.stringify(d).slice(0,300);
+    addLog('OK', '/shop/api/products/all → ' + r.status + ' (' + (d.products?.length||0) + ' produits)');
+  } catch(e) {
+    pre.textContent = 'ERREUR: ' + e.message;
+    addLog('ERR', e.message);
+  }
+}
+
+async function testFetch2() {
+  const pre = document.getElementById('fetchResult');
+  pre.textContent = 'Chargement...';
+  try {
+    const r = await fetch('/shop/admin');
+    pre.textContent = 'Status: ' + r.status + ' — ' + (r.ok ? 'OK' : 'ERREUR');
+    addLog(r.ok?'OK':'ERR', '/shop/admin → HTTP ' + r.status);
+  } catch(e) {
+    pre.textContent = 'ERREUR: ' + e.message;
+    addLog('ERR', e.message);
+  }
+}
+
+addLog('INFO', 'Diagnostic prêt. Heure: ' + new Date().toLocaleTimeString());
+</script>
+</body>
+</html>"""
+
+
+
+# ── Headers pour les fichiers statiques (images uploadées) ────────────────────
+@app.after_request
+def _add_upload_headers(response):
+    if request.path.startswith('/static/uploads/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+
+@app.route('/api/ai/test', methods=['GET'])
+@login_required
+def api_ai_test():
+    """Route de test rapide pour vérifier que l'API Anthropic fonctionne."""
+    if not ANTHROPIC_API_KEY:
+        return jsonify({
+            'success': False,
+            'status': 'not_configured',
+            'message': 'ANTHROPIC_API_KEY non définie',
+            'fix': 'PythonAnywhere > Web > Environment variables > ajouter ANTHROPIC_API_KEY'
+        })
+    result = _call_anthropic(
+        system='Tu es un assistant de test. Réponds toujours en une seule phrase.',
+        messages=[{'role': 'user', 'content': 'Dis juste "API OK" pour confirmer que tu fonctionnes.'}],
+        max_tokens=50
+    )
+    if 'error' in result:
+        return jsonify({'success': False, 'status': 'error', 'error': result['error']})
+    return jsonify({'success': True, 'status': 'ok', 'response': result.get('text', ''), 'model': CLAUDE_MODEL})
 
 
 if __name__ == '__main__':

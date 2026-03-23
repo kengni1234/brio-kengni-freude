@@ -15,10 +15,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Chart.js chargé de façon asynchrone pour ne pas bloquer le rendu -->
 
     <style>
         :root {
@@ -1166,10 +1167,10 @@ body.light-theme .main-content { background: #f1f5f9 !important; }
     </main>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" defer></script>
 
     <script>
         function toggleTheme() {
@@ -1632,6 +1633,32 @@ body.light-theme .main-content { background: #f1f5f9 !important; }
                 }
             }).catch(() => {});
         setTimeout(checkUnreadChat, 30000);
+    })();
+    </script>
+
+
+    <!-- Chart.js : synchrone (requis par les graphiques inline) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- SESSION KEEPALIVE — ping toutes les 10min pour maintenir la session active -->
+    <script>
+    (function(){
+      var _kaInterval = setInterval(function(){
+        fetch('/api/chat/messages?limit=1', {credentials:'same-origin'})
+          .then(function(r){
+            if(r.status === 401 || r.status === 302){
+              // Session expirée - afficher un message discret
+              var banner = document.getElementById('_sessionBanner');
+              if(!banner){
+                banner = document.createElement('div');
+                banner.id = '_sessionBanner';
+                banner.style.cssText = 'position:fixed;bottom:1rem;right:1rem;z-index:9999;background:#1e293b;color:#f8fafc;padding:.7rem 1.1rem;border-radius:10px;font-size:.82rem;border:1px solid rgba(239,68,68,.4);display:flex;align-items:center;gap:.6rem;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+                banner.innerHTML = '<i class="fas fa-clock" style="color:#f59e0b"></i> Session expirée — <a href="/login" style="color:#00d4aa;font-weight:700;text-decoration:none">Se reconnecter</a>';
+                document.body.appendChild(banner);
+              }
+            }
+          }).catch(function(){});
+      }, 10 * 60 * 1000); // 10 minutes
     })();
     </script>
 
