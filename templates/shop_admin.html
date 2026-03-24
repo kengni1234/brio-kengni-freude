@@ -1024,6 +1024,7 @@ button .emoji, span.emoji, [data-emoji]{
     <div class="sa-grp">Équipe</div>
     <button class="sa-nb" id="nb-staff" onclick="go('staff')"><i class="fas fa-headset"></i> Assistance</button>
     <button class="sa-nb" id="nb-banners" onclick="go('banners')"><i class="fas fa-scroll"></i> Bannières top</button>
+    <button class="sa-nb" id="nb-imglib" onclick="go('imglib')" style="border-left:3px solid #f59e0b"><i class="fas fa-photo-video" style="color:#f59e0b"></i> Bibliothèque images <span id="imgLibCount" style="margin-left:auto;font-size:.65rem;color:var(--text-secondary)"></span></button>
     <button class="sa-nb" id="nb-posters" onclick="go('posters')"><i class="fas fa-image"></i> Affiches k-Ni</button>
     <button class="sa-nb" id="nb-perf" onclick="go('perf')"><i class="fas fa-trophy"></i> Performance équipe</button>
     {% if session.get('role') in ('admin','superadmin') %}
@@ -1499,6 +1500,573 @@ button .emoji, span.emoji, [data-emoji]{
 
 <!-- ══ PERFORMANCE ÉQUIPE ══ -->
 <!-- ══ AFFICHES k-Ni ══ -->
+<!-- ══════════════════════ SECTION BIBLIOTHÈQUE D'IMAGES ════════════════════ -->
+<div class="sec" id="sec-imglib">
+<style>
+/* ── Image Library Styles ── */
+.ilib-toolbar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:1.1rem}
+.ilib-search{flex:1;min-width:160px;background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:.5rem .85rem;border-radius:9px;font-size:.85rem;outline:none;font-family:inherit;transition:.2s}
+.ilib-search:focus{border-color:var(--primary-color)}
+.ilib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:.75rem;margin-bottom:1.25rem}
+.ilib-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:11px;overflow:hidden;transition:.18s;position:relative;cursor:pointer}
+.ilib-card:hover{border-color:var(--primary-color);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,176,116,.18)}
+.ilib-card.selected{border-color:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.35)}
+.ilib-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg-main)}
+.ilib-img-placeholder{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--bg-main);color:var(--text-secondary);font-size:1.8rem}
+.ilib-info{padding:.45rem .55rem .5rem}
+.ilib-fname{font-size:.67rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.2rem}
+.ilib-label{font-size:.72rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ilib-meta{font-size:.62rem;color:var(--text-secondary);margin-top:.15rem;display:flex;gap:.35rem;flex-wrap:wrap}
+.ilib-prods{display:flex;flex-wrap:wrap;gap:.2rem;margin-top:.3rem}
+.ilib-prod-tag{font-size:.58rem;background:rgba(0,176,116,.12);color:var(--primary-color);border:1px solid rgba(0,176,116,.3);padding:.08rem .35rem;border-radius:20px;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.ilib-actions{display:flex;gap:.3rem;padding:.4rem .55rem .5rem;border-top:1px solid var(--border-color)}
+.ilib-btn{flex:1;background:none;border:1px solid var(--border-color);color:var(--text-secondary);border-radius:7px;padding:.28rem;font-size:.72rem;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:.25rem;font-family:inherit}
+.ilib-btn:hover{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+.ilib-btn.danger:hover{background:#ef4444;border-color:#ef4444}
+.ilib-check{position:absolute;top:.4rem;right:.4rem;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff;pointer-events:none;opacity:0;transition:.15s}
+.ilib-card.selected .ilib-check{opacity:1;background:#f59e0b;border-color:#f59e0b}
+.ilib-drop-zone{border:2.5px dashed var(--border-color);border-radius:12px;padding:2rem;text-align:center;color:var(--text-secondary);font-size:.88rem;margin-bottom:1rem;transition:.2s;cursor:pointer;background:var(--bg-card)}
+.ilib-drop-zone.drag{border-color:var(--primary-color);background:rgba(0,176,116,.06);color:var(--primary-color)}
+.ilib-drop-zone i{font-size:2rem;margin-bottom:.5rem;display:block;opacity:.5}
+.ilib-pagination{display:flex;align-items:center;justify-content:center;gap:.4rem;flex-wrap:wrap}
+.ilib-pg-btn{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:.35rem .65rem;border-radius:7px;font-size:.8rem;cursor:pointer;transition:.15s;font-family:inherit}
+.ilib-pg-btn:hover,.ilib-pg-btn.on{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+/* Modal attacher image à un produit */
+.ilib-attach-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:800;align-items:center;justify-content:center}
+.ilib-attach-modal.open{display:flex}
+.ilib-attach-box{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1.75rem;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.ilib-prod-row{display:flex;align-items:center;gap:.6rem;padding:.55rem .7rem;border-radius:9px;cursor:pointer;transition:.15s;border:1px solid transparent}
+.ilib-prod-row:hover{background:rgba(0,176,116,.07);border-color:rgba(0,176,116,.2)}
+.ilib-prod-row img{width:38px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--bg-main)}
+.ilib-prod-row .pn{font-size:.82rem;font-weight:600;color:var(--text-primary)}
+.ilib-prod-row .pm{font-size:.72rem;color:var(--text-secondary)}
+/* Upload progress */
+.ilib-upbar{height:3px;background:var(--border-color);border-radius:2px;overflow:hidden;margin-top:.35rem;display:none}
+.ilib-upbarf{height:100%;background:var(--primary-color);border-radius:2px;width:0;transition:width .1s}
+/* Bulk actions bar */
+.ilib-bulk{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:.6rem 1rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;flex-wrap:wrap;display:none}
+.ilib-bulk.visible{display:flex}
+/* Edit label inline */
+.ilib-edit-label{width:100%;background:var(--bg-main);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:.2rem .4rem;font-size:.72rem;font-family:inherit;outline:none}
+.ilib-edit-label:focus{border-color:var(--primary-color)}
+/* Empty state */
+.ilib-empty{text-align:center;padding:3rem 1rem;color:var(--text-secondary)}
+.ilib-empty i{font-size:3rem;opacity:.3;display:block;margin-bottom:.75rem}
+/* Responsive */
+@media(max-width:640px){
+  .ilib-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.5rem}
+  .ilib-toolbar{gap:.4rem}
+}
+</style>
+
+<div class="sh" style="margin-bottom:.75rem">
+  <div>
+    <h4 style="font-size:1rem;font-weight:800;display:flex;align-items:center;gap:.5rem">
+      <i class="fas fa-photo-video" style="color:#f59e0b"></i> Bibliothèque d'images
+    </h4>
+    <small style="color:var(--text-secondary);font-size:.75rem">Gérez toutes vos images et attachez-les aux produits</small>
+  </div>
+  <div style="display:flex;gap:.5rem;align-items:center">
+    <button class="btn-g" onclick="syncImageLibrary()" title="Synchroniser les images existantes des produits"><i class="fas fa-sync-alt"></i> Sync</button>
+    <button class="btn-p" onclick="document.getElementById('ilibFileInput').click()"><i class="fas fa-upload"></i> Uploader</button>
+    <input type="file" id="ilibFileInput" multiple accept="image/*" style="display:none" onchange="ilibHandleFiles(this.files)">
+  </div>
+</div>
+
+<!-- Barre de sélection multiple -->
+<div class="ilib-bulk" id="ilibBulkBar">
+  <span id="ilibBulkCount" style="font-size:.83rem;font-weight:700;color:#f59e0b"></span>
+  <button class="btn-g" onclick="ilibBulkAttach()" style="font-size:.78rem;padding:.3rem .7rem"><i class="fas fa-link"></i> Attacher à un produit</button>
+  <button class="btn-g" onclick="ilibBulkDelete()" style="font-size:.78rem;padding:.3rem .7rem;color:#ef4444;border-color:#ef4444"><i class="fas fa-trash"></i> Supprimer</button>
+  <button class="btn-g" onclick="ilibClearSelection()" style="font-size:.78rem;padding:.3rem .7rem;margin-left:auto"><i class="fas fa-times"></i> Désélectionner</button>
+</div>
+
+<!-- Zone de glisser-déposer -->
+<div class="ilib-drop-zone" id="ilibDropZone"
+     ondragover="event.preventDefault();this.classList.add('drag')"
+     ondragleave="this.classList.remove('drag')"
+     ondrop="ilibDropHandle(event)"
+     onclick="document.getElementById('ilibFileInput').click()">
+  <i class="fas fa-cloud-upload-alt"></i>
+  Glissez vos images ici ou <strong>cliquez pour choisir</strong><br>
+  <small style="font-size:.72rem">PNG, JPG, WEBP — max 8 Mo chacune — envoi multiple supporté</small>
+</div>
+<div class="ilib-upbar" id="ilibUpbar"><div class="ilib-upbarf" id="ilibUpbarf"></div></div>
+
+<!-- Barre outils recherche + filtre -->
+<div class="ilib-toolbar" style="margin-top:.6rem">
+  <input class="ilib-search" id="ilibSearch" placeholder="🔍 Rechercher par nom, tag…" oninput="ilibSearchDebounced()">
+  <select class="fi" id="ilibPerPage" onchange="ilibPage=1;loadImageLibrary()" style="padding:.45rem .7rem;font-size:.82rem;min-width:90px">
+    <option value="24">24 / page</option>
+    <option value="48" selected>48 / page</option>
+    <option value="96">96 / page</option>
+  </select>
+  <span id="ilibTotal" style="font-size:.78rem;color:var(--text-secondary);white-space:nowrap"></span>
+</div>
+
+<!-- Grille images -->
+<div class="ilib-grid" id="ilibGrid">
+  <div class="ilib-empty" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><div>Chargement…</div></div>
+</div>
+
+<!-- Pagination -->
+<div class="ilib-pagination" id="ilibPagination"></div>
+
+<!-- Modal : attacher image à produit(s) -->
+<div class="ilib-attach-modal" id="ilibAttachModal">
+  <div class="ilib-attach-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h4 style="font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:.4rem">
+        <i class="fas fa-link" style="color:var(--primary-color)"></i> Attacher l'image à un produit
+      </h4>
+      <button onclick="ilibCloseAttach()" style="background:none;border:none;color:var(--text-secondary);font-size:1.1rem;cursor:pointer"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="ilibAttachImgPreview" style="text-align:center;margin-bottom:.85rem"></div>
+    <div style="margin-bottom:.6rem">
+      <input class="ilib-search" id="ilibAttachSearch" placeholder="🔍 Filtrer les produits…" oninput="ilibFilterProds()" style="width:100%">
+    </div>
+    <div style="max-height:340px;overflow-y:auto" id="ilibProdList"></div>
+    <div style="margin-top:.85rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:.35rem;font-size:.8rem;cursor:pointer">
+        <input type="checkbox" id="ilibAsMain"> Définir comme image principale
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : aperçu image grande taille -->
+<div class="ilib-attach-modal" id="ilibPreviewModal" onclick="this.classList.remove('open')" style="cursor:zoom-out">
+  <div style="max-width:90vw;max-height:90vh;position:relative" onclick="event.stopPropagation()">
+    <img id="ilibPreviewImg" src="" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:12px;display:block">
+    <div id="ilibPreviewInfo" style="text-align:center;color:#fff;font-size:.82rem;margin-top:.5rem;opacity:.8"></div>
+    <button onclick="document.getElementById('ilibPreviewModal').classList.remove('open')"
+            style="position:absolute;top:-12px;right:-12px;background:#ef4444;border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.9rem">×</button>
+  </div>
+</div>
+
+</div><!-- end sec-imglib -->
+
+
+<!-- ══════════════════════ SCRIPT BIBLIOTHÈQUE D'IMAGES ════════════════════ -->
+<script>
+/* ── State ── */
+let ilibPage = 1;
+let ilibData = [];
+let ilibSelected = new Set();
+let ilibAttachUrl = null;
+let ilibAllProds = [];
+let _ilibSearchTimer = null;
+
+/* ── Debounce recherche ── */
+function ilibSearchDebounced(){
+  clearTimeout(_ilibSearchTimer);
+  _ilibSearchTimer = setTimeout(()=>{ilibPage=1;loadImageLibrary();}, 320);
+}
+
+/* ── Chargement principal ── */
+async function loadImageLibrary(){
+  const q   = (document.getElementById('ilibSearch')?.value||'').trim();
+  const per = parseInt(document.getElementById('ilibPerPage')?.value||48);
+  const grid = document.getElementById('ilibGrid');
+  if(grid) grid.innerHTML = '<div class="ilib-empty" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><div>Chargement…</div></div>';
+
+  try {
+    const url = `/shop/api/image-library?q=${encodeURIComponent(q)}&page=${ilibPage}&per=${per}`;
+    const r   = await fetch(url, {credentials:'same-origin'});
+    const d   = await r.json();
+    if(!d.success){ if(grid) grid.innerHTML=`<div class="ilib-empty" style="grid-column:1/-1"><i class="fas fa-exclamation-circle"></i><div>${d.error||'Erreur'}</div></div>`; return; }
+    ilibData = d.images||[];
+
+    // Compteur header
+    const cnt = document.getElementById('imgLibCount');
+    if(cnt) cnt.textContent = d.total>0 ? d.total : '';
+    const tot = document.getElementById('ilibTotal');
+    if(tot) tot.textContent = `${d.total} image${d.total>1?'s':''}`;
+
+    ilibRenderGrid(ilibData);
+    ilibRenderPagination(d.page, d.pages);
+  } catch(e){
+    if(grid) grid.innerHTML = `<div class="ilib-empty" style="grid-column:1/-1"><i class="fas fa-wifi"></i><div>Erreur réseau</div></div>`;
+    console.error('[ImageLib]', e);
+  }
+}
+
+/* ── Rendu grille ── */
+function ilibRenderGrid(images){
+  const grid = document.getElementById('ilibGrid');
+  if(!grid) return;
+  if(!images.length){
+    grid.innerHTML = `<div class="ilib-empty" style="grid-column:1/-1">
+      <i class="fas fa-images"></i>
+      <div>Aucune image dans la bibliothèque</div>
+      <small>Uploadez des images via le bouton "Uploader" ou glissez-les ici</small>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = images.map(img => {
+    const isSelected = ilibSelected.has(img.id);
+    const prodTags = (img.products||[]).slice(0,3).map(p=>
+      `<span class="ilib-prod-tag" title="${p.name}">${p.name}</span>`).join('');
+    const moreProd = img.products&&img.products.length>3 ? `<span class="ilib-prod-tag">+${img.products.length-3}</span>` : '';
+    const sizeFmt = img.size_bytes>1048576 ? (img.size_bytes/1048576).toFixed(1)+'Mo' : img.size_bytes>1024 ? Math.round(img.size_bytes/1024)+'Ko' : img.size_bytes+'o';
+    const dimFmt  = img.width&&img.height ? `${img.width}×${img.height}` : '';
+    return `<div class="ilib-card${isSelected?' selected':''}" id="ilcard-${img.id}" data-id="${img.id}">
+      <div style="position:relative">
+        <img class="ilib-img" src="${img.url}" alt="${img.filename}"
+             loading="lazy"
+             onerror="this.style.display='none';this.nextSibling.style.display='flex'"
+             onclick="ilibToggleSelect(${img.id})">
+        <div class="ilib-img-placeholder" style="display:none" onclick="ilibToggleSelect(${img.id})">
+          <i class="fas fa-image"></i>
+        </div>
+        <div class="ilib-check"><i class="fas fa-check"></i></div>
+        <button onclick="event.stopPropagation();ilibPreview('${img.url}','${img.filename}','${dimFmt}','${sizeFmt}')"
+                style="position:absolute;top:.35rem;left:.35rem;background:rgba(0,0,0,.55);border:none;color:#fff;width:22px;height:22px;border-radius:50%;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                title="Aperçu"><i class="fas fa-search-plus"></i></button>
+      </div>
+      <div class="ilib-info">
+        <div class="ilib-label">
+          <input class="ilib-edit-label" data-id="${img.id}" value="${img.label||''}"
+                 placeholder="Libellé…"
+                 onblur="ilibSaveLabel(${img.id},this.value)"
+                 onclick="event.stopPropagation()"
+                 onkeydown="if(event.key==='Enter'){this.blur();}">
+        </div>
+        <div class="ilib-fname">${img.filename}</div>
+        <div class="ilib-meta">
+          ${dimFmt?`<span>${dimFmt}</span>`:''}
+          ${sizeFmt?`<span>${sizeFmt}</span>`:''}
+        </div>
+        ${img.products&&img.products.length ? `<div class="ilib-prods">${prodTags}${moreProd}</div>` : ''}
+      </div>
+      <div class="ilib-actions">
+        <button class="ilib-btn" onclick="event.stopPropagation();ilibOpenAttach('${img.url}')" title="Attacher à un produit">
+          <i class="fas fa-link"></i>
+        </button>
+        <button class="ilib-btn" onclick="event.stopPropagation();ilibCopyUrl('${img.url}')" title="Copier l'URL">
+          <i class="fas fa-copy"></i>
+        </button>
+        <button class="ilib-btn danger" onclick="event.stopPropagation();ilibDelete(${img.id},'${img.filename}',${(img.products||[]).length})" title="Supprimer">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Pagination ── */
+function ilibRenderPagination(current, total){
+  const el = document.getElementById('ilibPagination');
+  if(!el||total<=1){if(el)el.innerHTML='';return;}
+  let html = '';
+  if(current>1) html+=`<button class="ilib-pg-btn" onclick="ilibPage=${current-1};loadImageLibrary()"><i class="fas fa-chevron-left"></i></button>`;
+  const delta=2;
+  for(let p=1;p<=total;p++){
+    if(p===1||p===total||Math.abs(p-current)<=delta){
+      html+=`<button class="ilib-pg-btn${p===current?' on':''}" onclick="ilibPage=${p};loadImageLibrary()">${p}</button>`;
+    } else if(Math.abs(p-current)===delta+1){
+      html+='<span style="color:var(--text-secondary);padding:0 .2rem">…</span>';
+    }
+  }
+  if(current<total) html+=`<button class="ilib-pg-btn" onclick="ilibPage=${current+1};loadImageLibrary()"><i class="fas fa-chevron-right"></i></button>`;
+  el.innerHTML = html;
+}
+
+/* ── Sélection multiple ── */
+function ilibToggleSelect(id){
+  if(ilibSelected.has(id)) ilibSelected.delete(id);
+  else ilibSelected.add(id);
+  const card = document.getElementById('ilcard-'+id);
+  if(card) card.classList.toggle('selected', ilibSelected.has(id));
+  ilibUpdateBulk();
+}
+function ilibUpdateBulk(){
+  const bar = document.getElementById('ilibBulkBar');
+  const cnt = document.getElementById('ilibBulkCount');
+  if(!bar) return;
+  bar.classList.toggle('visible', ilibSelected.size>0);
+  if(cnt) cnt.textContent = `${ilibSelected.size} image${ilibSelected.size>1?'s':''} sélectionnée${ilibSelected.size>1?'s':''}`;
+}
+function ilibClearSelection(){
+  ilibSelected.forEach(id=>{
+    const card=document.getElementById('ilcard-'+id);
+    if(card) card.classList.remove('selected');
+  });
+  ilibSelected.clear();
+  ilibUpdateBulk();
+}
+
+/* ── Upload fichiers ── */
+function ilibHandleFiles(files){
+  if(!files||!files.length) return;
+  ilibUploadBatch(Array.from(files));
+}
+function ilibDropHandle(e){
+  e.preventDefault();
+  document.getElementById('ilibDropZone')?.classList.remove('drag');
+  const files = Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
+  if(!files.length){toast('Images uniquement (PNG, JPG, WEBP…)',false);return;}
+  ilibUploadBatch(files);
+}
+async function ilibUploadBatch(files){
+  const bar  = document.getElementById('ilibUpbar');
+  const barf = document.getElementById('ilibUpbarf');
+  if(bar) bar.style.display='block';
+  let done=0;
+  const total=files.length;
+  const results=[];
+  for(const f of files){
+    if(f.size>8*1024*1024){toast(`${f.name} trop lourd (max 8 Mo)`,false);done++;continue;}
+    // Watermark
+    let fileToSend=f;
+    try{fileToSend=await applyKniWatermark(f);}catch(e){fileToSend=f;}
+    const fd=new FormData();
+    fd.append('image',fileToSend,f.name);
+    try{
+      const r=await fetch('/shop/api/image-library/upload',{method:'POST',body:fd,credentials:'same-origin'});
+      const d=await r.json();
+      results.push(d);
+    }catch(e){results.push({success:false,error:e.message});}
+    done++;
+    if(barf) barf.style.width=(done/total*100)+'%';
+  }
+  setTimeout(()=>{if(bar)bar.style.display='none';if(barf)barf.style.width='0';},600);
+  const ok=results.filter(r=>r.success).length;
+  if(ok>0){
+    KniUI?.toast?.success(`${ok} image${ok>1?'s':''} ajoutée${ok>1?'s':''} à la bibliothèque`,'Bibliothèque');
+    loadImageLibrary();
+  } else {
+    toast('❌ Échec de l\'upload',false);
+  }
+}
+
+/* ── Supprimer une image ── */
+async function ilibDelete(id, fname, prodCount){
+  const confirm1 = prodCount>0
+    ? `⚠️ Cette image est utilisée par ${prodCount} produit(s).\n\nSi vous continuez, elle sera aussi retirée de ces produits.\n\nSupprimer quand même ?`
+    : `Supprimer "${fname}" de la bibliothèque ?`;
+  if(!confirm(confirm1)) return;
+  try{
+    const r=await fetch(`/shop/api/image-library/${id}?force=1`,{method:'DELETE',credentials:'same-origin'});
+    const d=await r.json();
+    if(d.success){
+      KniUI?.toast?.success('Image supprimée','Bibliothèque');
+      ilibSelected.delete(id);
+      ilibUpdateBulk();
+      loadImageLibrary();
+    } else {
+      toast('❌ '+(d.error||'Erreur lors de la suppression'),false);
+    }
+  }catch(e){toast('❌ Erreur réseau',false);}
+}
+
+/* ── Bulk delete ── */
+async function ilibBulkDelete(){
+  if(!ilibSelected.size) return;
+  if(!confirm(`Supprimer ${ilibSelected.size} image(s) ? Cette action est irréversible.`)) return;
+  KniUI?.loading?.show('Suppression en cours…');
+  let ok=0;
+  for(const id of [...ilibSelected]){
+    try{
+      const r=await fetch(`/shop/api/image-library/${id}?force=1`,{method:'DELETE',credentials:'same-origin'});
+      const d=await r.json();
+      if(d.success) ok++;
+    }catch(e){}
+  }
+  KniUI?.loading?.hide();
+  KniUI?.toast?.success(`${ok} image(s) supprimée(s)`,'Bibliothèque');
+  ilibClearSelection();
+  loadImageLibrary();
+}
+
+/* ── Aperçu image ── */
+function ilibPreview(url,fname,dim,size){
+  const m=document.getElementById('ilibPreviewModal');
+  const img=document.getElementById('ilibPreviewImg');
+  const info=document.getElementById('ilibPreviewInfo');
+  if(!m||!img) return;
+  img.src=url;
+  if(info) info.textContent=[fname,dim,size].filter(Boolean).join(' • ');
+  m.classList.add('open');
+}
+
+/* ── Copier URL ── */
+function ilibCopyUrl(url){
+  navigator.clipboard?.writeText(url).then(()=>{
+    KniUI?.toast?.success('URL copiée','Presse-papier');
+  }).catch(()=>{
+    // Fallback
+    const ta=document.createElement('textarea');
+    ta.value=url;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    KniUI?.toast?.success('URL copiée','Presse-papier');
+  });
+}
+
+/* ── Sauvegarder le libellé en ligne ── */
+async function ilibSaveLabel(id, label){
+  try{
+    await fetch(`/shop/api/image-library/${id}`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({label}),
+      credentials:'same-origin'
+    });
+  }catch(e){}
+}
+
+/* ── Synchroniser depuis les produits ── */
+async function syncImageLibrary(){
+  KniUI?.loading?.show('Synchronisation en cours…');
+  try{
+    const r=await fetch('/shop/api/image-library/sync',{method:'POST',credentials:'same-origin'});
+    const d=await r.json();
+    KniUI?.loading?.hide();
+    if(d.success){
+      KniUI?.toast?.success(`${d.added} nouvelle(s) image(s) importée(s) des produits`,'Sync bibliothèque');
+      loadImageLibrary();
+    } else {
+      toast('❌ '+(d.error||'Erreur sync'),false);
+    }
+  }catch(e){KniUI?.loading?.hide();toast('❌ Erreur réseau',false);}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL : Attacher image à un produit
+   ═══════════════════════════════════════════════════════════ */
+async function ilibOpenAttach(url){
+  ilibAttachUrl = url;
+  const m = document.getElementById('ilibAttachModal');
+  const prev = document.getElementById('ilibAttachImgPreview');
+  if(prev) prev.innerHTML=`<img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border-color)">`;
+  document.getElementById('ilibAttachSearch').value='';
+  if(!m) return;
+  m.classList.add('open');
+  // Charger liste produits
+  if(!ilibAllProds.length){
+    try{
+      const r=await fetch('/shop/api/products/all',{credentials:'same-origin'});
+      const d=await r.json();
+      ilibAllProds=(d.products||[]).sort((a,b)=>a.name.localeCompare(b.name));
+    }catch(e){}
+  }
+  ilibRenderProdList(ilibAllProds);
+}
+function ilibCloseAttach(){
+  const m=document.getElementById('ilibAttachModal');
+  if(m) m.classList.remove('open');
+  ilibAttachUrl=null;
+}
+function ilibFilterProds(){
+  const q=(document.getElementById('ilibAttachSearch')?.value||'').toLowerCase();
+  const filtered=q?ilibAllProds.filter(p=>p.name.toLowerCase().includes(q)):ilibAllProds;
+  ilibRenderProdList(filtered);
+}
+function ilibRenderProdList(prods){
+  const el=document.getElementById('ilibProdList');
+  if(!el) return;
+  if(!prods.length){el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--text-secondary);font-size:.85rem">Aucun produit</div>';return;}
+  el.innerHTML=prods.map(p=>`
+    <div class="ilib-prod-row" onclick="ilibAttachToProduct(${p.id},'${(p.name||'').replace(/'/g,"\\'")}')">
+      <img src="${p.image_url||''}" alt="${p.name}" onerror="this.src=''">
+      <div style="flex:1;min-width:0">
+        <div class="pn">${p.name}</div>
+        <div class="pm">${p.category||''} — Stock: ${p.stock||0}</div>
+      </div>
+      <i class="fas fa-chevron-right" style="color:var(--text-secondary);font-size:.75rem"></i>
+    </div>`).join('');
+}
+async function ilibAttachToProduct(pid, pname){
+  if(!ilibAttachUrl) return;
+  const asMain = document.getElementById('ilibAsMain')?.checked||false;
+  KniUI?.loading?.show('Attachement en cours…');
+  try{
+    const r=await fetch(`/shop/api/product/${pid}/attach-image`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url:ilibAttachUrl,as_main:asMain}),
+      credentials:'same-origin'
+    });
+    const d=await r.json();
+    KniUI?.loading?.hide();
+    if(d.success){
+      KniUI?.toast?.success(`Image attachée à "${pname}"`, 'Bibliothèque');
+      ilibCloseAttach();
+      loadImageLibrary();
+      // Invalider le cache prod local
+      ilibAllProds=[];
+    } else {
+      toast('❌ '+(d.error||'Erreur'),false);
+    }
+  }catch(e){KniUI?.loading?.hide();toast('❌ Erreur réseau',false);}
+}
+
+/* ── Bulk attach ── */
+async function ilibBulkAttach(){
+  if(!ilibSelected.size){toast('Aucune image sélectionnée',false);return;}
+  const urls=[...ilibSelected].map(id=>{
+    const img=ilibData.find(i=>i.id===id);
+    return img?img.url:null;
+  }).filter(Boolean);
+  if(!urls.length) return;
+  // Pour bulk, ouvrir avec la première image (les autres seront aussi attachées)
+  ilibAttachUrl=JSON.stringify(urls); // JSON pour indiquer mode bulk
+  const m=document.getElementById('ilibAttachModal');
+  const prev=document.getElementById('ilibAttachImgPreview');
+  if(prev) prev.innerHTML=`<div style="display:flex;gap:.3rem;flex-wrap:wrap;justify-content:center">
+    ${urls.slice(0,5).map(u=>`<img src="${u}" style="width:44px;height:44px;object-fit:cover;border-radius:6px">`).join('')}
+    ${urls.length>5?`<div style="width:44px;height:44px;border-radius:6px;background:var(--bg-main);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--text-secondary)">+${urls.length-5}</div>`:''}
+  </div><div style="font-size:.78rem;color:var(--text-secondary);margin-top:.4rem">${urls.length} images sélectionnées</div>`;
+  document.getElementById('ilibAttachSearch').value='';
+  if(m) m.classList.add('open');
+  if(!ilibAllProds.length){
+    try{
+      const r=await fetch('/shop/api/products/all',{credentials:'same-origin'});
+      const d=await r.json();
+      ilibAllProds=(d.products||[]).sort((a,b)=>a.name.localeCompare(b.name));
+    }catch(e){}
+  }
+  ilibRenderProdList(ilibAllProds);
+}
+
+/* ── Override attachToProduct pour gérer bulk ── */
+const _ilibOrigAttach = ilibAttachToProduct;
+ilibAttachToProduct = async function(pid, pname){
+  if(!ilibAttachUrl) return;
+  let urls=[];
+  try{ urls=JSON.parse(ilibAttachUrl); } catch(e){ urls=[ilibAttachUrl]; }
+  if(!Array.isArray(urls)) urls=[ilibAttachUrl];
+  const asMain=document.getElementById('ilibAsMain')?.checked||false;
+  KniUI?.loading?.show('Attachement en cours…');
+  let ok=0;
+  for(const url of urls){
+    try{
+      const r=await fetch(`/shop/api/product/${pid}/attach-image`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({url,as_main:asMain&&urls.indexOf(url)===0}),
+        credentials:'same-origin'
+      });
+      const d=await r.json();
+      if(d.success) ok++;
+    }catch(e){}
+  }
+  KniUI?.loading?.hide();
+  if(ok>0){
+    KniUI?.toast?.success(`${ok} image(s) attachée(s) à "${pname}"`, 'Bibliothèque');
+    ilibCloseAttach();
+    ilibClearSelection();
+    loadImageLibrary();
+    ilibAllProds=[];
+  } else {
+    toast('❌ Échec de l\'attachement',false);
+  }
+};
+</script>
+
+
+
 <div class="sec" id="sec-posters">
   <div class="sh"><h4>🎨 Affiches Promotionnelles k-Ni</h4></div>
   <div style="background:var(--accent-color);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem">
@@ -2632,6 +3200,97 @@ button .emoji, span.emoji, [data-emoji]{
 </div>
 
 <!-- ══ DETAIL PANEL ══ -->
+
+<!-- ══ SECTION PAIEMENTS ══ -->
+<div class="sec" id="sec-paiements">
+  <div class="sh">
+    <h4>💳 Gestion des Paiements</h4>
+    <div style="display:flex;gap:.45rem;flex-wrap:wrap;align-items:center">
+      <button class="btn-g" onclick="loadAdminPayments()"><i class="fas fa-sync"></i> Actualiser</button>
+      <select id="payFilterStatus" class="fi" style="font-size:.8rem;padding:.35rem .7rem;border-radius:8px" onchange="loadAdminPayments()">
+        <option value="">Tous les statuts</option>
+        <option value="pending">⏳ En attente</option>
+        <option value="confirmed">✅ Confirmés</option>
+        <option value="failed">❌ Échoués</option>
+        <option value="refunded">🔄 Remboursés</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Stats paiements -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.6rem;margin-bottom:1rem" id="payStats">
+    <div class="kpi"><div class="kpi-v" id="ps-pending">—</div><div class="kpi-l">⏳ En attente</div></div>
+    <div class="kpi"><div class="kpi-v" id="ps-confirmed" style="color:var(--primary-color)">—</div><div class="kpi-l">✅ Confirmés</div></div>
+    <div class="kpi"><div class="kpi-v" id="ps-failed" style="color:#f87171">—</div><div class="kpi-l">❌ Échoués</div></div>
+    <div class="kpi"><div class="kpi-v" id="ps-total" style="color:#f59e0b">—</div><div class="kpi-l">💰 Total XAF</div></div>
+  </div>
+
+  <!-- Table des paiements -->
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem" id="payTable">
+      <thead>
+        <tr style="background:var(--accent-color)">
+          <th style="padding:.5rem .75rem;text-align:left;font-weight:700;color:var(--text-secondary)">Commande</th>
+          <th style="padding:.5rem .75rem;text-align:left;font-weight:700;color:var(--text-secondary)">Client</th>
+          <th style="padding:.5rem .75rem;text-align:left;font-weight:700;color:var(--text-secondary)">Méthode</th>
+          <th style="padding:.5rem .75rem;text-align:right;font-weight:700;color:var(--text-secondary)">Montant</th>
+          <th style="padding:.5rem .75rem;text-align:left;font-weight:700;color:var(--text-secondary)">Statut</th>
+          <th style="padding:.5rem .75rem;text-align:left;font-weight:700;color:var(--text-secondary)">Date</th>
+          <th style="padding:.5rem .75rem;text-align:center;font-weight:700;color:var(--text-secondary)">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="payTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i> Chargement…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ SECTION ANNULATIONS ══ -->
+<div class="sec" id="sec-annulations">
+  <div class="sh">
+    <h4>🔄 Demandes d'Annulation</h4>
+    <div style="display:flex;gap:.45rem;align-items:center">
+      <button class="btn-g" onclick="loadAdminCancellations()"><i class="fas fa-sync"></i> Actualiser</button>
+    </div>
+  </div>
+
+  <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.83rem;color:var(--text-secondary)">
+    🛡️ <strong>Politique Garantie 3 jours :</strong> Les clients peuvent annuler dans les 72h suivant la commande. Traitez chaque demande sous 24h maximum.
+  </div>
+
+  <div id="cancellationsList">
+    <div style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i> Chargement…</div>
+  </div>
+</div>
+
+<!-- ══ MODAL CONFIRMATION PAIEMENT ADMIN ══ -->
+<div class="modal-ov" id="payConfirmAdminModal" style="display:none">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-hd">
+      <h4 id="payConfirmAdminTitle">Confirmer le paiement</h4>
+      <button class="modal-x" onclick="closePayConfirmAdmin()">&times;</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="payConfirmAdminId">
+      <div id="payConfirmAdminInfo" style="background:var(--accent-color);border-radius:10px;padding:.9rem;margin-bottom:.9rem;font-size:.85rem"></div>
+      <div class="fg">
+        <label class="fl">Référence de paiement (optionnel)</label>
+        <input class="fi" id="payConfirmAdminRef" placeholder="ex: OM-20250322-12345 ou numéro de transaction">
+      </div>
+      <div style="background:rgba(0,176,116,.07);border:1px solid rgba(0,176,116,.2);border-radius:8px;padding:.7rem;font-size:.82rem;color:var(--text-secondary)">
+        ✅ Confirmer signifie que vous avez bien reçu le paiement sur votre compte.
+      </div>
+    </div>
+    <div class="modal-ft" style="padding:.9rem 1.25rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.6rem">
+      <button class="btn-g" onclick="closePayConfirmAdmin()">Annuler</button>
+      <button class="btn-p" onclick="confirmPaymentAdmin()" id="payConfirmAdminBtn">
+        <i class="fas fa-check-circle"></i> Confirmer la réception
+      </button>
+    </div>
+  </div>
+</div>
+
 <aside class="dp closed" id="dpanel">
   <div class="dp-hd"><h5 id="dpTitle">Détail</h5><button class="dp-x" onclick="closeDP()"><i class="fas fa-times"></i></button></div>
   <div class="dp-bd" id="dpBody"></div>
@@ -3299,6 +3958,8 @@ button .emoji, span.emoji, [data-emoji]{
   <button class="bnav-btn" id="bnb-ord" onclick="go('ord')"><i class="fas fa-receipt"></i>Commandes{% if pending_count %}<span class="badge">{{ pending_count }}</span>{% endif %}</button>
   <button class="bnav-btn" id="bnb-inv" onclick="go('inv')"><i class="fas fa-file-invoice"></i>Factures</button>
   <button class="bnav-btn" id="bnb-perf" onclick="go('perf')"><i class="fas fa-trophy"></i>Équipe</button>
+  <button class="bnav-btn" id="bnb-paiements" onclick="go('paiements')"><i class="fas fa-credit-card"></i>Paiements</button>
+  <button class="bnav-btn" id="bnb-annulations" onclick="go('annulations')"><i class="fas fa-undo"></i>Annulations</button>
   {% if session.get('role') in ('admin','superadmin') %}<button class="bnav-btn" id="bnb-acc" onclick="go('acc')"><i class="fas fa-user-shield"></i>Accès</button>{% endif %}
 </nav>
 
@@ -3360,7 +4021,7 @@ if (typeof KniUI === 'undefined') {
 
 
 /* ══ NAVIGATION ══ */
-const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','deals','categories','zones','fidelite','promos','pages','apropos','messages','popup','activity','wordpress','seo','keywords','calendar'];
+const SECS=['dash','prod','new','ord','inv','stock','analytics','staff','banners','imglib','posters','perf','acc','crm','devis','fourn','sav','contrats','flash','deals','categories','zones','fidelite','promos','pages','apropos','messages','popup','activity','paiements','annulations','wordpress','seo','keywords','calendar'];
 function go(n){
   SECS.forEach(s=>{
     const el=document.getElementById('sec-'+s);
@@ -3393,8 +4054,11 @@ function go(n){
   if(n==='activity') loadActivityLog();
   if(n==='categories') loadCategories();
   if(n==='apropos') loadAproposAdmin();
+  if(n==='imglib') loadImageLibrary();
 
   if(n==='wordpress') { if(typeof loadWordPress==='function') loadWordPress(); }
+  if(n==='paiements')   { loadAdminPayments(); }
+  if(n==='annulations') { loadAdminCancellations(); }
   if(n==='seo')        { if(typeof initSEOPanel==='function') initSEOPanel(); }
   if(n==='keywords')   { if(typeof initKeywordsPanel==='function') initKeywordsPanel(); }
   if(n==='calendar')   { if(typeof initCalendarPanel==='function') initCalendarPanel(); }
@@ -6440,16 +7104,78 @@ function qimgHandleDrop(e){
   const file = e.dataTransfer?.files?.[0] || e.target?.files?.[0];
   if(file) qimgUploadFile(file);
 }
+
+/* ════ FIXES IMAGE UPLOAD ════════════════════════════════════ */
+
+/* Compression avant upload (réduit la taille, accélère l'envoi) */
+function _compressImage(file, maxPx, quality){
+  return new Promise(function(resolve){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        if(w > maxPx || h > maxPx){
+          if(w > h){ h = Math.round(h * maxPx / w); w = maxPx; }
+          else { w = Math.round(w * maxPx / h); h = maxPx; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob){ resolve(blob || file); }, 'image/jpeg', quality || 0.82);
+      };
+      img.onerror = function(){ resolve(file); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){ resolve(file); };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* Prévisualisation URL externe */
+function qimgPreviewUrl(url){
+  if(!url || !url.startsWith('http')) return;
+  var img = document.getElementById('qimgNewPreview');
+  var box = document.getElementById('qimgNewBox');
+  var ph  = document.getElementById('qimgNewPlaceholder');
+  if(!img) return;
+  img.onerror = function(){
+    if(box) box.classList.remove('has-image');
+    toast('⚠️ Image non accessible (URL invalide ou CORS)', false);
+  };
+  img.onload = function(){
+    if(box) box.classList.add('has-image');
+    if(ph) ph.style.display = 'none';
+    _qimgNewUrl = url;
+    var btn = document.getElementById('qimgSaveBtn');
+    if(btn) btn.disabled = false;
+    toast('✅ Image chargée — cliquez sur Appliquer');
+  };
+  img.src = url;
+}
+
+/* ════ FIN FIXES IMAGE UPLOAD ══════════════════════════════ */
+
 async function qimgUploadFile(file){
   if(!file){ toast('❌ Aucun fichier sélectionné', false); return; }
   if(!file.type.startsWith('image/')){ toast('❌ Fichier image requis (jpg, png, webp…)', false); return; }
-  if(file.size > 8*1024*1024){ toast('❌ Fichier trop volumineux (max 8 Mo)', false); return; }
+  if(file.size > 20*1024*1024){ toast('❌ Fichier trop volumineux (max 20 Mo)', false); return; }
   const bar = document.getElementById('qimgProgress');
   const barFill = document.getElementById('qimgProgressBar');
   bar.style.display = 'block'; barFill.style.width = '15%';
-  /* Appliquer le watermark k-Ni avant envoi (fallback silencieux) */
+  /* Compression si > 1.5Mo, watermark avec timeout 3s */
   let fileToSend = file;
-  try { fileToSend = await applyKniWatermark(file); } catch(e){ fileToSend = file; }
+  try {
+    if(file.size > 1.5*1024*1024){
+      fileToSend = await _compressImage(file, 1200, 0.82);
+    }
+    if(fileToSend.size < 3*1024*1024){
+      fileToSend = await Promise.race([
+        applyKniWatermark(fileToSend),
+        new Promise(function(r){ setTimeout(function(){ r(fileToSend); }, 3000); }) // timeout 3s
+      ]);
+    }
+  } catch(e){ fileToSend = file; }
   const fd = new FormData();
   fd.append('image', fileToSend, fileToSend.name || ('kni_prod_' + Date.now() + '.jpg'));
   /* ── Envoyer le pid pour que la DB soit mise à jour directement ── */
@@ -8367,6 +9093,686 @@ function loadWordPress(){if(typeof checkWPStatus==='function')checkWPStatus();if
 function initSEOPanel(){if(typeof showSEOTab==='function')showSEOTab(1);}
 function initKeywordsPanel(){}
 function initCalendarPanel(){}
+
+/* ════════════════════════════════════════════════════════════════
+   ADMIN — Gestion paiements & annulations
+════════════════════════════════════════════════════════════════ */
+const _PAY_STATUS_LABELS = {
+  pending:'En attente', waiting_confirm:'En verification',
+  confirmed:'Confirme', failed:'Echoue',
+  refunded:'Rembourse', cancelled:'Annule'
+};
+const _PAY_STATUS_COLORS = {
+  pending:'rgba(245,158,11,.15)', confirmed:'rgba(0,176,116,.15)',
+  failed:'rgba(239,68,68,.15)', refunded:'rgba(99,102,241,.15)',
+  cancelled:'rgba(107,114,128,.15)'
+};
+const _ADM_METHOD_LABELS = {
+  orange_money:'Orange Money', mtn_momo:'MTN MoMo',
+  cash:'Especes', virement:'Virement', stripe:'Carte bancaire'
+};
+
+async function loadAdminPayments(){
+  const fs = document.getElementById('payFilterStatus')?.value||'';
+  const tb = document.getElementById('payTableBody');
+  if(tb) tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i> Chargement</td></tr>';
+  const d = await cdcFetch('/shop/api/admin/payments');
+  if(!d||!d.success){ if(tb) tb.innerHTML = '<tr><td colspan="7" style="color:#f87171;text-align:center;padding:1rem">Erreur</td></tr>'; return; }
+  const pays = fs ? d.payments.filter(p=>p.status===fs) : d.payments;
+  ['pending','confirmed','failed'].forEach(s=>{
+    const el=document.getElementById('ps-'+s);
+    if(el) el.textContent=pays.filter(p=>p.status===s).length;
+  });
+  const tot=document.getElementById('ps-total');
+  if(tot) tot.textContent=pays.filter(p=>p.status==='confirmed').reduce((s,p)=>s+(p.amount||0),0).toLocaleString('fr-FR')+' XAF';
+  if(!pays.length){ if(tb) tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-secondary)">Aucun paiement</td></tr>'; return; }
+  if(tb) tb.innerHTML = pays.map(p=>{
+    const sc=_PAY_STATUS_COLORS[p.status]||'transparent';
+    const sl=_PAY_STATUS_LABELS[p.status]||p.status;
+    const ml=_ADM_METHOD_LABELS[p.method]||p.method;
+    const can=p.status==='pending'||p.status==='waiting_confirm';
+    return `<tr style="border-bottom:1px solid var(--border-color)">
+      <td style="padding:.55rem .75rem;font-weight:700">${p.order_number||('#'+p.order_id)}</td>
+      <td style="padding:.55rem .75rem"><div style="font-weight:600">${p.customer_name||'—'}</div><div style="font-size:.75rem;color:var(--text-secondary)">${p.customer_phone||''}</div></td>
+      <td style="padding:.55rem .75rem">${ml}</td>
+      <td style="padding:.55rem .75rem;text-align:right;font-weight:800;color:var(--primary-color)">${(p.amount||0).toLocaleString('fr-FR')} XAF</td>
+      <td style="padding:.55rem .75rem"><span style="background:${sc};padding:.2rem .6rem;border-radius:8px;font-size:.78rem;font-weight:700">${sl}</span></td>
+      <td style="padding:.55rem .75rem;font-size:.78rem;color:var(--text-secondary)">${(p.created_at||'').slice(0,16)}</td>
+      <td style="padding:.55rem .75rem;text-align:center">
+        <div style="display:flex;gap:.35rem;justify-content:center">
+          ${can?`<button class="btn-p" style="font-size:.72rem;padding:.3rem .6rem" onclick="openPayConfirmAdmin(${p.id},'${p.order_number||'#'+p.order_id}',${p.amount||0},'${p.method||''}')"><i class="fas fa-check"></i></button>`:''}
+          ${can?`<button class="btn-g" style="font-size:.72rem;padding:.3rem .6rem;color:#f87171" onclick="rejectPaymentAdmin(${p.id})"><i class="fas fa-times"></i></button>`:''}
+        </div>
+      </td></tr>`;
+  }).join('');
+}
+
+function openPayConfirmAdmin(payId, orderRef, amount, method){
+  document.getElementById('payConfirmAdminId').value = payId;
+  const info=document.getElementById('payConfirmAdminInfo');
+  if(info) info.innerHTML=`<strong>Commande :</strong> ${orderRef}<br><strong>Montant :</strong> <span style="color:var(--primary-color);font-weight:900">${parseFloat(amount).toLocaleString('fr-FR')} XAF</span><br><strong>Via :</strong> ${_ADM_METHOD_LABELS[method]||method}`;
+  document.getElementById('payConfirmAdminRef').value='';
+  document.getElementById('payConfirmAdminModal').style.display='flex';
+}
+function closePayConfirmAdmin(){
+  document.getElementById('payConfirmAdminModal').style.display='none';
+}
+async function confirmPaymentAdmin(){
+  const payId=document.getElementById('payConfirmAdminId').value;
+  const ref=document.getElementById('payConfirmAdminRef').value.trim();
+  const btn=document.getElementById('payConfirmAdminBtn');
+  btn.disabled=true;
+  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+  const d=await cdcFetch(`/shop/api/payment/${payId}/confirm`,{method:'POST',body:JSON.stringify({ref})});
+  btn.disabled=false;
+  btn.innerHTML='<i class="fas fa-check-circle"></i> Confirmer la reception';
+  if(d&&d.success){ KniUI.toast.success('Paiement confirme'); closePayConfirmAdmin(); loadAdminPayments(); }
+  else KniUI.toast.error((d&&d.error)||'Erreur');
+}
+async function rejectPaymentAdmin(payId){
+  const ok=await KniUI.danger('Rejeter ce paiement ?',{title:'Rejeter'});
+  if(!ok) return;
+  const d=await cdcFetch(`/shop/api/payment/${payId}/reject`,{method:'POST'});
+  if(d&&d.success){ KniUI.toast.success('Paiement rejete'); loadAdminPayments(); }
+  else KniUI.toast.error((d&&d.error)||'Erreur');
+}
+
+async function loadAdminCancellations(){
+  const list=document.getElementById('cancellationsList');
+  if(list) list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></div>';
+  const d=await cdcFetch('/shop/api/admin/cancellations');
+  if(!d||!d.success||!d.cancellations.length){
+    if(list) list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-check-circle" style="color:var(--primary-color)"></i> Aucune demande en attente</div>';
+    return;
+  }
+  const _SC={pending:'En attente',approved:'Approuvee',rejected:'Refusee',refunded:'Remboursee'};
+  if(list) list.innerHTML=d.cancellations.map(c=>`
+    <div style="border:1px solid var(--border-color);border-radius:14px;padding:1rem;margin-bottom:.75rem;background:var(--accent-color)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:800">${c.order_number||('#'+c.order_id)}</div>
+          <div style="font-size:.82rem;color:var(--text-secondary)">${c.customer_name||''} — ${c.customer_phone||''}</div>
+          <div style="font-size:.8rem;margin-top:.25rem"><strong>Motif :</strong> ${c.reason||'—'}</div>
+          <div style="font-size:.78rem;color:var(--text-secondary)">Montant : ${(c.total||0).toLocaleString('fr-FR')} XAF | ${_ADM_METHOD_LABELS[c.pay_method]||c.pay_method||'—'}</div>
+          <div style="font-size:.75rem;color:var(--text-secondary)">${(c.requested_at||'').slice(0,16)}</div>
+        </div>
+        <span style="padding:.25rem .65rem;border-radius:8px;font-size:.78rem;font-weight:700;background:${c.status==='pending'?'rgba(245,158,11,.15)':c.status==='approved'?'rgba(0,176,116,.15)':'rgba(239,68,68,.15)'}">${_SC[c.status]||c.status}</span>
+      </div>
+      ${c.status==='pending'?`
+      <div style="display:flex;gap:.5rem;margin-top:.75rem">
+        <textarea id="cn-${c.id}" style="flex:1;padding:.5rem .7rem;border:1.5px solid var(--border-color);border-radius:8px;font-family:inherit;font-size:.8rem;resize:vertical;min-height:48px;background:var(--bg-main)" placeholder="Note interne..."></textarea>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <button class="btn-p" style="font-size:.78rem;padding:.4rem .8rem" onclick="processCancellation(${c.id},'approved')"><i class="fas fa-check"></i> Approuver</button>
+          <button class="btn-g" style="font-size:.78rem;padding:.4rem .8rem;color:#f87171" onclick="processCancellation(${c.id},'rejected')"><i class="fas fa-times"></i> Refuser</button>
+        </div>
+      </div>`:c.admin_note?`<div style="margin-top:.4rem;font-size:.78rem;color:var(--text-secondary)">Note: ${c.admin_note}</div>`:''}
+    </div>`).join('');
+}
+
+async function processCancellation(cid, status){
+  const note=(document.getElementById('cn-'+cid)?.value||'').trim();
+  const ok=await KniUI.confirm(status==='approved'?'Approuver cette annulation ?':'Refuser cette demande ?',{title:status==='approved'?'Approuver':'Refuser'});
+  if(!ok) return;
+  const d=await cdcFetch(`/shop/api/admin/cancellations/${cid}`,{method:'PUT',body:JSON.stringify({status,note})});
+  if(d&&d.success){ KniUI.toast.success(status==='approved'?'Annulation approuvee':'Demande refusee'); loadAdminCancellations(); }
+  else KniUI.toast.error((d&&d.error)||'Erreur');
+}
+/* ════ FIN ADMIN PAIEMENTS ═══════════════════════════════════════ */
+
 </script>
+
+
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   PATCH 3A — clearSlot avec suppression serveur si produit existant
+   ══════════════════════════════════════════════════════════════════
+   Override la fonction clearSlot originale pour appeler
+   /shop/api/product/<pid>/detach-image au lieu de juste vider le slot
+   (le slot local est vidé dans tous les cas pour l'UX immédiate)
+*/
+const _originalClearSlot = typeof clearSlot === 'function' ? clearSlot : null;
+
+function clearSlot(slot){
+  // Vider le slot localement (comportement original)
+  galleryUrls[slot] = '';
+  if(slot === 0){
+    const prev = document.getElementById('imgPrev');
+    if(prev){ prev.src=''; prev.style.display='none'; }
+    const ico = document.getElementById('imgIco');
+    if(ico) ico.style.display='';
+    const sm = document.querySelector('#imgMainZone small');
+    if(sm) sm.style.display='';
+    document.getElementById('pimg').value='';
+  }
+  initGallery();
+
+  // Si un produit est déjà enregistré (eid non vide), détacher côté serveur
+  const pid = parseInt(document.getElementById('eid')?.value || 0);
+  if(!pid) return; // Nouveau produit : pas encore en DB, rien à faire côté serveur
+
+  // Récupérer l'URL avant de la vider (on l'a dans le dataset du bouton appelant)
+  // On cherche dans l'ancienne galleryUrls — déjà vidée, donc on utilise
+  // le produit courant rechargé via l'API
+  // NOTE : l'URL a déjà été retirée de galleryUrls, mais le formulaire n'est
+  // pas encore sauvegardé → on ne touche pas le serveur ici pour éviter
+  // des incohérences. La suppression réelle sur le serveur se fait à la
+  // sauvegarde via saveProd() qui envoie images:galleryUrls.slice(1).filter(Boolean)
+  // → Comportement CORRECT : le slot est vidé visuellement, la sauvegarde
+  //   via "Enregistrer" synchronise avec le serveur.
+  // Pour une suppression IMMÉDIATE sans passer par "Enregistrer", utilisez
+  // le modal de gestion d'images (voir PATCH 3C).
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   PATCH 3B — Modal de gestion d'images pour produit EN LIGNE
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Injecter le modal dans le DOM si pas encore présent ── */
+(function injectProductImgModal(){
+  if(document.getElementById('prodImgModal')) return;
+  const m = document.createElement('div');
+  m.innerHTML = `
+<style>
+.pim-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:900;align-items:center;justify-content:center}
+.pim-modal.open{display:flex}
+.pim-box{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1.6rem;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;animation:fadeInUp .2s ease}
+@keyframes fadeInUp{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.pim-title{font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:.45rem;margin-bottom:1.1rem}
+.pim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:.65rem;margin-bottom:.85rem}
+.pim-slot{position:relative;border-radius:10px;overflow:hidden;border:2px solid var(--border-color);aspect-ratio:1;cursor:pointer;transition:.18s}
+.pim-slot:hover{border-color:var(--primary-color)}
+.pim-slot.is-main{border-color:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.3)}
+.pim-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.pim-slot-placeholder{width:100%;height:100%;background:var(--bg-main);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;color:var(--text-secondary);font-size:.75rem;border:2px dashed var(--border-color);border-radius:10px;cursor:pointer;transition:.18s}
+.pim-slot-placeholder:hover{border-color:var(--primary-color);color:var(--primary-color)}
+.pim-slot-actions{position:absolute;inset:0;background:rgba(0,0,0,.0);display:flex;align-items:flex-start;justify-content:flex-end;padding:.3rem;gap:.25rem;opacity:0;transition:.18s}
+.pim-slot:hover .pim-slot-actions{opacity:1;background:rgba(0,0,0,.35)}
+.pim-sa-btn{background:rgba(0,0,0,.6);border:none;color:#fff;width:24px;height:24px;border-radius:50%;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
+.pim-sa-btn:hover{background:var(--primary-color)}
+.pim-sa-btn.del:hover{background:#ef4444}
+.pim-main-badge{position:absolute;bottom:.3rem;left:.3rem;background:#f59e0b;color:#000;font-size:.58rem;font-weight:800;padding:.1rem .35rem;border-radius:20px}
+.pim-add-slot{border:2px dashed var(--border-color);border-radius:10px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;color:var(--text-secondary);font-size:.78rem;cursor:pointer;transition:.18s}
+.pim-add-slot:hover{border-color:var(--primary-color);color:var(--primary-color);background:rgba(0,176,116,.04)}
+.pim-upbar{height:3px;background:var(--border-color);border-radius:2px;overflow:hidden;margin-bottom:.7rem;display:none}
+.pim-upbarf{height:100%;background:var(--primary-color);border-radius:2px;width:0;transition:width .1s}
+/* Onglets bibliothèque / upload */
+.pim-tabs{display:flex;gap:.4rem;margin-bottom:.85rem}
+.pim-tab{flex:1;padding:.45rem;border:1px solid var(--border-color);border-radius:8px;background:none;color:var(--text-secondary);font-size:.8rem;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit;text-align:center}
+.pim-tab.on{background:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+</style>
+
+<div class="pim-modal" id="prodImgModal">
+  <div class="pim-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
+      <div class="pim-title">
+        <i class="fas fa-images" style="color:var(--primary-color)"></i>
+        <span id="pimProdName">Images du produit</span>
+      </div>
+      <button onclick="closeProdImgModal()" style="background:none;border:none;color:var(--text-secondary);font-size:1.15rem;cursor:pointer"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="pim-upbar" id="pimUpbar"><div class="pim-upbarf" id="pimUpbarf"></div></div>
+
+    <!-- Onglets -->
+    <div class="pim-tabs">
+      <button class="pim-tab on" id="pimTabUpload" onclick="pimSwitchTab('upload')"><i class="fas fa-upload"></i> Uploader</button>
+      <button class="pim-tab" id="pimTabLib" onclick="pimSwitchTab('lib')"><i class="fas fa-photo-video"></i> Bibliothèque</button>
+    </div>
+
+    <!-- Tab upload -->
+    <div id="pimPanelUpload">
+      <div class="pim-grid" id="pimGrid"></div>
+      <input type="file" id="pimFileInput" multiple accept="image/*" style="display:none" onchange="pimHandleFiles(this.files)">
+      <div class="pim-add-slot" onclick="document.getElementById('pimFileInput').click()"
+           style="margin-bottom:.7rem;padding:.85rem"
+           ondragover="event.preventDefault();this.style.borderColor='var(--primary-color)'"
+           ondragleave="this.style.borderColor=''"
+           ondrop="event.preventDefault();this.style.borderColor='';pimHandleFiles(event.dataTransfer.files)">
+        <i class="fas fa-cloud-upload-alt" style="font-size:1.4rem"></i>
+        <span>Glissez ou cliquez pour ajouter</span>
+        <small style="font-size:.68rem;opacity:.7">PNG, JPG, WEBP — max 8 Mo</small>
+      </div>
+    </div>
+
+    <!-- Tab bibliothèque -->
+    <div id="pimPanelLib" style="display:none">
+      <input class="ilib-search" id="pimLibSearch" placeholder="🔍 Rechercher dans la bibliothèque…"
+             oninput="pimFilterLib()" style="width:100%;margin-bottom:.65rem">
+      <div style="max-height:340px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.45rem" id="pimLibGrid">
+        <div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-secondary);font-size:.82rem"><i class="fas fa-spinner fa-spin"></i> Chargement…</div>
+      </div>
+    </div>
+
+    <div style="margin-top:.7rem;display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn-g" onclick="closeProdImgModal()" style="font-size:.83rem">Fermer</button>
+    </div>
+  </div>
+</div>`;
+  document.body.appendChild(m.firstElementChild);
+  document.body.appendChild(m.lastElementChild); // la div modale
+})();
+
+
+/* ── État du modal produit images ── */
+let _pimPid = 0;
+let _pimProdName = '';
+let _pimCurrentImages = [];
+let _pimLibImages = [];
+
+/* ── Ouvrir le modal ── */
+async function openProdImgModal(pid, pname){
+  _pimPid = pid;
+  _pimProdName = pname;
+  document.getElementById('pimProdName').textContent = pname || `Produit #${pid}`;
+  document.getElementById('prodImgModal').classList.add('open');
+  pimSwitchTab('upload');
+  await pimLoadProductImages();
+}
+
+function closeProdImgModal(){
+  document.getElementById('prodImgModal')?.classList.remove('open');
+  _pimPid=0; _pimCurrentImages=[]; _pimLibImages=[];
+}
+
+/* ── Basculer onglet ── */
+function pimSwitchTab(tab){
+  document.getElementById('pimTabUpload').classList.toggle('on', tab==='upload');
+  document.getElementById('pimTabLib').classList.toggle('on', tab==='lib');
+  document.getElementById('pimPanelUpload').style.display = tab==='upload'?'':'none';
+  document.getElementById('pimPanelLib').style.display = tab==='lib'?'':'none';
+  if(tab==='lib') pimLoadLib();
+}
+
+/* ── Charger images du produit ── */
+async function pimLoadProductImages(){
+  const grid = document.getElementById('pimGrid');
+  if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></div>';
+  try{
+    const r = await fetch(`/shop/api/products/all`, {credentials:'same-origin'});
+    const d = await r.json();
+    const prod = (d.products||[]).find(p=>p.id===_pimPid);
+    if(!prod){ if(grid) grid.innerHTML='<div style="color:var(--text-secondary);font-size:.82rem">Produit introuvable</div>'; return; }
+    _pimCurrentImages = [];
+    if(prod.image_url) _pimCurrentImages.push({url:prod.image_url, is_main:true});
+    try{
+      const extras = JSON.parse(prod.images||'[]');
+      extras.forEach(u=>{ if(u&&u!==prod.image_url) _pimCurrentImages.push({url:u,is_main:false}); });
+    }catch(e){}
+    pimRenderGrid();
+  }catch(e){
+    if(grid) grid.innerHTML='<div style="color:#ef4444;font-size:.82rem">Erreur de chargement</div>';
+  }
+}
+
+/* ── Rendu grille images produit ── */
+function pimRenderGrid(){
+  const grid = document.getElementById('pimGrid');
+  if(!grid) return;
+  if(!_pimCurrentImages.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-secondary);font-size:.82rem"><i class="fas fa-images" style="font-size:1.8rem;opacity:.3;display:block;margin-bottom:.4rem"></i>Aucune image sur ce produit</div>';
+    return;
+  }
+  grid.innerHTML = _pimCurrentImages.map((img,i)=>`
+    <div class="pim-slot${img.is_main?' is-main':''}" id="pims-${i}">
+      <img src="${img.url}" alt="" loading="lazy" onerror="this.style.opacity='.3'">
+      ${img.is_main?'<div class="pim-main-badge">⭐ Principale</div>':''}
+      <div class="pim-slot-actions">
+        ${!img.is_main?`<button class="pim-sa-btn" onclick="event.stopPropagation();pimSetMain('${img.url}')" title="Définir comme principale"><i class="fas fa-star"></i></button>`:''}
+        <button class="pim-sa-btn del" onclick="event.stopPropagation();pimRemoveImage('${img.url}')" title="Retirer du produit">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+/* ── Retirer image du produit (détacher, sans supprimer le fichier) ── */
+async function pimRemoveImage(url){
+  if(!_pimPid) return;
+  if(!confirm('Retirer cette image du produit ?\n(L\'image reste dans la bibliothèque)')) return;
+  try{
+    const r = await fetch(`/shop/api/product/${_pimPid}/detach-image`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url}),
+      credentials:'same-origin'
+    });
+    const d = await r.json();
+    if(d.success){
+      KniUI?.toast?.success('Image retirée du produit', 'Produit');
+      await pimLoadProductImages();
+      // Rafraîchir la liste produits sans reload complet
+      if(typeof PRODS !== 'undefined') pimRefreshProdInList(_pimPid);
+    } else {
+      toast('❌ '+(d.error||'Erreur'), false);
+    }
+  }catch(e){toast('❌ Erreur réseau',false);}
+}
+
+/* ── Définir image principale ── */
+async function pimSetMain(url){
+  if(!_pimPid) return;
+  try{
+    const r = await fetch(`/shop/api/product/${_pimPid}/set-main-image`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url}),
+      credentials:'same-origin'
+    });
+    const d = await r.json();
+    if(d.success){
+      KniUI?.toast?.success('Image principale définie', 'Produit');
+      _pimCurrentImages.forEach(img=>img.is_main=(img.url===url));
+      pimRenderGrid();
+    } else {
+      toast('❌ '+(d.error||'Erreur'),false);
+    }
+  }catch(e){toast('❌ Erreur réseau',false);}
+}
+
+/* ── Upload de nouvelles images vers le produit ── */
+function pimHandleFiles(files){
+  if(!files||!files.length||!_pimPid) return;
+  pimUploadFiles(Array.from(files));
+}
+
+async function pimUploadFiles(files){
+  const bar  = document.getElementById('pimUpbar');
+  const barf = document.getElementById('pimUpbarf');
+  if(bar) bar.style.display='block';
+  let done=0,ok=0;
+  for(const f of files){
+    if(f.size>8*1024*1024){toast(`${f.name} trop lourd (max 8 Mo)`,false);done++;continue;}
+    let fileToSend=f;
+    try{fileToSend=await applyKniWatermark(f);}catch(e){fileToSend=f;}
+    const fd=new FormData();
+    fd.append('image',fileToSend,f.name);
+    fd.append('pid',_pimPid);
+    try{
+      const r=await fetch('/shop/api/product/upload-image',{method:'POST',body:fd,credentials:'same-origin'});
+      const d=await r.json();
+      if(d.success){
+        ok++;
+        // Ajouter aussi à la bibliothèque
+        try{
+          const fd2=new FormData();
+          fd2.append('image',fileToSend,f.name);
+          await fetch('/shop/api/image-library/upload',{method:'POST',body:fd2,credentials:'same-origin'});
+        }catch(e){}
+      }
+    }catch(e){}
+    done++;
+    if(barf) barf.style.width=(done/files.length*100)+'%';
+  }
+  setTimeout(()=>{if(bar)bar.style.display='none';if(barf)barf.style.width='0';},600);
+  if(ok>0){
+    KniUI?.toast?.success(`${ok} image(s) ajoutée(s) au produit`, 'Produit');
+    await pimLoadProductImages();
+  }
+}
+
+/* ── Charger bibliothèque dans le modal ── */
+async function pimLoadLib(){
+  const grid=document.getElementById('pimLibGrid');
+  if(!grid) return;
+  if(_pimLibImages.length){ pimRenderLib(_pimLibImages); return; }
+  grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i></div>';
+  try{
+    const r=await fetch('/shop/api/image-library?per=120',{credentials:'same-origin'});
+    const d=await r.json();
+    _pimLibImages=d.images||[];
+    pimRenderLib(_pimLibImages);
+  }catch(e){
+    grid.innerHTML='<div style="grid-column:1/-1;color:#ef4444;font-size:.82rem;text-align:center">Erreur de chargement</div>';
+  }
+}
+
+function pimFilterLib(){
+  const q=(document.getElementById('pimLibSearch')?.value||'').toLowerCase();
+  const filtered=q?_pimLibImages.filter(i=>(i.filename||'').toLowerCase().includes(q)||(i.label||'').toLowerCase().includes(q)):_pimLibImages;
+  pimRenderLib(filtered);
+}
+
+function pimRenderLib(images){
+  const grid=document.getElementById('pimLibGrid');
+  if(!grid) return;
+  const currentUrls=new Set(_pimCurrentImages.map(i=>i.url));
+  if(!images.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-secondary);font-size:.82rem">Bibliothèque vide</div>';
+    return;
+  }
+  grid.innerHTML=images.map(img=>{
+    const alreadyOn=currentUrls.has(img.url);
+    return `<div style="position:relative;border-radius:8px;overflow:hidden;border:2px solid ${alreadyOn?'var(--primary-color)':'var(--border-color)'};aspect-ratio:1;cursor:pointer;transition:.18s"
+                 title="${img.filename}"
+                 onclick="${alreadyOn?`pimRemoveImage('${img.url}')`:`pimAttachFromLib('${img.url}')`}">
+      <img src="${img.url}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"
+           onerror="this.style.opacity='.3'">
+      ${alreadyOn?'<div style="position:absolute;inset:0;background:rgba(0,176,116,.35);display:flex;align-items:center;justify-content:center;font-size:1.2rem">✓</div>':''}
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,.0);transition:.15s;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;opacity:0"
+           class="pim-lib-overlay"
+           onmouseenter="this.style.opacity='1';this.style.background='rgba(0,0,0,.4)'"
+           onmouseleave="this.style.opacity='0';this.style.background='rgba(0,0,0,.0)'">
+        ${alreadyOn?'Retirer':'Ajouter'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function pimAttachFromLib(url){
+  if(!_pimPid||!url) return;
+  try{
+    const r=await fetch(`/shop/api/product/${_pimPid}/attach-image`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url,as_main:false}),
+      credentials:'same-origin'
+    });
+    const d=await r.json();
+    if(d.success){
+      KniUI?.toast?.success('Image attachée au produit','Produit');
+      await pimLoadProductImages();
+      pimFilterLib(); // Re-render lib avec état mis à jour
+    } else {
+      toast('❌ '+(d.error||'Erreur'),false);
+    }
+  }catch(e){toast('❌ Erreur réseau',false);}
+}
+
+/* ── Rafraîchir un produit dans la liste sans reload complet ── */
+function pimRefreshProdInList(pid){
+  // Met à jour l'image affichée dans la carte produit de la liste
+  fetch('/shop/api/products/all',{credentials:'same-origin'})
+    .then(r=>r.json())
+    .then(d=>{
+      const prod=(d.products||[]).find(p=>p.id===pid);
+      if(!prod) return;
+      // Chercher la miniature dans la liste produits
+      const imgs = document.querySelectorAll(`[data-pid="${pid}"] img, #prod-img-${pid}`);
+      imgs.forEach(img=>{ if(prod.image_url) img.src=prod.image_url; });
+    })
+    .catch(()=>{});
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   PATCH 3C — Ajouter bouton "Gérer images" dans la liste des produits
+   ══════════════════════════════════════════════════════════════════
+   Ce patch intercepte le rendu de la liste des produits et ajoute
+   le bouton "Gérer images" sur chaque ligne/carte produit.
+
+   Il observe les mutations DOM pour patcher dynamiquement les
+   éléments créés par renderProducts() (si elle existe).
+*/
+(function patchProductListImages(){
+  // Ajouter le bouton dans les actions produit au rendu
+  const origRender = window.renderProducts;
+  if(typeof origRender === 'function'){
+    window.renderProducts = function(...args){
+      origRender.apply(this, args);
+      // Après le rendu, injecter les boutons
+      setTimeout(injectImgBtns, 80);
+    };
+  }
+
+  function injectImgBtns(){
+    // Chercher les boutons d'action sur chaque ligne produit
+    // data-pid doit être présent sur les lignes
+    document.querySelectorAll('[data-pid]').forEach(row=>{
+      const pid=parseInt(row.dataset.pid||0);
+      if(!pid) return;
+      if(row.querySelector('.pim-inline-btn')) return; // déjà injecté
+      const actArea = row.querySelector('.tda,[class*="actions"],[class*="action-btns"]');
+      if(!actArea) return;
+      const pname = row.querySelector('[data-pname]')?.dataset.pname || row.querySelector('.pn,.prod-name')?.textContent?.trim()||`#${pid}`;
+      const btn = document.createElement('button');
+      btn.className='btn-g btn-xs pim-inline-btn';
+      btn.title='Gérer les images';
+      btn.innerHTML='<i class="fas fa-images"></i>';
+      btn.onclick=(e)=>{e.stopPropagation();openProdImgModal(pid,pname);};
+      actArea.appendChild(btn);
+    });
+  }
+
+  // Observer pour les rendus futurs
+  new MutationObserver(()=>setTimeout(injectImgBtns,80))
+    .observe(document.getElementById('sec-prod')||document.body, {childList:true,subtree:true});
+
+  // Injection initiale
+  setTimeout(injectImgBtns, 500);
+})();
+
+
+/* ══════════════════════════════════════════════════════════════════
+   PATCH 3D — Optimisations JS performance côté client
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 1. Lazy loading images dans la liste produits */
+(function initLazyImages(){
+  const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        const img=entry.target;
+        if(img.dataset.src){
+          img.src=img.dataset.src;
+          img.removeAttribute('data-src');
+          observer.unobserve(img);
+        }
+      }
+    });
+  },{rootMargin:'200px'});
+
+  function observeImages(){
+    document.querySelectorAll('img[data-src]').forEach(img=>observer.observe(img));
+  }
+
+  new MutationObserver(observeImages)
+    .observe(document.body,{childList:true,subtree:true});
+  observeImages();
+})();
+
+/* 2. Réduire les rechargements complets → rechargement partiel
+   Override location.reload si appelé dans un délai court après une action
+   shop (toast déjà affiché) */
+(function reduceForcedReloads(){
+  // Les fonctions qui appelaient location.reload() avec setTimeout
+  // ont maintenant leurs propres callbacks → rien à faire ici.
+  // Ce patch est un filet de sécurité pour les futurs ajouts.
+  const _origReload = window.location.reload.bind(window.location);
+  // Ne pas override location.reload globalement — trop risqué.
+  // On laisse tel quel.
+})();
+
+/* 3. Préfetch des données produits au survol du menu */
+(function prefetchOnHover(){
+  let _prefetched=false;
+  const nbProd = document.getElementById('nb-prod');
+  if(!nbProd) return;
+  nbProd.addEventListener('mouseenter',()=>{
+    if(_prefetched) return;
+    _prefetched=true;
+    fetch('/shop/api/products/all',{credentials:'same-origin',priority:'low'}).catch(()=>{});
+  },{once:false});
+})();
+
+/* 4. Optimiser les requêtes fetch : timeout automatique 15s */
+(function patchFetchTimeout(){
+  const _origFetch = window.fetch;
+  window.fetch = function(url, opts={}){
+    if(typeof url!=='string'||url.startsWith('http')||url.startsWith('blob:')) return _origFetch(url,opts);
+    if(opts.signal) return _origFetch(url,opts);
+    const ctrl = new AbortController();
+    const tid = setTimeout(()=>ctrl.abort(), 15000);
+    return _origFetch(url,{...opts,signal:ctrl.signal})
+      .finally(()=>clearTimeout(tid));
+  };
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   PATCH 3E — Fix suppression directe image dans le formulaire produit
+   ══════════════════════════════════════════════════════════════════
+   Lorsqu'on est en mode ÉDITION (eid != 0) et qu'on clique sur le ×
+   d'un slot galerie, appeler directement l'API detach-image pour
+   une suppression immédiate sans attendre "Enregistrer".
+*/
+(function patchGallerySlotDelete(){
+  // On va surcharger initGallery pour injecter le bon onclick
+  const _orig_initGallery = typeof initGallery === 'function' ? initGallery : null;
+  if(!_orig_initGallery) return;
+
+  window.initGallery = function(){
+    _orig_initGallery();
+    const pid = parseInt(document.getElementById('eid')?.value||0);
+    if(!pid) return; // Nouveau produit → comportement original OK
+
+    // Sur chaque bouton × de la galerie (slots 1-5), patcher le onclick
+    for(let i=1;i<=5;i++){
+      const slot = document.getElementById('gs-'+i);
+      if(!slot) continue;
+      const btn = slot.querySelector('.isd');
+      if(!btn) continue;
+      const imgEl = slot.querySelector('img');
+      const imgUrl = imgEl ? imgEl.src : galleryUrls[i];
+      if(!imgUrl) continue;
+
+      btn.onclick = async function(e){
+        e.stopPropagation();
+        // 1. Vider le slot visuellement immédiatement
+        galleryUrls[i]='';
+        slot.className='img-slot img-slot-add';
+        slot.onclick=()=>trigGal(i);
+        slot.innerHTML=`<i class="fas fa-plus" style="font-size:1rem;opacity:.5"></i><span style="font-size:.62rem">Ajouter</span>`;
+
+        // 2. Appeler l'API de détachement côté serveur
+        try{
+          await fetch(`/shop/api/product/${pid}/detach-image`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({url:imgUrl}),
+            credentials:'same-origin'
+          });
+          KniUI?.toast?.success('Image retirée','Produit');
+        }catch(err){
+          console.warn('[ImageSlot] detach error:', err);
+        }
+      };
+    }
+
+    // Pareil pour l'image principale (slot 0)
+    const mainZone = document.getElementById('imgMainZone');
+    if(mainZone && galleryUrls[0]){
+      // L'image principale n'a pas de bouton × — elle se gère via clearSlot(0)
+      // override local ici pour déclencher le detach
+      const mainUrl = galleryUrls[0];
+      // On ne surcharge pas le onclick global (trop risqué),
+      // on laisse clearSlot() gérer ça via saveProd au prochain enregistrement.
+    }
+  };
+})();
+
+console.log('[k-Ni Patch 3] Image management + performance patches applied ✓');
+</script>
+
 
 {% endblock %}

@@ -218,8 +218,8 @@ header{background:var(--white);box-shadow:0 2px 20px rgba(0,0,0,.08);position:st
 /* ─── SIDEBAR + LAYOUT ─── */
 .main-wrap{width:100%;padding:1.5rem 0}
 .main-wrap-inner{max-width:1400px;margin:0 auto;padding:0 1rem}
-.main-layout{display:grid;grid-template-columns:240px 1fr;gap:1.5rem;align-items:start}
-.sidebar{position:sticky;top:80px}
+.main-layout{display:grid;grid-template-columns:1fr;gap:0;align-items:start}
+.sidebar{display:none!important}
 .filter-card{background:var(--white);border-radius:var(--radius);padding:1.1rem;box-shadow:var(--shadow);margin-bottom:1rem}
 .filter-card h4{font-size:.93rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem}
 .filter-card h4 i{color:var(--orange)}
@@ -712,7 +712,7 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 0 1.5rem;margin-top:3rem
 
 /* ─── RESPONSIVE ─── */
 @media(max-width:1024px){
-  .main-layout{grid-template-columns:200px 1fr}
+  .main-layout{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
   .main-wrap{padding:1.2rem 0}
   .main-wrap-inner{padding:0 .8rem}
@@ -721,9 +721,8 @@ footer{background:var(--ink);color:#9ca3af;padding:3rem 0 1.5rem;margin-top:3rem
   .main-layout{grid-template-columns:1fr}
   .main-wrap{padding:.8rem 0}
   .main-wrap-inner{padding:0 .5rem}
-  .sidebar{display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.4);align-items:flex-start;padding-top:60px}
-  .sidebar.mobile-open{display:flex}
-  .sidebar-inner{background:var(--white);width:min(300px,88vw);height:100%;overflow-y:auto;padding:1rem;animation:slideDown .2s ease}
+  .sidebar{display:none!important}
+  .sidebar-inner{display:none!important}
   .header-search{display:none}
   .hbtn-search-toggle{display:flex}
   .hbtn span{display:none}
@@ -1362,6 +1361,104 @@ html{scroll-behavior:smooth}
 *{transition-property:background-color,border-color,color,box-shadow,transform,opacity;transition-duration:.18s;transition-timing-function:ease}
 /* Annuler la transition universelle pour les animations et les cartes */
 .pcard{transition:transform .28s cubic-bezier(.25,.46,.45,.94),box-shadow .28s ease,border-color .28s ease!important}
+
+/* ── Bannières paiement ─────────────────────────────────────── */
+.pay-banner{padding:1rem 1.2rem;border-radius:14px;display:flex;align-items:center;gap:.8rem;color:#fff;font-weight:700}
+.pay-banner-icon{font-size:2rem;flex-shrink:0}
+.pay-banner-title{font-size:1.05rem;font-weight:900;margin-bottom:.15rem}
+.pay-banner-sub{font-size:.82rem;opacity:.88;font-weight:400}
+.pay-steps{display:flex;gap:.5rem;margin-top:.7rem;flex-wrap:wrap}
+.pay-step{background:rgba(255,255,255,.15);border-radius:8px;padding:.35rem .7rem;font-size:.75rem;display:flex;align-items:center;gap:.3rem}
+.pay-step.active{background:rgba(255,255,255,.35);font-weight:800}
+/* Annulation */
+.cancel-section{margin-top:1.2rem;padding:1rem;border-radius:12px;background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15)}
+.cancel-section h6{color:#ef4444;font-size:.88rem;font-weight:800;margin-bottom:.6rem}
+
+
+/* ═══════════════════════════════════════════════════════════
+   CATÉGORIES CHIPS INLINE — remplace la sidebar verticale
+   ═══════════════════════════════════════════════════════════ */
+
+/* Chips catégories scrollables */
+#catChipsWrap::-webkit-scrollbar { display: none; }
+#catChipsWrap { scroll-snap-type: x proximity; }
+
+.icat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .42rem .85rem;
+  border-radius: 30px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--ink2);
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font);
+  transition: .15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+.icat-chip:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: var(--orange3);
+}
+.icat-chip.active {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+  box-shadow: 0 2px 10px rgba(0,176,116,.3);
+}
+.icat-chip:active { transform: scale(.94); }
+
+/* Grille produits : 2 colonnes strictes sur mobile — style marketplace */
+@media(max-width: 768px) {
+  #prodGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: .55rem !important;
+    padding: 0 !important;
+  }
+  .main-layout { padding: 0 !important; }
+  .main-wrap-inner { padding: 0 .5rem !important; }
+}
+@media(max-width: 480px) {
+  #prodGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: .45rem !important;
+  }
+  /* Contenu zone principale pleine largeur */
+  .main-layout > div { width: 100%; }
+}
+@media(max-width: 360px) {
+  #prodGrid { gap: .35rem !important; }
+  .icat-chip { font-size: .72rem; padding: .36rem .65rem; }
+}
+
+/* Desktop : grille auto-fill optimale */
+@media(min-width: 769px) {
+  #prodGrid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    gap: 1rem !important;
+  }
+}
+@media(min-width: 1200px) {
+  #prodGrid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important; }
+}
+
+/* Select tri inline */
+#inlineSortSel:focus { border-color: var(--orange) !important; outline: none; }
+@media(max-width: 480px) {
+  #inlineSortSel { font-size: .75rem; padding: .32rem .5rem; }
+}
+
+/* Masquer le bouton filtre toggle (plus de sidebar) */
+.filter-toggle-btn { display: none !important; }
+
 </style>
 </head>
 <body>
@@ -1564,72 +1661,37 @@ html{scroll-behavior:smooth}
   <div class="main-wrap-inner">
   <div class="main-layout" id="mainLayout">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-inner" id="sidebarInner">
-        <!-- Sort -->
-        <div class="filter-card">
-          <h4><i class="fas fa-sort-amount-down"></i> Trier par</h4>
-          <button class="sort-btn active" onclick="setSort(this,'default')" data-sort="default">⭐ Populaires</button>
-          <button class="sort-btn" onclick="setSort(this,'price_asc')" data-sort="price_asc">💰 Prix croissant</button>
-          <button class="sort-btn" onclick="setSort(this,'price_desc')" data-sort="price_desc">💎 Prix décroissant</button>
-          <button class="sort-btn" onclick="setSort(this,'name_asc')" data-sort="name_asc">🔤 Titre A→Z</button>
-          <button class="sort-btn" onclick="setSort(this,'newest')" data-sort="newest">🆕 Nouveautés</button>
-        </div>
-        <!-- Price filter -->
-        <div class="filter-card">
-          <h4><i class="fas fa-tag"></i> Prix max</h4>
-          <input type="range" class="price-range" id="priceRange" min="0" max="500000" step="1000" value="500000" oninput="updatePriceRange(this.value)">
-          <div class="price-label">
-            <span>0 XAF</span><span class="price-val" id="priceVal">500 000 XAF</span>
-          </div>
-        </div>
-        <!-- Availability -->
-        <div class="filter-card">
-          <h4><i class="fas fa-boxes"></i> Disponibilité</h4>
-          <button class="sort-btn active" onclick="setAvail(this,'all')" data-avail="all">Tous les produits</button>
-          <button class="sort-btn" onclick="setAvail(this,'stock')" data-avail="stock">✅ En stock</button>
-          <button class="sort-btn" onclick="setAvail(this,'promo')" data-avail="promo">🏷 En promo</button>
-        </div>
-        <!-- View -->
-        <div class="filter-card">
-          <h4><i class="fas fa-th"></i> Affichage</h4>
-          <div style="display:flex;gap:.4rem">
-            <button class="vt-btn active" id="vtGrid" onclick="setView('grid')" title="Grille"><i class="fas fa-th"></i></button>
-            <button class="vt-btn" id="vtList" onclick="setView('list')" title="Liste"><i class="fas fa-list"></i></button>
-          </div>
-        </div>
-
-        <!-- ── CATALOGUE — Catégories & Sous-catégories ── -->
-        <div class="filter-card" id="catalogueCard">
-          <h4><i class="fas fa-sitemap"></i> Catalogue</h4>
-          <div id="catalogueList" style="display:flex;flex-direction:column;gap:.18rem">
-            <div style="font-size:.78rem;color:var(--muted);padding:.5rem;text-align:center">
-              <i class="fas fa-spinner fa-spin"></i> Chargement…
-            </div>
-          </div>
-        </div>
-        <button class="btn-reset" onclick="resetFilters()"><i class="fas fa-undo"></i> Réinitialiser</button>
-        <!-- Promo sidebar -->
-        <div class="promo-sidebar" style="margin-top:1rem">
-          <h3>🎁 Code Promo</h3>
-          <p>Inscrivez-vous et obtenez 10% de réduction sur votre première commande !</p>
-          <a class="promo-sidebar-btn" onclick="openAuth()">S'inscrire gratuitement →</a>
-        </div>
-      </div>
-    </aside>
+    <!-- Sidebar supprimée : filtres intégrés dans la barre de catégories -->
 
     <!-- MAIN CONTENT -->
     <div>
-      <!-- Mobile filter toggle -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap.8rem;flex-wrap:wrap">
-        <button class="filter-toggle-btn" onclick="toggleSidebar()"><i class="fas fa-sliders-h"></i> Filtres</button>
-        <div class="prod-header" style="margin-bottom:0;flex:1">
-          <div class="prod-count"><span id="prodCount">0</span> produits trouvés</div>
-          <div class="view-btns">
-            <button class="vt-btn active" id="vtGridM" onclick="setView('grid')" title="Grille"><i class="fas fa-th"></i></button>
-            <button class="vt-btn" id="vtListM" onclick="setView('list')" title="Liste"><i class="fas fa-list"></i></button>
+      <!-- ── BARRE FILTRES INTÉGRÉE — catégories chips + tri ── -->
+      <div id="inlineFilterBar" style="margin-bottom:.75rem">
+
+        <!-- Ligne 1 : Catégories chips scrollables -->
+        <div id="catChipsWrap" style="overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:.1rem 0 .4rem;margin-bottom:.5rem">
+          <div id="catChips" style="display:flex;gap:.4rem;padding:0 .1rem;width:max-content;min-width:100%">
+            <!-- Chargé dynamiquement par buildInlineCatChips() -->
+            <button class="icat-chip active" data-slug="all" onclick="iCatFilter(this,'all')">🏪 Tout</button>
           </div>
+        </div>
+
+        <!-- Ligne 2 : Tri + compteur + reset -->
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:0 .1rem">
+          <span class="prod-count" style="flex:1;font-size:.82rem"><span id="prodCount">0</span> produits</span>
+          <select id="inlineSortSel" onchange="setSort(this,this.value)"
+                  style="background:var(--white);border:1.5px solid var(--border);color:var(--ink);padding:.38rem .65rem;border-radius:9px;font-size:.78rem;font-family:var(--font);outline:none;cursor:pointer;font-weight:600;-webkit-tap-highlight-color:transparent">
+            <option value="default">⭐ Populaires</option>
+            <option value="price_asc">💰 Prix ↑</option>
+            <option value="price_desc">💎 Prix ↓</option>
+            <option value="newest">🆕 Nouveautés</option>
+            <option value="name_asc">🔤 A→Z</option>
+          </select>
+          <button onclick="resetFilters()" title="Réinitialiser"
+                  style="background:var(--white);border:1.5px solid var(--border);color:var(--muted);padding:.38rem .6rem;border-radius:9px;font-size:.8rem;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:.15s"
+                  onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="fas fa-undo"></i>
+          </button>
         </div>
       </div>
 
@@ -1900,6 +1962,27 @@ html{scroll-behavior:smooth}
           <div class="pay-radio"></div>
           <div><div class="pay-name">Virement</div><div class="pay-sub">Bancaire</div></div>
         </div>
+        <div class="pay-opt" onclick="selectPay(this,'stripe')">
+          <div class="pay-radio"></div>
+          <div><div class="pay-name">💳 Carte bancaire</div><div class="pay-sub">Visa / Mastercard — International</div></div>
+        </div>
+      </div>
+
+      <!-- ── BANNIÈRE PAIEMENT SÉCURISÉ ── -->
+      <div id="payBanner" style="display:none;margin-top:1rem;border-radius:14px;overflow:hidden">
+        <!-- remplie dynamiquement par renderPayBanner() -->
+      </div>
+
+      <!-- ── INSTRUCTIONS DE PAIEMENT ── -->
+      <div id="payInstructions" style="display:none;margin-top:.8rem;padding:1rem;border-radius:12px;background:rgba(0,176,116,.06);border:1px solid rgba(0,176,116,.2)">
+        <!-- remplie dynamiquement -->
+      </div>
+
+      <!-- ── GARANTIE 3 JOURS ── -->
+      <div style="display:flex;align-items:center;gap:.6rem;margin-top:.9rem;padding:.7rem 1rem;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:10px;font-size:.82rem">
+        <span style="font-size:1.2rem">🛡️</span>
+        <div><strong style="color:#f97316">Garantie Satisfaction 3 jours</strong><br>
+        <span style="color:var(--muted)">Annulation et remboursement possible sous 72h après réception</span></div>
       </div>
 
       <div class="order-summary" id="orderSummary"></div>
@@ -1923,6 +2006,101 @@ html{scroll-behavior:smooth}
       <a href="https://wa.me/237695072759" target="_blank" class="btn-checkout" style="width:auto;padding:.6rem 1.5rem;background:#25d366;text-decoration:none">
         <i class="fab fa-whatsapp"></i> WhatsApp
       </a>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── MODAL SUIVI PAIEMENT ── -->
+<div class="modal-bg" id="payConfirmBg" style="display:none">
+  <div style="background:var(--white);border-radius:20px;max-width:520px;width:100%;padding:0;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.25)">
+    <!-- Bannière étape paiement -->
+    <div id="payConfirmBanner" style="padding:1.2rem 1.5rem;color:#fff">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:1.1rem;font-weight:900">⏳ En attente de paiement</div>
+        <div id="payCountdown" style="font-family:monospace;font-size:1rem;font-weight:800">60:00</div>
+      </div>
+      <div style="font-size:.82rem;opacity:.85;margin-top:.3rem">
+        Étape <span id="payStep">4</span>/5 — Finalisation du paiement
+      </div>
+      <!-- Barre de progression -->
+      <div style="margin-top:.7rem;background:rgba(255,255,255,.2);border-radius:4px;height:6px">
+        <div id="payProgressBar" style="background:#fff;height:100%;border-radius:4px;width:80%;transition:width .5s"></div>
+      </div>
+    </div>
+
+    <div style="padding:1.5rem">
+      <div id="payConfirmContent">
+        <div style="text-align:center;padding:1.5rem 0">
+          <div style="font-size:3rem;margin-bottom:.8rem" id="payMethodIcon">🟠</div>
+          <div style="font-size:1rem;font-weight:800;color:var(--ink)" id="payMethodTitle">Orange Money</div>
+          <div style="font-size:.88rem;color:var(--muted);margin-top:.3rem" id="payMethodSub">Envoyez le montant au 695 072 759</div>
+          <div style="font-size:2rem;font-weight:900;color:var(--orange);margin:1rem 0" id="payAmount">0 XAF</div>
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">
+            Numéro de commande : <strong id="payOrderNum" style="color:var(--ink)">—</strong>
+          </div>
+          <div style="background:rgba(0,176,116,.06);border:1px solid rgba(0,176,116,.2);border-radius:10px;padding:.8rem;font-size:.82rem;color:var(--muted);text-align:left">
+            📱 <strong>Après avoir payé :</strong><br>
+            Cliquez sur "J'ai effectué le paiement" ci-dessous. Notre équipe vérifiera et validera votre commande.
+          </div>
+        </div>
+
+        <div style="display:flex;gap:.6rem;margin-top:.5rem">
+          <button onclick="closePayConfirm()" style="flex:1;padding:.65rem;border:1.5px solid var(--border);border-radius:10px;background:none;cursor:pointer;font-size:.88rem;color:var(--muted)">Annuler</button>
+          <button onclick="declarePaymentDone()" id="payDoneBtn"
+            style="flex:2;padding:.65rem;background:var(--orange);color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer;font-size:.92rem">
+            ✅ J'ai effectué le paiement
+          </button>
+        </div>
+        <div style="text-align:center;margin-top:.6rem">
+          <a id="payWhatsapp" href="#" target="_blank"
+             style="font-size:.8rem;color:#25d366;text-decoration:none">
+            <i class="fab fa-whatsapp"></i> Confirmer via WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ANNULATION (depuis "Mes commandes") ── -->
+<div class="modal-bg" id="cancelBg" style="display:none" onclick="if(event.target===this)closeCancelModal()">
+  <div style="background:var(--white);border-radius:20px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.25)">
+    <div style="padding:1rem 1.5rem;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff">
+      <div style="font-size:1.1rem;font-weight:900">🔄 Demande d'annulation</div>
+      <div style="font-size:.8rem;opacity:.85;margin-top:.2rem">Délai : 72h après la commande</div>
+    </div>
+    <div style="padding:1.5rem">
+      <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:.8rem;font-size:.83rem;color:var(--muted);margin-bottom:1rem">
+        🛡️ Vous bénéficiez de la <strong style="color:#ef4444">Garantie Satisfaction 3 jours</strong>. Si vous n'êtes pas satisfait, nous vous remboursons intégralement.
+      </div>
+      <input type="hidden" id="cancelOrderId">
+      <div style="margin-bottom:.8rem">
+        <label style="font-size:.85rem;font-weight:700;display:block;margin-bottom:.35rem">Numéro de commande *</label>
+        <input id="cancelOrderNum" class="form-control" style="width:100%;padding:.6rem .9rem;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font)" placeholder="KNI-20250322-0001">
+      </div>
+      <div style="margin-bottom:.8rem">
+        <label style="font-size:.85rem;font-weight:700;display:block;margin-bottom:.35rem">Motif d'annulation *</label>
+        <select id="cancelReason" style="width:100%;padding:.6rem .9rem;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font);font-size:.9rem">
+          <option value="">Sélectionnez un motif…</option>
+          <option value="Produit non conforme à la description">Produit non conforme à la description</option>
+          <option value="Produit défectueux ou endommagé">Produit défectueux ou endommagé</option>
+          <option value="Service non rendu">Service non rendu</option>
+          <option value="Délai de livraison non respecté">Délai de livraison non respecté</option>
+          <option value="Erreur de commande (mauvais produit)">Erreur de commande (mauvais produit)</option>
+          <option value="Autre">Autre (précisez ci-dessous)</option>
+        </select>
+      </div>
+      <div style="margin-bottom:1rem">
+        <label style="font-size:.85rem;font-weight:700;display:block;margin-bottom:.35rem">Détails supplémentaires</label>
+        <textarea id="cancelDetails" rows="3" style="width:100%;padding:.6rem .9rem;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font);resize:vertical" placeholder="Décrivez le problème rencontré…"></textarea>
+      </div>
+      <div style="display:flex;gap:.6rem">
+        <button onclick="closeCancelModal()" style="flex:1;padding:.65rem;border:1.5px solid var(--border);border-radius:10px;background:none;cursor:pointer;font-size:.88rem;color:var(--muted)">Fermer</button>
+        <button onclick="submitCancelRequest()" style="flex:2;padding:.65rem;background:#ef4444;color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer;font-size:.92rem">
+          🔄 Envoyer la demande
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -2454,25 +2632,8 @@ function applyFilters(){
   /* ── Appliquer l'ordre via CSS order (aucun déplacement DOM) ── */
   sorted.forEach((c, idx) => { c.style.order = idx; });
 
-  /* ── Supprimer les anciens séparateurs de catégorie ── */
+  /* séparateurs de catégorie désactivés */
   document.querySelectorAll('#prodGrid .cat-separator').forEach(s=>s.remove());
-
-  /* ── Insérer des séparateurs visuels entre catégories (mode Tout + Populaires) ── */
-  if(_curCat==='all' && _curSort==='default' && !q){
-    let lastCat = null;
-    sorted.forEach((card, idx)=>{
-      const cat = card.dataset.cat||'';
-      if(cat && cat !== lastCat){
-        const sep = document.createElement('div');
-        sep.className = 'cat-separator';
-        sep.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:.75rem;padding:.5rem 0 .2rem;margin-top:.6rem;pointer-events:none';
-        sep.innerHTML = `<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);white-space:nowrap">${_catLabel(cat)}</span><span style="flex:1;height:1px;background:var(--border)"></span>`;
-        sep.style.order = idx - 0.5;
-        document.getElementById('prodGrid').appendChild(sep);
-        lastCat = cat;
-      }
-    });
-  }
 
   /* ── Visibilité + gel immédiat de l'animation ── */
   cards.forEach(c => {
@@ -3014,6 +3175,95 @@ function selectPay(el, method){
   _payMethod = method;
   document.querySelectorAll('.pay-opt').forEach(o=>o.classList.remove('sel'));
   el.classList.add('sel');
+  renderPayBanner(method);
+}
+
+/* ── Bannières dynamiques par méthode ── */
+const _PAY_BANNERS = {
+  orange_money: {
+    color:'linear-gradient(135deg,#ff7c00,#e65c00)',
+    icon:'🟠', title:'Orange Money',
+    sub:'Envoyez le montant au 695 072 759 — Nom: Kengni Fabrice',
+    steps:['1️⃣ Composez *150#','2️⃣ Transfert','3️⃣ Numéro: 695072759','4️⃣ Montant + confirmation'],
+    color2:'#ff7c00'
+  },
+  mtn_momo: {
+    color:'linear-gradient(135deg,#ffd100,#e6b800)',
+    icon:'🟡', title:'MTN Mobile Money',
+    sub:'Envoyez le montant au 670 695 946 — Nom: Kengni Fabrice',
+    steps:['1️⃣ Composez *126#','2️⃣ Envoyer argent','3️⃣ Numéro: 670695946','4️⃣ Montant + PIN'],
+    color2:'#e6b800', textColor:'#1a1a00'
+  },
+  cash: {
+    color:'linear-gradient(135deg,#00b074,#007a50)',
+    icon:'💵', title:'Espèces à la livraison',
+    sub:'Préparez le montant exact. Le livreur encaissera à la remise du colis.',
+    steps:['📦 Commande validée','🚚 Livraison sous 1-3 jours','💵 Paiement à réception','✅ Reçu remis'],
+    color2:'#00b074'
+  },
+  virement: {
+    color:'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+    icon:'🏦', title:'Virement bancaire',
+    sub:'Contactez-nous sur WhatsApp pour obtenir les coordonnées bancaires',
+    steps:['📞 Contact WhatsApp','💳 Coordonnées bancaires','⏱️ Virement 24-48h','✅ Confirmation email'],
+    color2:'#3b82f6'
+  },
+  stripe: {
+    color:'linear-gradient(135deg,#6366f1,#4338ca)',
+    icon:'💳', title:'Carte bancaire — International',
+    sub:'Paiement 100% sécurisé SSL — Visa, Mastercard, American Express',
+    steps:['🔒 Connexion sécurisée','💳 Saisie carte','🔐 3D Secure','✅ Confirmation immédiate'],
+    color2:'#6366f1'
+  }
+};
+
+function renderPayBanner(method){
+  const banner = document.getElementById('payBanner');
+  const inst   = document.getElementById('payInstructions');
+  if(!banner) return;
+  const b = _PAY_BANNERS[method];
+  if(!b){ banner.style.display='none'; if(inst) inst.style.display='none'; return; }
+
+  const tc = b.textColor || '#fff';
+  banner.style.display = '';
+  banner.innerHTML = `
+    <div class="pay-banner" style="background:${b.color}">
+      <div class="pay-banner-icon">${b.icon}</div>
+      <div style="flex:1">
+        <div class="pay-banner-title" style="color:${tc}">${b.title}</div>
+        <div class="pay-banner-sub" style="color:${tc}">${b.sub}</div>
+        <div class="pay-steps">
+          ${b.steps.map((s,i)=>`<div class="pay-step" style="color:${tc}">${s}</div>`).join('')}
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:.4rem .7rem;font-size:.75rem;color:${tc};font-weight:700">
+        🔒 Sécurisé
+      </div>
+    </div>`;
+
+  if(inst){
+    inst.style.display = '';
+    const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const prom  = _promoDiscount || 0;
+    const zon   = document.getElementById('ckZone');
+    const fee   = zon && zon.value ? parseFloat(zon.options[zon.selectedIndex].dataset.fee||'0') : 0;
+    const tot   = Math.max(0, total - prom + fee);
+    inst.innerHTML = `
+      <div style="font-weight:800;color:var(--ink);margin-bottom:.5rem">
+        📋 Instructions de paiement
+      </div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.7">
+        ${method==='orange_money' ? '<b>Numéro OM :</b> 695 072 759<br><b>Nom :</b> Kengni Fabrice<br><b>Montant exact :</b>' :
+          method==='mtn_momo'    ? '<b>Numéro MOMO :</b> 670 695 946<br><b>Nom :</b> Kengni Fabrice<br><b>Montant exact :</b>' :
+          method==='stripe'      ? '<b>Vous serez redirigé</b> vers notre page de paiement sécurisée après confirmation.<br>' :
+          method==='cash'        ? '<b>Préparez</b> le montant exact :<br>' :
+          '<b>Contactez-nous</b> sur WhatsApp pour les coordonnées bancaires.<br>'}
+        ${method !== 'stripe' && method !== 'virement' ? `<span style="font-size:1.1rem;font-weight:900;color:var(--orange)">${fmt(tot)} XAF</span>` : ''}
+      </div>
+      <div style="margin-top:.6rem;padding:.5rem .8rem;background:rgba(0,176,116,.08);border-radius:8px;font-size:.8rem;color:var(--orange);font-weight:700">
+        🛡️ Garantie remboursement 72h — Annulation possible sous 3 jours
+      </div>`;
+  }
 }
 function renderOrderSummary(){
   const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
@@ -3079,12 +3329,20 @@ async function confirmOrder(){
       closeCheckout();
       const orderRef = d.order_number || ('#' + d.order_id);
       const feeLabel = deliveryFee > 0 ? ` + ${new Intl.NumberFormat('fr-CM').format(deliveryFee)} XAF livraison` : '';
+      // ── Afficher le modal de paiement au lieu du succès immédiat ──
+      openPayConfirm({
+        order_id: d.order_id,
+        order_number: orderRef,
+        method: _payMethod,
+        total: total + deliveryFee,
+        phone: phone,
+        feeLabel: feeLabel
+      });
+      // Pré-remplir le message successMsg pour après confirmation
       document.getElementById('successMsg').innerHTML =
         `<strong style="color:var(--orange)">${orderRef}</strong> confirmée !<br>
          Nous vous contacterons au <strong>${phone}</strong> pour organiser la livraison${feeLabel}.<br>
          <a href="/shop/suivi" target="_blank" style="color:var(--orange);font-size:.93rem">📍 Suivre ma commande →</a>`;
-      document.getElementById('successBg').classList.add('open');
-      document.getElementById('overlay').classList.add('open');
       if(CUST.logged){CUST.points+=Math.max(1,Math.floor(total/1000));}
     } else {
       KniUI.toast.error(d.error||'Erreur serveur. Veuillez réessayer.', 'Erreur commande');
@@ -4481,6 +4739,143 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ── Exposer pour les autres scripts ── */
 window.refreshCatalogue = loadCatalogueData;
 
+
+/* ════════════════════════════════════════════════════════════════
+   SYSTÈME DE PAIEMENT SÉCURISÉ — JS complet
+════════════════════════════════════════════════════════════════ */
+let _payOrderId   = null;
+let _payOrderNum  = null;
+let _payCountdown = null;
+
+const _PAY_COLORS = {
+  orange_money:'linear-gradient(135deg,#ff7c00,#e65c00)',
+  mtn_momo:'linear-gradient(135deg,#ffd100,#e6b800)',
+  cash:'linear-gradient(135deg,#00b074,#007a50)',
+  virement:'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+  stripe:'linear-gradient(135deg,#6366f1,#4338ca)'
+};
+
+function openPayConfirm(opts){
+  _payOrderId  = opts.order_id;
+  _payOrderNum = opts.order_number;
+  const b = _PAY_BANNERS[opts.method] || _PAY_BANNERS['orange_money'];
+
+  // Bannière colorée
+  const banner = document.getElementById('payConfirmBanner');
+  if(banner) banner.style.background = _PAY_COLORS[opts.method] || _PAY_COLORS['orange_money'];
+
+  // Infos
+  const el = id => document.getElementById(id);
+  if(el('payMethodIcon'))  el('payMethodIcon').textContent  = b.icon;
+  if(el('payMethodTitle')) el('payMethodTitle').textContent = b.title;
+  if(el('payMethodSub'))   el('payMethodSub').textContent   = b.sub;
+  if(el('payAmount'))      el('payAmount').textContent      = fmt(opts.total || 0) + ' XAF';
+  if(el('payOrderNum'))    el('payOrderNum').textContent    = opts.order_number || '—';
+
+  // WhatsApp pré-rempli
+  const waLink = document.getElementById('payWhatsapp');
+  if(waLink){
+    const msg = encodeURIComponent(
+      `Bonjour, j'ai effectué le paiement de ${fmt(opts.total)} XAF pour la commande ${opts.order_number} via ${b.title}.`
+    );
+    waLink.href = `https://wa.me/237695072759?text=${msg}`;
+  }
+
+  // Ouvrir le modal
+  const modal = document.getElementById('payConfirmBg');
+  if(modal) modal.style.display = 'flex';
+
+  // Countdown 60 min
+  let secs = 60 * 60;
+  clearInterval(_payCountdown);
+  _payCountdown = setInterval(() => {
+    secs--;
+    if(secs <= 0){ clearInterval(_payCountdown); return; }
+    const m = String(Math.floor(secs/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    const cd = document.getElementById('payCountdown');
+    if(cd) cd.textContent = m + ':' + s;
+  }, 1000);
+}
+
+function closePayConfirm(){
+  const modal = document.getElementById('payConfirmBg');
+  if(modal) modal.style.display = 'none';
+  clearInterval(_payCountdown);
+}
+
+async function declarePaymentDone(){
+  const btn = document.getElementById('payDoneBtn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Envoi de la confirmation…'; }
+  try {
+    const r = await fetch('/shop/api/payment/status/' + _payOrderId, {credentials:'same-origin'});
+    const d = await r.json();
+    // Notification WhatsApp automatique
+    const b = _PAY_BANNERS[_payMethod] || {};
+    const waMsg = encodeURIComponent(
+      `Commande ${_payOrderNum} — paiement ${b.title||_payMethod} effectué. Veuillez confirmer.`
+    );
+    // Fermer modal paiement et ouvrir succès
+    closePayConfirm();
+    setTimeout(() => {
+      document.getElementById('successBg').classList.add('open');
+      const ovl = document.getElementById('overlay');
+      if(ovl) ovl.classList.add('open');
+    }, 200);
+  } catch(e){
+    if(btn){ btn.disabled=false; btn.textContent='✅ J\'ai effectué le paiement'; }
+  }
+}
+
+/* ── Demande d'annulation ── */
+function openCancelModal(orderId, orderNum){
+  document.getElementById('cancelOrderId').value  = orderId || '';
+  document.getElementById('cancelOrderNum').value = orderNum || '';
+  document.getElementById('cancelBg').style.display = 'flex';
+}
+function closeCancelModal(){
+  document.getElementById('cancelBg').style.display = 'none';
+}
+async function submitCancelRequest(){
+  const orderNum  = document.getElementById('cancelOrderNum').value.trim();
+  const reason    = document.getElementById('cancelReason').value;
+  const details   = document.getElementById('cancelDetails').value.trim();
+  const orderId   = document.getElementById('cancelOrderId').value;
+  if(!orderNum || !reason){
+    alert('Veuillez renseigner le numéro de commande et le motif.');
+    return;
+  }
+  const fullReason = reason + (details ? ' — ' + details : '');
+  try {
+    const r = await fetch('/shop/api/payment/cancel-request', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({order_id: orderId || orderNum, reason: fullReason, phone: ''})
+    });
+    const d = await r.json();
+    if(d.success){
+      closeCancelModal();
+      alert('✅ Demande enregistrée ! Notre équipe vous contactera sous 24h.');
+    } else {
+      alert('❌ ' + (d.error || 'Erreur lors de l\'envoi de la demande.'));
+    }
+  } catch(e){
+    alert('Erreur réseau. Contactez-nous sur WhatsApp.');
+  }
+}
+
+/* ── Lien annulation dans le footer de la boutique ── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Bouton annulation dans le header ou footer si présent
+  const cancelBtns = document.querySelectorAll('[data-cancel-order]');
+  cancelBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      openCancelModal(btn.dataset.cancelOrder, btn.dataset.cancelNum);
+    });
+  });
+});
+/* ════ FIN PAIEMENT ═══════════════════════════════════════════════ */
+
 </script>
 
 <!-- Bannière d'installation PWA -->
@@ -4509,5 +4904,88 @@ window.refreshCatalogue = loadCatalogueData;
                  width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer">×</button>
 </div>
 <!-- ══ / PWA ══ -->
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CHIPS CATÉGORIES INLINE — remplace la sidebar catalogue
+   ═══════════════════════════════════════════════════════════════ */
+
+let _iCatActive = 'all';
+
+function buildInlineCatChips(cats) {
+  const wrap = document.getElementById('catChips');
+  if (!wrap) return;
+  let html = '<button class="icat-chip active" data-slug="all" onclick="iCatFilter(this,'all')">🏪 Tout</button>';
+  cats.forEach(function(c) {
+    const em = c.emoji || '📦';
+    const lbl = (c.label || c.slug || '').replace(/^[\S]+\s+/, '');
+    html += '<button class="icat-chip" data-slug="' + c.slug + '" onclick="iCatFilter(this,'' + c.slug + '')">' + em + ' ' + lbl + '</button>';
+  });
+  wrap.innerHTML = html;
+}
+
+function iCatFilter(btn, slug) {
+  _iCatActive = slug;
+  document.querySelectorAll('.icat-chip').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  if (typeof filterCat === 'function') filterCat(slug);
+  document.querySelectorAll('.cat-pill').forEach(function(p) {
+    p.classList.toggle('active', p.dataset.cat === slug);
+  });
+}
+
+async function loadInlineCatChips() {
+  try {
+    const r = await fetch('/shop/api/categories');
+    if (r.ok) {
+      const d = await r.json();
+      if (d.success && d.categories && d.categories.length) {
+        buildInlineCatChips(d.categories);
+        return;
+      }
+    }
+  } catch(e) {}
+  // Fallback depuis PRODS
+  try {
+    const slugs = [...new Set(Object.values(PRODS || {}).map(function(p){ return p.category; }).filter(Boolean))].sort();
+    const fakeCats = slugs.map(function(slug) {
+      const lbl = typeof _catLabel === 'function' ? _catLabel(slug) : slug;
+      return { slug: slug, label: lbl.replace(/^[^\s]+\s+/,''), emoji: lbl.split(' ')[0] };
+    });
+    buildInlineCatChips(fakeCats);
+  } catch(e) {}
+}
+
+// Override setSort pour gérer aussi le <select> inline
+document.addEventListener('DOMContentLoaded', function() {
+  const sel = document.getElementById('inlineSortSel');
+  if (sel) {
+    sel.addEventListener('change', function() {
+      const val = this.value;
+      if (typeof applyFilters === 'function') {
+        window._currentSort = val;
+        applyFilters();
+      } else if (typeof setSort === 'function') {
+        const fakeBtn = { dataset: { sort: val }, classList: { add: function(){}, remove: function(){} } };
+        setSort(fakeBtn, val);
+      }
+    });
+  }
+  setTimeout(loadInlineCatChips, 600);
+});
+
+// Sync filterCat global avec les chips
+const __origFC = window.filterCat;
+if (typeof __origFC === 'function') {
+  window.filterCat = function(slug) {
+    _iCatActive = slug;
+    document.querySelectorAll('.icat-chip').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.slug === slug);
+    });
+    __origFC(slug);
+  };
+}
+</script>
+
 </body>
 </html>
