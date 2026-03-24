@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>k-Ni Store — Yaoundé 🇨🇲</title>
+<meta name="description" content="k-Ni Store — Boutique en ligne à Yaoundé. Électronique, mode, beauté, livraison partout au Cameroun.">
+<meta name="theme-color" content="#00b074">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#00b074; --green2:#009060; --green3:#e8f8f2;
+  --ink:#111827; --ink2:#374151; --muted:#6b7280;
+  --border:#e5e7eb; --white:#fff; --bg:#f8fafc;
+  --red:#ef4444; --gold:#f59e0b;
+  --font:'Outfit',system-ui,sans-serif;
+  --radius:14px;
+  --shadow:0 2px 16px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 40px rgba(0,0,0,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ══ ANIMATIONS ══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+
+/* ══ TICKER TOP ══ */
+.ticker-bar{background:var(--ink);color:#d1d5db;font-size:.82rem;padding:.35rem 0;overflow:hidden;position:relative;width:100%}
+.ticker-inner{display:flex;white-space:nowrap;animation:ticker 28s linear infinite;width:max-content}
+.ticker-inner:hover{animation-play-state:paused}
+.ticker-item{padding:0 2.5rem;flex-shrink:0}
+.ticker-item i{margin-right:.35rem;color:var(--green)}
+
+/* ══ HEADER ══ */
+.kni-header{background:var(--white);box-shadow:0 2px 16px rgba(0,0,0,.08);position:sticky;top:0;z-index:900;width:100%}
+.kni-header-inner{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.65rem 1.2rem;max-width:1400px;margin:0 auto}
+.kni-logo{display:flex;align-items:center;gap:.55rem;text-decoration:none;flex-shrink:0}
+.kni-logo-img{width:46px;height:46px;border-radius:12px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.kni-logo-text{font-size:1.35rem;font-weight:900;color:var(--ink);letter-spacing:-1px;line-height:1}
+.kni-logo-text span{color:var(--green)}
+.kni-logo-sub{font-size:.62rem;color:var(--muted);font-weight:500;display:block;letter-spacing:.02em}
+.kni-header-actions{display:flex;align-items:center;gap:.5rem}
+.kni-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.52rem 1rem;border-radius:10px;font-size:.88rem;font-weight:700;font-family:var(--font);cursor:pointer;border:none;text-decoration:none;transition:.18s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.kni-btn-shop{background:var(--green);color:#fff}
+.kni-btn-shop:hover{background:var(--green2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,176,116,.35)}
+.kni-btn-outline{background:var(--white);color:var(--ink);border:1.5px solid var(--border)}
+.kni-btn-outline:hover{border-color:var(--green);color:var(--green)}
+.kni-btn-wa{background:#25d366;color:#fff}
+.kni-btn-wa:hover{background:#1fba58}
+.kni-btn i{font-size:.92rem}
+
+/* ══ HERO SECTION ══ */
+.hero-section{background:linear-gradient(135deg,#003d27 0%,#00b074 50%,#00d4aa 100%);padding:2.5rem 1.2rem 2rem;text-align:center;position:relative;overflow:hidden}
+.hero-section::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:30px;padding:.3rem .9rem;font-size:.8rem;font-weight:700;margin-bottom:.9rem;backdrop-filter:blur(4px)}
+.hero-title{font-size:clamp(1.6rem,5vw,2.8rem);font-weight:900;color:#fff;line-height:1.15;margin-bottom:.7rem;text-shadow:0 2px 12px rgba(0,0,0,.2)}
+.hero-sub{font-size:clamp(.92rem,2.5vw,1.1rem);color:rgba(255,255,255,.88);margin-bottom:1.5rem;max-width:480px;margin-left:auto;margin-right:auto}
+.hero-actions{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap}
+.hero-cta{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.8rem;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;border:none;font-family:var(--font);text-decoration:none;transition:.2s;-webkit-tap-highlight-color:transparent}
+.hero-cta-primary{background:#fff;color:var(--green2)}
+.hero-cta-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.hero-cta-secondary{background:rgba(255,255,255,.18);color:#fff;border:2px solid rgba(255,255,255,.5);backdrop-filter:blur(4px)}
+.hero-cta-secondary:hover{background:rgba(255,255,255,.28)}
+.hero-stats{display:flex;justify-content:center;gap:2rem;margin-top:1.8rem;flex-wrap:wrap}
+.hero-stat{color:rgba(255,255,255,.9);text-align:center}
+.hero-stat strong{display:block;font-size:1.4rem;font-weight:900;color:#fff}
+.hero-stat span{font-size:.75rem;opacity:.8}
+
+/* ══ SECTION TITRE ══ */
+.sec-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:0 1rem}
+.sec-title h2{font-size:1.1rem;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:.45rem}
+.sec-title h2 i{color:var(--green)}
+.sec-title a{font-size:.82rem;color:var(--green);font-weight:600;text-decoration:none}
+.sec-title a:hover{text-decoration:underline}
+
+/* ══ FLYERS CAROUSEL DYNAMIQUE — Style Glotelho / NowTechCenter ══ */
+.flyers-section{padding:1.4rem 0 .5rem;background:var(--white);border-top:3px solid var(--green);border-bottom:1px solid var(--border)}
+.flyers-section .sec-title{padding:0 1.2rem}
+
+/* Carrousel pleine largeur */
+.flyer-carousel{position:relative;overflow:hidden;touch-action:pan-y}
+.flyer-track{display:flex;transition:transform .4s cubic-bezier(.25,.46,.45,.94);will-change:transform}
+.flyer-slide{min-width:100%;position:relative;cursor:pointer;overflow:hidden}
+.flyer-slide img{width:100%;display:block;max-height:380px;object-fit:cover;object-position:center;transition:transform .3s}
+.flyer-slide:hover img{transform:scale(1.02)}
+
+/* Overlay gradient sur les flyers */
+.flyer-overlay{position:absolute;bottom:0;left:0;right:0;padding:1.2rem 1.4rem;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;pointer-events:none}
+.flyer-overlay h3{font-size:1rem;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+
+/* Navigation dots */
+.flyer-dots{display:flex;justify-content:center;gap:.45rem;padding:.75rem 0 .5rem}
+.flyer-dot{width:8px;height:8px;border-radius:50%;background:var(--border);border:none;cursor:pointer;transition:.2s;padding:0;-webkit-tap-highlight-color:transparent}
+.flyer-dot.active{background:var(--green);width:22px;border-radius:4px}
+
+/* Flèches desktop */
+.flyer-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.92);border:none;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.15);z-index:5;transition:.15s;-webkit-tap-highlight-color:transparent}
+.flyer-arrow:hover{background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.2)}
+.flyer-arrow.prev{left:.8rem}
+.flyer-arrow.next{right:.8rem}
+@media(max-width:480px){.flyer-arrow{display:none}}
+
+/* Skeleton loader flyers */
+.flyer-skeleton{width:100%;aspect-ratio:16/7;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 37%,#f0f0f0 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
+@media(max-width:600px){.flyer-skeleton{aspect-ratio:4/3}}
+
+/* Indicateur auto-play */
+.flyer-progress{position:absolute;bottom:0;left:0;height:3px;background:var(--green);transition:width linear;border-radius:0 2px 2px 0;opacity:.8}
+
+/* Grid flyers vignettes — sous le carrousel (style NowTechCenter) */
+.flyer-thumbs{display:flex;gap:.55rem;overflow-x:auto;padding:.6rem 1.2rem;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.flyer-thumbs::-webkit-scrollbar{display:none}
+.flyer-thumb{flex-shrink:0;width:72px;height:72px;border-radius:10px;overflow:hidden;border:2.5px solid transparent;cursor:pointer;transition:.18s;-webkit-tap-highlight-color:transparent}
+.flyer-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.flyer-thumb.active{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,176,116,.25)}
+.flyer-thumb:hover{border-color:var(--green);transform:scale(1.05)}
+
+/* ══ PRODUITS VEDETTES MOBILE — grille 2×2 ══ */
+.featured-section{padding:1.4rem 0 1rem;background:var(--bg)}
+.prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;padding:0 .85rem}
+
+/* Carte produit style Facebook Marketplace */
+.fp-card{background:var(--white);border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07);cursor:pointer;transition:.18s;animation:fadeUp .4s ease forwards;-webkit-tap-highlight-color:transparent;text-decoration:none;display:block;color:inherit}
+.fp-card:hover{transform:translateY(-3px);box-shadow:0 6px 22px rgba(0,0,0,.12)}
+.fp-card:active{transform:scale(.97)}
+.fp-imgwrap{aspect-ratio:1/1.05;overflow:hidden;background:#f0fdf4;position:relative}
+.fp-img{width:100%;height:100%;object-fit:cover;display:block;transition:.3s}
+.fp-card:hover .fp-img{transform:scale(1.05)}
+.fp-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--green);opacity:.35}
+.fp-badge{position:absolute;top:.4rem;left:.4rem;font-size:.7rem;font-weight:800;padding:.17rem .42rem;border-radius:5px;backdrop-filter:blur(4px)}
+.fp-badge-hot{background:#fef2f2;color:#ef4444;border:1px solid #fca5a5}
+.fp-badge-new{background:#f0fdf4;color:#059669;border:1px solid #86efac}
+.fp-badge-promo{background:#e8f8f2;color:#00875a;border:1px solid #6ee7c4}
+.fp-body{padding:.6rem .65rem .65rem}
+.fp-cat{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--green);font-weight:700;display:block;background:#e8f8f2;border-radius:4px;padding:.1rem .35rem;width:fit-content;margin-bottom:.28rem}
+.fp-name{font-size:.9rem;font-weight:700;line-height:1.3;color:var(--ink);margin-bottom:.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fp-price{font-size:1rem;font-weight:900;color:var(--green2);display:block;margin-bottom:.45rem}
+.fp-old{font-size:.72rem;color:var(--muted);text-decoration:line-through;margin-left:.35rem;font-weight:400}
+.fp-disc{font-size:.65rem;background:#fef2f2;color:#ef4444;font-weight:800;padding:.08rem .3rem;border-radius:4px;margin-left:.2rem}
+.fp-btn{width:100%;padding:.62rem;background:var(--green);color:#fff;border:none;border-radius:9px;font-size:.85rem;font-weight:700;font-family:var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.35rem;transition:.15s;min-height:42px;-webkit-tap-highlight-color:transparent}
+.fp-btn:hover{background:var(--green2)}
+.fp-btn:active{transform:scale(.96)}
+
+/* Skeleton card */
+.fp-skeleton{background:var(--white);border-radius:12px;overflow:hidden}
+.fp-sk-img{aspect-ratio:1/1.05;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 37%,#f0f0f0 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
+.fp-sk-body{padding:.6rem .65rem;display:flex;flex-direction:column;gap:.4rem}
+.fp-sk-line{height:.75rem;border-radius:4px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 37%,#f0f0f0 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
+.fp-sk-line.short{width:60%}
+.fp-sk-line.price{width:50%;height:1rem}
+
+/* ══ CATÉGORIES RAPIDES ══ */
+.cats-section{padding:1.2rem 0;background:var(--white);border-bottom:1px solid var(--border)}
+.cats-scroll{display:flex;gap:.6rem;overflow-x:auto;padding:0 1rem;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+.cats-scroll::-webkit-scrollbar{display:none}
+.cat-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:.3rem;padding:.55rem .75rem;background:var(--bg);border-radius:12px;cursor:pointer;transition:.18s;border:1.5px solid transparent;text-decoration:none;-webkit-tap-highlight-color:transparent;scroll-snap-align:start;min-width:64px}
+.cat-chip:hover,.cat-chip:active{background:var(--green3);border-color:var(--green)}
+.cat-chip .em{font-size:1.4rem;line-height:1}
+.cat-chip .lbl{font-size:.68rem;font-weight:700;color:var(--ink2);text-align:center;white-space:nowrap}
+
+/* ══ BANNIÈRE PROMO INLINE ══ */
+.promo-banner{margin:1rem;border-radius:14px;background:linear-gradient(135deg,#00875a,#00b074,#00d4aa);padding:1.1rem 1.4rem;display:flex;align-items:center;gap:1rem;overflow:hidden;position:relative;cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.promo-banner::before{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:rgba(255,255,255,.08);border-radius:50%}
+.promo-banner-ico{font-size:2.2rem;flex-shrink:0;animation:pulse 2s ease infinite}
+.promo-banner-text{flex:1;min-width:0}
+.promo-banner-text strong{display:block;font-size:.97rem;font-weight:900;color:#fff;margin-bottom:.2rem}
+.promo-banner-text span{font-size:.8rem;color:rgba(255,255,255,.88)}
+.promo-banner-arrow{color:rgba(255,255,255,.7);font-size:1.1rem;flex-shrink:0}
+
+/* ══ SECTION "COMMENT COMMANDER" ══ */
+.how-section{padding:1.5rem 1rem;background:var(--white);border-top:1px solid var(--border)}
+.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:1rem}
+.how-step{text-align:center;padding:.7rem .5rem}
+.how-step .ico{width:48px;height:48px;border-radius:50%;background:var(--green3);display:flex;align-items:center;justify-content:center;margin:0 auto .55rem;font-size:1.2rem;color:var(--green)}
+.how-step h4{font-size:.78rem;font-weight:800;color:var(--ink);margin-bottom:.2rem}
+.how-step p{font-size:.68rem;color:var(--muted);line-height:1.4}
+
+/* ══ FOOTER ══ */
+.kni-footer{background:var(--ink);color:#d1d5db;padding:2rem 1.2rem 1.5rem;margin-bottom:60px}
+.footer-brand{margin-bottom:1.2rem}
+.footer-logo{font-size:1.4rem;font-weight:900;color:#fff;letter-spacing:-1px;display:inline-block;margin-bottom:.5rem}
+.footer-logo span{color:var(--green)}
+.footer-desc{font-size:.82rem;opacity:.75;line-height:1.6;max-width:300px}
+.footer-contacts{display:flex;flex-direction:column;gap:.35rem;margin-top:.8rem}
+.footer-contact{font-size:.8rem;display:flex;align-items:center;gap:.45rem}
+.footer-contact i{color:var(--green);width:14px}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:.85rem;margin-top:1.2rem;text-align:center;font-size:.75rem;opacity:.6}
+
+/* ══ BARRE NAV MOBILE BAS ══ */
+.mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:850;background:rgba(255,255,255,.98);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-top:1px solid rgba(0,0,0,.08);padding:5px 0 calc(5px + env(safe-area-inset-bottom,0px));box-shadow:0 -2px 16px rgba(0,0,0,.07)}
+.mob-nav-inner{display:flex;align-items:center;justify-content:space-around;width:100%}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:#6b7280;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.42rem .55rem;border-radius:10px;font-family:var(--font);position:relative;-webkit-tap-highlight-color:transparent;transition:color .15s;text-decoration:none;min-width:52px;touch-action:manipulation}
+.mob-btn i{font-size:1.2rem;line-height:1}
+.mob-btn.active{color:var(--green)}
+.mob-btn.active i{transform:scale(1.1)}
+.mob-badge{position:absolute;top:2px;right:8px;background:var(--red);color:#fff;border-radius:20px;font-size:.52rem;padding:.05rem .3rem;font-weight:800;border:1.5px solid #fff}
+body{padding-bottom:62px}
+
+/* ══ WA FLOAT ══ */
+.wa-float{position:fixed;bottom:calc(4.8rem + env(safe-area-inset-bottom,0px));right:1rem;z-index:800;background:#25d366;color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 18px rgba(37,211,102,.4);text-decoration:none;transition:.2s;-webkit-tap-highlight-color:transparent}
+.wa-float:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(37,211,102,.5)}
+.wa-float:active{transform:scale(.95)}
+
+/* ══ TOAST ══ */
+.toast-container{position:fixed;bottom:5.5rem;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:.5rem;align-items:center;width:90%;max-width:340px;pointer-events:none}
+.toast{background:var(--ink);color:#fff;padding:.65rem 1.1rem;border-radius:10px;font-size:.85rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadeUp .3s ease;text-align:center;border-left:4px solid var(--green)}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:360px){
+  .hero-title{font-size:1.45rem}
+  .prod-grid{gap:.45rem;padding:0 .65rem}
+  .fp-name{font-size:.82rem}
+  .fp-price{font-size:.92rem}
+}
+@media(min-width:600px){
+  .flyer-slide img{max-height:440px}
+  .prod-grid{grid-template-columns:repeat(3,1fr);gap:.8rem;padding:0 1rem}
+}
+@media(min-width:900px){
+  .prod-grid{grid-template-columns:repeat(4,1fr);gap:1rem;padding:0 1.2rem}
+  .flyer-slide img{max-height:520px}
+  .how-steps{grid-template-columns:repeat(5,1fr)}
+}
+@media(min-width:1200px){
+  .kni-header-inner,.hero-section{padding-left:2rem;padding-right:2rem}
+  .prod-grid{padding:0 2rem}
+}
+@media(hover:none){
+  .fp-card:active{transform:scale(.975);box-shadow:0 1px 6px rgba(0,0,0,.1)}
+  .fp-btn:active{transform:scale(.96);background:var(--green2)}
+  .cat-chip:active{background:var(--green3);border-color:var(--green)}
+}
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker-bar" aria-hidden="true">
+  <div class="ticker-inner" id="tickerInner">
+    <span class="ticker-item"><i class="fas fa-truck"></i> Livraison partout au Cameroun 🇨🇲</span>
+    <span class="ticker-item"><i class="fas fa-mobile-alt"></i> Paiement Orange Money &amp; MTN MoMo</span>
+    <span class="ticker-item"><i class="fas fa-headset"></i> Support : +237 695 072 759</span>
+    <span class="ticker-item"><i class="fas fa-shield-alt"></i> Paiement 100% sécurisé</span>
+    <span class="ticker-item"><i class="fas fa-gift"></i> Livraison gratuite dès 25 000 XAF</span>
+    <span class="ticker-item"><i class="fas fa-star"></i> + de 500 produits disponibles</span>
+    <!-- Doublement pour le loop -->
+    <span class="ticker-item"><i class="fas fa-truck"></i> Livraison partout au Cameroun 🇨🇲</span>
+    <span class="ticker-item"><i class="fas fa-mobile-alt"></i> Paiement Orange Money &amp; MTN MoMo</span>
+    <span class="ticker-item"><i class="fas fa-headset"></i> Support : +237 695 072 759</span>
+    <span class="ticker-item"><i class="fas fa-shield-alt"></i> Paiement 100% sécurisé</span>
+    <span class="ticker-item"><i class="fas fa-gift"></i> Livraison gratuite dès 25 000 XAF</span>
+    <span class="ticker-item"><i class="fas fa-star"></i> + de 500 produits disponibles</span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="kni-header">
+  <div class="kni-header-inner">
+    <a href="/home" class="kni-logo">
+      <img src="/static/img/logo.jpeg" alt="k-Ni" class="kni-logo-img"
+           onerror="this.style.display='none'">
+      <div>
+        <div class="kni-logo-text">k-<span>N</span>i</div>
+        <span class="kni-logo-sub">Store · Yaoundé 🇨🇲</span>
+      </div>
+    </a>
+    <div class="kni-header-actions">
+      <a href="https://wa.me/237695072759" target="_blank" class="kni-btn kni-btn-wa" aria-label="WhatsApp">
+        <i class="fab fa-whatsapp"></i><span style="display:none" class="btn-lbl">WhatsApp</span>
+      </a>
+      <a href="/shop" class="kni-btn kni-btn-shop">
+        <i class="fas fa-store"></i> <span>Boutique</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero-section">
+  <span class="hero-badge"><i class="fas fa-bolt"></i> Yaoundé • Cameroun</span>
+  <h1 class="hero-title">Votre boutique<br>de confiance</h1>
+  <p class="hero-sub">Électronique, mode, beauté — prix imbattables &amp; livraison rapide</p>
+  <div class="hero-actions">
+    <a href="/shop" class="hero-cta hero-cta-primary">
+      <i class="fas fa-store"></i> Voir la boutique
+    </a>
+    <a href="https://wa.me/237695072759" target="_blank" class="hero-cta hero-cta-secondary">
+      <i class="fab fa-whatsapp"></i> Commander
+    </a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><strong id="heroProdsCount">500+</strong><span>Produits</span></div>
+    <div class="hero-stat"><strong>🇨🇲</strong><span>Cameroun</span></div>
+    <div class="hero-stat"><strong>24h</strong><span>Livraison</span></div>
+    <div class="hero-stat"><strong>100%</strong><span>Sécurisé</span></div>
+  </div>
+</section>
+
+<!-- CATÉGORIES RAPIDES -->
+<div class="cats-section">
+  <div class="cats-scroll">
+    <a href="/shop?cat=all" class="cat-chip"><span class="em">🏪</span><span class="lbl">Tout</span></a>
+    <a href="/shop?cat=smartphone" class="cat-chip"><span class="em">📱</span><span class="lbl">Phones</span></a>
+    <a href="/shop?cat=ordinateur-portable" class="cat-chip"><span class="em">💻</span><span class="lbl">PC</span></a>
+    <a href="/shop?cat=electronique" class="cat-chip"><span class="em">⚡</span><span class="lbl">Électro</span></a>
+    <a href="/shop?cat=mode" class="cat-chip"><span class="em">👗</span><span class="lbl">Mode</span></a>
+    <a href="/shop?cat=beaute" class="cat-chip"><span class="em">💄</span><span class="lbl">Beauté</span></a>
+    <a href="/shop?cat=maison" class="cat-chip"><span class="em">🏠</span><span class="lbl">Maison</span></a>
+    <a href="/shop?cat=sport" class="cat-chip"><span class="em">⚽</span><span class="lbl">Sport</span></a>
+    <a href="/shop?cat=sante" class="cat-chip"><span class="em">💊</span><span class="lbl">Santé</span></a>
+    <a href="/shop?cat=accessoires-info" class="cat-chip"><span class="em">🖱️</span><span class="lbl">Accesso.</span></a>
+  </div>
+</div>
+
+<!-- ═══════════════ FLYERS DYNAMIQUES ═══════════════ -->
+<section class="flyers-section">
+  <div class="sec-title">
+    <h2><i class="fas fa-fire"></i> Promotions &amp; Offres</h2>
+    <a href="/shop">Voir tout →</a>
+  </div>
+
+  <!-- Carrousel principal -->
+  <div class="flyer-carousel" id="flyerCarousel"
+       ontouchstart="flyerTouchStart(event)"
+       ontouchmove="flyerTouchMove(event)"
+       ontouchend="flyerTouchEnd(event)">
+    <div class="flyer-track" id="flyerTrack">
+      <!-- Skeleton pendant chargement -->
+      <div class="flyer-slide"><div class="flyer-skeleton"></div></div>
+    </div>
+    <div class="flyer-progress" id="flyerProgress" style="width:0%"></div>
+    <button class="flyer-arrow prev" id="flyerPrev" onclick="flyerGo(-1)" aria-label="Précédent">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <button class="flyer-arrow next" id="flyerNext" onclick="flyerGo(1)" aria-label="Suivant">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- Dots navigation -->
+  <div class="flyer-dots" id="flyerDots"></div>
+
+  <!-- Vignettes cliquables (style NowTechCenter) -->
+  <div class="flyer-thumbs" id="flyerThumbs"></div>
+</section>
+
+<!-- BANNIÈRE PROMO -->
+<a href="/shop" class="promo-banner">
+  <span class="promo-banner-ico">🎁</span>
+  <div class="promo-banner-text">
+    <strong>Livraison gratuite dès 25 000 XAF</strong>
+    <span>Paiement Orange Money ou MTN MoMo · Partout au Cameroun</span>
+  </div>
+  <i class="fas fa-chevron-right promo-banner-arrow"></i>
+</a>
+
+<!-- ═══════════════ PRODUITS VEDETTES ═══════════════ -->
+<section class="featured-section">
+  <div class="sec-title">
+    <h2><i class="fas fa-star"></i> Produits populaires</h2>
+    <a href="/shop">Tout voir →</a>
+  </div>
+  <div class="prod-grid" id="featuredGrid">
+    <!-- Skeletons -->
+    <div class="fp-skeleton"><div class="fp-sk-img"></div><div class="fp-sk-body"><div class="fp-sk-line"></div><div class="fp-sk-line short"></div><div class="fp-sk-line price"></div></div></div>
+    <div class="fp-skeleton"><div class="fp-sk-img"></div><div class="fp-sk-body"><div class="fp-sk-line"></div><div class="fp-sk-line short"></div><div class="fp-sk-line price"></div></div></div>
+    <div class="fp-skeleton"><div class="fp-sk-img"></div><div class="fp-sk-body"><div class="fp-sk-line"></div><div class="fp-sk-line short"></div><div class="fp-sk-line price"></div></div></div>
+    <div class="fp-skeleton"><div class="fp-sk-img"></div><div class="fp-sk-body"><div class="fp-sk-line"></div><div class="fp-sk-line short"></div><div class="fp-sk-line price"></div></div></div>
+  </div>
+</section>
+
+<!-- COMMENT COMMANDER -->
+<div class="how-section">
+  <div class="sec-title" style="padding:0;margin-bottom:.75rem">
+    <h2><i class="fas fa-info-circle"></i> Comment commander ?</h2>
+  </div>
+  <div class="how-steps">
+    <div class="how-step"><div class="ico"><i class="fas fa-search"></i></div><h4>Choisissez</h4><p>Parcourez notre catalogue</p></div>
+    <div class="how-step"><div class="ico"><i class="fas fa-cart-plus"></i></div><h4>Ajoutez</h4><p>Mettez au panier</p></div>
+    <div class="how-step"><div class="ico"><i class="fas fa-mobile-alt"></i></div><h4>Payez</h4><p>Orange Money / MTN</p></div>
+    <div class="how-step" style="display:none" class="how-step-extra"><div class="ico"><i class="fas fa-box"></i></div><h4>Emballez</h4><p>Votre colis préparé</p></div>
+    <div class="how-step" style="display:none" class="how-step-extra"><div class="ico"><i class="fas fa-truck"></i></div><h4>Livraison</h4><p>Reçu chez vous</p></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="kni-footer">
+  <div class="footer-brand">
+    <div class="footer-logo">k-<span>N</span>i Store</div>
+    <p class="footer-desc">Votre boutique de confiance à Yaoundé. Qualité garantie, livraisons partout au Cameroun.</p>
+    <div class="footer-contacts">
+      <div class="footer-contact"><i class="fas fa-phone"></i> Orange : 695 072 759</div>
+      <div class="footer-contact"><i class="fas fa-phone"></i> MTN : 670 695 946</div>
+      <div class="footer-contact"><i class="fab fa-whatsapp"></i> WhatsApp : 695 072 759</div>
+      <div class="footer-contact"><i class="fas fa-map-marker-alt"></i> Yaoundé, Cameroun</div>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 k-Ni Store — Tous droits réservés · Yaoundé, Cameroun</div>
+</footer>
+
+<!-- BARRE NAV BAS -->
+<nav class="mob-nav" aria-label="Navigation principale">
+  <div class="mob-nav-inner">
+    <a href="/home" class="mob-btn active" aria-label="Accueil">
+      <i class="fas fa-home"></i><span>Accueil</span>
+    </a>
+    <a href="/shop" class="mob-btn" aria-label="Boutique">
+      <i class="fas fa-store"></i><span>Boutique</span>
+    </a>
+    <a href="https://wa.me/237695072759" target="_blank" class="mob-btn" aria-label="WhatsApp">
+      <i class="fab fa-whatsapp"></i><span>WhatsApp</span>
+    </a>
+    <button class="mob-btn" onclick="window.location='/shop#cart'" aria-label="Panier">
+      <i class="fas fa-shopping-cart"></i><span>Panier</span>
+    </button>
+    <a href="/shop" class="mob-btn" aria-label="Compte">
+      <i class="fas fa-user"></i><span>Compte</span>
+    </a>
+  </div>
+</nav>
+
+<!-- BOUTON WA FLOTTANT -->
+<a href="https://wa.me/237695072759?text=Bonjour%20k-Ni%20Store%20!%20Je%20voudrais%20commander." target="_blank" class="wa-float" aria-label="Commander via WhatsApp">
+  <i class="fab fa-whatsapp"></i>
+</a>
+
+<!-- TOASTS -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FLYERS CAROUSEL — Chargement dynamique depuis l'API
+   ═══════════════════════════════════════════════════════════════ */
+
+let flyerData    = [];
+let flyerIdx     = 0;
+let flyerTimer   = null;
+let flyerTouchX  = 0;
+let flyerTouchDx = 0;
+const FLYER_DELAY = 4500; // ms entre chaque slide
+
+async function loadFlyers() {
+  try {
+    const r = await fetch('/shop/api/public/flyers');
+    const d = await r.json();
+    if (d.success && d.flyers && d.flyers.length > 0) {
+      flyerData = d.flyers;
+      renderFlyers();
+    } else {
+      // Fallback : afficher un slide par défaut si aucun flyer configuré
+      renderFlyersFallback();
+    }
+  } catch(e) {
+    renderFlyersFallback();
+  }
+}
+
+function renderFlyers() {
+  const track  = document.getElementById('flyerTrack');
+  const dots   = document.getElementById('flyerDots');
+  const thumbs = document.getElementById('flyerThumbs');
+  if (!track) return;
+
+  // Slides
+  track.innerHTML = flyerData.map((f, i) => `
+    <div class="flyer-slide" onclick="flyerClickSlide(${i})">
+      <img src="${f.url}"
+           alt="${escHtml(f.label)}"
+           loading="${i === 0 ? 'eager' : 'lazy'}"
+           fetchpriority="${i === 0 ? 'high' : 'auto'}"
+           decoding="async"
+           onerror="this.parentNode.style.background='linear-gradient(135deg,#003d27,#00b074)';this.style.display='none'">
+      <div class="flyer-overlay"><h3>${escHtml(f.label)}</h3></div>
+    </div>
+  `).join('');
+
+  // Dots
+  if (dots) {
+    dots.innerHTML = flyerData.map((_, i) =>
+      `<button class="flyer-dot${i===0?' active':''}" onclick="flyerGoTo(${i})" aria-label="Slide ${i+1}"></button>`
+    ).join('');
+  }
+
+  // Vignettes
+  if (thumbs) {
+    thumbs.innerHTML = flyerData.map((f, i) => `
+      <div class="flyer-thumb${i===0?' active':''}" onclick="flyerGoTo(${i})" title="${escHtml(f.label)}">
+        <img src="${f.url}" alt="${escHtml(f.label)}" loading="lazy" decoding="async"
+             onerror="this.style.background='var(--green3)'">
+      </div>
+    `).join('');
+  }
+
+  flyerIdx = 0;
+  flyerUpdateUI();
+  flyerStartAuto();
+}
+
+function renderFlyersFallback() {
+  const track = document.getElementById('flyerTrack');
+  if (!track) return;
+  // Slide de bienvenue par défaut
+  track.innerHTML = `
+    <div class="flyer-slide" onclick="window.location='/shop'">
+      <div style="aspect-ratio:16/7;background:linear-gradient(135deg,#003d27 0%,#00b074 60%,#00d4aa 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:2rem;text-align:center">
+        <div style="font-size:3rem">🛍️</div>
+        <div style="color:#fff;font-size:1.3rem;font-weight:900">Bienvenue chez k-Ni Store</div>
+        <div style="color:rgba(255,255,255,.85);font-size:.9rem">Découvrez nos produits</div>
+        <div style="background:#fff;color:#00875a;padding:.55rem 1.4rem;border-radius:10px;font-weight:800;font-size:.95rem">Voir la boutique →</div>
+      </div>
+    </div>`;
+  document.getElementById('flyerDots').innerHTML = '';
+  document.getElementById('flyerThumbs').innerHTML = '';
+}
+
+function flyerClickSlide(i) {
+  if (flyerData[i] && flyerData[i].link) {
+    window.location = flyerData[i].link;
+  }
+}
+
+function flyerGoTo(i) {
+  flyerIdx = i;
+  flyerUpdateUI();
+  flyerResetAuto();
+}
+
+function flyerGo(dir) {
+  flyerIdx = (flyerIdx + dir + flyerData.length) % flyerData.length;
+  flyerUpdateUI();
+  flyerResetAuto();
+}
+
+function flyerUpdateUI() {
+  const track = document.getElementById('flyerTrack');
+  if (track) track.style.transform = `translateX(-${flyerIdx * 100}%)`;
+
+  // Dots
+  document.querySelectorAll('.flyer-dot').forEach((d, i) =>
+    d.classList.toggle('active', i === flyerIdx));
+
+  // Thumbs
+  document.querySelectorAll('.flyer-thumb').forEach((t, i) => {
+    t.classList.toggle('active', i === flyerIdx);
+    if (i === flyerIdx) t.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'nearest'});
+  });
+
+  // Progress bar
+  const prog = document.getElementById('flyerProgress');
+  if (prog) {
+    prog.style.transition = 'none';
+    prog.style.width = '0%';
+    requestAnimationFrame(() => {
+      prog.style.transition = `width ${FLYER_DELAY}ms linear`;
+      prog.style.width = '100%';
+    });
+  }
+}
+
+function flyerStartAuto() {
+  clearInterval(flyerTimer);
+  if (flyerData.length <= 1) return;
+  flyerTimer = setInterval(() => {
+    flyerIdx = (flyerIdx + 1) % flyerData.length;
+    flyerUpdateUI();
+  }, FLYER_DELAY);
+}
+
+function flyerResetAuto() {
+  clearInterval(flyerTimer);
+  flyerStartAuto();
+}
+
+/* Touch swipe */
+function flyerTouchStart(e) { flyerTouchX = e.touches[0].clientX; flyerTouchDx = 0; }
+function flyerTouchMove(e)  {
+  flyerTouchDx = e.touches[0].clientX - flyerTouchX;
+  if (Math.abs(flyerTouchDx) > 8) e.preventDefault();
+}
+function flyerTouchEnd(e) {
+  if (Math.abs(flyerTouchDx) > 45) {
+    flyerGo(flyerTouchDx < 0 ? 1 : -1);
+  }
+  flyerTouchDx = 0;
+}
+
+/* Pause au hover */
+document.getElementById('flyerCarousel')?.addEventListener('mouseenter', () => clearInterval(flyerTimer));
+document.getElementById('flyerCarousel')?.addEventListener('mouseleave', () => flyerStartAuto());
+
+/* ═══════════════════════════════════════════════════════════════
+   PRODUITS VEDETTES
+   ═══════════════════════════════════════════════════════════════ */
+async function loadFeatured() {
+  const grid = document.getElementById('featuredGrid');
+  try {
+    const r = await fetch('/shop/api/public/featured');
+    const d = await r.json();
+    if (!d.success || !d.products.length) {
+      if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted);font-size:.9rem">Aucun produit disponible</div>';
+      return;
+    }
+    // Mettre à jour le compteur hero
+    const el = document.getElementById('heroProdsCount');
+    if (el && d.products.length) el.textContent = d.products.length + '+';
+
+    if (!grid) return;
+    grid.innerHTML = d.products.map((p, idx) => {
+      const price = p.price ? p.price.toLocaleString('fr-FR') + ' XAF' : 'Sur devis';
+      const oldP  = p.original_price && p.original_price > p.price
+        ? `<span class="fp-old">${p.original_price.toLocaleString('fr-FR')} XAF</span>` : '';
+      const disc  = p.original_price && p.original_price > p.price
+        ? `<span class="fp-disc">-${Math.round((1-p.price/p.original_price)*100)}%</span>` : '';
+      const badge = p.badge === 'hot'  ? '<span class="fp-badge fp-badge-hot">🔥 Top</span>'  :
+                    p.badge === 'new'  ? '<span class="fp-badge fp-badge-new">✨ Nouveau</span>' :
+                    p.badge === 'promo'? '<span class="fp-badge fp-badge-promo">🏷 Promo</span>' : '';
+      const img   = p.image_url
+        ? `<img class="fp-img" src="${p.image_url}" alt="${escHtml(p.name)}"
+                loading="${idx < 4 ? 'eager' : 'lazy'}" decoding="async"
+                fetchpriority="${idx < 2 ? 'high' : 'auto'}"
+                onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+        : '';
+      return `
+        <a class="fp-card" href="/shop" onclick="sessionStorage.setItem('openProd','${p.id}');return true"
+           style="animation-delay:${idx * 0.06}s">
+          <div class="fp-imgwrap">
+            ${img}
+            <div class="fp-img-placeholder" style="display:${p.image_url?'none':'flex'}">
+              <i class="fas fa-box-open"></i>
+            </div>
+            ${badge}
+          </div>
+          <div class="fp-body">
+            <span class="fp-cat">${escHtml(p.category||'')}</span>
+            <div class="fp-name">${escHtml(p.name)}</div>
+            <div>
+              <span class="fp-price">${price}</span>${oldP}${disc}
+            </div>
+            <button class="fp-btn" onclick="event.preventDefault();event.stopPropagation();addToCartHome(${p.id},'${escHtml(p.name)}',${p.price},'${p.image_url||''}')">
+              <i class="fas fa-cart-plus"></i>
+              ${p.stock === 0 ? 'Épuisé' : 'Ajouter'}
+            </button>
+          </div>
+        </a>`;
+    }).join('');
+  } catch(e) {
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted)">Erreur de chargement</div>';
+  }
+}
+
+function addToCartHome(pid, name, price, img) {
+  // Stocker dans sessionStorage et rediriger vers /shop pour ajouter au panier
+  sessionStorage.setItem('cartPending', JSON.stringify({pid, name, price, img}));
+  showToast('Redirection vers la boutique…');
+  setTimeout(() => { window.location = '/shop'; }, 800);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITAIRES
+   ═══════════════════════════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const c = document.getElementById('toastContainer');
+  if (!c) return;
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+/* Chargement initial */
+document.addEventListener('DOMContentLoaded', function() {
+  loadFlyers();
+  loadFeatured();
+  // Sur grand écran afficher les étapes supplémentaires "comment commander"
+  if (window.innerWidth >= 900) {
+    document.querySelectorAll('.how-step-extra').forEach(el => el.style.display = '');
+  }
+});
+</script>
+</body>
+</html>

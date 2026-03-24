@@ -196,14 +196,68 @@ class _RateLimiter:
 
 _rl = _RateLimiter()
 
+# ── Blocklist IP dynamique (ban temporaire après abus grave) ──────────────────
+import collections as _col_dos
+_DOS_BANLIST: dict = {}           # ip -> timestamp de fin de ban
+_DOS_STRIKE:  dict = _col_dos.defaultdict(int)  # ip -> nombre de violations
+_DOS_BAN_DURATION = 600           # 10 min de ban après _DOS_STRIKE_LIMIT violations
+_DOS_STRIKE_LIMIT  = 10
+
+def _get_client_ip():
+    from flask import request as _r2
+    xff = (_r2.headers.get('X-Forwarded-For') or '').split(',')[0].strip()
+    return xff or _r2.remote_addr or '0.0.0.0'
+
+def _is_ip_banned(ip: str) -> bool:
+    import time as _t2
+    until = _DOS_BANLIST.get(ip)
+    if until and _t2.monotonic() < until:
+        return True
+    if until:
+        del _DOS_BANLIST[ip]
+        _DOS_STRIKE[ip] = 0
+    return False
+
+def _record_strike(ip: str):
+    import time as _t3
+    _DOS_STRIKE[ip] += 1
+    if _DOS_STRIKE[ip] >= _DOS_STRIKE_LIMIT:
+        _DOS_BANLIST[ip] = _t3.monotonic() + _DOS_BAN_DURATION
+        _sec_log('IP_BANNED', f"ip={ip} apres {_DOS_STRIKE[ip]} violations")
+        _DOS_STRIKE[ip] = 0
+
 def _rl_check(limit: int, window: int):
-    """Retourne None si OK, réponse 429 sinon. Journalise les abus."""
+    """Retourne None si OK, réponse 429/403 sinon. Journalise les abus.
+    Integre detection DOS : ban automatique apres abus repetes."""
     try:
         from flask import request as _r, jsonify as _j
-        ip = (_r.headers.get('X-Forwarded-For', _r.remote_addr) or '').split(',')[0].strip()
+        ip = _get_client_ip()
+        if _is_ip_banned(ip):
+            _sec_log('BANNED_REQUEST', f"path={_r.path}")
+            return _j({'success': False, 'error': 'Acces temporairement bloque.'}), 403
         if not _rl.is_allowed(f"{ip}:{_r.path}:{window}", limit, window):
             _sec_log('RATE_LIMIT', f"path={_r.path}")
+            _record_strike(ip)
             return _j({'success': False, 'error': f'Trop de tentatives. Attendez {window}s.'}), 429
+    except Exception:
+        pass
+    return None
+
+def _rl_check_global(limit: int = 300, window: int = 60):
+    """Rate-limit global par IP : 300 req/min. Appele dans before_request."""
+    try:
+        from flask import request as _r, jsonify as _j
+        ip = _get_client_ip()
+        if _is_ip_banned(ip):
+            from flask import make_response
+            return make_response('Forbidden', 403)
+        if not _rl.is_allowed(f"global:{ip}:{window}", limit, window):
+            _sec_log('GLOBAL_RATE_LIMIT', f"ip={ip} path={_r.path}")
+            _record_strike(ip)
+            from flask import make_response
+            resp = make_response('Too Many Requests', 429)
+            resp.headers['Retry-After'] = str(window)
+            return resp
     except Exception:
         pass
     return None
@@ -1687,6 +1741,36 @@ def set_cache_headers(response):
         response.set_data(data)
     return response
 
+@app.before_request
+def _global_dos_protection():
+    """Protection DOS globale : 300 req/min par IP.
+    Exclut /static/. Applique le ban-list dynamique sur toutes les routes."""
+    try:
+        from flask import make_response as _mkr
+        if request.path.startswith('/static/'):
+            return None
+        ip = _get_client_ip()
+        # IP bannie -> rejet immediat
+        if _is_ip_banned(ip):
+            return _mkr('Forbidden', 403)
+        # Rate-limit global : 300 req/60s par IP
+        if not _rl.is_allowed(f"global:{ip}:60", 300, 60):
+            _sec_log('GLOBAL_RATE_LIMIT', f"ip={ip} path={request.path}")
+            _record_strike(ip)
+            resp = _mkr('Too Many Requests', 429)
+            resp.headers['Retry-After'] = '60'
+            return resp
+        # Limite stricte sur /shop/stream : 2 req/10s (anti-spam SSE)
+        if request.path == '/shop/stream':
+            if not _rl.is_allowed(f"sse:{ip}:10", 2, 10):
+                _sec_log('SSE_FLOOD', f"ip={ip}")
+                _record_strike(ip)
+                return _mkr('Too Many Requests', 429)
+    except Exception:
+        pass
+    return None
+
+
 @app.route('/')
 def index():
     """Landing page"""
@@ -2843,7 +2927,10 @@ def export_portfolio():
             }
 
             def _brand_page(c, doc):
-                _kf_draw_branded_page(c, doc.pagesize[0], doc.pagesize[1], doc_info)
+                try:
+                    _kf_draw_branded_page(c, doc.pagesize[0], doc.pagesize[1], doc_info)
+                except Exception as _be:
+                    print(f"[PDF Brand] Erreur non bloquante: {_be}")
 
             doc = SimpleDocTemplate(
                 output, pagesize=A4,
@@ -2916,11 +3003,12 @@ def export_portfolio():
                 output, mimetype='application/pdf', as_attachment=True,
                 download_name=f'portfolio_{now.strftime("%Y%m%d")}.pdf'
             )
-        except ImportError:
+        except ImportError as _ie:
+            _mod = str(_ie).replace("No module named ", "").strip("'").strip()
             return jsonify({'success': False,
-                            'message': 'ReportLab non installé. Installez avec: pip install reportlab'}), 500
+                            'message': f'Module manquant : {_mod}. Verifiez les modules installes.'}), 500
         except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 500
+            return jsonify({'success': False, 'message': f'Erreur PDF portfolio : {str(e)}'}), 500
 
 @app.route('/api/export-finances')
 @login_required
@@ -3017,7 +3105,10 @@ def export_finances():
             }
 
             def _brand_page(c, doc):
-                _kf_draw_branded_page(c, doc.pagesize[0], doc.pagesize[1], doc_info)
+                try:
+                    _kf_draw_branded_page(c, doc.pagesize[0], doc.pagesize[1], doc_info)
+                except Exception as _be:
+                    print(f"[PDF Brand] Erreur non bloquante: {_be}")
 
             doc = SimpleDocTemplate(
                 output, pagesize=A4,
@@ -3104,11 +3195,12 @@ def export_finances():
                 output, mimetype='application/pdf', as_attachment=True,
                 download_name=f'finances_{now.strftime("%Y%m%d")}.pdf'
             )
-        except ImportError:
+        except ImportError as _ie:
+            _mod = str(_ie).replace("No module named ", "").strip("'").strip()
             return jsonify({'success': False,
-                            'message': 'ReportLab non installé. Installez avec: pip install reportlab'}), 500
+                            'message': f'Module manquant : {_mod}. Verifiez les modules installes.'}), 500
         except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 500
+            return jsonify({'success': False, 'message': f'Erreur PDF finances : {str(e)}'}), 500
 
     return jsonify({'success': False, 'message': 'Format non supporté'}), 400
 
@@ -3970,36 +4062,28 @@ def generate_report():
 
 def _kf_draw_branded_page(c, width, height, doc_info=None):
     """
-    Dessine sur la page courante (canvas ReportLab) :
-      - Logo k-ni en filigrane central (semi-transparent)
-      - Bande d'en-tête verte : logo petit (centre), infos doc (gauche), infos proprio (droite)
-      - QR code en bas à gauche (URL inscription + WhatsApp)
-      - Pied de page certifié avec logo miniature
-
-    doc_info : dict optionnel {
-        'title'        : str,
-        'type'         : str,
-        'period_start' : str,
-        'period_end'   : str,
-        'generated_at' : datetime
-    }
+    Dessine en-tête, filigrane, QR code et pied de page sur la page courante.
+    Robuste : aucune exception n'est levée vers l'appelant.
     """
-    from reportlab.lib import colors
-    from reportlab.lib.units import mm
-    from reportlab.lib.utils import ImageReader
+    # ── Imports internes — tous optionnels ────────────────────────────
+    try:
+        from reportlab.lib import colors as _rl_colors
+        from reportlab.lib.units import mm
+        from reportlab.lib.utils import ImageReader
+    except ImportError:
+        return  # reportlab manquant — page sans branding
     import io as _io
 
     doc_info = doc_info or {}
     now      = doc_info.get('generated_at', datetime.now())
 
-    # ── Chemin du logo ────────────────────────────────────────────────
+    # ── Chemin du logo ─────────────────────────────────────────────────
     _LOGO_PATH = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         'static', 'img', 'logo.jpeg'
     )
 
     def _logo_reader():
-        """Retourne un ImageReader du logo, ou None si introuvable."""
         try:
             if os.path.exists(_LOGO_PATH):
                 return ImageReader(_LOGO_PATH)
@@ -4009,170 +4093,143 @@ def _kf_draw_branded_page(c, width, height, doc_info=None):
 
     logo = _logo_reader()
 
-    # ═══════════════════════════════════════════════════════════════
-    # 1. FILIGRANE : logo centré, semi-transparent (fond de page)
-    # ═══════════════════════════════════════════════════════════════
-    if logo:
-        c.saveState()
-        c.setFillAlpha(0.06)           # très discret comme l'image de référence
-        wm_size = 110 * mm
-        wm_x    = (width  - wm_size) / 2
-        wm_y    = (height - wm_size) / 2
-        c.drawImage(logo, wm_x, wm_y, wm_size, wm_size,
-                    mask='auto', preserveAspectRatio=True)
-        c.restoreState()
-    else:
-        # Fallback texte si logo absent
-        c.saveState()
-        c.setFillColor(colors.HexColor('#00d4aa'))
-        c.setFillAlpha(0.04)
-        c.setFont('Helvetica-Bold', 68)
-        c.translate(width / 2, height / 2)
-        c.rotate(40)
-        for offset in (-120, 0, 120):
-            c.drawCentredString(0, offset, 'KENGNI FINANCE')
-        c.restoreState()
+    # ══════════════════════════════════════════════════════════════════
+    # 1. FILIGRANE central semi-transparent
+    # ══════════════════════════════════════════════════════════════════
+    try:
+        if logo:
+            c.saveState()
+            c.setFillAlpha(0.06)
+            wm_size = 110 * mm
+            wm_x    = (width  - wm_size) / 2
+            wm_y    = (height - wm_size) / 2
+            c.drawImage(logo, wm_x, wm_y, wm_size, wm_size,
+                        mask='auto', preserveAspectRatio=True)
+            c.restoreState()
+        else:
+            c.saveState()
+            c.setFillColor(_rl_colors.HexColor('#00d4aa'))
+            c.setFillAlpha(0.04)
+            c.setFont('Helvetica-Bold', 68)
+            c.translate(width / 2, height / 2)
+            c.rotate(35)
+            c.drawCentredString(0, 0, 'k-ni Finance')
+            c.restoreState()
+    except Exception:
+        pass
 
-    # ═══════════════════════════════════════════════════════════════
-    # 2. EN-TÊTE : bande verte (30 mm)
-    # ═══════════════════════════════════════════════════════════════
-    hdr_h = 32 * mm
-    c.setFillColor(colors.HexColor('#051a0f'))   # vert très sombre
-    c.rect(0, height - hdr_h, width, hdr_h, fill=True, stroke=False)
+    # ══════════════════════════════════════════════════════════════════
+    # 2. EN-TÊTE vert
+    # ══════════════════════════════════════════════════════════════════
+    try:
+        hdr_h = 28 * mm
+        c.setFillColor(_rl_colors.HexColor('#00b074'))
+        c.rect(0, height - hdr_h, width, hdr_h, fill=True, stroke=False)
 
-    # Séparateur doré en bas du header
-    c.setStrokeColor(colors.HexColor('#00d4aa'))
-    c.setLineWidth(1.8)
-    c.line(0, height - hdr_h, width, height - hdr_h)
+        # Logo miniature à gauche
+        if logo:
+            try:
+                c.drawImage(logo, 10 * mm, height - hdr_h + 4 * mm,
+                            20 * mm, 20 * mm, mask='auto', preserveAspectRatio=True)
+            except Exception:
+                pass
 
-    # ── Logo dans l'en-tête (centré, carré) ──────────────────────────
-    if logo:
-        logo_hdr_size = 24 * mm
-        logo_hdr_x    = (width - logo_hdr_size) / 2
-        logo_hdr_y    = height - hdr_h + (hdr_h - logo_hdr_size) / 2
-        # Fond blanc circulaire derrière le logo
-        c.setFillColor(colors.white)
-        cx = logo_hdr_x + logo_hdr_size / 2
-        cy = logo_hdr_y + logo_hdr_size / 2
-        c.circle(cx, cy, logo_hdr_size / 2 + 1.5, fill=True, stroke=False)
-        c.drawImage(logo, logo_hdr_x, logo_hdr_y,
-                    logo_hdr_size, logo_hdr_size,
-                    mask='auto', preserveAspectRatio=True)
+        # Titre centré
+        title = doc_info.get('title', 'Kengni Finance')
+        c.setFillColor(_rl_colors.white)
+        c.setFont('Helvetica-Bold', 13)
+        c.drawCentredString(width / 2, height - 12 * mm, title)
 
-    # ── Infos document (gauche) ───────────────────────────────────────
-    c.setFillColor(colors.white)
-    y_top      = height - 7 * mm
-    doc_type   = str(doc_info.get('type',  'RAPPORT')).upper()
-    doc_title  = str(doc_info.get('title', 'Rapport Kengni Finance'))[:42]
-    p_start    = doc_info.get('period_start', '')
-    p_end      = doc_info.get('period_end',   '')
-    period_str = f"{p_start} → {p_end}" if p_start else 'Tous'
+        # Type document
+        doc_type = doc_info.get('type', '')
+        if doc_type:
+            c.setFont('Helvetica', 8)
+            c.setFillColor(_rl_colors.HexColor('#d4f5e9'))
+            c.drawCentredString(width / 2, height - 18 * mm, doc_type)
 
-    c.setFont('Helvetica-Bold', 9.5)
-    c.drawString(12 * mm, y_top, 'k-ni chez Htech-training')
-    c.setFont('Helvetica', 7)
-    c.drawString(12 * mm, y_top - 5 * mm,  f'Type     : {doc_type}')
-    c.drawString(12 * mm, y_top - 9.5 * mm, f'Période  : {period_str}')
-    c.drawString(12 * mm, y_top - 14 * mm,  doc_title)
-    c.drawString(12 * mm, y_top - 18.5 * mm,
-                 f"Édité le : {now.strftime('%d/%m/%Y à %H:%M')}")
+        # Période à droite
+        p_start = doc_info.get('period_start', '')
+        p_end   = doc_info.get('period_end',   '')
+        if p_start:
+            c.setFont('Helvetica', 7)
+            c.setFillColor(_rl_colors.HexColor('#d4f5e9'))
+            c.drawRightString(width - 10 * mm, height - 12 * mm,
+                              f'Période : {p_start} → {p_end}')
+            c.drawRightString(width - 10 * mm, height - 18 * mm,
+                              f'Généré le {now.strftime("%d/%m/%Y %H:%M")}')
+    except Exception:
+        pass
 
-    # ── Infos propriétaire (droite) ───────────────────────────────────
-    c.setFont('Helvetica-Bold', 9.5)
-    c.drawRightString(width - 12 * mm, y_top, 'Fabrice Kengni Nzoyem')
-    c.setFont('Helvetica', 7)
-    c.drawRightString(width - 12 * mm, y_top - 5 * mm,   'WhatsApp : +237 695 072 759')
-    c.drawRightString(width - 12 * mm, y_top - 9.5 * mm,  'kengni.pythonanywhere.com')
-    c.drawRightString(width - 12 * mm, y_top - 14 * mm,   'Kengni Trading Academy')
-    c.drawRightString(width - 12 * mm, y_top - 18.5 * mm,
-                      f"Réf. : KF-{now.strftime('%Y%m%d%H%M')}")
-
-    # Ligne verte fine sous le header (séparation corps)
-    c.setStrokeColor(colors.HexColor('#00d4aa'))
-    c.setLineWidth(0.8)
-    c.line(12 * mm, height - hdr_h - 4 * mm,
-           width - 12 * mm, height - hdr_h - 4 * mm)
-
-    # ═══════════════════════════════════════════════════════════════
-    # 3. QR CODE — bas à gauche (comme l'attestation DGI)
-    # ═══════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════
+    # 3. QR CODE — bas à gauche (optionnel — ignoré si qrcode/PIL manque)
+    # ══════════════════════════════════════════════════════════════════
     try:
         import qrcode as _qrcode
-
         qr_data = (
             'https://kengni.pythonanywhere.com/inscription-trading'
             '?ref=kf_doc&wa=237695072759'
         )
-        qr = _qrcode.QRCode(
-            version=2, box_size=5, border=2,
-            error_correction=_qrcode.constants.ERROR_CORRECT_M
-        )
+        qr = _qrcode.QRCode(version=2, box_size=5, border=2,
+                             error_correction=_qrcode.constants.ERROR_CORRECT_M)
         qr.add_data(qr_data)
         qr.make(fit=True)
-        from PIL import Image  # lazy
         qr_img = qr.make_image(fill_color='#051a0f', back_color='white')
         qr_buf = _io.BytesIO()
         qr_img.save(qr_buf, format='PNG')
         qr_buf.seek(0)
 
-        qr_size = 28 * mm
+        qr_size = 26 * mm
         qr_x    = 12 * mm
         qr_y    = 19 * mm
 
-        # Fond blanc + bordure verte légère
-        c.setFillColor(colors.white)
-        c.setStrokeColor(colors.HexColor('#00d4aa'))
+        c.setFillColor(_rl_colors.white)
+        c.setStrokeColor(_rl_colors.HexColor('#00d4aa'))
         c.setLineWidth(0.6)
         c.roundRect(qr_x - 1.5, qr_y - 1.5,
                     qr_size + 3, qr_size + 3, 3,
                     fill=True, stroke=True)
-
         c.drawImage(ImageReader(qr_buf), qr_x, qr_y,
                     qr_size, qr_size, mask='auto')
-
-        # Légende + URL sous le QR (style DGI)
-        c.setFillColor(colors.HexColor('#333333'))
+        c.setFillColor(_rl_colors.HexColor('#333333'))
         c.setFont('Helvetica-Bold', 5)
         c.drawCentredString(qr_x + qr_size / 2, qr_y - 3.5 * mm,
-                            'Scanner pour s\'inscrire')
+                            "Scanner pour s'inscrire")
         c.setFont('Helvetica', 4.5)
         c.drawCentredString(qr_x + qr_size / 2, qr_y - 6.5 * mm,
-                            'kengni.pythonanywhere.com/inscription-trading')
+                            'kengni.pythonanywhere.com')
     except Exception:
-        pass   # qrcode non installé → ignoré silencieusement
+        pass  # qrcode ou PIL absent → QR ignoré silencieusement
 
-    # ═══════════════════════════════════════════════════════════════
-    # 4. PIED DE PAGE avec logo miniature
-    # ═══════════════════════════════════════════════════════════════
-    ftr_h = 17 * mm
-    c.setFillColor(colors.HexColor('#f0f4f0'))
-    c.rect(0, 0, width, ftr_h, fill=True, stroke=False)
-    c.setStrokeColor(colors.HexColor('#00d4aa'))
-    c.setLineWidth(1)
-    c.line(0, ftr_h, width, ftr_h)
+    # ══════════════════════════════════════════════════════════════════
+    # 4. PIED DE PAGE
+    # ══════════════════════════════════════════════════════════════════
+    try:
+        ftr_h = 17 * mm
+        c.setFillColor(_rl_colors.HexColor('#f0f4f0'))
+        c.rect(0, 0, width, ftr_h, fill=True, stroke=False)
+        c.setStrokeColor(_rl_colors.HexColor('#00d4aa'))
+        c.setLineWidth(0.8)
+        c.line(0, ftr_h, width, ftr_h)
 
-    # Logo miniature dans le pied de page (à droite)
-    if logo:
-        logo_ftr_size = 11 * mm
-        c.setFillColor(colors.white)
-        c.circle(width - 14 * mm, ftr_h / 2,
-                 logo_ftr_size / 2 + 1, fill=True, stroke=False)
-        c.drawImage(logo,
-                    width - 14 * mm - logo_ftr_size / 2,
-                    ftr_h / 2 - logo_ftr_size / 2,
-                    logo_ftr_size, logo_ftr_size,
-                    mask='auto', preserveAspectRatio=True)
+        if logo:
+            try:
+                c.drawImage(logo, 10 * mm, 3 * mm, 12 * mm, 12 * mm,
+                            mask='auto', preserveAspectRatio=True)
+            except Exception:
+                pass
 
-    c.setFillColor(colors.HexColor('#444444'))
-    c.setFont('Helvetica-Bold', 6.5)
-    c.drawCentredString(width / 2, ftr_h - 4 * mm,
-        'Document certifié — Kengni Finance v2.1 — © 2025 Tous droits réservés')
-    c.setFont('Helvetica', 6)
-    c.drawCentredString(width / 2, ftr_h - 7.5 * mm,
-        'k-ni chez Htech-training  ·  +237 695 072 759  ·  WhatsApp : +237 695 072 759')
-    c.setFont('Helvetica', 5.5)
-    c.drawCentredString(width / 2, ftr_h - 11 * mm,
-        f"Généré le {now.strftime('%d/%m/%Y à %H:%M')}  ·  Document confidentiel  ·  kengni.pythonanywhere.com")
+        c.setFillColor(_rl_colors.HexColor('#444444'))
+        c.setFont('Helvetica-Bold', 7)
+        c.drawCentredString(width / 2, ftr_h - 6 * mm,
+            'Document certifié — Kengni Finance v2.1 — © 2025 Tous droits réservés')
+        c.setFont('Helvetica', 6)
+        c.drawCentredString(width / 2, ftr_h - 10 * mm,
+            'k-ni chez Htech-training  ·  +237 695 072 759  ·  WhatsApp : +237 695 072 759')
+        c.setFont('Helvetica', 5.5)
+        c.drawCentredString(width / 2, ftr_h - 13.5 * mm,
+            f"Généré le {now.strftime('%d/%m/%Y à %H:%M')}  ·  Document confidentiel  ·  kengni.pythonanywhere.com")
+    except Exception:
+        pass
 
 
 @app.route('/api/download-report/<int:report_id>', methods=['GET'])
@@ -4217,7 +4274,10 @@ def download_report(report_id):
         }
 
         # ── Branding (watermark + header + QR + footer) ───────────────
-        _kf_draw_branded_page(c, width, height, doc_info)
+        try:
+            _kf_draw_branded_page(c, width, height, doc_info)
+        except Exception:
+            pass  # branding non bloquant
 
         # ── Corps du document (décalé sous le header) ─────────────────
         # Zone utile : de (hdr_h + 8mm) jusqu'à (ftr_h + 5mm)
@@ -9461,28 +9521,54 @@ def shop_update_profile():
 
 @app.route('/shop/stream')
 def shop_sse_stream():
-    """SSE endpoint — nouvelles commandes en temps réel."""
+    """SSE endpoint — nouvelles commandes en temps réel.
+    ANTI-HARAKIRI : durée max 270 s < timeout uWSGI (300 s).
+    Le client SSE reconnecte automatiquement grâce à retry:.
+    ANTI-FLOOD : max 5 connexions SSE simultanées par IP.
+    """
     from flask import Response, stream_with_context
+    import time as _t_sse
+
+    # ── Authentification ────────────────────────────────────────────
     if not session.get('user_id'):
         def _empty():
             yield ": stream désactivé\n\n"
         return Response(_empty(), mimetype='text/event-stream',
-                       headers={'Cache-Control':'no-cache','X-Accel-Buffering':'no'})
+                       headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
+    # ── Anti-flood : max 5 connexions SSE simultanées par IP ────────
+    _ip_sse = (request.headers.get('X-Forwarded-For', request.remote_addr) or '').split(',')[0].strip()
+    _sse_ip_count = sum(1 for _q in list(_sse_clients) if getattr(_q, '_ip', '') == _ip_sse)
+    if _sse_ip_count >= 5:
+        def _flood():
+            yield ": trop de connexions\n\n"
+        return Response(_flood(), mimetype='text/event-stream',
+                       headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
 
     q = _queue.Queue(maxsize=20)
+    q._ip = _ip_sse          # Tag IP pour le comptage anti-flood
     _sse_clients.append(q)
 
+    # ── Durée max 270 s (uWSGI harakiri = 300 s) ───────────────────
+    _SSE_MAX_LIFETIME = 270
+
     def generate():
+        # retry: 3000 → le navigateur reconnecte après 3 s si le stream se ferme
+        yield "retry: 3000\n"
         yield "data: {\"type\":\"connected\"}\n\n"
+        _deadline = _t_sse.monotonic() + _SSE_MAX_LIFETIME
         try:
-            while True:
+            while _t_sse.monotonic() < _deadline:
+                remaining = _deadline - _t_sse.monotonic()
+                timeout = min(25, max(1, remaining))
                 try:
-                    msg = q.get(timeout=25)
+                    msg = q.get(timeout=timeout)
                     yield msg
                 except _queue.Empty:
                     yield ": keepalive\n\n"
+            # Fermeture propre → le client reconnecte via retry:
+            yield ": reconnect\n\n"
         except (GeneratorExit, OSError, BrokenPipeError):
-            # Client déconnecté — erreur d'écriture normale, on ignore silencieusement
             pass
         except Exception:
             pass
@@ -13773,6 +13859,741 @@ def api_ai_test():
     if 'error' in result:
         return jsonify({'success': False, 'status': 'error', 'error': result['error']})
     return jsonify({'success': True, 'status': 'ok', 'response': result.get('text', ''), 'model': CLAUDE_MODEL})
+
+
+
+
+# ══════════════════════════════════════════════════════════════════
+# PATCH : Bibliothèque images + Performance
+# ══════════════════════════════════════════════════════════════════
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+═══════════════════════════════════════════════════════════════════
+PATCH app.py — k-Ni Store
+═══════════════════════════════════════════════════════════════════
+
+CONTENU DE CE PATCH :
+  1. BIBLIOTHÈQUE D'IMAGES  — routes GET/POST/DELETE + attacher/détacher
+  2. FIX suppression image produit en ligne
+  3. PERFORMANCE             — gzip, cache JSON in-memory, SQLite optimisé
+
+COMMENT L'APPLIQUER :
+  Copiez-collez le bloc "# ── INSÉRER ICI" juste AVANT la ligne :
+      
+
+@app.route('/home')
+def home_page():
+    return render_template('home.html')
+
+
+@app.route('/shop/api/public/flyers', methods=['GET'])
+def shop_public_flyers():
+    conn = None
+    try:
+        conn = get_db_connection()
+        flyers = []
+        try:
+            rows = conn.execute(
+                "SELECT id, url, filename, label, tags FROM shop_image_library"
+                " WHERE tags LIKE '%flyer%' OR tags LIKE '%pub%' OR tags LIKE '%promo%'"
+                " OR label LIKE '%flyer%' OR label LIKE '%pub%'"
+                " ORDER BY created_at DESC LIMIT 20"
+            ).fetchall()
+            for r in rows:
+                r = dict(r)
+                flyers.append({'id': 'lib_'+str(r['id']), 'url': r['url'],
+                               'label': r['label'] or r['filename'], 'link': '/shop'})
+        except Exception:
+            pass
+        try:
+            rows2 = conn.execute(
+                "SELECT id, image_url, content, link_url FROM shop_banners"
+                " WHERE is_active=1 AND type='image' AND image_url != ''"
+                " ORDER BY display_order ASC, id ASC LIMIT 15"
+            ).fetchall()
+            for r in rows2:
+                r = dict(r)
+                flyers.append({'id': 'ban_'+str(r['id']), 'url': r['image_url'],
+                               'label': r['content'] or 'Promotion', 'link': r['link_url'] or '/shop'})
+        except Exception:
+            pass
+        if not flyers:
+            try:
+                rows3 = conn.execute(
+                    "SELECT id, url, filename, label FROM shop_image_library"
+                    " ORDER BY created_at DESC LIMIT 8"
+                ).fetchall()
+                for r in rows3:
+                    r = dict(r)
+                    flyers.append({'id': 'lib_'+str(r['id']), 'url': r['url'],
+                                   'label': r['label'] or r['filename'], 'link': '/shop'})
+            except Exception:
+                pass
+        return jsonify({'success': True, 'flyers': flyers, 'count': len(flyers)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'flyers': []}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+
+@app.route('/shop/api/public/featured', methods=['GET'])
+def shop_public_featured():
+    conn = None
+    try:
+        conn = get_db_connection()
+        rows = conn.execute(
+            "SELECT id, name, price, original_price, image_url, badge, category, stock"
+            " FROM shop_products WHERE is_active=1"
+            " ORDER BY CASE badge WHEN 'hot' THEN 0 WHEN 'new' THEN 1"
+            " WHEN 'promo' THEN 2 ELSE 3 END, created_at DESC LIMIT 8"
+        ).fetchall()
+        return jsonify({'success': True, 'products': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'products': []}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+
+
+
+if __name__ == '__main__':
+  dans votre app.py (environ ligne 13864).
+
+  Le reste du fichier (if __name__ == / else: init_db()) reste intact.
+═══════════════════════════════════════════════════════════════════
+"""
+
+# ══════════════════════════════════════════════════════════════════
+#  SECTION 1 — OPTIMISATIONS PERFORMANCE GLOBALES
+# ══════════════════════════════════════════════════════════════════
+# À COLLER juste AVANT  "if __name__ == '__main__':"
+# ─────────────────────────────────────────────────────────────────
+
+# ── 1a. Gzip automatique sur toutes les réponses JSON/HTML/JS ─────
+# Réduit la taille des réponses de 60-80% → latence réseau divisée
+from flask import Response as _FlaskResponse
+import gzip as _gzip_mod
+import io as _io_gz
+
+@app.after_request
+def _gzip_response(response):
+    """Compresse automatiquement les réponses > 1 Ko via gzip."""
+    try:
+        accept = request.headers.get('Accept-Encoding', '')
+        if 'gzip' not in accept:
+            return response
+        # Ne compresser que JSON, HTML, JS, CSS, text
+        ct = response.content_type or ''
+        if not any(t in ct for t in ('json', 'text/', 'javascript', 'css')):
+            return response
+        data = response.get_data()
+        if len(data) < 1024:          # Pas la peine pour moins de 1 Ko
+            return response
+        buf = _io_gz.BytesIO()
+        with _gzip_mod.GzipFile(fileobj=buf, mode='wb', compresslevel=6) as gz:
+            gz.write(data)
+        compressed = buf.getvalue()
+        if len(compressed) < len(data):
+            response.set_data(compressed)
+            response.headers['Content-Encoding'] = 'gzip'
+            response.headers['Content-Length'] = len(compressed)
+            response.headers['Vary'] = 'Accept-Encoding'
+    except Exception:
+        pass
+    return response
+
+
+# ── 1b. Cache in-memory pour les listes produits (TTL 30s) ────────
+# Évite de recharger toute la table à chaque requête boutique
+import time as _time_cache
+import threading as _thr_cache
+import functools as _functools_cache
+
+_CACHE_STORE: dict = {}
+_CACHE_LOCK = _thr_cache.Lock()
+
+def _cache_get(key: str):
+    with _CACHE_LOCK:
+        entry = _CACHE_STORE.get(key)
+        if entry and _time_cache.monotonic() - entry['ts'] < entry['ttl']:
+            return entry['val']
+        if entry:
+            del _CACHE_STORE[key]
+    return None
+
+def _cache_set(key: str, val, ttl: float = 30.0):
+    with _CACHE_LOCK:
+        _CACHE_STORE[key] = {'val': val, 'ts': _time_cache.monotonic(), 'ttl': ttl}
+
+def _cache_del(key: str):
+    with _CACHE_LOCK:
+        _CACHE_STORE.pop(key, None)
+
+def _cache_del_prefix(prefix: str):
+    """Invalide toutes les entrées dont la clé commence par prefix."""
+    with _CACHE_LOCK:
+        keys = [k for k in _CACHE_STORE if k.startswith(prefix)]
+        for k in keys:
+            del _CACHE_STORE[k]
+
+
+# ── 1c. Optimisation connexion DB : pool simple + WAL renforcé ────
+# Évite de recréer la connexion à chaque requête (coûteux sur PythonAnywhere)
+_DB_CONN_POOL: list = []
+_DB_POOL_LOCK = _thr_cache.Lock()
+_DB_POOL_MAX  = 4   # max 4 connexions simultanées en pool
+
+def get_db_connection_fast():
+    """
+    Connexion DB avec pool léger.
+    Retourne une connexion existante du pool ou en crée une nouvelle.
+    Toujours appeler conn.close() en fin d'usage (remet dans le pool).
+    """
+    import sqlite3 as _sq
+    class _PooledConn:
+        """Wrapper qui remet la connexion dans le pool au lieu de la fermer."""
+        def __init__(self, conn):
+            self._c = conn
+        def __getattr__(self, name):
+            return getattr(self._c, name)
+        def close(self):
+            with _DB_POOL_LOCK:
+                if len(_DB_CONN_POOL) < _DB_POOL_MAX:
+                    _DB_CONN_POOL.append(self._c)
+                else:
+                    try: self._c.close()
+                    except Exception: pass
+        def __enter__(self): return self
+        def __exit__(self, *a): self.close()
+
+    with _DB_POOL_LOCK:
+        if _DB_CONN_POOL:
+            raw = _DB_CONN_POOL.pop()
+            # Vérifier que la connexion est toujours valide
+            try:
+                raw.execute("SELECT 1")
+                return _PooledConn(raw)
+            except Exception:
+                try: raw.close()
+                except Exception: pass
+
+    # Nouvelle connexion
+    raw = _sq.connect(DB_FILE, timeout=20, check_same_thread=False)
+    raw.row_factory = _sq.Row
+    raw.execute("PRAGMA journal_mode=WAL")
+    raw.execute("PRAGMA cache_size=-20000")     # 20 Mo cache
+    raw.execute("PRAGMA synchronous=NORMAL")
+    raw.execute("PRAGMA temp_store=MEMORY")
+    raw.execute("PRAGMA mmap_size=268435456")   # 256 Mo mmap
+    raw.execute("PRAGMA busy_timeout=10000")    # 10s timeout busy
+    raw.execute("PRAGMA optimize")              # Statistiques auto
+    raw.commit()
+    return _PooledConn(raw)
+
+
+# ── 1d. Index SQLite manquants pour la boutique ───────────────────
+def _ensure_shop_indexes():
+    """Crée les index manquants au démarrage — idempotent."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        for sql in [
+            "CREATE INDEX IF NOT EXISTS idx_shop_prod_active_cat ON shop_products(is_active,category)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_prod_name       ON shop_products(name)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_orders_created  ON shop_orders(created_at DESC)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_orders_status   ON shop_orders(status,created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_shop_img_lib_created ON shop_image_library(created_at DESC)",
+        ]:
+            try: conn.execute(sql); conn.commit()
+            except Exception: pass
+    except Exception as e:
+        print(f"[Indexes] {e}")
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+# Appel au démarrage (sera exécuté une fois par worker)
+try: _ensure_shop_indexes()
+except Exception: pass
+
+
+# ══════════════════════════════════════════════════════════════════
+#  SECTION 2 — TABLE BIBLIOTHÈQUE D'IMAGES
+# ══════════════════════════════════════════════════════════════════
+
+def _init_image_library_table():
+    """Crée la table shop_image_library si elle n'existe pas encore."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS shop_image_library (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                url         TEXT    NOT NULL UNIQUE,
+                filename    TEXT    DEFAULT '',
+                size_bytes  INTEGER DEFAULT 0,
+                width       INTEGER DEFAULT 0,
+                height      INTEGER DEFAULT 0,
+                label       TEXT    DEFAULT '',
+                tags        TEXT    DEFAULT '',
+                uploaded_by TEXT    DEFAULT '',
+                created_at  TEXT    DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+        # Migrations colonnes optionnelles
+        for _sql in [
+            "ALTER TABLE shop_image_library ADD COLUMN label TEXT DEFAULT ''",
+            "ALTER TABLE shop_image_library ADD COLUMN tags TEXT DEFAULT ''",
+        ]:
+            try: conn.execute(_sql); conn.commit()
+            except Exception: pass
+    except Exception as e:
+        print(f"[ImageLib] init table: {e}")
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+_init_image_library_table()
+
+
+# ══════════════════════════════════════════════════════════════════
+#  SECTION 3 — ROUTES BIBLIOTHÈQUE D'IMAGES
+# ══════════════════════════════════════════════════════════════════
+
+@app.route('/shop/api/image-library', methods=['GET'])
+@shop_staff_required
+def shop_image_library_list():
+    """
+    Retourne toutes les images de la bibliothèque + quels produits les utilisent.
+    Query params :
+      q       — recherche texte (label / filename)
+      page    — page (défaut 1)
+      per     — items par page (défaut 40, max 120)
+    """
+    q    = request.args.get('q', '').strip()
+    page = max(1, int(request.args.get('page', 1)))
+    per  = min(120, max(12, int(request.args.get('per', 40))))
+
+    # Cache 15s (invalidé à chaque upload/suppression)
+    cache_key = f"img_lib:{q}:{page}:{per}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        offset = (page - 1) * per
+
+        # Requête principale
+        if q:
+            rows = conn.execute(
+                """SELECT * FROM shop_image_library
+                   WHERE label LIKE ? OR filename LIKE ? OR tags LIKE ?
+                   ORDER BY created_at DESC LIMIT ? OFFSET ?""",
+                (f'%{q}%', f'%{q}%', f'%{q}%', per, offset)
+            ).fetchall()
+            total = conn.execute(
+                "SELECT COUNT(*) FROM shop_image_library WHERE label LIKE ? OR filename LIKE ? OR tags LIKE ?",
+                (f'%{q}%', f'%{q}%', f'%{q}%')
+            ).fetchone()[0]
+        else:
+            rows = conn.execute(
+                "SELECT * FROM shop_image_library ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (per, offset)
+            ).fetchall()
+            total = conn.execute("SELECT COUNT(*) FROM shop_image_library").fetchone()[0]
+
+        images = [dict(r) for r in rows]
+
+        # Pour chaque image, trouver les produits qui l'utilisent
+        all_urls = [img['url'] for img in images]
+        product_usage: dict = {u: [] for u in all_urls}
+        if all_urls:
+            prods = conn.execute(
+                "SELECT id, name, image_url, images FROM shop_products WHERE is_active IN (0,1)"
+            ).fetchall()
+            for p in prods:
+                p = dict(p)
+                p_imgs = [p['image_url']] if p['image_url'] else []
+                try:
+                    extras = json.loads(p['images'] or '[]')
+                    if isinstance(extras, list):
+                        p_imgs.extend(extras)
+                except Exception:
+                    pass
+                for u in p_imgs:
+                    if u in product_usage:
+                        product_usage[u].append({'id': p['id'], 'name': p['name']})
+
+        for img in images:
+            img['products'] = product_usage.get(img['url'], [])
+
+        result = {
+            'success': True,
+            'images': images,
+            'total': total,
+            'page': page,
+            'per': per,
+            'pages': max(1, (total + per - 1) // per)
+        }
+        _cache_set(cache_key, result, ttl=15.0)
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+
+@app.route('/shop/api/image-library/upload', methods=['POST'])
+@shop_staff_required
+def shop_image_library_upload():
+    """
+    Upload une ou plusieurs images dans la bibliothèque (sans les attacher à un produit).
+    Form-data : images[] (fichiers multiples) ou image (fichier unique)
+    Champ optionnel : label (texte libre), tags (virgule-séparés)
+    """
+    if not can_shop('add') and not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+
+    files = request.files.getlist('images[]') or request.files.getlist('images')
+    if not files:
+        single = request.files.get('image')
+        files = [single] if single else []
+    if not files or not files[0]:
+        return jsonify({'success': False, 'error': 'Aucun fichier reçu'}), 400
+
+    label = request.form.get('label', '').strip()
+    tags  = request.form.get('tags', '').strip()
+    uploader = session.get('username', 'admin')
+
+    saved = []
+    errors = []
+    dest = os.path.join(app.config['UPLOAD_FOLDER'], 'shop')
+    os.makedirs(dest, exist_ok=True)
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        for f in files:
+            if not f or not f.filename:
+                continue
+            if not allowed_file(f.filename):
+                errors.append(f"{f.filename}: extension invalide")
+                continue
+            ext   = f.filename.rsplit('.', 1)[1].lower()
+            fname = secure_filename(f'lib_{datetime.now().strftime("%Y%m%d_%H%M%S%f")}_{secrets.token_hex(4)}.{ext}')
+            fpath = os.path.join(dest, fname)
+            f.save(fpath)
+            url = f'/static/uploads/shop/{fname}'
+            size = os.path.getsize(fpath)
+
+            # Dimensions via PIL si disponible
+            w, h = 0, 0
+            try:
+                from PIL import Image as _PILImg
+                with _PILImg.open(fpath) as im:
+                    w, h = im.size
+            except Exception:
+                pass
+
+            try:
+                conn.execute(
+                    """INSERT OR IGNORE INTO shop_image_library
+                       (url, filename, size_bytes, width, height, label, tags, uploaded_by)
+                       VALUES (?,?,?,?,?,?,?,?)""",
+                    (url, fname, size, w, h, label, tags, uploader)
+                )
+                conn.commit()
+                saved.append({'url': url, 'filename': fname, 'size_bytes': size, 'width': w, 'height': h})
+            except Exception as db_e:
+                errors.append(f"{fname}: {db_e}")
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+    _cache_del_prefix('img_lib:')
+    if saved:
+        return jsonify({'success': True, 'saved': saved, 'errors': errors})
+    return jsonify({'success': False, 'error': 'Aucune image sauvegardée', 'errors': errors}), 400
+
+
+@app.route('/shop/api/image-library/<int:img_id>', methods=['DELETE'])
+@shop_staff_required
+def shop_image_library_delete(img_id):
+    """
+    Supprime une image de la bibliothèque.
+    - Retire aussi l'image de tous les produits qui l'utilisent.
+    - Supprime le fichier local si c'est un upload k-Ni.
+    Query param : force=1 pour forcer même si l'image est utilisée par des produits.
+    """
+    if not can_shop('delete') and not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+
+    force = request.args.get('force', '0') == '1'
+    conn = None
+    try:
+        conn = get_db_connection()
+        row = conn.execute("SELECT * FROM shop_image_library WHERE id=?", (img_id,)).fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Image introuvable'}), 404
+        row = dict(row)
+        url = row['url']
+
+        # Vérifier si des produits utilisent cette image
+        prods_using = conn.execute(
+            "SELECT id, name FROM shop_products WHERE image_url=? OR images LIKE ?",
+            (url, f'%{url}%')
+        ).fetchall()
+        prods_using = [dict(p) for p in prods_using]
+
+        if prods_using and not force:
+            return jsonify({
+                'success': False,
+                'error': 'Image utilisée par des produits',
+                'products': prods_using,
+                'can_force': True
+            }), 409
+
+        # Retirer l'image de tous les produits qui l'utilisent
+        all_prods = conn.execute("SELECT id, image_url, images FROM shop_products").fetchall()
+        for p in all_prods:
+            p = dict(p)
+            changed = False
+            new_main = p['image_url']
+            try:
+                imgs = json.loads(p['images'] or '[]')
+                if not isinstance(imgs, list): imgs = []
+            except Exception:
+                imgs = []
+
+            if url in imgs:
+                imgs = [i for i in imgs if i != url]
+                changed = True
+            if p['image_url'] == url:
+                new_main = imgs[0] if imgs else ''
+                changed = True
+
+            if changed:
+                conn.execute(
+                    "UPDATE shop_products SET image_url=?, images=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                    (new_main, json.dumps(imgs), p['id'])
+                )
+
+        # Supprimer l'entrée bibliothèque
+        conn.execute("DELETE FROM shop_image_library WHERE id=?", (img_id,))
+        conn.commit()
+
+        # Supprimer fichier local
+        if '/uploads/shop/' in url:
+            local = os.path.join(app.static_folder, url.lstrip('/static/'))
+            try:
+                if os.path.exists(local): os.remove(local)
+            except Exception:
+                pass
+
+        _cache_del_prefix('img_lib:')
+        return jsonify({'success': True, 'products_cleaned': len(prods_using)})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+
+@app.route('/shop/api/image-library/<int:img_id>', methods=['PATCH'])
+@shop_staff_required
+def shop_image_library_update(img_id):
+    """Met à jour le label et/ou les tags d'une image."""
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    label = d.get('label', '').strip()
+    tags  = d.get('tags',  '').strip()
+    conn = None
+    try:
+        conn = get_db_connection()
+        conn.execute(
+            "UPDATE shop_image_library SET label=?, tags=? WHERE id=?",
+            (label, tags, img_id)
+        )
+        conn.commit()
+        _cache_del_prefix('img_lib:')
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+
+# ── Synchroniser les images uploadées dans les produits vers la lib ─
+@app.route('/shop/api/image-library/sync', methods=['POST'])
+@shop_staff_required
+def shop_image_library_sync():
+    """
+    Scanne tous les produits et ajoute leurs images à la bibliothèque
+    si elles n'y sont pas encore. Utile pour la migration initiale.
+    """
+    if session.get('role') not in ('admin', 'superadmin', 'shop_manager'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    conn = None
+    try:
+        conn = get_db_connection()
+        prods = conn.execute("SELECT image_url, images FROM shop_products").fetchall()
+        added = 0
+        for p in prods:
+            p = dict(p)
+            all_imgs = []
+            if p['image_url']: all_imgs.append(p['image_url'])
+            try:
+                extras = json.loads(p['images'] or '[]')
+                if isinstance(extras, list): all_imgs.extend(extras)
+            except Exception: pass
+            for url in all_imgs:
+                url = url.strip()
+                if not url: continue
+                fname = url.rsplit('/', 1)[-1]
+                # Taille fichier
+                size = 0
+                if '/uploads/shop/' in url:
+                    local = os.path.join(app.static_folder, url.lstrip('/static/'))
+                    try: size = os.path.getsize(local)
+                    except Exception: pass
+                try:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO shop_image_library (url, filename, size_bytes) VALUES (?,?,?)",
+                        (url, fname, size)
+                    )
+                    if conn.execute("SELECT changes()").fetchone()[0]:
+                        added += 1
+                except Exception: pass
+        conn.commit()
+        _cache_del_prefix('img_lib:')
+        return jsonify({'success': True, 'added': added})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+
+# ══════════════════════════════════════════════════════════════════
+#  SECTION 4 — GESTION IMAGES PRODUIT (attacher / détacher)
+# ══════════════════════════════════════════════════════════════════
+
+@app.route('/shop/api/product/<int:pid>/attach-image', methods=['POST'])
+@shop_staff_required
+def shop_product_attach_image(pid):
+    """
+    Attache une image de la bibliothèque à un produit.
+    Body JSON : { "url": "/static/uploads/shop/xxx.jpg", "as_main": false }
+    """
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d   = request.get_json(force=True, silent=True) or {}
+    url = (d.get('url') or '').strip()
+    as_main = bool(d.get('as_main', False))
+    if not url:
+        return jsonify({'success': False, 'error': 'URL manquante'}), 400
+    conn = None
+    try:
+        conn = get_db_connection()
+        row = conn.execute("SELECT image_url, images FROM shop_products WHERE id=?", (pid,)).fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Produit introuvable'}), 404
+        row = dict(row)
+        try:
+            imgs = json.loads(row['images'] or '[]')
+            if not isinstance(imgs, list): imgs = []
+        except Exception:
+            imgs = []
+        if url not in imgs:
+            imgs.append(url)
+        new_main = url if as_main else (row['image_url'] or url)
+        conn.execute(
+            "UPDATE shop_products SET image_url=?, images=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (new_main, json.dumps(imgs), pid)
+        )
+        conn.commit()
+        _cache_del_prefix('img_lib:')
+        return jsonify({'success': True, 'image_url': new_main, 'images': imgs})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+
+@app.route('/shop/api/product/<int:pid>/detach-image', methods=['POST'])
+@shop_staff_required
+def shop_product_detach_image(pid):
+    """
+    Détache une image d'un produit SANS la supprimer de la bibliothèque ni du disque.
+    Body JSON : { "url": "/static/uploads/shop/xxx.jpg" }
+    """
+    if not can_shop('edit'):
+        return jsonify({'success': False, 'error': 'Non autorisé'}), 403
+    d   = request.get_json(force=True, silent=True) or {}
+    url = (d.get('url') or '').strip()
+    if not url:
+        return jsonify({'success': False, 'error': 'URL manquante'}), 400
+    conn = None
+    try:
+        conn = get_db_connection()
+        row = conn.execute("SELECT image_url, images FROM shop_products WHERE id=?", (pid,)).fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Produit introuvable'}), 404
+        row = dict(row)
+        try:
+            imgs = json.loads(row['images'] or '[]')
+            if not isinstance(imgs, list): imgs = []
+        except Exception:
+            imgs = []
+        imgs = [i for i in imgs if i != url]
+        new_main = row['image_url']
+        if new_main == url:
+            new_main = imgs[0] if imgs else ''
+        conn.execute(
+            "UPDATE shop_products SET image_url=?, images=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (new_main, json.dumps(imgs), pid)
+        )
+        conn.commit()
+        _cache_del_prefix('img_lib:')
+        return jsonify({'success': True, 'image_url': new_main, 'images': imgs})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            try: conn.close()
+            except Exception: pass
+
+
+# ══════════════════════════════════════════════════════════════════
+#  FIN DU PATCH — ne rien ajouter après cette ligne
+#  La prochaine ligne dans app.py doit être :
+#      if __name__ == '__main__':
+# ══════════════════════════════════════════════════════════════════
 
 
 if __name__ == '__main__':
