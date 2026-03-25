@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>k-Ni Store — Yaoundé 🇨🇲</title>
 <meta name="description" content="k-Ni Store — Boutique en ligne à Yaoundé. Électronique, mode, beauté, livraison partout au Cameroun.">
-<meta name="theme-color" content="#00b074">
+<meta name="theme-color" content="#00c076">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -14,250 +14,283 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --green:#00b074; --green2:#009060; --green3:#e8f8f2;
-  --ink:#111827; --ink2:#374151; --muted:#6b7280;
-  --border:#e5e7eb; --white:#fff; --bg:#f8fafc;
-  --red:#ef4444; --gold:#f59e0b;
-  --font:'Outfit',system-ui,sans-serif;
-  --radius:14px;
-  --shadow:0 2px 16px rgba(0,0,0,.08);
-  --shadow-lg:0 8px 40px rgba(0,0,0,.14);
+  --g1:#00c076;--g2:#00965c;--g3:#00ff9d;
+  --gold:#f59e0b;--red:#ef4444;
+  --ink:#0a0f0d;--ink2:#1c2b24;--ink3:#374151;
+  --muted:#6b7280;--border:#e2e8f0;--white:#fff;--bg:#f0fdf8;
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font2:'Space Grotesk',sans-serif;
+  --radius:16px;--radius-sm:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden}
-body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-bottom:64px}
 
-/* ══ ANIMATIONS ══ */
-@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-@keyframes slideInLeft{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes heroBgKen{0%{transform:scale(1)}50%{transform:scale(1.07) translate(-1%,-1%)}100%{transform:scale(1)}}
+@keyframes gradMove{0%{background-position:0%}100%{background-position:200%}}
+@keyframes kniChatPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes kniChatSlide{from{transform:scale(.85) translateY(20px);opacity:0}to{transform:none;opacity:1}}
 
-/* ══ TICKER TOP ══ */
-.ticker-bar{background:var(--ink);color:#d1d5db;font-size:.82rem;padding:.35rem 0;overflow:hidden;position:relative;width:100%}
-.ticker-inner{display:flex;white-space:nowrap;animation:ticker 28s linear infinite;width:max-content}
+/* TICKER */
+.ticker-bar{background:var(--ink);color:#9ca3af;font-size:.78rem;padding:.3rem 0;overflow:hidden}
+.ticker-inner{display:flex;white-space:nowrap;animation:ticker 30s linear infinite;width:max-content}
 .ticker-inner:hover{animation-play-state:paused}
-.ticker-item{padding:0 2.5rem;flex-shrink:0}
-.ticker-item i{margin-right:.35rem;color:var(--green)}
+.ticker-item{padding:0 2.2rem;flex-shrink:0;display:flex;align-items:center;gap:.4rem}
+.ticker-item i{color:var(--g1)}
 
-/* ══ HEADER ══ */
-.kni-header{background:var(--white);box-shadow:0 2px 16px rgba(0,0,0,.08);position:sticky;top:0;z-index:900;width:100%}
-.kni-header-inner{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.65rem 1.2rem;max-width:1400px;margin:0 auto}
-.kni-logo{display:flex;align-items:center;gap:.55rem;text-decoration:none;flex-shrink:0}
-.kni-logo-img{width:46px;height:46px;border-radius:12px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.kni-logo-text{font-size:1.35rem;font-weight:900;color:var(--ink);letter-spacing:-1px;line-height:1}
-.kni-logo-text span{color:var(--green)}
-.kni-logo-sub{font-size:.62rem;color:var(--muted);font-weight:500;display:block;letter-spacing:.02em}
-.kni-header-actions{display:flex;align-items:center;gap:.5rem}
-.kni-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.52rem 1rem;border-radius:10px;font-size:.88rem;font-weight:700;font-family:var(--font);cursor:pointer;border:none;text-decoration:none;transition:.18s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
-.kni-btn-shop{background:var(--green);color:#fff}
-.kni-btn-shop:hover{background:var(--green2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,176,116,.35)}
-.kni-btn-outline{background:var(--white);color:var(--ink);border:1.5px solid var(--border)}
-.kni-btn-outline:hover{border-color:var(--green);color:var(--green)}
+/* HEADER */
+.kni-header{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 1px 0 rgba(0,0,0,.07),0 4px 24px rgba(0,0,0,.06);position:sticky;top:0;z-index:900;width:100%}
+.kni-header-inner{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.6rem 1.2rem;max-width:1400px;margin:0 auto}
+.kni-logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;flex-shrink:0}
+.kni-logo-img{width:44px;height:44px;border-radius:12px;object-fit:cover;box-shadow:0 3px 12px rgba(0,192,118,.3)}
+.kni-logo-text{font-family:var(--font2);font-size:1.4rem;font-weight:700;color:var(--ink);letter-spacing:-1.5px;line-height:1}
+.kni-logo-text b{color:var(--g1)}
+.kni-logo-sub{font-size:.6rem;color:var(--muted);display:block;letter-spacing:.03em;font-weight:600;margin-top:.05rem}
+.kni-header-actions{display:flex;align-items:center;gap:.45rem}
+.kni-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:var(--radius-sm);font-size:.86rem;font-weight:700;font-family:var(--font);cursor:pointer;border:none;text-decoration:none;transition:.18s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.kni-btn-shop{background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;box-shadow:0 3px 12px rgba(0,192,118,.35)}
+.kni-btn-shop:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,192,118,.5)}
 .kni-btn-wa{background:#25d366;color:#fff}
 .kni-btn-wa:hover{background:#1fba58}
-.kni-btn i{font-size:.92rem}
 
-/* ══ HERO SECTION ══ */
-.hero-section{background:linear-gradient(135deg,#003d27 0%,#00b074 50%,#00d4aa 100%);padding:2.5rem 1.2rem 2rem;text-align:center;position:relative;overflow:hidden}
-.hero-section::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none}
-.hero-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:30px;padding:.3rem .9rem;font-size:.8rem;font-weight:700;margin-bottom:.9rem;backdrop-filter:blur(4px)}
-.hero-title{font-size:clamp(1.6rem,5vw,2.8rem);font-weight:900;color:#fff;line-height:1.15;margin-bottom:.7rem;text-shadow:0 2px 12px rgba(0,0,0,.2)}
-.hero-sub{font-size:clamp(.92rem,2.5vw,1.1rem);color:rgba(255,255,255,.88);margin-bottom:1.5rem;max-width:480px;margin-left:auto;margin-right:auto}
-.hero-actions{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap}
-.hero-cta{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.8rem;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;border:none;font-family:var(--font);text-decoration:none;transition:.2s;-webkit-tap-highlight-color:transparent}
-.hero-cta-primary{background:#fff;color:var(--green2)}
-.hero-cta-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
-.hero-cta-secondary{background:rgba(255,255,255,.18);color:#fff;border:2px solid rgba(255,255,255,.5);backdrop-filter:blur(4px)}
-.hero-cta-secondary:hover{background:rgba(255,255,255,.28)}
-.hero-stats{display:flex;justify-content:center;gap:2rem;margin-top:1.8rem;flex-wrap:wrap}
-.hero-stat{color:rgba(255,255,255,.9);text-align:center}
-.hero-stat strong{display:block;font-size:1.4rem;font-weight:900;color:#fff}
-.hero-stat span{font-size:.75rem;opacity:.8}
+/* HERO */
+.hero-section{position:relative;overflow:hidden;background:linear-gradient(145deg,#001a10 0%,#003d27 45%,#00543a 100%);min-height:420px;display:flex;align-items:center}
+.hero-bg-slides{position:absolute;inset:0;z-index:0}
+.hero-bg-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.4s ease-in-out}
+.hero-bg-slide.active{opacity:1;animation:heroBgKen 9s ease-in-out infinite}
+.hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(145deg,rgba(0,20,10,.83) 0%,rgba(0,60,40,.62) 60%,rgba(0,80,58,.45) 100%)}
+.hero-grain{position:absolute;inset:0;z-index:2;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px;pointer-events:none}
+.hero-orb{position:absolute;border-radius:50%;pointer-events:none;z-index:2}
+.hero-orb-1{width:300px;height:300px;background:radial-gradient(circle,rgba(0,255,157,.14) 0%,transparent 70%);top:-80px;right:-60px}
+.hero-orb-2{width:200px;height:200px;background:radial-gradient(circle,rgba(0,192,118,.18) 0%,transparent 70%);bottom:20px;left:-40px}
+.hero-content{position:relative;z-index:3;padding:2.5rem 1.4rem;width:100%;max-width:1200px;margin:0 auto}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,255,157,.12);border:1px solid rgba(0,255,157,.25);color:#00ff9d;border-radius:30px;padding:.3rem .9rem;font-size:.73rem;font-weight:700;margin-bottom:1rem;letter-spacing:.05em;text-transform:uppercase}
+.hero-title{font-family:var(--font2);font-size:clamp(1.9rem,6vw,3.4rem);font-weight:700;color:#fff;line-height:1.12;margin-bottom:.75rem;letter-spacing:-1.5px}
+.hero-title .hl{color:#00ff9d;position:relative;display:inline-block}
+.hero-title .hl::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:3px;background:linear-gradient(90deg,#00ff9d,transparent);border-radius:2px}
+.hero-sub{font-size:clamp(.9rem,2.5vw,1.05rem);color:rgba(255,255,255,.75);margin-bottom:1.6rem;max-width:420px;line-height:1.65}
+.hero-actions{display:flex;gap:.75rem;flex-wrap:wrap}
+.hero-cta{display:inline-flex;align-items:center;gap:.5rem;padding:.78rem 1.8rem;border-radius:12px;font-size:.97rem;font-weight:800;cursor:pointer;border:none;font-family:var(--font);text-decoration:none;transition:.2s;-webkit-tap-highlight-color:transparent}
+.hero-cta-primary{background:linear-gradient(135deg,#00ff9d 0%,var(--g1) 100%);color:#0a1a0f;box-shadow:0 4px 20px rgba(0,255,157,.4)}
+.hero-cta-primary:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,255,157,.5);color:#0a1a0f}
+.hero-cta-secondary{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.35);backdrop-filter:blur(6px)}
+.hero-cta-secondary:hover{background:rgba(255,255,255,.22)}
+.hero-stats{display:flex;gap:1.5rem;margin-top:2rem;flex-wrap:wrap}
+.hero-stat{color:rgba(255,255,255,.85);display:flex;flex-direction:column}
+.hero-stat strong{font-family:var(--font2);font-size:1.5rem;font-weight:700;color:#fff;line-height:1}
+.hero-stat span{font-size:.68rem;opacity:.7;letter-spacing:.04em;text-transform:uppercase;margin-top:.1rem}
 
-/* ══ SECTION TITRE ══ */
-.sec-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:0 1rem}
-.sec-title h2{font-size:1.1rem;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:.45rem}
-.sec-title h2 i{color:var(--green)}
-.sec-title a{font-size:.82rem;color:var(--green);font-weight:600;text-decoration:none}
+/* TRUST BAR */
+.trust-bar{background:#fff;border-bottom:2px solid rgba(0,192,118,.12);overflow-x:auto;scrollbar-width:none}
+.trust-bar::-webkit-scrollbar{display:none}
+.trust-inner{display:flex;align-items:center;padding:.65rem 1rem;gap:0;min-width:max-content;max-width:1200px;margin:0 auto}
+.trust-item{display:flex;align-items:center;gap:.5rem;padding:.3rem 1.1rem;flex-shrink:0;border-right:1px solid var(--border)}
+.trust-item:last-child{border-right:none}
+.trust-item i{color:var(--g1);font-size:.95rem;flex-shrink:0}
+.trust-item strong{display:block;font-size:.76rem;font-weight:800;color:var(--ink);white-space:nowrap}
+.trust-item span{font-size:.66rem;color:var(--muted);white-space:nowrap}
+
+/* CATÉGORIES */
+.cats-section{padding:1.4rem 0 .6rem;background:var(--bg)}
+.cats-scroll{display:flex;gap:.55rem;overflow-x:auto;padding:0 1rem;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cats-scroll::-webkit-scrollbar{display:none}
+.cat-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:.3rem;padding:.6rem .8rem;background:var(--white);border-radius:14px;cursor:pointer;transition:.18s;border:2px solid transparent;text-decoration:none;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.cat-chip:hover,.cat-chip.active{background:#e8faf2;border-color:var(--g1);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,192,118,.2)}
+.cat-chip .em{font-size:1.5rem;line-height:1}
+.cat-chip .lbl{font-size:.67rem;font-weight:800;color:var(--ink2);text-align:center;white-space:nowrap}
+
+/* SEC TITLE */
+.sec-title{display:flex;align-items:center;justify-content:space-between;padding:0 1rem}
+.sec-title h2{font-size:1.05rem;font-weight:900;color:var(--ink);display:flex;align-items:center;gap:.45rem;font-family:var(--font2)}
+.sec-title h2 i{color:var(--g1)}
+.sec-title a{font-size:.8rem;color:var(--g1);font-weight:700;text-decoration:none}
 .sec-title a:hover{text-decoration:underline}
 
-/* ══ FLYERS CAROUSEL DYNAMIQUE — Style Glotelho / NowTechCenter ══ */
-.flyers-section{padding:1.4rem 0 .5rem;background:var(--white);border-top:3px solid var(--green);border-bottom:1px solid var(--border)}
-.flyers-section .sec-title{padding:0 1.2rem}
+/* FLASH DEALS */
+.flash-section{background:#fff;padding:1.2rem 0 .8rem;border-top:3px solid var(--gold);position:relative;overflow:hidden}
+.flash-section::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--g1),var(--gold));background-size:200%;animation:gradMove 3s linear infinite}
+.flash-header{display:flex;align-items:center;justify-content:space-between;padding:0 1.2rem;margin-bottom:.9rem;flex-wrap:wrap;gap:.5rem}
+.flash-label{display:inline-flex;align-items:center;gap:.45rem;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1.5px solid var(--gold);border-radius:8px;padding:.3rem .8rem;font-size:.78rem;font-weight:900;color:#92400e}
+.flash-label i{color:var(--gold);animation:pulse 1.5s ease infinite}
+.flash-countdown{display:flex;align-items:center;gap:.3rem}
+.cd-block{display:flex;flex-direction:column;align-items:center;background:var(--ink);color:#fff;border-radius:7px;padding:.25rem .45rem;min-width:36px}
+.cd-num{font-family:var(--font2);font-size:1rem;font-weight:700;line-height:1;color:var(--gold)}
+.cd-lbl{font-size:.5rem;opacity:.6;letter-spacing:.04em;text-transform:uppercase;margin-top:.1rem}
+.cd-sep{color:var(--muted);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
+.flash-grid{display:flex;gap:.7rem;overflow-x:auto;padding:0 1rem;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.flash-grid::-webkit-scrollbar{display:none}
+.flash-card{flex-shrink:0;width:150px;background:var(--bg);border-radius:12px;overflow:hidden;border:1.5px solid transparent;cursor:pointer;transition:.18s;text-decoration:none;display:block;color:inherit;animation:fadeUp .4s ease forwards;-webkit-tap-highlight-color:transparent}
+.flash-card:hover{border-color:var(--g1);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,192,118,.15)}
+.flash-imgwrap{aspect-ratio:1;overflow:hidden;background:#f0fdf4;position:relative}
+.flash-img{width:100%;height:100%;object-fit:cover;transition:.3s}
+.flash-card:hover .flash-img{transform:scale(1.06)}
+.flash-disc-badge{position:absolute;top:.35rem;right:.35rem;background:linear-gradient(135deg,var(--red),#f87171);color:#fff;border-radius:6px;font-size:.65rem;font-weight:900;padding:.18rem .42rem}
+.flash-body{padding:.55rem .6rem}
+.flash-name{font-size:.78rem;font-weight:700;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;margin-bottom:.3rem}
+.flash-price{font-size:.9rem;font-weight:900;color:var(--g2)}
+.flash-old{font-size:.65rem;color:var(--muted);text-decoration:line-through;display:block}
+.flash-stock-bar{margin-top:.4rem;background:#e5e7eb;border-radius:3px;height:4px;overflow:hidden}
+.flash-stock-fill{height:100%;background:linear-gradient(90deg,var(--g1),#00ff9d);border-radius:3px;transition:width .5s ease}
+.flash-stock-txt{font-size:.6rem;color:var(--red);font-weight:700;margin-top:.2rem}
 
-/* Carrousel pleine largeur */
-.flyer-carousel{position:relative;overflow:hidden;touch-action:pan-y}
+/* FLYERS */
+.flyers-section{padding:1.2rem 0 .4rem;background:var(--white);border-top:1px solid var(--border)}
+.flyer-carousel{position:relative;overflow:hidden;touch-action:pan-y;border-radius:var(--radius);margin:0 1rem;box-shadow:0 4px 24px rgba(0,0,0,.1)}
 .flyer-track{display:flex;transition:transform .4s cubic-bezier(.25,.46,.45,.94);will-change:transform}
 .flyer-slide{min-width:100%;position:relative;cursor:pointer;overflow:hidden}
-.flyer-slide img{width:100%;display:block;max-height:380px;object-fit:cover;object-position:center;transition:transform .3s}
+.flyer-slide img{width:100%;display:block;max-height:360px;object-fit:cover;object-position:center;transition:transform .3s}
 .flyer-slide:hover img{transform:scale(1.02)}
-
-/* Overlay gradient sur les flyers */
-.flyer-overlay{position:absolute;bottom:0;left:0;right:0;padding:1.2rem 1.4rem;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;pointer-events:none}
-.flyer-overlay h3{font-size:1rem;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.4)}
-
-/* Navigation dots */
-.flyer-dots{display:flex;justify-content:center;gap:.45rem;padding:.75rem 0 .5rem}
-.flyer-dot{width:8px;height:8px;border-radius:50%;background:var(--border);border:none;cursor:pointer;transition:.2s;padding:0;-webkit-tap-highlight-color:transparent}
-.flyer-dot.active{background:var(--green);width:22px;border-radius:4px}
-
-/* Flèches desktop */
-.flyer-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.92);border:none;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.15);z-index:5;transition:.15s;-webkit-tap-highlight-color:transparent}
-.flyer-arrow:hover{background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.2)}
-.flyer-arrow.prev{left:.8rem}
-.flyer-arrow.next{right:.8rem}
+.flyer-overlay{position:absolute;bottom:0;left:0;right:0;padding:1.2rem 1.4rem;background:linear-gradient(transparent,rgba(0,0,0,.6));color:#fff;pointer-events:none}
+.flyer-overlay h3{font-size:1rem;font-weight:800}
+.flyer-dots{display:flex;justify-content:center;gap:.4rem;padding:.65rem 0}
+.flyer-dot{width:7px;height:7px;border-radius:50%;background:var(--border);border:none;cursor:pointer;transition:.2s;padding:0}
+.flyer-dot.active{background:var(--g1);width:20px;border-radius:4px}
+.flyer-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.15);z-index:5;transition:.15s}
+.flyer-arrow:hover{background:#fff}
+.flyer-arrow.prev{left:.7rem}.flyer-arrow.next{right:.7rem}
 @media(max-width:480px){.flyer-arrow{display:none}}
-
-/* Skeleton loader flyers */
-.flyer-skeleton{width:100%;aspect-ratio:16/7;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 37%,#f0f0f0 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
-@media(max-width:600px){.flyer-skeleton{aspect-ratio:4/3}}
-
-/* Indicateur auto-play */
-.flyer-progress{position:absolute;bottom:0;left:0;height:3px;background:var(--green);transition:width linear;border-radius:0 2px 2px 0;opacity:.8}
-
-/* Grid flyers vignettes — sous le carrousel (style NowTechCenter) */
-.flyer-thumbs{display:flex;gap:.55rem;overflow-x:auto;padding:.6rem 1.2rem;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.flyer-skeleton{width:100%;aspect-ratio:16/7;background:linear-gradient(90deg,#f0fdf4 25%,#dcfce7 37%,#f0fdf4 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
+.flyer-progress{position:absolute;bottom:0;left:0;height:3px;background:var(--g1);transition:width linear;border-radius:0 2px 2px 0;opacity:.8}
+.flyer-thumbs{display:flex;gap:.5rem;overflow-x:auto;padding:.5rem 1rem;scrollbar-width:none}
 .flyer-thumbs::-webkit-scrollbar{display:none}
-.flyer-thumb{flex-shrink:0;width:72px;height:72px;border-radius:10px;overflow:hidden;border:2.5px solid transparent;cursor:pointer;transition:.18s;-webkit-tap-highlight-color:transparent}
-.flyer-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.flyer-thumb.active{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,176,116,.25)}
-.flyer-thumb:hover{border-color:var(--green);transform:scale(1.05)}
+.flyer-thumb{flex-shrink:0;width:66px;height:66px;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;transition:.18s}
+.flyer-thumb img{width:100%;height:100%;object-fit:cover}
+.flyer-thumb.active{border-color:var(--g1);box-shadow:0 0 0 2px rgba(0,192,118,.25)}
 
-/* ══ PRODUITS VEDETTES MOBILE — grille 2×2 ══ */
+/* PROMO BANNER */
+.promo-banner{margin:1rem;border-radius:var(--radius);overflow:hidden;background:linear-gradient(135deg,#003d27 0%,var(--g1) 60%,#00ff9d 100%);padding:1.15rem 1.4rem;display:flex;align-items:center;gap:1rem;position:relative;cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent;box-shadow:0 6px 24px rgba(0,192,118,.3)}
+.promo-banner::before{content:'';position:absolute;right:-20px;top:-20px;width:130px;height:130px;background:rgba(255,255,255,.07);border-radius:50%}
+.promo-banner-bg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.4s ease-in-out}
+.promo-banner-bg.active{opacity:.18}
+.promo-banner>*:not(.promo-banner-bg){position:relative;z-index:1}
+.promo-banner-ico{font-size:2.3rem;flex-shrink:0;animation:floatUp 3s ease-in-out infinite}
+.promo-banner-text{flex:1;min-width:0}
+.promo-banner-text strong{display:block;font-size:1rem;font-weight:900;color:#fff;margin-bottom:.18rem}
+.promo-banner-text span{font-size:.79rem;color:rgba(255,255,255,.85)}
+.promo-banner-arrow{color:rgba(255,255,255,.7);font-size:1.1rem;flex-shrink:0;transition:.2s}
+.promo-banner:hover .promo-banner-arrow{color:#fff;transform:translateX(4px)}
+
+/* PRODUITS */
 .featured-section{padding:1.4rem 0 1rem;background:var(--bg)}
-.prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;padding:0 .85rem}
-
-/* Carte produit style Facebook Marketplace */
-.fp-card{background:var(--white);border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07);cursor:pointer;transition:.18s;animation:fadeUp .4s ease forwards;-webkit-tap-highlight-color:transparent;text-decoration:none;display:block;color:inherit}
-.fp-card:hover{transform:translateY(-3px);box-shadow:0 6px 22px rgba(0,0,0,.12)}
+.prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.65rem;padding:0 .9rem}
+@media(min-width:540px){.prod-grid{grid-template-columns:repeat(3,1fr);gap:.75rem;padding:0 1rem}}
+@media(min-width:900px){.prod-grid{grid-template-columns:repeat(4,1fr);gap:.9rem;padding:0 1.2rem}}
+@media(min-width:1200px){.prod-grid{grid-template-columns:repeat(5,1fr)}}
+.fp-card{background:var(--white);border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);cursor:pointer;transition:.2s;animation:fadeUp .4s ease forwards;-webkit-tap-highlight-color:transparent;text-decoration:none;display:block;color:inherit;border:1.5px solid transparent}
+.fp-card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,.12);border-color:rgba(0,192,118,.2)}
 .fp-card:active{transform:scale(.97)}
 .fp-imgwrap{aspect-ratio:1/1.05;overflow:hidden;background:#f0fdf4;position:relative}
-.fp-img{width:100%;height:100%;object-fit:cover;display:block;transition:.3s}
-.fp-card:hover .fp-img{transform:scale(1.05)}
-.fp-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--green);opacity:.35}
-.fp-badge{position:absolute;top:.4rem;left:.4rem;font-size:.7rem;font-weight:800;padding:.17rem .42rem;border-radius:5px;backdrop-filter:blur(4px)}
-.fp-badge-hot{background:#fef2f2;color:#ef4444;border:1px solid #fca5a5}
+.fp-img{width:100%;height:100%;object-fit:cover;display:block;transition:.35s}
+.fp-card:hover .fp-img{transform:scale(1.07)}
+.fp-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--g1);opacity:.3}
+.fp-badge{position:absolute;top:.4rem;left:.4rem;font-size:.65rem;font-weight:800;padding:.16rem .4rem;border-radius:5px}
+.fp-badge-hot{background:#fef2f2;color:var(--red);border:1px solid #fca5a5}
 .fp-badge-new{background:#f0fdf4;color:#059669;border:1px solid #86efac}
-.fp-badge-promo{background:#e8f8f2;color:#00875a;border:1px solid #6ee7c4}
+.fp-badge-promo{background:#fef9c3;color:#92400e;border:1px solid var(--gold)}
 .fp-body{padding:.6rem .65rem .65rem}
-.fp-cat{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--green);font-weight:700;display:block;background:#e8f8f2;border-radius:4px;padding:.1rem .35rem;width:fit-content;margin-bottom:.28rem}
-.fp-name{font-size:.9rem;font-weight:700;line-height:1.3;color:var(--ink);margin-bottom:.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.fp-price{font-size:1rem;font-weight:900;color:var(--green2);display:block;margin-bottom:.45rem}
-.fp-old{font-size:.72rem;color:var(--muted);text-decoration:line-through;margin-left:.35rem;font-weight:400}
-.fp-disc{font-size:.65rem;background:#fef2f2;color:#ef4444;font-weight:800;padding:.08rem .3rem;border-radius:4px;margin-left:.2rem}
-.fp-btn{width:100%;padding:.62rem;background:var(--green);color:#fff;border:none;border-radius:9px;font-size:.85rem;font-weight:700;font-family:var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.35rem;transition:.15s;min-height:42px;-webkit-tap-highlight-color:transparent}
-.fp-btn:hover{background:var(--green2)}
-.fp-btn:active{transform:scale(.96)}
-
-/* Skeleton card */
-.fp-skeleton{background:var(--white);border-radius:12px;overflow:hidden}
-.fp-sk-img{aspect-ratio:1/1.05;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 37%,#f0f0f0 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
+.fp-cat{font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;color:var(--g2);font-weight:800;display:inline-block;background:#e8faf2;border-radius:4px;padding:.1rem .35rem;margin-bottom:.28rem}
+.fp-name{font-size:.88rem;font-weight:700;line-height:1.3;color:var(--ink);margin-bottom:.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fp-price{font-size:1rem;font-weight:900;color:var(--g2)}
+.fp-old{font-size:.7rem;color:var(--muted);text-decoration:line-through;margin-left:.3rem;font-weight:400}
+.fp-disc{font-size:.62rem;background:#fef2f2;color:var(--red);font-weight:800;padding:.07rem .28rem;border-radius:4px;margin-left:.2rem}
+.fp-btn{width:100%;padding:.6rem;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border:none;border-radius:9px;font-size:.82rem;font-weight:800;font-family:var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.3rem;transition:.15s;min-height:40px;-webkit-tap-highlight-color:transparent;margin-top:.4rem}
+.fp-btn:hover{background:linear-gradient(135deg,#00ff9d,var(--g1));color:#0a1a0f}
+.fp-skeleton{background:var(--white);border-radius:14px;overflow:hidden}
+.fp-sk-img{aspect-ratio:1/1.05;background:linear-gradient(90deg,#f0fdf4 25%,#dcfce7 37%,#f0fdf4 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
 .fp-sk-body{padding:.6rem .65rem;display:flex;flex-direction:column;gap:.4rem}
-.fp-sk-line{height:.75rem;border-radius:4px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 37%,#f0f0f0 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
-.fp-sk-line.short{width:60%}
-.fp-sk-line.price{width:50%;height:1rem}
+.fp-sk-line{height:.72rem;border-radius:4px;background:linear-gradient(90deg,#f0fdf4 25%,#dcfce7 37%,#f0fdf4 63%);background-size:800px 100%;animation:shimmer 1.4s ease infinite}
+.fp-sk-line.short{width:55%}.fp-sk-line.price{width:48%;height:.95rem}
 
-/* ══ CATÉGORIES RAPIDES ══ */
-.cats-section{padding:1.2rem 0;background:var(--white);border-bottom:1px solid var(--border)}
-.cats-scroll{display:flex;gap:.6rem;overflow-x:auto;padding:0 1rem;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
-.cats-scroll::-webkit-scrollbar{display:none}
-.cat-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:.3rem;padding:.55rem .75rem;background:var(--bg);border-radius:12px;cursor:pointer;transition:.18s;border:1.5px solid transparent;text-decoration:none;-webkit-tap-highlight-color:transparent;scroll-snap-align:start;min-width:64px}
-.cat-chip:hover,.cat-chip:active{background:var(--green3);border-color:var(--green)}
-.cat-chip .em{font-size:1.4rem;line-height:1}
-.cat-chip .lbl{font-size:.68rem;font-weight:700;color:var(--ink2);text-align:center;white-space:nowrap}
-
-/* ══ BANNIÈRE PROMO INLINE ══ */
-.promo-banner{margin:1rem;border-radius:14px;background:linear-gradient(135deg,#00875a,#00b074,#00d4aa);padding:1.1rem 1.4rem;display:flex;align-items:center;gap:1rem;overflow:hidden;position:relative;cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent}
-.promo-banner::before{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:rgba(255,255,255,.08);border-radius:50%}
-.promo-banner-ico{font-size:2.2rem;flex-shrink:0;animation:pulse 2s ease infinite}
-.promo-banner-text{flex:1;min-width:0}
-.promo-banner-text strong{display:block;font-size:.97rem;font-weight:900;color:#fff;margin-bottom:.2rem}
-.promo-banner-text span{font-size:.8rem;color:rgba(255,255,255,.88)}
-.promo-banner-arrow{color:rgba(255,255,255,.7);font-size:1.1rem;flex-shrink:0}
-
-/* ══ SECTION "COMMENT COMMANDER" ══ */
+/* COMMENT COMMANDER */
 .how-section{padding:1.5rem 1rem;background:var(--white);border-top:1px solid var(--border)}
-.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:1rem}
-.how-step{text-align:center;padding:.7rem .5rem}
-.how-step .ico{width:48px;height:48px;border-radius:50%;background:var(--green3);display:flex;align-items:center;justify-content:center;margin:0 auto .55rem;font-size:1.2rem;color:var(--green)}
-.how-step h4{font-size:.78rem;font-weight:800;color:var(--ink);margin-bottom:.2rem}
-.how-step p{font-size:.68rem;color:var(--muted);line-height:1.4}
+.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.9rem}
+.how-step{text-align:center;padding:.6rem .4rem}
+.how-step .ico{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#e8faf2,#f0fdf4);border:2px solid rgba(0,192,118,.2);display:flex;align-items:center;justify-content:center;margin:0 auto .5rem;font-size:1.15rem;color:var(--g1)}
+.how-step h4{font-size:.76rem;font-weight:800;color:var(--ink);margin-bottom:.18rem}
+.how-step p{font-size:.65rem;color:var(--muted);line-height:1.4}
 
-/* ══ FOOTER ══ */
-.kni-footer{background:var(--ink);color:#d1d5db;padding:2rem 1.2rem 1.5rem;margin-bottom:60px}
-.footer-brand{margin-bottom:1.2rem}
-.footer-logo{font-size:1.4rem;font-weight:900;color:#fff;letter-spacing:-1px;display:inline-block;margin-bottom:.5rem}
-.footer-logo span{color:var(--green)}
-.footer-desc{font-size:.82rem;opacity:.75;line-height:1.6;max-width:300px}
-.footer-contacts{display:flex;flex-direction:column;gap:.35rem;margin-top:.8rem}
-.footer-contact{font-size:.8rem;display:flex;align-items:center;gap:.45rem}
-.footer-contact i{color:var(--green);width:14px}
-.footer-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:.85rem;margin-top:1.2rem;text-align:center;font-size:.75rem;opacity:.6}
+/* FOOTER */
+.kni-footer{background:var(--ink);color:#9ca3af;padding:2rem 1.2rem 1.5rem}
+.footer-logo{font-family:var(--font2);font-size:1.5rem;font-weight:700;color:#fff;letter-spacing:-1px;display:inline-block;margin-bottom:.5rem}
+.footer-logo b{color:var(--g1)}
+.footer-desc{font-size:.8rem;opacity:.7;line-height:1.65;max-width:300px;margin-bottom:.9rem}
+.footer-contacts{display:flex;flex-direction:column;gap:.32rem}
+.footer-contact{font-size:.78rem;display:flex;align-items:center;gap:.45rem}
+.footer-contact i{color:var(--g1);width:14px}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:.8rem;margin-top:1.2rem;text-align:center;font-size:.72rem;opacity:.5}
 
-/* ══ BARRE NAV MOBILE BAS ══ */
-.mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:850;background:rgba(255,255,255,.98);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-top:1px solid rgba(0,0,0,.08);padding:5px 0 calc(5px + env(safe-area-inset-bottom,0px));box-shadow:0 -2px 16px rgba(0,0,0,.07)}
+/* NAV BAS */
+.mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:850;background:rgba(255,255,255,.97);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-top:1px solid rgba(0,0,0,.07);padding:5px 0 calc(5px + env(safe-area-inset-bottom,0px));box-shadow:0 -2px 20px rgba(0,0,0,.08)}
 .mob-nav-inner{display:flex;align-items:center;justify-content:space-around;width:100%}
-.mob-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:#6b7280;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:.42rem .55rem;border-radius:10px;font-family:var(--font);position:relative;-webkit-tap-highlight-color:transparent;transition:color .15s;text-decoration:none;min-width:52px;touch-action:manipulation}
-.mob-btn i{font-size:1.2rem;line-height:1}
-.mob-btn.active{color:var(--green)}
-.mob-btn.active i{transform:scale(1.1)}
-.mob-badge{position:absolute;top:2px;right:8px;background:var(--red);color:#fff;border-radius:20px;font-size:.52rem;padding:.05rem .3rem;font-weight:800;border:1.5px solid #fff}
-body{padding-bottom:62px}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:.56rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:.4rem .55rem;border-radius:10px;font-family:var(--font);position:relative;-webkit-tap-highlight-color:transparent;transition:color .15s;text-decoration:none;min-width:52px;touch-action:manipulation}
+.mob-btn i{font-size:1.18rem;line-height:1;transition:.2s}
+.mob-btn.active{color:var(--g1)}.mob-btn.active i{transform:scale(1.12)}
+.mob-badge{position:absolute;top:2px;right:7px;background:var(--red);color:#fff;border-radius:20px;font-size:.5rem;padding:.04rem .28rem;font-weight:800;border:1.5px solid #fff}
 
-/* ══ WA FLOAT ══ */
-.wa-float{position:fixed;bottom:calc(4.8rem + env(safe-area-inset-bottom,0px));right:1rem;z-index:800;background:#25d366;color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 18px rgba(37,211,102,.4);text-decoration:none;transition:.2s;-webkit-tap-highlight-color:transparent}
-.wa-float:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(37,211,102,.5)}
-.wa-float:active{transform:scale(.95)}
+/* WA FLOAT */
+.wa-float{position:fixed;bottom:calc(4.8rem + env(safe-area-inset-bottom,0px));right:1rem;z-index:800;background:#25d366;color:#fff;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.35rem;box-shadow:0 4px 18px rgba(37,211,102,.4);text-decoration:none;transition:.2s}
+.wa-float:hover{transform:scale(1.1);box-shadow:0 6px 26px rgba(37,211,102,.55)}
 
-/* ══ TOAST ══ */
+/* TOAST */
 .toast-container{position:fixed;bottom:5.5rem;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:.5rem;align-items:center;width:90%;max-width:340px;pointer-events:none}
-.toast{background:var(--ink);color:#fff;padding:.65rem 1.1rem;border-radius:10px;font-size:.85rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadeUp .3s ease;text-align:center;border-left:4px solid var(--green)}
+.toast{background:var(--ink);color:#fff;padding:.6rem 1.1rem;border-radius:10px;font-size:.83rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadeUp .3s ease;text-align:center;border-left:4px solid var(--g1)}
 
-/* ══ RESPONSIVE ══ */
-@media(max-width:360px){
-  .hero-title{font-size:1.45rem}
-  .prod-grid{gap:.45rem;padding:0 .65rem}
-  .fp-name{font-size:.82rem}
-  .fp-price{font-size:.92rem}
-}
-@media(min-width:600px){
-  .flyer-slide img{max-height:440px}
-  .prod-grid{grid-template-columns:repeat(3,1fr);gap:.8rem;padding:0 1rem}
-}
-@media(min-width:900px){
-  .prod-grid{grid-template-columns:repeat(4,1fr);gap:1rem;padding:0 1.2rem}
-  .flyer-slide img{max-height:520px}
-  .how-steps{grid-template-columns:repeat(5,1fr)}
-}
-@media(min-width:1200px){
-  .kni-header-inner,.hero-section{padding-left:2rem;padding-right:2rem}
-  .prod-grid{padding:0 2rem}
-}
-@media(hover:none){
-  .fp-card:active{transform:scale(.975);box-shadow:0 1px 6px rgba(0,0,0,.1)}
-  .fp-btn:active{transform:scale(.96);background:var(--green2)}
-  .cat-chip:active{background:var(--green3);border-color:var(--green)}
-}
+/* CHAT */
+#kniChatFab{position:fixed;bottom:5.5rem;right:1rem;z-index:2000;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#001a10,var(--g1));border:none;cursor:pointer;box-shadow:0 4px 18px rgba(0,192,118,.45);display:flex;align-items:center;justify-content:center;font-size:1.3rem;transition:.2s;animation:kniChatPop .4s cubic-bezier(.34,1.56,.64,1)}
+#kniChatFab:hover{transform:scale(1.1)}
+#kniChatFab .kni-chat-badge{position:absolute;top:-3px;right:-3px;width:17px;height:17px;border-radius:50%;background:var(--red);color:#fff;font-size:.58rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;animation:pulse 1.5s ease infinite}
+#kniChatPanel{position:fixed;bottom:5rem;right:1rem;z-index:2001;width:min(340px,92vw);background:#fff;border-radius:18px;box-shadow:0 12px 48px rgba(0,0,0,.22);overflow:hidden;display:none;animation:kniChatSlide .35s cubic-bezier(.32,1.1,.64,1);transform-origin:bottom right}
+#kniChatPanel.open{display:flex;flex-direction:column}
+.kni-chat-hd{background:linear-gradient(135deg,#001a10 0%,var(--g1) 100%);padding:.85rem 1.1rem;display:flex;align-items:center;gap:.7rem}
+.kni-chat-hd-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.kni-chat-hd-info{flex:1}
+.kni-chat-hd-name{color:#fff;font-weight:800;font-size:.92rem}
+.kni-chat-hd-status{color:rgba(255,255,255,.8);font-size:.7rem;display:flex;align-items:center;gap:.3rem}
+.kni-chat-hd-status::before{content:'';width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block}
+.kni-chat-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.83rem;display:flex;align-items:center;justify-content:center;transition:.15s}
+.kni-chat-close:hover{background:rgba(255,255,255,.3)}
+.kni-chat-body{padding:.85rem;flex:1;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:.55rem;scrollbar-width:thin}
+.kni-msg{display:flex;gap:.5rem;align-items:flex-end;animation:fadeUp .25s ease}
+.kni-msg-bot{justify-content:flex-start}.kni-msg-user{justify-content:flex-end}
+.kni-msg-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#003d27,var(--g1));display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+.kni-msg-bubble{max-width:82%;padding:.58rem .82rem;border-radius:14px;font-size:.82rem;line-height:1.5}
+.kni-msg-bot .kni-msg-bubble{background:#f3f4f6;color:var(--ink);border-radius:4px 14px 14px 14px}
+.kni-msg-user .kni-msg-bubble{background:linear-gradient(135deg,#00875a,var(--g1));color:#fff;border-radius:14px 14px 4px 14px}
+.kni-chat-suggestions{padding:.5rem .85rem .75rem;display:flex;flex-direction:column;gap:.4rem}
+.kni-sug-btn{background:none;border:1.5px solid var(--border);border-radius:22px;padding:.5rem 1rem;font-size:.78rem;font-weight:600;color:var(--ink3);cursor:pointer;text-align:left;display:flex;align-items:center;gap:.5rem;transition:.15s;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.kni-sug-btn:hover,.kni-sug-btn:active{background:#e8faf2;border-color:var(--g1);color:#003d27;transform:translateX(3px)}
+.kni-sug-btn i{color:var(--g1);font-size:.83rem;width:16px;text-align:center;flex-shrink:0}
+.kni-chat-input-row{display:flex;align-items:center;gap:.42rem;padding:.6rem .75rem;border-top:1px solid #f3f4f6}
+.kni-chat-inp{flex:1;border:1.5px solid var(--border);border-radius:22px;padding:.48rem .9rem;font-size:.82rem;outline:none;font-family:inherit;background:#f9fafb;color:var(--ink);transition:.15s}
+.kni-chat-inp:focus{border-color:var(--g1);background:#fff}
+.kni-chat-send{width:33px;height:33px;border-radius:50%;background:linear-gradient(135deg,#00875a,var(--g1));border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.82rem;transition:.15s;flex-shrink:0}
+.kni-chat-send:hover{transform:scale(1.1)}
+@media(max-width:960px){ #kniChatFab{bottom:4.8rem}}
+@media(max-width:480px){ #kniChatPanel{bottom:4.5rem;right:.5rem;left:.5rem;width:auto}}
+@media(max-width:360px){.hero-title{font-size:1.65rem}.prod-grid{gap:.4rem;padding:0 .65rem}}
+@media(min-width:600px){.flyer-slide img{max-height:420px}}
+@media(min-width:900px){.flyer-slide img{max-height:500px}.how-steps{grid-template-columns:repeat(5,1fr)}.flash-card{width:170px}}
 </style>
 </head>
 <body>
 
 <!-- TICKER -->
 <div class="ticker-bar" aria-hidden="true">
-  <div class="ticker-inner" id="tickerInner">
+  <div class="ticker-inner">
     <span class="ticker-item"><i class="fas fa-truck"></i> Livraison partout au Cameroun 🇨🇲</span>
     <span class="ticker-item"><i class="fas fa-mobile-alt"></i> Paiement Orange Money &amp; MTN MoMo</span>
     <span class="ticker-item"><i class="fas fa-headset"></i> Support : +237 695 072 759</span>
     <span class="ticker-item"><i class="fas fa-shield-alt"></i> Paiement 100% sécurisé</span>
     <span class="ticker-item"><i class="fas fa-gift"></i> Livraison gratuite dès 25 000 XAF</span>
     <span class="ticker-item"><i class="fas fa-star"></i> + de 500 produits disponibles</span>
-    <!-- Doublement pour le loop -->
     <span class="ticker-item"><i class="fas fa-truck"></i> Livraison partout au Cameroun 🇨🇲</span>
     <span class="ticker-item"><i class="fas fa-mobile-alt"></i> Paiement Orange Money &amp; MTN MoMo</span>
     <span class="ticker-item"><i class="fas fa-headset"></i> Support : +237 695 072 759</span>
@@ -271,18 +304,17 @@ body{padding-bottom:62px}
 <header class="kni-header">
   <div class="kni-header-inner">
     <a href="/home" class="kni-logo">
-      <img src="/static/img/logo.jpeg" alt="k-Ni" class="kni-logo-img"
-           onerror="this.style.display='none'">
+      <img src="/static/img/logo.jpeg" alt="k-Ni" class="kni-logo-img" onerror="this.style.display='none'">
       <div>
-        <div class="kni-logo-text">k-<span>N</span>i</div>
+        <div class="kni-logo-text">k-<b>N</b>i</div>
         <span class="kni-logo-sub">Store · Yaoundé 🇨🇲</span>
       </div>
     </a>
     <div class="kni-header-actions">
       <a href="https://wa.me/237695072759" target="_blank" class="kni-btn kni-btn-wa" aria-label="WhatsApp">
-        <i class="fab fa-whatsapp"></i><span style="display:none" class="btn-lbl">WhatsApp</span>
+        <i class="fab fa-whatsapp"></i>
       </a>
-      <a href="/shop" class="kni-btn kni-btn-shop">
+      <a href="/shop" class="kni-btn kni-btn-shop" onclick="sessionStorage.setItem('kni_from_home','1')">
         <i class="fas fa-store"></i> <span>Boutique</span>
       </a>
     </div>
@@ -290,76 +322,99 @@ body{padding-bottom:62px}
 </header>
 
 <!-- HERO -->
-<section class="hero-section">
-  <span class="hero-badge"><i class="fas fa-bolt"></i> Yaoundé • Cameroun</span>
-  <h1 class="hero-title">Votre boutique<br>de confiance</h1>
-  <p class="hero-sub">Électronique, mode, beauté — prix imbattables &amp; livraison rapide</p>
-  <div class="hero-actions">
-    <a href="/shop" class="hero-cta hero-cta-primary">
-      <i class="fas fa-store"></i> Voir la boutique
-    </a>
-    <a href="https://wa.me/237695072759" target="_blank" class="hero-cta hero-cta-secondary">
-      <i class="fab fa-whatsapp"></i> Commander
-    </a>
-  </div>
-  <div class="hero-stats">
-    <div class="hero-stat"><strong id="heroProdsCount">500+</strong><span>Produits</span></div>
-    <div class="hero-stat"><strong>🇨🇲</strong><span>Cameroun</span></div>
-    <div class="hero-stat"><strong>24h</strong><span>Livraison</span></div>
-    <div class="hero-stat"><strong>100%</strong><span>Sécurisé</span></div>
+<section class="hero-section" id="heroSection">
+  <div class="hero-bg-slides" id="heroBgSlides"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-grain"></div>
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow"><i class="fas fa-bolt"></i> Yaoundé · Cameroun · Livraison rapide</div>
+    <h1 class="hero-title">Votre boutique<br><span class="hl">de confiance</span></h1>
+    <p class="hero-sub">Électronique, mode, beauté — prix imbattables &amp; livraison rapide partout au Cameroun</p>
+    <div class="hero-actions">
+      <a href="/shop" class="hero-cta hero-cta-primary" onclick="sessionStorage.setItem('kni_from_home','1')">
+        <i class="fas fa-store"></i> Voir la boutique
+      </a>
+      <a href="https://wa.me/237695072759" target="_blank" class="hero-cta hero-cta-secondary">
+        <i class="fab fa-whatsapp"></i> Commander
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><strong id="heroProdsCount">500+</strong><span>Produits</span></div>
+      <div class="hero-stat"><strong>🇨🇲</strong><span>Cameroun</span></div>
+      <div class="hero-stat"><strong>24h</strong><span>Livraison</span></div>
+      <div class="hero-stat"><strong>100%</strong><span>Sécurisé</span></div>
+    </div>
   </div>
 </section>
 
-<!-- CATÉGORIES RAPIDES -->
-<div class="cats-section">
-  <div class="cats-scroll">
-    <a href="/shop?cat=all" class="cat-chip"><span class="em">🏪</span><span class="lbl">Tout</span></a>
-    <a href="/shop?cat=smartphone" class="cat-chip"><span class="em">📱</span><span class="lbl">Phones</span></a>
-    <a href="/shop?cat=ordinateur-portable" class="cat-chip"><span class="em">💻</span><span class="lbl">PC</span></a>
-    <a href="/shop?cat=electronique" class="cat-chip"><span class="em">⚡</span><span class="lbl">Électro</span></a>
-    <a href="/shop?cat=mode" class="cat-chip"><span class="em">👗</span><span class="lbl">Mode</span></a>
-    <a href="/shop?cat=beaute" class="cat-chip"><span class="em">💄</span><span class="lbl">Beauté</span></a>
-    <a href="/shop?cat=maison" class="cat-chip"><span class="em">🏠</span><span class="lbl">Maison</span></a>
-    <a href="/shop?cat=sport" class="cat-chip"><span class="em">⚽</span><span class="lbl">Sport</span></a>
-    <a href="/shop?cat=sante" class="cat-chip"><span class="em">💊</span><span class="lbl">Santé</span></a>
-    <a href="/shop?cat=accessoires-info" class="cat-chip"><span class="em">🖱️</span><span class="lbl">Accesso.</span></a>
+<!-- TRUST BADGES -->
+<div class="trust-bar">
+  <div class="trust-inner">
+    <div class="trust-item"><i class="fas fa-truck-fast"></i><div><strong>Livraison rapide</strong><span>Partout au Cameroun</span></div></div>
+    <div class="trust-item"><i class="fas fa-mobile-screen-button"></i><div><strong>Orange Money &amp; MTN</strong><span>Paiement sécurisé</span></div></div>
+    <div class="trust-item"><i class="fas fa-rotate-left"></i><div><strong>Retours 7 jours</strong><span>Garantie satisfaction</span></div></div>
+    <div class="trust-item"><i class="fas fa-headset"></i><div><strong>Support 24/7</strong><span>+237 695 072 759</span></div></div>
+    <div class="trust-item"><i class="fas fa-shield-check"></i><div><strong>100% authentique</strong><span>Produits vérifiés</span></div></div>
   </div>
 </div>
 
-<!-- ═══════════════ FLYERS DYNAMIQUES ═══════════════ -->
+<!-- CATÉGORIES -->
+<div class="cats-section">
+  <div class="sec-title" style="margin-bottom:.85rem"><h2><i class="fas fa-grid-2"></i> Catégories</h2></div>
+  <div class="cats-scroll">
+    <a href="/shop?cat=all"                 class="cat-chip"><span class="em">🏪</span><span class="lbl">Tout</span></a>
+    <a href="/shop?cat=smartphone"          class="cat-chip"><span class="em">📱</span><span class="lbl">Phones</span></a>
+    <a href="/shop?cat=ordinateur-portable" class="cat-chip"><span class="em">💻</span><span class="lbl">PC</span></a>
+    <a href="/shop?cat=electronique"        class="cat-chip"><span class="em">⚡</span><span class="lbl">Électro</span></a>
+    <a href="/shop?cat=mode"                class="cat-chip"><span class="em">👗</span><span class="lbl">Mode</span></a>
+    <a href="/shop?cat=beaute"              class="cat-chip"><span class="em">💄</span><span class="lbl">Beauté</span></a>
+    <a href="/shop?cat=maison"              class="cat-chip"><span class="em">🏠</span><span class="lbl">Maison</span></a>
+    <a href="/shop?cat=sport"               class="cat-chip"><span class="em">⚽</span><span class="lbl">Sport</span></a>
+    <a href="/shop?cat=accessoires-info"    class="cat-chip"><span class="em">🖱️</span><span class="lbl">Accesso.</span></a>
+  </div>
+</div>
+
+<!-- FLASH DEALS -->
+<section class="flash-section" id="flashSection" style="display:none">
+  <div class="flash-header">
+    <div class="flash-label"><i class="fas fa-bolt"></i> Flash Deals</div>
+    <div class="flash-countdown">
+      <div class="cd-block"><span class="cd-num" id="cdH">00</span><span class="cd-lbl">heure</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cdM">00</span><span class="cd-lbl">min</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cdS">00</span><span class="cd-lbl">sec</span></div>
+    </div>
+  </div>
+  <div class="flash-grid" id="flashGrid"></div>
+</section>
+
+<!-- FLYERS -->
 <section class="flyers-section">
-  <div class="sec-title">
+  <div class="sec-title" style="margin-bottom:.9rem">
     <h2><i class="fas fa-fire"></i> Promotions &amp; Offres</h2>
     <a href="/shop">Voir tout →</a>
   </div>
-
-  <!-- Carrousel principal -->
   <div class="flyer-carousel" id="flyerCarousel"
        ontouchstart="flyerTouchStart(event)"
        ontouchmove="flyerTouchMove(event)"
        ontouchend="flyerTouchEnd(event)">
     <div class="flyer-track" id="flyerTrack">
-      <!-- Skeleton pendant chargement -->
       <div class="flyer-slide"><div class="flyer-skeleton"></div></div>
     </div>
     <div class="flyer-progress" id="flyerProgress" style="width:0%"></div>
-    <button class="flyer-arrow prev" id="flyerPrev" onclick="flyerGo(-1)" aria-label="Précédent">
-      <i class="fas fa-chevron-left"></i>
-    </button>
-    <button class="flyer-arrow next" id="flyerNext" onclick="flyerGo(1)" aria-label="Suivant">
-      <i class="fas fa-chevron-right"></i>
-    </button>
+    <button class="flyer-arrow prev" id="flyerPrev" onclick="flyerGo(-1)" aria-label="Précédent"><i class="fas fa-chevron-left"></i></button>
+    <button class="flyer-arrow next" id="flyerNext" onclick="flyerGo(1)"  aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
   </div>
-
-  <!-- Dots navigation -->
   <div class="flyer-dots" id="flyerDots"></div>
-
-  <!-- Vignettes cliquables (style NowTechCenter) -->
   <div class="flyer-thumbs" id="flyerThumbs"></div>
 </section>
 
 <!-- BANNIÈRE PROMO -->
-<a href="/shop" class="promo-banner">
+<a href="/shop" class="promo-banner" id="promoBanner">
+  <div class="promo-banner-bg" id="promoBannerBg"></div>
   <span class="promo-banner-ico">🎁</span>
   <div class="promo-banner-text">
     <strong>Livraison gratuite dès 25 000 XAF</strong>
@@ -368,14 +423,13 @@ body{padding-bottom:62px}
   <i class="fas fa-chevron-right promo-banner-arrow"></i>
 </a>
 
-<!-- ═══════════════ PRODUITS VEDETTES ═══════════════ -->
+<!-- PRODUITS VEDETTES -->
 <section class="featured-section">
-  <div class="sec-title">
+  <div class="sec-title" style="margin-bottom:.9rem">
     <h2><i class="fas fa-star"></i> Produits populaires</h2>
-    <a href="/shop">Tout voir →</a>
+    <a href="/shop" onclick="sessionStorage.setItem('kni_from_home','1')">Tout voir →</a>
   </div>
   <div class="prod-grid" id="featuredGrid">
-    <!-- Skeletons -->
     <div class="fp-skeleton"><div class="fp-sk-img"></div><div class="fp-sk-body"><div class="fp-sk-line"></div><div class="fp-sk-line short"></div><div class="fp-sk-line price"></div></div></div>
     <div class="fp-skeleton"><div class="fp-sk-img"></div><div class="fp-sk-body"><div class="fp-sk-line"></div><div class="fp-sk-line short"></div><div class="fp-sk-line price"></div></div></div>
     <div class="fp-skeleton"><div class="fp-sk-img"></div><div class="fp-sk-body"><div class="fp-sk-line"></div><div class="fp-sk-line short"></div><div class="fp-sk-line price"></div></div></div>
@@ -385,316 +439,235 @@ body{padding-bottom:62px}
 
 <!-- COMMENT COMMANDER -->
 <div class="how-section">
-  <div class="sec-title" style="padding:0;margin-bottom:.75rem">
-    <h2><i class="fas fa-info-circle"></i> Comment commander ?</h2>
-  </div>
+  <div class="sec-title" style="padding:0;margin-bottom:.75rem"><h2><i class="fas fa-circle-info"></i> Comment commander ?</h2></div>
   <div class="how-steps">
-    <div class="how-step"><div class="ico"><i class="fas fa-search"></i></div><h4>Choisissez</h4><p>Parcourez notre catalogue</p></div>
+    <div class="how-step"><div class="ico"><i class="fas fa-search"></i></div><h4>Choisissez</h4><p>Parcourez le catalogue</p></div>
     <div class="how-step"><div class="ico"><i class="fas fa-cart-plus"></i></div><h4>Ajoutez</h4><p>Mettez au panier</p></div>
     <div class="how-step"><div class="ico"><i class="fas fa-mobile-alt"></i></div><h4>Payez</h4><p>Orange Money / MTN</p></div>
-    <div class="how-step" style="display:none" class="how-step-extra"><div class="ico"><i class="fas fa-box"></i></div><h4>Emballez</h4><p>Votre colis préparé</p></div>
-    <div class="how-step" style="display:none" class="how-step-extra"><div class="ico"><i class="fas fa-truck"></i></div><h4>Livraison</h4><p>Reçu chez vous</p></div>
+    <div class="how-step" style="display:none" class="how-step-extra"><div class="ico"><i class="fas fa-box"></i></div><h4>Emballé</h4><p>Colis préparé</p></div>
+    <div class="how-step" style="display:none" class="how-step-extra"><div class="ico"><i class="fas fa-truck"></i></div><h4>Livré</h4><p>Reçu chez vous</p></div>
   </div>
 </div>
 
 <!-- FOOTER -->
 <footer class="kni-footer">
-  <div class="footer-brand">
-    <div class="footer-logo">k-<span>N</span>i Store</div>
-    <p class="footer-desc">Votre boutique de confiance à Yaoundé. Qualité garantie, livraisons partout au Cameroun.</p>
-    <div class="footer-contacts">
-      <div class="footer-contact"><i class="fas fa-phone"></i> Orange : 695 072 759</div>
-      <div class="footer-contact"><i class="fas fa-phone"></i> MTN : 670 695 946</div>
-      <div class="footer-contact"><i class="fab fa-whatsapp"></i> WhatsApp : 695 072 759</div>
-      <div class="footer-contact"><i class="fas fa-map-marker-alt"></i> Yaoundé, Cameroun</div>
-    </div>
+  <div class="footer-logo">k-<b>N</b>i Store</div>
+  <p class="footer-desc">Votre boutique de confiance à Yaoundé. Qualité garantie, livraisons partout au Cameroun.</p>
+  <div class="footer-contacts">
+    <div class="footer-contact"><i class="fas fa-phone"></i> Orange : 695 072 759</div>
+    <div class="footer-contact"><i class="fas fa-phone"></i> MTN : 670 695 946</div>
+    <div class="footer-contact"><i class="fab fa-whatsapp"></i> WhatsApp : 695 072 759</div>
+    <div class="footer-contact"><i class="fas fa-map-marker-alt"></i> Yaoundé, Cameroun</div>
   </div>
   <div class="footer-bottom">© 2026 k-Ni Store — Tous droits réservés · Yaoundé, Cameroun</div>
 </footer>
 
-<!-- BARRE NAV BAS -->
+<!-- NAV BAS -->
 <nav class="mob-nav" aria-label="Navigation principale">
   <div class="mob-nav-inner">
-    <a href="/home" class="mob-btn active" aria-label="Accueil">
-      <i class="fas fa-home"></i><span>Accueil</span>
-    </a>
-    <a href="/shop" class="mob-btn" aria-label="Boutique">
-      <i class="fas fa-store"></i><span>Boutique</span>
-    </a>
-    <a href="https://wa.me/237695072759" target="_blank" class="mob-btn" aria-label="WhatsApp">
-      <i class="fab fa-whatsapp"></i><span>WhatsApp</span>
-    </a>
-    <button class="mob-btn" onclick="window.location='/shop#cart'" aria-label="Panier">
-      <i class="fas fa-shopping-cart"></i><span>Panier</span>
-    </button>
-    <a href="/shop" class="mob-btn" aria-label="Compte">
-      <i class="fas fa-user"></i><span>Compte</span>
-    </a>
+    <a href="/home" class="mob-btn active" aria-label="Accueil"><i class="fas fa-home"></i><span>Accueil</span></a>
+    <a href="/shop" class="mob-btn" onclick="sessionStorage.setItem('kni_from_home','1')"><i class="fas fa-store"></i><span>Boutique</span></a>
+    <a href="https://wa.me/237695072759" target="_blank" class="mob-btn"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></a>
+    <button class="mob-btn" onclick="window.location='/shop#cart'"><i class="fas fa-shopping-cart"></i><span>Panier</span></button>
+    <a href="/shop" class="mob-btn" onclick="sessionStorage.setItem('kni_from_home','1')"><i class="fas fa-user"></i><span>Compte</span></a>
   </div>
 </nav>
 
-<!-- BOUTON WA FLOTTANT -->
-<a href="https://wa.me/237695072759?text=Bonjour%20k-Ni%20Store%20!%20Je%20voudrais%20commander." target="_blank" class="wa-float" aria-label="Commander via WhatsApp">
+<a href="https://wa.me/237695072759?text=Bonjour%20k-Ni%20Store%20!%20Je%20voudrais%20commander." target="_blank" class="wa-float" aria-label="WhatsApp">
   <i class="fab fa-whatsapp"></i>
 </a>
-
-<!-- TOASTS -->
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   FLYERS CAROUSEL — Chargement dynamique depuis l'API
-   ═══════════════════════════════════════════════════════════════ */
+/* ── UTILITAIRES ── */
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function showToast(msg){var c=document.getElementById('toastContainer');if(!c)return;var t=document.createElement('div');t.className='toast';t.textContent=msg;c.appendChild(t);setTimeout(function(){t.remove();},2800);}
 
-let flyerData    = [];
-let flyerIdx     = 0;
-let flyerTimer   = null;
-let flyerTouchX  = 0;
-let flyerTouchDx = 0;
-const FLYER_DELAY = 4500; // ms entre chaque slide
-
-async function loadFlyers() {
-  try {
-    const r = await fetch('/shop/api/public/flyers');
-    const d = await r.json();
-    if (d.success && d.flyers && d.flyers.length > 0) {
-      flyerData = d.flyers;
-      renderFlyers();
-    } else {
-      // Fallback : afficher un slide par défaut si aucun flyer configuré
-      renderFlyersFallback();
-    }
-  } catch(e) {
-    renderFlyersFallback();
+/* ── COUNTDOWN ── */
+(function(){
+  function deadline(){var d=new Date();d.setHours(23,59,59,0);return d;}
+  var end=deadline();
+  function tick(){
+    var diff=end-new Date();if(diff<=0){end=deadline();return;}
+    var h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+    var pad=function(n){return String(n).padStart(2,'0');};
+    var ch=document.getElementById('cdH'),cm=document.getElementById('cdM'),cs=document.getElementById('cdS');
+    if(ch)ch.textContent=pad(h);if(cm)cm.textContent=pad(m);if(cs)cs.textContent=pad(s);
   }
+  tick();setInterval(tick,1000);
+})();
+
+/* ── FLYERS ── */
+var flyerData=[],flyerIdx=0,flyerTimer=null,flyerTouchX=0,flyerTouchDx=0;
+var FLYER_DELAY=4500;
+async function loadFlyers(){
+  try{
+    var r=await fetch('/shop/api/public/flyers'),d=await r.json();
+    if(d.success&&d.flyers&&d.flyers.length>0){flyerData=d.flyers;renderFlyers();if(typeof window._heroUpdateFromFlyers==='function')window._heroUpdateFromFlyers(d.flyers);}
+    else renderFlyersFallback();
+  }catch(e){renderFlyersFallback();}
 }
-
-function renderFlyers() {
-  const track  = document.getElementById('flyerTrack');
-  const dots   = document.getElementById('flyerDots');
-  const thumbs = document.getElementById('flyerThumbs');
-  if (!track) return;
-
-  // Slides
-  track.innerHTML = flyerData.map((f, i) => `
-    <div class="flyer-slide" onclick="flyerClickSlide(${i})">
-      <img src="${f.url}"
-           alt="${escHtml(f.label)}"
-           loading="${i === 0 ? 'eager' : 'lazy'}"
-           fetchpriority="${i === 0 ? 'high' : 'auto'}"
-           decoding="async"
-           onerror="this.parentNode.style.background='linear-gradient(135deg,#003d27,#00b074)';this.style.display='none'">
-      <div class="flyer-overlay"><h3>${escHtml(f.label)}</h3></div>
-    </div>
-  `).join('');
-
-  // Dots
-  if (dots) {
-    dots.innerHTML = flyerData.map((_, i) =>
-      `<button class="flyer-dot${i===0?' active':''}" onclick="flyerGoTo(${i})" aria-label="Slide ${i+1}"></button>`
-    ).join('');
-  }
-
-  // Vignettes
-  if (thumbs) {
-    thumbs.innerHTML = flyerData.map((f, i) => `
-      <div class="flyer-thumb${i===0?' active':''}" onclick="flyerGoTo(${i})" title="${escHtml(f.label)}">
-        <img src="${f.url}" alt="${escHtml(f.label)}" loading="lazy" decoding="async"
-             onerror="this.style.background='var(--green3)'">
-      </div>
-    `).join('');
-  }
-
-  flyerIdx = 0;
-  flyerUpdateUI();
-  flyerStartAuto();
+function renderFlyers(){
+  var track=document.getElementById('flyerTrack'),dots=document.getElementById('flyerDots'),thumbs=document.getElementById('flyerThumbs');
+  if(!track)return;
+  track.innerHTML=flyerData.map(function(f,i){return '<div class="flyer-slide" onclick="flyerClickSlide('+i+')"><img src="'+f.url+'" alt="'+escHtml(f.label)+'" loading="'+(i===0?'eager':'lazy')+'" decoding="async" onerror="this.parentNode.style.background=\'linear-gradient(135deg,#001a10,#00c076)\';this.style.display=\'none\'"><div class="flyer-overlay"><h3>'+escHtml(f.label)+'</h3></div></div>';}).join('');
+  if(dots)dots.innerHTML=flyerData.map(function(_,i){return '<button class="flyer-dot'+(i===0?' active':'')+'" onclick="flyerGoTo('+i+')" aria-label="Slide '+(i+1)+'"></button>';}).join('');
+  if(thumbs)thumbs.innerHTML=flyerData.map(function(f,i){return '<div class="flyer-thumb'+(i===0?' active':'')+'" onclick="flyerGoTo('+i+')" title="'+escHtml(f.label)+'"><img src="'+f.url+'" alt="'+escHtml(f.label)+'" loading="lazy" decoding="async" onerror="this.style.background=\'#e8faf2\'"></div>';}).join('');
+  flyerIdx=0;flyerUpdateUI();flyerStartAuto();
 }
-
-function renderFlyersFallback() {
-  const track = document.getElementById('flyerTrack');
-  if (!track) return;
-  // Slide de bienvenue par défaut
-  track.innerHTML = `
-    <div class="flyer-slide" onclick="window.location='/shop'">
-      <div style="aspect-ratio:16/7;background:linear-gradient(135deg,#003d27 0%,#00b074 60%,#00d4aa 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:2rem;text-align:center">
-        <div style="font-size:3rem">🛍️</div>
-        <div style="color:#fff;font-size:1.3rem;font-weight:900">Bienvenue chez k-Ni Store</div>
-        <div style="color:rgba(255,255,255,.85);font-size:.9rem">Découvrez nos produits</div>
-        <div style="background:#fff;color:#00875a;padding:.55rem 1.4rem;border-radius:10px;font-weight:800;font-size:.95rem">Voir la boutique →</div>
-      </div>
-    </div>`;
-  document.getElementById('flyerDots').innerHTML = '';
-  document.getElementById('flyerThumbs').innerHTML = '';
+function renderFlyersFallback(){
+  var track=document.getElementById('flyerTrack');if(!track)return;
+  var imgs=['https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&q=80&auto=format&fit=crop','https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80&auto=format&fit=crop','https://images.unsplash.com/photo-1491933382434-500287f9b54b?w=1200&q=80&auto=format&fit=crop','https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=1200&q=80&auto=format&fit=crop'];
+  track.innerHTML='<div class="flyer-slide" onclick="sessionStorage.setItem(\'kni_from_home\',\'1\');window.location=\'/shop\'" style="position:relative;overflow:hidden"><div id="welcomeBgSlides" style="position:absolute;inset:0;z-index:0"></div><div style="position:absolute;inset:0;z-index:1;background:linear-gradient(135deg,rgba(0,26,16,.72) 0%,rgba(0,192,118,.48) 100%)"></div><div style="aspect-ratio:16/7;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:2rem;text-align:center;position:relative;z-index:2"><div style="font-size:3rem">🛍️</div><div style="color:#fff;font-size:1.35rem;font-weight:900;text-shadow:0 2px 14px rgba(0,0,0,.35)">Bienvenue chez k-Ni Store</div><div style="color:rgba(255,255,255,.9);font-size:.9rem">Électronique · Mode · Beauté</div><div style="background:#fff;color:#00875a;padding:.55rem 1.5rem;border-radius:12px;font-weight:900;font-size:.95rem;margin-top:.5rem">Voir la boutique →</div></div></div>';
+  document.getElementById('flyerDots').innerHTML='';document.getElementById('flyerThumbs').innerHTML='';
+  var bgC=document.getElementById('welcomeBgSlides');
+  if(bgC){var bgS=imgs.map(function(url,i){var d=document.createElement('div');d.style.cssText='position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease-in-out;';if(i===0)d.style.animation='heroBgKen 8s ease-in-out infinite';d.style.backgroundImage='url('+url+')';bgC.appendChild(d);return d;});bgS[0].style.opacity='0.35';var wI=0;setInterval(function(){bgS[wI].style.opacity='0';bgS[wI].style.animation='';wI=(wI+1)%bgS.length;bgS[wI].style.opacity='0.35';bgS[wI].style.animation='heroBgKen 8s ease-in-out infinite';},5000);}
 }
-
-function flyerClickSlide(i) {
-  if (flyerData[i] && flyerData[i].link) {
-    window.location = flyerData[i].link;
-  }
+function flyerClickSlide(i){if(flyerData[i]&&flyerData[i].link)window.location=flyerData[i].link;}
+function flyerGoTo(i){flyerIdx=i;flyerUpdateUI();flyerResetAuto();}
+function flyerGo(dir){flyerIdx=(flyerIdx+dir+Math.max(flyerData.length,1))%Math.max(flyerData.length,1);flyerUpdateUI();flyerResetAuto();}
+function flyerUpdateUI(){
+  var track=document.getElementById('flyerTrack');if(track)track.style.transform='translateX(-'+(flyerIdx*100)+'%)';
+  document.querySelectorAll('.flyer-dot').forEach(function(d,i){d.classList.toggle('active',i===flyerIdx);});
+  document.querySelectorAll('.flyer-thumb').forEach(function(t,i){t.classList.toggle('active',i===flyerIdx);if(i===flyerIdx)t.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});});
+  var prog=document.getElementById('flyerProgress');
+  if(prog){prog.style.transition='none';prog.style.width='0%';requestAnimationFrame(function(){prog.style.transition='width '+FLYER_DELAY+'ms linear';prog.style.width='100%';});}
 }
+function flyerStartAuto(){clearInterval(flyerTimer);if(flyerData.length<=1)return;flyerTimer=setInterval(function(){flyerIdx=(flyerIdx+1)%flyerData.length;flyerUpdateUI();},FLYER_DELAY);}
+function flyerResetAuto(){clearInterval(flyerTimer);flyerStartAuto();}
+function flyerTouchStart(e){flyerTouchX=e.touches[0].clientX;flyerTouchDx=0;}
+function flyerTouchMove(e){flyerTouchDx=e.touches[0].clientX-flyerTouchX;if(Math.abs(flyerTouchDx)>8)e.preventDefault();}
+function flyerTouchEnd(e){if(Math.abs(flyerTouchDx)>45)flyerGo(flyerTouchDx<0?1:-1);flyerTouchDx=0;}
+var fc=document.getElementById('flyerCarousel');
+if(fc){fc.addEventListener('mouseenter',function(){clearInterval(flyerTimer);});fc.addEventListener('mouseleave',flyerStartAuto);}
 
-function flyerGoTo(i) {
-  flyerIdx = i;
-  flyerUpdateUI();
-  flyerResetAuto();
-}
-
-function flyerGo(dir) {
-  flyerIdx = (flyerIdx + dir + flyerData.length) % flyerData.length;
-  flyerUpdateUI();
-  flyerResetAuto();
-}
-
-function flyerUpdateUI() {
-  const track = document.getElementById('flyerTrack');
-  if (track) track.style.transform = `translateX(-${flyerIdx * 100}%)`;
-
-  // Dots
-  document.querySelectorAll('.flyer-dot').forEach((d, i) =>
-    d.classList.toggle('active', i === flyerIdx));
-
-  // Thumbs
-  document.querySelectorAll('.flyer-thumb').forEach((t, i) => {
-    t.classList.toggle('active', i === flyerIdx);
-    if (i === flyerIdx) t.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'nearest'});
-  });
-
-  // Progress bar
-  const prog = document.getElementById('flyerProgress');
-  if (prog) {
-    prog.style.transition = 'none';
-    prog.style.width = '0%';
-    requestAnimationFrame(() => {
-      prog.style.transition = `width ${FLYER_DELAY}ms linear`;
-      prog.style.width = '100%';
-    });
-  }
-}
-
-function flyerStartAuto() {
-  clearInterval(flyerTimer);
-  if (flyerData.length <= 1) return;
-  flyerTimer = setInterval(() => {
-    flyerIdx = (flyerIdx + 1) % flyerData.length;
-    flyerUpdateUI();
-  }, FLYER_DELAY);
-}
-
-function flyerResetAuto() {
-  clearInterval(flyerTimer);
-  flyerStartAuto();
-}
-
-/* Touch swipe */
-function flyerTouchStart(e) { flyerTouchX = e.touches[0].clientX; flyerTouchDx = 0; }
-function flyerTouchMove(e)  {
-  flyerTouchDx = e.touches[0].clientX - flyerTouchX;
-  if (Math.abs(flyerTouchDx) > 8) e.preventDefault();
-}
-function flyerTouchEnd(e) {
-  if (Math.abs(flyerTouchDx) > 45) {
-    flyerGo(flyerTouchDx < 0 ? 1 : -1);
-  }
-  flyerTouchDx = 0;
-}
-
-/* Pause au hover */
-document.getElementById('flyerCarousel')?.addEventListener('mouseenter', () => clearInterval(flyerTimer));
-document.getElementById('flyerCarousel')?.addEventListener('mouseleave', () => flyerStartAuto());
-
-/* ═══════════════════════════════════════════════════════════════
-   PRODUITS VEDETTES
-   ═══════════════════════════════════════════════════════════════ */
-async function loadFeatured() {
-  const grid = document.getElementById('featuredGrid');
-  try {
-    const r = await fetch('/shop/api/public/featured');
-    const d = await r.json();
-    if (!d.success || !d.products.length) {
-      if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted);font-size:.9rem">Aucun produit disponible</div>';
-      return;
-    }
-    // Mettre à jour le compteur hero
-    const el = document.getElementById('heroProdsCount');
-    if (el && d.products.length) el.textContent = d.products.length + '+';
-
-    if (!grid) return;
-    grid.innerHTML = d.products.map((p, idx) => {
-      const price = p.price ? p.price.toLocaleString('fr-FR') + ' XAF' : 'Sur devis';
-      const oldP  = p.original_price && p.original_price > p.price
-        ? `<span class="fp-old">${p.original_price.toLocaleString('fr-FR')} XAF</span>` : '';
-      const disc  = p.original_price && p.original_price > p.price
-        ? `<span class="fp-disc">-${Math.round((1-p.price/p.original_price)*100)}%</span>` : '';
-      const badge = p.badge === 'hot'  ? '<span class="fp-badge fp-badge-hot">🔥 Top</span>'  :
-                    p.badge === 'new'  ? '<span class="fp-badge fp-badge-new">✨ Nouveau</span>' :
-                    p.badge === 'promo'? '<span class="fp-badge fp-badge-promo">🏷 Promo</span>' : '';
-      const img   = p.image_url
-        ? `<img class="fp-img" src="${p.image_url}" alt="${escHtml(p.name)}"
-                loading="${idx < 4 ? 'eager' : 'lazy'}" decoding="async"
-                fetchpriority="${idx < 2 ? 'high' : 'auto'}"
-                onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
-        : '';
-      return `
-        <a class="fp-card" href="/shop" onclick="sessionStorage.setItem('openProd','${p.id}');return true"
-           style="animation-delay:${idx * 0.06}s">
-          <div class="fp-imgwrap">
-            ${img}
-            <div class="fp-img-placeholder" style="display:${p.image_url?'none':'flex'}">
-              <i class="fas fa-box-open"></i>
-            </div>
-            ${badge}
-          </div>
-          <div class="fp-body">
-            <span class="fp-cat">${escHtml(p.category||'')}</span>
-            <div class="fp-name">${escHtml(p.name)}</div>
-            <div>
-              <span class="fp-price">${price}</span>${oldP}${disc}
-            </div>
-            <button class="fp-btn" onclick="event.preventDefault();event.stopPropagation();addToCartHome(${p.id},'${escHtml(p.name)}',${p.price},'${p.image_url||''}')">
-              <i class="fas fa-cart-plus"></i>
-              ${p.stock === 0 ? 'Épuisé' : 'Ajouter'}
-            </button>
-          </div>
-        </a>`;
+/* ── PRODUITS ── */
+async function loadFeatured(){
+  var grid=document.getElementById('featuredGrid');
+  try{
+    var r=await fetch('/shop/api/public/featured'),d=await r.json();
+    if(!d.success||!d.products.length){if(grid)grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted);font-size:.9rem">Aucun produit disponible</div>';return;}
+    var el=document.getElementById('heroProdsCount');if(el&&d.products.length)el.textContent=d.products.length+'+';
+    var flashProds=d.products.filter(function(p){return p.original_price&&p.original_price>p.price&&((p.original_price-p.price)/p.original_price)>=0.1;});
+    if(flashProds.length>=2){renderFlashDeals(flashProds);document.getElementById('flashSection').style.display='';}
+    if(!grid)return;
+    grid.innerHTML=d.products.map(function(p,idx){
+      var price=p.price?p.price.toLocaleString('fr-FR')+' XAF':'Sur devis';
+      var oldP=p.original_price&&p.original_price>p.price?'<span class="fp-old">'+p.original_price.toLocaleString('fr-FR')+' XAF</span>':'';
+      var disc=p.original_price&&p.original_price>p.price?'<span class="fp-disc">-'+Math.round((1-p.price/p.original_price)*100)+'%</span>':'';
+      var badge=p.badge==='hot'?'<span class="fp-badge fp-badge-hot">🔥 Top</span>':p.badge==='new'?'<span class="fp-badge fp-badge-new">✨ Nouveau</span>':p.badge==='promo'?'<span class="fp-badge fp-badge-promo">🏷 Promo</span>':'';
+      var img=p.image_url?'<img class="fp-img" src="'+p.image_url+'" alt="'+escHtml(p.name)+'" loading="'+(idx<4?'eager':'lazy')+'" decoding="async" fetchpriority="'+(idx<2?'high':'auto')+'" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">':'';
+      return '<a class="fp-card" href="/shop" onclick="sessionStorage.setItem(\'openProd\',\''+p.id+'\');return true" style="animation-delay:'+(idx*.06)+'s"><div class="fp-imgwrap">'+img+'<div class="fp-img-placeholder" style="display:'+(p.image_url?'none':'flex')+'"><i class="fas fa-box-open"></i></div>'+badge+'</div><div class="fp-body"><span class="fp-cat">'+escHtml(p.category||'')+'</span><div class="fp-name">'+escHtml(p.name)+'</div><div><span class="fp-price">'+price+'</span>'+oldP+disc+'</div><button class="fp-btn" onclick="event.preventDefault();event.stopPropagation();addToCartHome('+p.id+',\''+escHtml(p.name)+'\','+p.price+',\''+(p.image_url||'')+'\')"><i class="fas fa-cart-plus"></i>'+(p.stock===0?'Épuisé':'Ajouter')+'</button></div></a>';
     }).join('');
-  } catch(e) {
-    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted)">Erreur de chargement</div>';
-  }
+  }catch(e){if(grid)grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted)">Erreur de chargement</div>';}
 }
 
-function addToCartHome(pid, name, price, img) {
-  // Stocker dans sessionStorage et rediriger vers /shop pour ajouter au panier
-  sessionStorage.setItem('cartPending', JSON.stringify({pid, name, price, img}));
+function renderFlashDeals(prods){
+  var grid=document.getElementById('flashGrid');if(!grid)return;
+  grid.innerHTML=prods.slice(0,8).map(function(p,i){
+    var disc=Math.round((1-p.price/p.original_price)*100);
+    var stockPct=p.stock>0?Math.min(100,Math.max(10,p.stock/50*100)):5;
+    var img=p.image_url?'<img class="flash-img" src="'+p.image_url+'" alt="'+escHtml(p.name)+'" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">':'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem">🛍️</div>';
+    return '<a class="flash-card" href="/shop" onclick="sessionStorage.setItem(\'openProd\',\''+p.id+'\');return true" style="animation-delay:'+(i*.08)+'s"><div class="flash-imgwrap">'+img+'<div class="flash-disc-badge">-'+disc+'%</div></div><div class="flash-body"><div class="flash-name">'+escHtml(p.name)+'</div><div class="flash-price">'+p.price.toLocaleString('fr-FR')+' XAF</div><span class="flash-old">'+p.original_price.toLocaleString('fr-FR')+' XAF</span><div class="flash-stock-bar"><div class="flash-stock-fill" style="width:'+stockPct+'%"></div></div><div class="flash-stock-txt">'+(p.stock<10&&p.stock>0?'⚠️ Plus que '+p.stock+'!':p.stock===0?'Épuisé':'')+'</div></div></a>';
+  }).join('');
+}
+
+function addToCartHome(pid,name,price,img){
+  sessionStorage.setItem('cartPending',JSON.stringify({pid:pid,name:name,price:price,img:img}));
   showToast('Redirection vers la boutique…');
-  setTimeout(() => { window.location = '/shop'; }, 800);
+  setTimeout(function(){window.location='/shop';},800);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   UTILITAIRES
-   ═══════════════════════════════════════════════════════════════ */
-function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function showToast(msg) {
-  const c = document.getElementById('toastContainer');
-  if (!c) return;
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 2800);
-}
-
-/* Chargement initial */
-document.addEventListener('DOMContentLoaded', function() {
-  loadFlyers();
-  loadFeatured();
-  // Sur grand écran afficher les étapes supplémentaires "comment commander"
-  if (window.innerWidth >= 900) {
-    document.querySelectorAll('.how-step-extra').forEach(el => el.style.display = '');
+/* ── HERO BG ── */
+(function(){
+  var HERO_IMAGES=['https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=1400&q=80&auto=format&fit=crop','https://images.unsplash.com/photo-1445205170230-053b83016050?w=1400&q=80&auto=format&fit=crop','https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1400&q=80&auto=format&fit=crop','https://images.unsplash.com/photo-1491933382434-500287f9b54b?w=1400&q=80&auto=format&fit=crop','https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=1400&q=80&auto=format&fit=crop'];
+  var PROMO_IMAGES=['https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=900&q=75&auto=format&fit=crop','https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=900&q=75&auto=format&fit=crop','https://images.unsplash.com/photo-1483985988355-763728e1935b?w=900&q=75&auto=format&fit=crop'];
+  var heroIdx=0,heroTimer=null,heroSlides=[];
+  function initHeroBg(images){
+    var c=document.getElementById('heroBgSlides');if(!c||!images||!images.length)return;
+    HERO_IMAGES=images;c.innerHTML='';
+    heroSlides=images.map(function(url,i){var d=document.createElement('div');d.className='hero-bg-slide'+(i===0?' active':'');d.style.backgroundImage='url('+url+')';c.appendChild(d);return d;});
+    heroIdx=0;new Image().src=images[0];startHeroBg();
   }
+  function startHeroBg(){clearInterval(heroTimer);if(heroSlides.length<=1)return;heroTimer=setInterval(function(){heroSlides[heroIdx].classList.remove('active');heroIdx=(heroIdx+1)%heroSlides.length;heroSlides[heroIdx].classList.add('active');},5500);}
+  function initPromoBg(images){
+    var bg=document.getElementById('promoBannerBg');if(!bg||!images||!images.length)return;
+    var pi=0;bg.style.backgroundImage='url('+images[0]+')';bg.classList.add('active');
+    if(images.length>1){setInterval(function(){bg.classList.remove('active');setTimeout(function(){pi=(pi+1)%images.length;bg.style.backgroundImage='url('+images[pi]+')';bg.classList.add('active');},700);},6000);}
+  }
+  document.addEventListener('DOMContentLoaded',function(){initHeroBg(HERO_IMAGES);initPromoBg(PROMO_IMAGES);});
+  window._heroUpdateFromFlyers=function(flyers){
+    if(!flyers||!flyers.length)return;
+    var urls=flyers.map(function(f){return f.url;}).filter(Boolean);
+    if(urls.length>=2){clearInterval(heroTimer);initHeroBg(urls);}
+  };
+})();
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded',function(){
+  loadFlyers();loadFeatured();
+  if(window.innerWidth>=900)document.querySelectorAll('.how-step-extra').forEach(function(el){el.style.display='';});
 });
+</script>
+
+<!-- CHAT ASSISTANT -->
+<button id="kniChatFab" onclick="kniToggleChat()" aria-label="Assistant k-Ni" style="display:none">
+  <span>🤖</span>
+  <span class="kni-chat-badge" id="kniChatBadge">1</span>
+</button>
+<div id="kniChatPanel" role="dialog" aria-label="Assistant k-Ni Store">
+  <div class="kni-chat-hd">
+    <div class="kni-chat-hd-avatar">🤖</div>
+    <div class="kni-chat-hd-info">
+      <div class="kni-chat-hd-name">Assistant k-Ni</div>
+      <div class="kni-chat-hd-status">En ligne maintenant</div>
+    </div>
+    <button class="kni-chat-close" onclick="kniCloseChat()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="kni-chat-body" id="kniChatBody">
+    <div class="kni-msg kni-msg-bot">
+      <div class="kni-msg-av">🤖</div>
+      <div class="kni-msg-bubble">👋 Bienvenue chez <strong>k-Ni Store</strong> ! Comment puis-je vous aider ?</div>
+    </div>
+  </div>
+  <div class="kni-chat-suggestions" id="kniChatSuggestions">
+    <button class="kni-sug-btn" onclick="kniSugClick(this,'📍 Localisation & Contact')"><i class="fas fa-map-marker-alt"></i>Localisation / Contact</button>
+    <button class="kni-sug-btn" onclick="kniSugClick(this,'💬 Parler à un agent')"><i class="fas fa-headset"></i>Discuter avec un Agent</button>
+    <button class="kni-sug-btn" onclick="kniSugClick(this,'❓ FAQ / Aide')"><i class="fas fa-question-circle"></i>FAQ / Aide</button>
+    <button class="kni-sug-btn" onclick="kniSugClick(this,'🔍 Recherche rapide')"><i class="fas fa-search"></i>Recherche de produit</button>
+    <button class="kni-sug-btn" onclick="kniSugClick(this,'🛠️ Problèmes & Solutions')"><i class="fas fa-tools"></i>Problèmes &amp; Solutions</button>
+  </div>
+  <div class="kni-chat-input-row">
+    <input class="kni-chat-inp" id="kniChatInp" type="text" placeholder="Tapez votre message…" maxlength="200" onkeydown="if(event.key==='Enter')kniSendMsg()">
+    <button class="kni-chat-send" onclick="kniSendMsg()"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+<script>
+(function(){
+  var _chatOpen=false,_chatShown=false;
+  var SK_SEEN='kni_chat_seen_v2';
+  var RESPONSES={
+    localisation:{msg:'📍 Nous sommes à <strong>Yaoundé, Cameroun</strong>.<br>📞 Orange&nbsp;: <a href="tel:+237695072759" style="color:#00c076;font-weight:700">695 072 759</a><br>📞 MTN&nbsp;: <a href="tel:+237670695946" style="color:#00c076;font-weight:700">670 695 946</a><br>💬 <a href="https://wa.me/237695072759" target="_blank" style="color:#25d366;font-weight:700">WhatsApp →</a>',suggestions:['🏠 Voir les produits','💬 Parler à un agent','❓ FAQ']},
+    agent:{msg:'💬 Je vous mets en contact avec un agent k-Ni !<br><a href="https://wa.me/237695072759" target="_blank" style="display:inline-flex;align-items:center;gap:.4rem;background:#25d366;color:#fff;padding:.45rem 1rem;border-radius:8px;font-weight:700;text-decoration:none;margin-top:.4rem;font-size:.82rem">💬 Ouvrir WhatsApp</a>',suggestions:['📍 Localisation','🔍 Recherche produit']},
+    faq:{msg:'❓ <strong>FAQ :</strong><br>• 🚚 Livraison : 24-72h au Cameroun<br>• 💳 Orange Money, MTN MoMo<br>• 🔄 Retours sous 7 jours<br>• ✅ Produits garantis',suggestions:['📦 Voir les produits','💬 Parler à un agent','📍 Contact']},
+    recherche:{msg:'🔍 Visitez notre boutique pour trouver votre produit !',suggestions:['📱 Smartphones','💻 Ordinateurs','👗 Mode & Beauté'],action:function(){setTimeout(function(){window.location='/shop';},1200);}},
+    probleme:{msg:'🛠️ <br>• Commande non reçue → contactez-nous<br>• Produit défectueux → retour sous 7j',suggestions:['💬 Contacter un agent','❓ FAQ complète']},
+    default:{msg:'😊 Un agent va vous répondre bientôt via WhatsApp.',suggestions:['💬 WhatsApp','📍 Contact']}
+  };
+  var SUG_MAP={'📍 Localisation & Contact':'localisation','📍 Localisation':'localisation','💬 Parler à un agent':'agent','❓ FAQ / Aide':'faq','❓ FAQ':'faq','🔍 Recherche rapide':'recherche','🛠️ Problèmes & Solutions':'probleme','📱 Smartphones':'recherche','💻 Ordinateurs':'recherche','👗 Mode & Beauté':'recherche','🏠 Voir les produits':'recherche','📦 Voir les produits':'recherche','💬 WhatsApp':'agent','💬 Contacter un agent':'agent','❓ FAQ complète':'faq'};
+  window.kniToggleChat=function(){_chatOpen?kniCloseChat():kniOpenChat();};
+  window.kniOpenChat=function(){_chatOpen=true;var p=document.getElementById('kniChatPanel'),b=document.getElementById('kniChatBadge');if(p){p.classList.add('open');p.style.display='flex';}if(b)b.style.display='none';_chatShown=true;sessionStorage.setItem(SK_SEEN,'1');setTimeout(function(){var body=document.getElementById('kniChatBody');if(body)body.scrollTop=body.scrollHeight;},100);};
+  window.kniCloseChat=function(){_chatOpen=false;var p=document.getElementById('kniChatPanel');if(p)p.classList.remove('open');};
+  function kniAddMsg(html,isBot,delay){delay=delay||0;setTimeout(function(){var body=document.getElementById('kniChatBody');if(!body)return;var div=document.createElement('div');div.className='kni-msg '+(isBot?'kni-msg-bot':'kni-msg-user');div.innerHTML=isBot?'<div class="kni-msg-av">🤖</div><div class="kni-msg-bubble">'+html+'</div>':'<div class="kni-msg-bubble">'+html+'</div>';body.appendChild(div);body.scrollTop=body.scrollHeight;},delay);}
+  function kniSetSuggestions(items){var c=document.getElementById('kniChatSuggestions');if(!c)return;c.innerHTML=items.map(function(label){return '<button class="kni-sug-btn" onclick="kniSugClick(this,\''+label.replace(/'/g,"\\'")+'\')"><i style="font-size:.9rem">'+label.charAt(0)+'</i>'+label.slice(2)+'</button>';}).join('');}
+  window.kniSugClick=function(btn,label){kniAddMsg(label,false);var c=document.getElementById('kniChatSuggestions');if(c)c.innerHTML='<div style="text-align:center;padding:.5rem;color:#9ca3af;font-size:.78rem">⏳ En cours de réponse…</div>';var cat=SUG_MAP[label]||'default',resp=RESPONSES[cat]||RESPONSES.default;kniAddMsg(resp.msg,true,850);setTimeout(function(){if(resp.suggestions)kniSetSuggestions(resp.suggestions);else kniSetSuggestions(['💬 Agent','🏠 Boutique']);if(resp.action)resp.action();},900);};
+  window.kniSendMsg=function(){var inp=document.getElementById('kniChatInp');if(!inp||!inp.value.trim())return;var msg=inp.value.trim();inp.value='';kniAddMsg(msg,false);var lower=msg.toLowerCase(),cat='default';if(/localisa|contact|adresse|où|tel|appel/.test(lower))cat='localisation';else if(/agent|humain|parler/.test(lower))cat='agent';else if(/faq|question|aide|comment/.test(lower))cat='faq';else if(/cherche|trouve|produit/.test(lower))cat='recherche';else if(/probl|panne|défectu|retour/.test(lower))cat='probleme';var resp=RESPONSES[cat];kniAddMsg(resp.msg,true,900);setTimeout(function(){if(resp.suggestions)kniSetSuggestions(resp.suggestions);},950);};
+  document.addEventListener('DOMContentLoaded',function(){
+    var fab=document.getElementById('kniChatFab');
+    setTimeout(function(){if(fab){fab.style.display='flex';}},3000);
+    if(!sessionStorage.getItem(SK_SEEN)){setTimeout(function(){if(!_chatShown){kniOpenChat();_chatOpen=true;}},12000);}
+  });
+})();
 </script>
 </body>
 </html>

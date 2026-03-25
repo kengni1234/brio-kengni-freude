@@ -479,6 +479,74 @@ button .emoji, span.emoji, [data-emoji]{
 /* ── CORRECTIF FILTRE PRODUIT ADMIN : évite reset animation ── */
 .pcard.admin-hidden { display:none!important; }
 
+/* ══ HAMBURGER + DRAWER MOBILE ══ */
+.sa-hamburger{
+  display:none;
+  position:fixed;top:.75rem;left:.75rem;z-index:1200;
+  width:42px;height:42px;border-radius:12px;
+  background:var(--secondary-color);
+  border:1px solid var(--border-color);
+  color:var(--primary-color);
+  font-size:1.1rem;cursor:pointer;
+  align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  transition:.18s;flex-shrink:0;
+}
+.sa-hamburger:active{transform:scale(.92)}
+@media(max-width:960px){.sa-hamburger{display:flex}}
+
+/* Overlay sombre derrière le drawer */
+.sa-drawer-overlay{
+  display:none;position:fixed;inset:0;z-index:1100;
+  background:rgba(0,0,0,.52);backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+  transition:opacity .28s;opacity:0;
+}
+.sa-drawer-overlay.open{display:block;opacity:1}
+
+/* Drawer latéral qui s'ouvre */
+@media(max-width:960px){
+  .sa-nav{
+    display:flex!important;
+    position:fixed!important;left:0;top:0;bottom:0;
+    width:min(280px,85vw)!important;
+    z-index:1150;
+    transform:translateX(-100%);
+    transition:transform .3s cubic-bezier(.32,1.1,.64,1);
+    box-shadow:6px 0 30px rgba(0,0,0,.4);
+    overflow-y:auto;
+  }
+  .sa-nav.drawer-open{transform:translateX(0)!important}
+  /* Ajuster le padding-top de la nav pour ne pas être sous le hamburger */
+  .sa-nav .sa-green-banner{padding-top:1.1rem}
+}
+
+/* Grille tablette — 3 colonnes produits */
+@media(min-width:601px) and (max-width:960px){
+  .pg{grid-template-columns:repeat(3,1fr)!important;gap:.8rem!important}
+  .kpis{grid-template-columns:repeat(2,1fr)!important}
+  .sa-main{padding:1.2rem!important;padding-bottom:80px!important}
+}
+
+/* Grille produits — 2 cols mobile, 3 cols tablette */
+@media(max-width:600px){
+  .pg{grid-template-columns:repeat(2,1fr)!important;gap:.6rem!important}
+}
+@media(max-width:380px){
+  .pg{grid-template-columns:repeat(1,1fr)!important}
+  .pcard-img{height:160px!important}
+}
+
+/* Titre page avec marge hamburger sur mobile */
+@media(max-width:960px){
+  .sa-main > .sec.on:first-child,
+  .sa-main > #sec-dash:first-child{
+    padding-top:.2rem;
+  }
+  /* Si le top-bar admin existe, pousser pour le hamburger */
+  .sa-top{padding-left:3.8rem!important}
+}
+
 /* ═══════════════════════════════════════════════════════════
    SHOP ADMIN — AMÉLIORATIONS DESIGN
 ═══════════════════════════════════════════════════════════ */
@@ -972,6 +1040,13 @@ button .emoji, span.emoji, [data-emoji]{
 .ap-del{background:none;border:none;cursor:pointer;color:#f87171;font-size:.85rem;margin-left:auto;padding:.2rem .4rem}
 </style>
 
+<!-- ══ HAMBURGER MOBILE ══ -->
+<button class="sa-hamburger" id="saHamburger" aria-label="Menu" onclick="toggleDrawer()">
+  <i class="fas fa-bars" id="saHamburgerIcon"></i>
+</button>
+<!-- Overlay fond sombre -->
+<div class="sa-drawer-overlay" id="saDrawerOverlay" onclick="closeDrawer()"></div>
+
 <div class="sa-root">
 <!-- ══ SIDEBAR ══ -->
 <nav class="sa-nav">
@@ -1232,7 +1307,6 @@ button .emoji, span.emoji, [data-emoji]{
 <option value="jeux">🎮 Jeux & Loisirs</option>
 <option value="alimentation">🍎 Alimentation</option>
 <option value="vehicule">🚗 Auto & Moto</option>
-<option value="sante">💊 Santé & Bien-être</option>
 <option value="papeterie">📚 Papeterie & Bureau</option>
 <option value="autre">📦 Autre</option>
 </select></div>
@@ -2106,7 +2180,6 @@ ilibAttachToProduct = async function(pid, pname){
 <option value="jeux">🎮 Jeux & Loisirs</option>
 <option value="alimentation">🍎 Alimentation</option>
 <option value="vehicule">🚗 Auto & Moto</option>
-<option value="sante">💊 Santé & Bien-être</option>
 <option value="papeterie">📚 Papeterie & Bureau</option>
 <option value="autre">📦 Autre</option>
 </select>
@@ -4062,7 +4135,38 @@ function go(n){
   if(n==='seo')        { if(typeof initSEOPanel==='function') initSEOPanel(); }
   if(n==='keywords')   { if(typeof initKeywordsPanel==='function') initKeywordsPanel(); }
   if(n==='calendar')   { if(typeof initCalendarPanel==='function') initCalendarPanel(); }
+
+  /* Fermer le drawer sur mobile après navigation */
+  closeDrawer();
 }
+
+/* ══ DRAWER HAMBURGER — Navigation mobile ══ */
+function toggleDrawer(){
+  const nav = document.querySelector('.sa-nav');
+  const overlay = document.getElementById('saDrawerOverlay');
+  const icon = document.getElementById('saHamburgerIcon');
+  if(!nav) return;
+  const isOpen = nav.classList.contains('drawer-open');
+  if(isOpen){ closeDrawer(); }
+  else {
+    nav.classList.add('drawer-open');
+    if(overlay) overlay.classList.add('open');
+    if(icon) icon.className = 'fas fa-times';
+    document.body.style.overflow = 'hidden';
+  }
+}
+function closeDrawer(){
+  const nav = document.querySelector('.sa-nav');
+  const overlay = document.getElementById('saDrawerOverlay');
+  const icon = document.getElementById('saHamburgerIcon');
+  if(!nav) return;
+  nav.classList.remove('drawer-open');
+  if(overlay) overlay.classList.remove('open');
+  if(icon) icon.className = 'fas fa-bars';
+  document.body.style.overflow = '';
+}
+/* Fermer drawer avec Echap */
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeDrawer(); });
 
 /* ══ FORM TABS ══ */
 function st(i){
@@ -6136,7 +6240,6 @@ setTimeout(()=>{ if(Object.keys(ACT_DATA).length>0){ /* already have server data
 <option value="jeux">🎮 Jeux & Loisirs</option>
 <option value="alimentation">🍎 Alimentation</option>
 <option value="vehicule">🚗 Auto & Moto</option>
-<option value="sante">💊 Santé & Bien-être</option>
 <option value="papeterie">📚 Papeterie & Bureau</option>
 <option value="autre">📦 Autre</option>
 </select>

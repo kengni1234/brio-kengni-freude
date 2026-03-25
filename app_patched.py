@@ -28,7 +28,7 @@ def generate_password_hash(password: str) -> str:
     import os as _os_h, hashlib as _hl
     salt = _os_h.urandom(32)
     # pbkdf2 : compatible PythonAnywhere free tier, aucune limite memoire
-    dk = _hl.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations=100000, dklen=64)  # PATCH: 260000→100000, toujours sécurisé NIST SP800-132
+    dk = _hl.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations=100000  # PATCH: 260000→100000, toujours sécurisé NIST SP800-132, dklen=64)
     return f"pbkdf2$v1${salt.hex()}${dk.hex()}"
 
 def check_password_hash(stored: str, password: str) -> bool:
@@ -38,7 +38,7 @@ def check_password_hash(stored: str, password: str) -> bool:
         try:
             _, _v, salt_hex, dk_hex = stored.split('$')
             salt_bytes = bytes.fromhex(salt_hex)
-            dk = _hl2.pbkdf2_hmac('sha256', password.encode('utf-8'), salt_bytes, iterations=100000, dklen=64)  # PATCH: 260000→100000, toujours sécurisé NIST SP800-132
+            dk = _hl2.pbkdf2_hmac('sha256', password.encode('utf-8'), salt_bytes, iterations=100000  # PATCH: 260000→100000, toujours sécurisé NIST SP800-132, dklen=64)
             return dk.hex() == dk_hex
         except Exception:
             return False
@@ -13876,15 +13876,20 @@ def api_ai_test():
 # ══════════════════════════════════════════════════════════════════
 # PATCH : Bibliothèque images + Performance
 # ══════════════════════════════════════════════════════════════════
-# PATCH app.py — k-Ni Store
-# ───────────────────────────────────────────────────────────────────
-# CONTENU DE CE PATCH :
-#   1. BIBLIOTHÈQUE D'IMAGES  — routes GET/POST/DELETE + attacher/détacher
-#   2. FIX suppression image produit en ligne
-#   3. PERFORMANCE             — gzip, cache JSON in-memory, SQLite optimisé
-#
-# COMMENT L'APPLIQUER :
-#   Copiez-collez le bloc "# ── INSÉRER ICI" juste AVANT la ligne :
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+═══════════════════════════════════════════════════════════════════
+PATCH app.py — k-Ni Store
+═══════════════════════════════════════════════════════════════════
+
+CONTENU DE CE PATCH :
+  1. BIBLIOTHÈQUE D'IMAGES  — routes GET/POST/DELETE + attacher/détacher
+  2. FIX suppression image produit en ligne
+  3. PERFORMANCE             — gzip, cache JSON in-memory, SQLite optimisé
+
+COMMENT L'APPLIQUER :
+  Copiez-collez le bloc "# ── INSÉRER ICI" juste AVANT la ligne :
       
 
 @app.route('/home')
@@ -13966,7 +13971,12 @@ def shop_public_featured():
 
 
 
-# ── Fin du bloc de routes publiques ──
+if __name__ == '__main__':
+  dans votre app.py (environ ligne 13864).
+
+  Le reste du fichier (if __name__ == / else: init_db()) reste intact.
+═══════════════════════════════════════════════════════════════════
+"""
 
 # ══════════════════════════════════════════════════════════════════
 #  SECTION 1 — OPTIMISATIONS PERFORMANCE GLOBALES
@@ -14329,9 +14339,6 @@ def shop_image_library_upload():
             except Exception as db_e:
                 errors.append(f"{fname}: {db_e}")
 
-        if conn:
-            try: conn.commit()  # PATCH: commit groupé ici, avant la fermeture
-            except Exception: pass
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
@@ -14339,6 +14346,9 @@ def shop_image_library_upload():
             try: conn.close()
             except Exception: pass
 
+    if conn:
+        try: conn.commit()
+        except Exception: pass
     _cache_del_prefix('img_lib:')
     if saved:
         return jsonify({'success': True, 'saved': saved, 'errors': errors})
