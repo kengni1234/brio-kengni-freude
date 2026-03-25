@@ -1618,6 +1618,7 @@ body.light-theme .main-content { background: #f1f5f9 !important; }
 
     /* ══ Vérification messages non lus ══ */
     (function checkUnreadChat() {
+        if(document.visibilityState !== 'visible') { setTimeout(checkUnreadChat, 30000); return; }
         fetch('/api/chat/messages?limit=1')
             .then(r => r.json())
             .then(data => {
@@ -1644,7 +1645,8 @@ body.light-theme .main-content { background: #f1f5f9 !important; }
     <script>
     (function(){
       var _kaInterval = setInterval(function(){
-        fetch('/api/chat/messages?limit=1', {credentials:'same-origin'})
+        if(document.visibilityState !== 'visible') return; // pause si onglet inactif
+        fetch('/api/ping', {credentials:'same-origin'})
           .then(function(r){
             if(r.status === 401 || r.status === 302){
               // Session expirée - afficher un message discret
