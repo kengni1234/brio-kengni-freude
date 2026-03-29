@@ -92,10 +92,15 @@ from datetime import date as _date
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'K3nGn1-F1n@nc3-s3cr3t-k3y-!2024#XqZ9pLmR7vBw')
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # 8h pour les admins boutique
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # PERF: 24h → moins de reconnexions forcées
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_REFRESH_EACH_REQUEST'] = False  # PERF: ne pas réécrire le cookie à chaque req
+app.config['SESSION_COOKIE_NAME'] = 'kni_session'   # PERF: nom court → moins d'octets HTTP
+
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max file size
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # PERF: 1 an cache pour fichiers statiques
+
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 
 # ── Créer les sous-dossiers d'upload nécessaires ──────────────────────────────
@@ -1635,7 +1640,7 @@ def verify_token_page():
             session.pop('pending_2fa_token',   None)
             session.pop('pending_2fa_expires', None)
             session['admin_secondary_verified'] = False  # Reset secondary check on new login
-            session.permanent = False  # Session expire a la fermeture du navigateur
+            session.permanent = True   # PERF: session persistante 24h → moins de reconnexions
 
             if is_admin_login:
                 return redirect(url_for('admin_secondary_verify'))
@@ -1692,8 +1697,14 @@ def set_cache_headers(response):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
     elif path.startswith('/shop/api/stocks'):
         response.headers['Cache-Control'] = 'public, max-age=30'
-    elif path in ('/shop',):
+    elif path in ('/shop', '/home'):
         response.headers['Cache-Control'] = 'private, max-age=60'
+        # PERF: hints de préchargement ressources critiques
+        response.headers['Link'] = (
+            '<https://cdnjs.cloudflare.com>; rel=preconnect,'
+            '<https://fonts.googleapis.com>; rel=preconnect,'
+            '<https://fonts.gstatic.com>; rel=preconnect; crossorigin'
+        )
     # ── Headers de sécurité sur toutes les réponses ──────────────────────────
     response.headers['X-Frame-Options']        = 'SAMEORIGIN'
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -13946,6 +13957,12 @@ def shop_public_flyers():
 
 @app.route('/shop/api/public/featured', methods=['GET'])
 def shop_public_featured():
+    # PERF: cache 45s pour les produits vedettes
+    _ck = 'pub_featured'
+    _cached = _cache_get(_ck)
+    if _cached is not None:
+        return _cached
+
     conn = None
     try:
         conn = get_db_connection()
