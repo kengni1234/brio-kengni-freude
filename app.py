@@ -7701,6 +7701,51 @@ def init_word_docs_db():
 init_word_docs_db()
 
 
+@app.route('/api/bloc-notes/autosave', methods=['POST'])
+@login_required
+def api_word_doc_autosave():
+    """Route dédiée sendBeacon (beforeunload) — accepte text/plain et application/json."""
+    user_id = session['user_id']
+    try:
+        raw = request.get_data(as_text=True)
+        data = json.loads(raw) if raw else {}
+    except Exception:
+        data = {}
+    doc_id  = data.get('id', '').strip()
+    title   = (data.get('title') or 'Sans titre').strip()[:255]
+    content = data.get('content', '')
+    updated = data.get('updatedAt') or datetime.now().isoformat()
+    created = data.get('createdAt') or updated
+
+    if not doc_id:
+        return '', 204
+
+    import re as _re2
+    text_plain = _re2.sub(r'<[^>]+>', ' ', content)
+    word_count = len(text_plain.split()) if text_plain.strip() else 0
+
+    conn = get_db_connection()
+    if not conn:
+        return '', 204
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM word_documents WHERE id=? AND user_id=?", (doc_id, user_id))
+        exists = cursor.fetchone()
+        if exists:
+            cursor.execute(
+                'UPDATE word_documents SET title=?, content=?, word_count=?, updated_at=? WHERE id=? AND user_id=?',
+                (title, content, word_count, updated, doc_id, user_id))
+        else:
+            cursor.execute(
+                'INSERT INTO word_documents (id, user_id, title, content, word_count, created_at, updated_at) VALUES (?,?,?,?,?,?,?)',
+                (doc_id, user_id, title, content, word_count, created, updated))
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+    return '', 204
+
 @app.route('/api/bloc-notes/save', methods=['POST'])
 @login_required
 def api_word_doc_save():
@@ -7814,6 +7859,9 @@ def api_word_doc_list():
         plain = _re.sub(r'<[^>]+>', ' ', r.get('excerpt') or '')
         plain = ' '.join(plain.split())[:200]
         r['excerpt'] = plain
+        # Normaliser les noms de champs (snake_case → les deux)
+        r['updatedAt'] = r.get('updated_at', '')
+        r['createdAt'] = r.get('created_at', '')
         docs.append(r)
 
     return jsonify({'success': True, 'docs': docs, 'total': len(docs)})
@@ -7836,7 +7884,10 @@ def api_word_doc_get(doc_id):
     conn.close()
     if not row:
         return jsonify({'success': False, 'error': 'Document non trouvé'}), 404
-    return jsonify({'success': True, 'doc': dict(row)})
+    doc = dict(row)
+    doc['updatedAt'] = doc.get('updated_at', '')
+    doc['createdAt'] = doc.get('created_at', '')
+    return jsonify({'success': True, 'doc': doc})
 
 
 # ═══════════════════════════════════════════════════════════════════

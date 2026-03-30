@@ -1468,7 +1468,7 @@ const editor = document.getElementById('wordEditor');
 const DOCS_KEY       = 'kf_docs_v3';
 const CURRENT_KEY    = 'kf_word_current_v3';
 const IDLE_DELAY     = 5 * 60 * 1000;   // 5 min
-const AUTOSAVE_DELAY = 1 * 1000;        // 1 sec après frappe
+const AUTOSAVE_DELAY = 500;              // PATCH: 500ms après frappe (réduit)
 
 // ── État ────────────────────────────────────────────────────────
 let autoSaveTimer = null;
@@ -1495,22 +1495,126 @@ function setDocs(docs) {
 }
 
 // ── Charger le doc en cours au démarrage ────────────────────────
-function loadWordDoc() {
+// ══ CHARGEMENT DEPUIS LE SERVEUR (priorité absolue) ════════════════════
+async function loadWordDoc() {
   try {
-    const cur = JSON.parse(localStorage.getItem(CURRENT_KEY) || 'null');
+    // 1️⃣ Restaurer la liste de docs depuis le serveur
+    const listRes = await fetch('/api/bloc-notes/list', { credentials: 'same-origin' });
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      if (listData.success && listData.docs && listData.docs.length > 0) {
+        // Reconstruire le store localStorage depuis le serveur
+        // (on garde uniquement le contenu court pour la liste)
+        const serverDocs = listData.docs.map(d => ({
+          id: d.id, title: d.title,
+          content: '', // chargé à la demande
+          createdAt: d.created_at, updatedAt: d.updated_at,
+          excerpt: d.excerpt, word_count: d.word_count
+        }));
+        setDocs(serverDocs);
+      }
+    }
+
+    // 2️⃣ Retrouver le dernier doc ouvert (localStorage → serveur)
+    let cur = null;
+    try { cur = JSON.parse(localStorage.getItem(CURRENT_KEY) || 'null'); } catch(e) {}
+
+    // Si on a un doc courant avec un ID, recharger depuis le serveur (fraîcheur garantie)
+    if (cur && cur.id) {
+      try {
+        const docRes = await fetch('/api/bloc-notes/get/' + encodeURIComponent(cur.id),
+                                   { credentials: 'same-origin' });
+        if (docRes.ok) {
+          const docData = await docRes.json();
+          if (docData.success && docData.doc) {
+            const d = docData.doc;
+            editor.innerHTML = d.content || '';
+            const titleEl = document.getElementById('wordDocTitle');
+            if (titleEl) titleEl.value = d.title || '';
+            currentDocId = d.id;
+            _lastContent = d.content || '';
+            // Re-sync localStorage
+            localStorage.setItem(CURRENT_KEY, JSON.stringify({
+              id: d.id, title: d.title, content: d.content,
+              savedAt: d.updated_at
+            }));
+            updateWordCount();
+            updateRibbonState();
+            renderWordFilesPanel();
+            _showSyncBadge('☁ Restauré depuis le serveur', '#00d4aa');
+            return; // chargement serveur réussi → sortir
+          }
+        }
+      } catch(e) {}
+    }
+
+    // 3️⃣ Fallback : localStorage si serveur indisponible
     if (cur && cur.content) {
       editor.innerHTML = cur.content;
       const titleEl = document.getElementById('wordDocTitle');
       if (titleEl) titleEl.value = cur.title || '';
       currentDocId = cur.id || null;
       _lastContent = cur.content;
+      _showSyncBadge('⚠ Chargé hors-ligne', '#f59e0b');
     }
+
+    // 4️⃣ Si aucun doc courant mais des docs existent sur le serveur
+    // → proposer de reprendre le dernier
+    else {
+      const docs = getDocs();
+      if (docs.length > 0 && docs[0].id) {
+        try {
+          const docRes = await fetch('/api/bloc-notes/get/' + encodeURIComponent(docs[0].id),
+                                     { credentials: 'same-origin' });
+          if (docRes.ok) {
+            const docData = await docRes.json();
+            if (docData.success && docData.doc) {
+              const d = docData.doc;
+              editor.innerHTML = d.content || '';
+              const titleEl = document.getElementById('wordDocTitle');
+              if (titleEl) titleEl.value = d.title || '';
+              currentDocId = d.id;
+              _lastContent = d.content || '';
+              localStorage.setItem(CURRENT_KEY, JSON.stringify({
+                id: d.id, title: d.title, content: d.content, savedAt: d.updated_at
+              }));
+              _showSyncBadge('📂 Dernier document restauré', '#00d4aa');
+            }
+          }
+        } catch(e) {}
+      }
+    }
+
     updateWordCount();
     updateRibbonState();
     const el = document.getElementById('sbDocCount');
     if (el) el.textContent = getDocs().length;
-  } catch(e) {}
+  } catch(e) {
+    // Fallback total localStorage
+    try {
+      const cur = JSON.parse(localStorage.getItem(CURRENT_KEY) || 'null');
+      if (cur && cur.content) {
+        editor.innerHTML = cur.content;
+        const titleEl = document.getElementById('wordDocTitle');
+        if (titleEl) titleEl.value = cur.title || '';
+        currentDocId = cur.id || null;
+        _lastContent = cur.content;
+      }
+    } catch(e2) {}
+    updateWordCount();
+    updateRibbonState();
+  }
 }
+
+function _showSyncBadge(msg, color) {
+  const el = document.getElementById('sbSyncStatus');
+  if (el) {
+    el.textContent = msg;
+    el.style.color = color || '#00d4aa';
+    setTimeout(() => { if(el.textContent === msg) el.textContent = ''; }, 4000);
+  }
+}
+
 loadWordDoc();
 
 // ══════════════════════════════════════════════════════════════════
@@ -1920,9 +2024,10 @@ function _silentAutoSave() {
   const title   = (titleEl ? titleEl.value.trim() : '');
   const content = editor.innerHTML;
 
-  // ✅ Besoin d'au moins un titre OU un contenu réel pour sauvegarder
+  // Besoin d'au moins 3 caractères de contenu réel pour sauvegarder
   const hasTitle   = title.length > 0;
-  const hasContent = content && content !== '<br>' && content.trim() !== '';
+  const plainText  = (content || '').replace(/<[^>]+>/g,' ').trim();
+  const hasContent = plainText.length >= 3;
   if (!hasTitle && !hasContent) return;
 
   const docTitle = hasTitle ? title : 'Sans titre';
@@ -1955,9 +2060,11 @@ function _silentAutoSave() {
 
   wordDocDirty = false;
   const sbSave = document.getElementById('sbSaveStatus');
+  const timeStr = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
   if (sbSave) {
-    sbSave.textContent = '✓ Auto-sauvegardé ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    sbSave.textContent = '✓ Sauvegardé ' + timeStr;
     sbSave.className   = 'sb-pill saved';
+    sbSave.title       = 'Dernière sauvegarde serveur : ' + timeStr;
   }
 }
 
@@ -2709,6 +2816,46 @@ window.addEventListener('beforeunload', e => {
 
 // Initialisation timer idle
 editor.addEventListener('input', resetIdleTimer);
+
+// ══ SAUVEGARDE GARANTIE — fermeture onglet / changement page ════════════
+window.addEventListener('beforeunload', function(e) {
+  // Sauvegarder en localStorage IMMÉDIATEMENT (sync)
+  try {
+    const titleEl = document.getElementById('wordDocTitle');
+    const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
+    const content = editor.innerHTML;
+    const plainText = content.replace(/<[^>]+>/g,' ').trim();
+    if (!plainText || plainText.length < 2) return;
+    localStorage.setItem(CURRENT_KEY, JSON.stringify({
+      id: currentDocId, title, content, savedAt: new Date().toISOString()
+    }));
+    // Envoyer en sync via sendBeacon (ne bloque pas la fermeture)
+    if (currentDocId) {
+      const payload = JSON.stringify({
+        id: currentDocId, title, content,
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      });
+      navigator.sendBeacon && navigator.sendBeacon('/api/bloc-notes/save',
+        new Blob([payload], { type: 'application/json' }));
+    }
+  } catch(ex) {}
+});
+
+// Sauvegarde quand l'onglet passe en arrière-plan (changement d'onglet, Alt+Tab)
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden && wordDocDirty) {
+    _saveToLocalStorage();
+    _silentAutoSave();
+  }
+});
+
+// Sauvegarde par intervalle fixe toutes les 30s en plus de l'autosave par frappe
+setInterval(function() {
+  if (wordDocDirty) {
+    _silentAutoSave();
+  }
+}, 30000);
 resetIdleTimer();
 
 
