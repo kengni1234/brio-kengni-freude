@@ -33,6 +33,15 @@
         <input type="password" id="password" placeholder="••••••••">
     </div>
     <button class="btn" id="loginBtn" onclick="doLogin()">Connexion</button>
+    <div style="text-align:center;margin-top:1.2rem;font-size:.82rem;color:#6b7280">
+        Pas de compte ?
+        <a href="{{ url_for('home_page') }}"
+           style="color:#00d4aa;font-weight:600;text-decoration:none;margin-left:.3rem"
+           onmouseover="this.style.textDecoration='underline'"
+           onmouseout="this.style.textDecoration='none'">
+            🛍️ Accéder à la boutique
+        </a>
+    </div>
 </div>
 <script>
 document.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });

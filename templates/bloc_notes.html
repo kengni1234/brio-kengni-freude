@@ -1625,6 +1625,7 @@ async function syncDocToServer(id, title, content, createdAt) {
   try {
     const res = await fetch('/api/bloc-notes/save', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id, title, content,
@@ -1671,11 +1672,14 @@ async function renameDocOnServer(id, title) {
 // ══════════════════════════════════════════════════════════════════
 
 function saveWordDoc(auto = false) {
+  // Si pas de doc courant, déléguer à saveCurrentAsDoc (gère la création)
+  if (!currentDocId && !auto) { saveCurrentAsDoc(false); return; }
   try {
     const titleEl = document.getElementById('wordDocTitle');
     const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
     const content = editor.innerHTML;
-    if (!content || content === '<br>') return;
+    const plainCheck = (content || '').replace(/<[^>]+>/g, ' ').trim();
+    if (!plainCheck || plainCheck.length < 2) return;
 
     localStorage.setItem(CURRENT_KEY, JSON.stringify({
       id: currentDocId, title, content, savedAt: new Date().toISOString()
@@ -1707,7 +1711,9 @@ function saveCurrentAsDoc(fromIdle = false) {
   const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
   const content = editor.innerHTML;
 
-  if (!content || content === '<br>') {
+  // Vérification contenu robuste (gère <br>, <div><br></div>, espaces vides)
+  const plainText = (content || '').replace(/<[^>]+>/g, ' ').trim();
+  if (!plainText || plainText.length < 2) {
     if (!fromIdle) showBNToast('Rien à sauvegarder', 'info');
     return;
   }
@@ -1717,14 +1723,25 @@ function saveCurrentAsDoc(fromIdle = false) {
   if (currentDocId) {
     const idx = docs.findIndex(d => d.id === currentDocId);
     if (idx >= 0) {
+      const createdAt = docs[idx].createdAt;
       docs[idx] = { ...docs[idx], title, content, updatedAt: new Date().toISOString() };
       setDocs(docs);
-      saveWordDoc(true);
-      syncDocToServer(currentDocId, title, content, docs[idx].createdAt);
-      if (!fromIdle) showBNToast('Document mis à jour ✓', 'success');
-      refreshDocsModal();
+      localStorage.setItem(CURRENT_KEY, JSON.stringify({
+        id: currentDocId, title, content, savedAt: new Date().toISOString()
+      }));
+      wordDocDirty = false;
+      const sbSave = document.getElementById('sbSaveStatus');
+      if (sbSave) {
+        sbSave.textContent = '\u2713 Sauvegardé ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+        sbSave.className = 'sb-pill saved';
+      }
+      syncDocToServer(currentDocId, title, content, createdAt);
+      if (!fromIdle) showBNToast('Document mis à jour \u2713', 'success');
+      renderWordFilesPanel();
       return;
     }
+    // currentDocId défini mais introuvable → réinitialiser pour créer un nouveau
+    currentDocId = null;
   }
 
   // Nouveau doc
@@ -2011,7 +2028,8 @@ function _saveToLocalStorage() {
     const titleEl = document.getElementById('wordDocTitle');
     const title   = (titleEl ? titleEl.value.trim() : '') || 'Sans titre';
     const content = editor.innerHTML;
-    if (!title && (!content || content === '<br>')) return;
+    const _pt = (content || '').replace(/<[^>]+>/g, ' ').trim();
+    if (!title && _pt.length < 2) return;
     localStorage.setItem(CURRENT_KEY, JSON.stringify({
       id: currentDocId, title, content, savedAt: new Date().toISOString()
     }));
@@ -2038,9 +2056,11 @@ function _silentAutoSave() {
     // Mettre à jour le doc existant dans le tableau de bord
     const idx = docs.findIndex(d => d.id === currentDocId);
     if (idx >= 0) {
+      const createdAt = docs[idx].createdAt;
       docs[idx] = { ...docs[idx], title: docTitle, content, updatedAt: now };
       setDocs(docs);
-      syncDocToServer(currentDocId, docTitle, content, docs[idx].createdAt);
+      syncDocToServer(currentDocId, docTitle, content, createdAt);
+      renderWordFilesPanel(); // FIX: panneau mis à jour après autosave
     }
   } else {
     // ✅ Créer automatiquement dès qu'il y a un titre (même sans contenu)

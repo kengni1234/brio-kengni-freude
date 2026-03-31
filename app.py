@@ -14041,12 +14041,12 @@ def shop_public_featured():
 # ══════════════════════════════════════════════════════════════════
 # À COLLER juste AVANT  "
 @app.route('/api/ping')
-@login_required  
 def api_ping():
-    """Keepalive session léger — ne fait aucune requête DB."""
-    return jsonify({'ok': True})
+    """Keepalive session léger."""
+    from flask import session
+    if not session.get('user_id'): return '', 401
+    return '{"ok":true}', 200, {'Content-Type':'application/json'}
 
-if __name__ == '__main__':"
 # ─────────────────────────────────────────────────────────────────
 
 # ── 1a. Gzip automatique sur toutes les réponses JSON/HTML/JS ─────
@@ -14679,23 +14679,9 @@ def shop_product_detach_image(pid):
 # ══════════════════════════════════════════════════════════════════
 #  FIN DU PATCH — ne rien ajouter après cette ligne
 #  La prochaine ligne dans app.py doit être :
-#      
-@app.route('/api/ping')
-@login_required  
-def api_ping():
-    """Keepalive session léger — ne fait aucune requête DB."""
-    return jsonify({'ok': True})
-
-if __name__ == '__main__':
+#      if __name__ == '__main__':
 # ══════════════════════════════════════════════════════════════════
 
-
-
-@app.route('/api/ping')
-@login_required  
-def api_ping():
-    """Keepalive session léger — ne fait aucune requête DB."""
-    return jsonify({'ok': True})
 
 if __name__ == '__main__':
 
