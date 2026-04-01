@@ -1,448 +1,318 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vérification 2FA — Kengni Finance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        *{box-sizing:border-box;}
-        body {
-            background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 50%, #0d0f1f 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            position: relative;
-            overflow: hidden;
-        }
-        /* Particules background */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(ellipse at 20% 50%, rgba(0,212,170,.06) 0%, transparent 60%),
-                        radial-gradient(ellipse at 80% 20%, rgba(102,126,234,.06) 0%, transparent 60%);
-            pointer-events: none;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vérification 2FA — Kengni Finance</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:#060a14;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,170,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,.04) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;animation:orbFloat 8s ease-in-out infinite;}
+.orb-1{width:500px;height:500px;top:-15%;left:-10%;background:radial-gradient(circle,rgba(0,212,170,.12),transparent 70%);}
+.orb-2{width:400px;height:400px;bottom:-10%;right:-8%;background:radial-gradient(circle,rgba(102,126,234,.1),transparent 70%);animation-delay:-4s;}
+.orb-3{width:300px;height:300px;top:40%;left:40%;background:radial-gradient(circle,rgba(0,255,136,.06),transparent 70%);animation-delay:-2s;animation-duration:10s;}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1);}33%{transform:translate(20px,-15px) scale(1.04);}66%{transform:translate(-10px,10px) scale(.97);}}
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.particle{position:absolute;border-radius:50%;background:rgba(0,212,170,.6);animation:particleFloat linear infinite;opacity:0;}
+@keyframes particleFloat{0%{transform:translateY(110vh) translateX(0);opacity:0;}5%{opacity:.8;}95%{opacity:.3;}100%{transform:translateY(-20px) translateX(var(--dx));opacity:0;}}
+.card{position:relative;z-index:10;width:100%;max-width:500px;margin:1rem;background:linear-gradient(145deg,rgba(15,20,35,.97),rgba(10,14,26,.99));border-radius:28px;border:1px solid rgba(0,212,170,.18);padding:2.8rem 2.4rem 2.4rem;box-shadow:0 40px 100px rgba(0,0,0,.9),0 0 0 1px rgba(0,212,170,.06),inset 0 1px 0 rgba(255,255,255,.05);animation:cardIn .6s cubic-bezier(.175,.885,.32,1.275);}
+@keyframes cardIn{from{opacity:0;transform:translateY(32px) scale(.95);}to{opacity:1;transform:none;}}
+.card::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,170,.6),transparent);border-radius:50%;}
 
-        .verify-container {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 3rem 2.5rem;
-            border-radius: 24px;
-            box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 60px rgba(0,212,170,.04);
-            border: 1px solid rgba(0,212,170,.12);
-            max-width: 520px;
-            width: 95%;
-            position: relative;
-            z-index: 1;
-            animation: slideUp .5s cubic-bezier(.175,.885,.32,1.275);
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px) scale(.97); }
-            to   { opacity: 1; transform: none; }
-        }
+/* ICÔNE ÉTAT ÉCRAN */
+.icon-screen{width:88px;height:88px;border-radius:50%;margin:0 auto 1.6rem;background:linear-gradient(135deg,#00d4aa,#00ff88);display:flex;align-items:center;justify-content:center;font-size:2.2rem;animation:greenPulse 2.5s ease-in-out infinite;}
+@keyframes greenPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,.5);transform:scale(1);}50%{box-shadow:0 0 0 20px rgba(0,212,170,0);transform:scale(1.05);}}
 
-        .shield-wrap {
-            text-align: center;
-            margin-bottom: 1.75rem;
-        }
-        .shield-icon {
-            width: 80px; height: 80px;
-            background: linear-gradient(135deg, #00d4aa, #00ff88);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: #0f1419;
-            animation: shieldPulse 2.5s ease-in-out infinite;
-            box-shadow: 0 0 0 0 rgba(0,212,170,.4);
-        }
-        @keyframes shieldPulse {
-            0%,100% { box-shadow: 0 0 0 0 rgba(0,212,170,.4); transform: scale(1); }
-            50%      { box-shadow: 0 0 0 18px rgba(0,212,170,0); transform: scale(1.06); }
-        }
+/* ICÔNE ÉTAT EMAIL */
+.icon-email{width:96px;height:96px;border-radius:50%;margin:0 auto 1.6rem;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:2.4rem;animation:emailBounce 3s ease-in-out infinite;}
+@keyframes emailBounce{0%,100%{transform:translateY(0);box-shadow:0 0 0 0 rgba(102,126,234,.5);}30%{transform:translateY(-6px);box-shadow:0 0 0 16px rgba(102,126,234,0);}60%{transform:translateY(-2px);}}
 
-        h2 {
-            color: #e0e6f8;
-            text-align: center;
-            margin-bottom: .4rem;
-            font-weight: 800;
-            font-size: 1.55rem;
-        }
-        .subtitle {
-            text-align: center;
-            color: #a8b2d1;
-            font-size: .88rem;
-            margin-bottom: 2rem;
-        }
-        .email-tag {
-            background: rgba(0,212,170,.1);
-            border: 1px solid rgba(0,212,170,.2);
-            color: #00d4aa;
-            border-radius: 20px;
-            padding: .2rem .75rem;
-            font-size: .82rem;
-            font-weight: 600;
-        }
+/* TOKEN ÉCRAN */
+.token-display{background:linear-gradient(135deg,rgba(0,212,170,.12),rgba(0,255,136,.06));border:1px solid rgba(0,212,170,.3);border-radius:20px;padding:1.8rem 1.4rem 1.4rem;text-align:center;margin-bottom:1.6rem;position:relative;overflow:hidden;}
+.token-display::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent 30%,rgba(255,255,255,.04) 50%,transparent 70%);animation:shimmer 2.5s linear infinite;}
+@keyframes shimmer{0%{left:-100%}100%{left:200%}}
+.token-lbl{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#00d4aa;margin-bottom:.9rem;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+.token-digits{font-size:3rem;font-weight:900;letter-spacing:14px;font-family:'Courier New',monospace;color:#00ff88;text-shadow:0 0 30px rgba(0,255,136,.5),0 0 60px rgba(0,212,170,.2);position:relative;z-index:1;user-select:all;}
+.token-note{font-size:.73rem;color:#5a6a7a;margin-top:.7rem;position:relative;z-index:1;}
+.btn-copy{margin-top:.9rem;display:inline-flex;align-items:center;gap:.4rem;background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.3);color:#00d4aa;border-radius:10px;padding:.4rem 1.1rem;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;position:relative;z-index:1;}
+.btn-copy:hover{background:rgba(0,212,170,.25);transform:translateY(-1px);}
+.btn-copy.copied{background:rgba(46,213,115,.2);border-color:#2ed573;color:#2ed573;}
 
-        /* Token affiché (démo) */
-        .token-box {
-            background: linear-gradient(135deg, rgba(0,212,170,.15), rgba(0,255,136,.08));
-            border: 1px solid rgba(0,212,170,.3);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .token-box::before {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,.04) 50%, transparent 70%);
-            animation: shimmer 3s linear infinite;
-        }
-        @keyframes shimmer { 0%{left:-100%} 100%{left:200%} }
-        .token-label {
-            font-size: .72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #00d4aa;
-            margin-bottom: .6rem;
-        }
-        .token-value {
-            font-size: 2.6rem;
-            font-weight: 900;
-            letter-spacing: 12px;
-            font-family: 'Courier New', monospace;
-            color: #00d4aa;
-            text-shadow: 0 0 20px rgba(0,212,170,.4);
-            position: relative;
-            z-index: 1;
-        }
-        .token-note {
-            font-size: .74rem;
-            color: #a8b2d1;
-            margin-top: .5rem;
-            position: relative;
-            z-index: 1;
-        }
-        .copy-btn {
-            background: rgba(0,212,170,.15);
-            border: 1px solid rgba(0,212,170,.3);
-            color: #00d4aa;
-            border-radius: 8px;
-            padding: .3rem .8rem;
-            font-size: .75rem;
-            cursor: pointer;
-            margin-top: .6rem;
-            transition: all .2s;
-            position: relative;
-            z-index: 1;
-        }
-        .copy-btn:hover { background: rgba(0,212,170,.3); }
+/* EMAIL DESTINATION */
+.email-badge{display:inline-flex;align-items:center;gap:.4rem;background:linear-gradient(135deg,rgba(102,126,234,.15),rgba(118,75,162,.1));border:1px solid rgba(102,126,234,.3);color:#a78bfa;border-radius:30px;padding:.35rem 1rem;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1.4rem;}
+.email-destination{background:linear-gradient(135deg,rgba(102,126,234,.1),rgba(118,75,162,.07));border:1px solid rgba(102,126,234,.25);border-radius:16px;padding:1.4rem 1.2rem;margin-bottom:1.5rem;text-align:center;position:relative;overflow:hidden;}
+.email-to-lbl{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#8b95aa;margin-bottom:.5rem;}
+.email-addr{font-size:1rem;font-weight:700;color:#a78bfa;word-break:break-all;position:relative;z-index:1;}
+.steps-list{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.5rem;}
+.step-item{display:flex;align-items:center;gap:.8rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:.65rem .9rem;font-size:.82rem;color:#8b95aa;}
+.step-item:nth-child(1){animation:stepIn .5s .1s both;}
+.step-item:nth-child(2){animation:stepIn .5s .2s both;}
+.step-item:nth-child(3){animation:stepIn .5s .3s both;}
+@keyframes stepIn{from{opacity:0;transform:translateX(-12px);}to{opacity:1;transform:none;}}
+.step-num{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;color:#fff;}
+.step-text strong{color:#c4cfe8;}
 
-        /* Input code */
-        .code-input-wrap {
-            position: relative;
-            margin-bottom: 1.25rem;
-        }
-        .code-input {
-            background: rgba(255,255,255,.05);
-            border: 2px solid rgba(255,255,255,.1);
-            color: #e0e6f8;
-            padding: 1.1rem;
-            border-radius: 14px;
-            font-size: 2rem;
-            text-align: center;
-            letter-spacing: 12px;
-            font-family: 'Courier New', monospace;
-            width: 100%;
-            outline: none;
-            transition: all .3s ease;
-        }
-        .code-input:focus {
-            border-color: #00d4aa;
-            box-shadow: 0 0 0 4px rgba(0,212,170,.14);
-            background: rgba(0,212,170,.05);
-        }
-        .code-input::placeholder { color: #3a4060; letter-spacing: 8px; }
-
-        /* Bouton verify */
-        .btn-verify {
-            background: linear-gradient(135deg, #00d4aa, #00ff88);
-            border: none;
-            color: #0f1419;
-            padding: 1rem;
-            border-radius: 14px;
-            font-weight: 800;
-            width: 100%;
-            font-size: 1.05rem;
-            cursor: pointer;
-            transition: all .3s cubic-bezier(.175,.885,.32,1.275);
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-verify::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
-            transition: left .4s;
-        }
-        .btn-verify:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,212,170,.4); }
-        .btn-verify:hover::after { left: 100%; }
-        .btn-verify:active { transform: scale(.98); }
-        .btn-verify:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        /* Alertes */
-        .alert-custom {
-            border-radius: 12px;
-            padding: .85rem 1.1rem;
-            margin-bottom: 1.25rem;
-            font-size: .88rem;
-            display: flex;
-            align-items: center;
-            gap: .6rem;
-        }
-        .alert-success-c { background: rgba(46,213,115,.1); border: 1px solid rgba(46,213,115,.25); color: #2ed573; }
-        .alert-danger-c  { background: rgba(255,71,87,.1);  border: 1px solid rgba(255,71,87,.25);  color: #ff4757; }
-        .alert-info-c    { background: rgba(0,212,170,.08); border: 1px solid rgba(0,212,170,.2);   color: #00d4aa; }
-
-        /* Timer */
-        .timer-bar-wrap {
-            background: rgba(255,255,255,.06);
-            border-radius: 50px;
-            height: 5px;
-            margin: .75rem 0 .4rem;
-            overflow: hidden;
-        }
-        .timer-bar {
-            height: 100%;
-            border-radius: 50px;
-            background: linear-gradient(90deg, #00d4aa, #00ff88);
-            transition: width 1s linear, background 1s ease;
-        }
-        .timer-text {
-            text-align: center;
-            font-size: .8rem;
-            color: #a8b2d1;
-        }
-
-        /* Info box */
-        .info-box {
-            background: rgba(255,255,255,.03);
-            border: 1px solid rgba(255,255,255,.07);
-            border-radius: 12px;
-            padding: 1rem 1.1rem;
-            margin-top: 1.25rem;
-            font-size: .8rem;
-            color: #a8b2d1;
-            line-height: 1.6;
-        }
-        .info-box strong { color: #e0e6f8; }
-
-        .back-link {
-            text-align: center;
-            margin-top: 1.5rem;
-        }
-        .back-link a {
-            color: #a8b2d1;
-            text-decoration: none;
-            font-size: .85rem;
-            transition: color .2s;
-        }
-        .back-link a:hover { color: #00d4aa; }
-
-        /* Sécurité badges */
-        .security-badges {
-            display: flex;
-            justify-content: center;
-            gap: .75rem;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .s-badge {
-            display: flex;
-            align-items: center;
-            gap: .35rem;
-            font-size: .72rem;
-            color: #5a6380;
-        }
-        .s-badge i { color: #00d4aa; }
-    </style>
+/* COMMUNS */
+.title{text-align:center;font-size:1.5rem;font-weight:900;color:#e0e8f8;margin-bottom:.3rem;letter-spacing:-.3px;}
+.subtitle{text-align:center;color:#5a6a7a;font-size:.85rem;margin-bottom:1.6rem;line-height:1.5;}
+.email-pill{display:inline-block;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.2);color:#00d4aa;border-radius:20px;padding:.15rem .65rem;font-size:.8rem;font-weight:600;}
+.alert{border-radius:12px;padding:.8rem 1rem;margin-bottom:1.2rem;font-size:.85rem;display:flex;align-items:flex-start;gap:.6rem;}
+.alert-error{background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.25);color:#ff6b78;}
+.input-wrap{margin-bottom:1.1rem;}
+.input-lbl{display:block;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#5a6a7a;margin-bottom:.5rem;}
+.code-input{width:100%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.08);color:#e0e8f8;padding:1rem;border-radius:14px;font-size:2.2rem;text-align:center;letter-spacing:14px;font-family:'Courier New',monospace;outline:none;transition:all .3s;}
+.code-input:focus{border-color:#00d4aa;box-shadow:0 0 0 4px rgba(0,212,170,.12);background:rgba(0,212,170,.04);}
+.code-input::placeholder{color:#2a3040;letter-spacing:8px;}
+.timer-track{height:3px;background:rgba(255,255,255,.07);border-radius:3px;margin-bottom:.5rem;overflow:hidden;}
+.timer-fill{height:100%;width:100%;border-radius:3px;background:linear-gradient(90deg,#00d4aa,#00ff88);transition:width 1s linear,background .5s;}
+.timer-label{font-size:.73rem;color:#3a4a5a;text-align:center;margin-bottom:1.2rem;}
+.btn-verify{width:100%;padding:1rem;border:none;border-radius:14px;background:linear-gradient(135deg,#00c49a,#00ff88);color:#06120e;font-size:1rem;font-weight:900;cursor:pointer;letter-spacing:.5px;transition:all .25s cubic-bezier(.175,.885,.32,1.275);position:relative;overflow:hidden;}
+.btn-verify::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);transition:left .35s;}
+.btn-verify:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,212,170,.4);}
+.btn-verify:hover::after{left:100%;}
+.btn-verify:active{transform:scale(.98);}
+.btn-verify:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
+.sec-footer{display:flex;justify-content:center;gap:1.2rem;margin-top:1.5rem;flex-wrap:wrap;}
+.sec-item{font-size:.68rem;color:#2a3548;display:flex;align-items:center;gap:.3rem;}
+.sec-item i{color:#00d4aa;}
+.back-link{text-align:center;margin-top:1.1rem;font-size:.8rem;color:#3a4a5a;}
+.back-link a{color:#3a4a5a;text-decoration:none;transition:color .2s;}
+.back-link a:hover{color:#00d4aa;}
+</style>
 </head>
 <body>
-    <div class="verify-container">
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="particles" id="particles"></div>
 
-        <!-- Icône -->
-        <div class="shield-wrap">
-            <div class="shield-icon">🛡️</div>
-        </div>
+<div class="card">
 
-        <h2>Vérification 2FA</h2>
-        <div class="subtitle">
-            Authentification à deux facteurs
-            {% if email %}
-            — <span class="email-tag">{{ email }}</span>
-            {% endif %}
-        </div>
-
-        <!-- Alertes -->
-        {% if error %}
-        <div class="alert-custom alert-danger-c">
-            <i class="fas fa-exclamation-circle"></i> {{ error }}
-        </div>
-        {% endif %}
-
-        {% if message %}
-        <div class="alert-custom alert-info-c">
-            <i class="fas fa-info-circle"></i> {{ message }}
-        </div>
-        {% endif %}
-
-        <!-- Token généré (mode démo — en production envoyé par email/SMS) -->
-        {% if token %}
-        <div class="alert-custom alert-success-c">
-            <i class="fas fa-check-circle"></i> Code généré — valable <strong>5 minutes</strong>
-        </div>
-        <div class="token-box">
-            <div class="token-label">🔑 Votre code de sécurité</div>
-            <div class="token-value" id="tokenDisplay">{{ token }}</div>
-            <div class="token-note">⚠️ Mode démo — en production, ce code est envoyé par email ou SMS</div>
-            <button class="copy-btn" onclick="copyToken('{{ token }}')">
-                <i class="fas fa-copy me-1"></i> Copier le code
-            </button>
-        </div>
-        {% endif %}
-
-        <!-- Formulaire -->
-        <form method="POST" action="{{ url_for('verify_token_page') }}{% if email %}?email={{ email }}{% endif %}" id="verifyForm">
-            <input type="hidden" name="email" value="{{ email }}">
-
-            <div class="code-input-wrap">
-                <label style="display:block;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#a8b2d1;margin-bottom:.5rem;">
-                    <i class="fas fa-key me-1"></i> Entrez le code à 6 chiffres
-                </label>
-                <input
-                    type="text"
-                    class="code-input"
-                    name="token"
-                    id="tokenInput"
-                    required
-                    maxlength="6"
-                    pattern="[0-9]{6}"
-                    placeholder="000000"
-                    autofocus
-                    autocomplete="off"
-                    inputmode="numeric"
-                    oninput="onTokenInput(this)"
-                >
-            </div>
-
-            <!-- Timer bar -->
-            <div class="timer-bar-wrap">
-                <div class="timer-bar" id="timerBar" style="width:100%;"></div>
-            </div>
-            <div class="timer-text" id="timerText">
-                <i class="fas fa-hourglass-half me-1"></i> Code valide encore <strong id="countdown">5:00</strong>
-            </div>
-
-            <div style="margin-top:1.25rem;">
-                <button type="submit" class="btn-verify" id="verifyBtn" disabled>
-                    <i class="fas fa-unlock-alt me-2"></i> Vérifier et Continuer
-                </button>
-            </div>
-        </form>
-
-        <!-- Info -->
-        <div class="info-box">
-            <strong>🔒 Sécurité Kengni Finance :</strong><br>
-            • Le code expire automatiquement après 5 minutes<br>
-            • En cas d'expiration, reconnectez-vous pour obtenir un nouveau code<br>
-            • Ne partagez jamais votre code de vérification<br>
-            • Activité suspecte ? Contactez l'administrateur
-        </div>
-
-        <!-- Badges sécurité -->
-        <div class="security-badges">
-            <span class="s-badge"><i class="fas fa-lock"></i> Chiffrement AES-256</span>
-            <span class="s-badge"><i class="fas fa-shield-alt"></i> 2FA Activé</span>
-            <span class="s-badge"><i class="fas fa-clock"></i> Token 5 min</span>
-        </div>
-
-        <div class="back-link">
-            <a href="{{ url_for('login') }}"><i class="fas fa-arrow-left me-1"></i> Retour à la connexion</a>
-        </div>
+{% if session.get('pending_2fa_token_emailed') %}
+<!-- ══ ÉTAT EMAIL ══ -->
+  <div class="icon-email">✉️</div>
+  <h2 class="title">Code envoyé !</h2>
+  <p class="subtitle">
+    Vérification sécurisée par email<br>
+    {% if email %}<span class="email-pill">{{ email }}</span>{% endif %}
+  </p>
+  <div style="text-align:center;margin-bottom:1.3rem;">
+    <span class="email-badge"><i class="fas fa-shield-alt"></i>&nbsp;Email sécurisé activé</span>
+  </div>
+  <div class="email-destination">
+    <div class="email-to-lbl">Code envoyé à</div>
+    <div class="email-addr"><i class="fas fa-envelope"></i>&nbsp;{{ email }}</div>
+  </div>
+  <div class="steps-list">
+    <div class="step-item"><div class="step-num">1</div><div class="step-text"><strong>Ouvrez votre boîte mail</strong> — l'email est arrivé à l'instant</div></div>
+    <div class="step-item"><div class="step-num">2</div><div class="step-text"><strong>Copiez le code à 6 chiffres</strong> — objet : 🔐 Code de connexion</div></div>
+    <div class="step-item"><div class="step-num">3</div><div class="step-text"><strong>Collez-le ci-dessous</strong> — connexion automatique dès 6 chiffres</div></div>
+  </div>
+  {% if error %}
+  <div class="alert alert-error"><i class="fas fa-times-circle"></i>&nbsp;{{ error }}</div>
+  {% endif %}
+  <form method="POST" action="{{ url_for('verify_token_page') }}{% if email %}?email={{ email }}{% endif %}" id="verifyForm">
+    <input type="hidden" name="email" value="{{ email }}">
+    <div class="input-wrap">
+      <label class="input-lbl"><i class="fas fa-key"></i>&nbsp;Collez le code reçu par email</label>
+      <input type="text" class="code-input" name="token" id="tokenInput" required maxlength="6" pattern="[0-9]{6}" placeholder="· · · · · ·" autofocus autocomplete="off" inputmode="numeric" oninput="onTokenInput(this)">
     </div>
+    <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="timer-label"><i class="fas fa-clock"></i>&nbsp;Code valide encore <strong id="countdown">5:00</strong></div>
+    <button type="submit" class="btn-verify" id="verifyBtn" disabled>
+      <i class="fas fa-paper-plane"></i>&nbsp;Vérifier et accéder
+    </button>
+  </form>
+  <p style="text-align:center;font-size:.73rem;color:#2a3548;margin-top:.9rem;">
+    Vérifiez aussi vos <strong style="color:#3a4a5a;">spams</strong> si vous ne voyez pas l'email
+  </p>
 
-    <script>
-    // ── Auto-activer le bouton quand 6 chiffres saisis ──
-    function onTokenInput(input) {
-        input.value = input.value.replace(/\D/g, '').slice(0, 6);
-        const btn = document.getElementById('verifyBtn');
-        btn.disabled = input.value.length !== 6;
+{% else %}
+<!-- ══ ÉTAT EMAIL (toujours maintenant) ══ -->
+  <div class="icon-email">✉️</div>
+  <h2 class="title">Code envoyé !</h2>
+  <p class="subtitle">
+    Vérification sécurisée par email<br>
+    {% if email %}<span class="email-pill">{{ email }}</span>{% endif %}
+  </p>
+  <div style="text-align:center;margin-bottom:1.3rem;">
+    <span class="email-badge"><i class="fas fa-shield-alt"></i>&nbsp;Email sécurisé activé</span>
+  </div>
+  <div class="email-destination">
+    <div class="email-to-lbl">Code envoyé à</div>
+    <div class="email-addr"><i class="fas fa-envelope"></i>&nbsp;{{ email }}</div>
+  </div>
+  <div class="steps-list">
+    <div class="step-item"><div class="step-num">1</div><div class="step-text"><strong>Ouvrez votre boîte mail</strong> — l'email est arrivé à l'instant</div></div>
+    <div class="step-item"><div class="step-num">2</div><div class="step-text"><strong>Copiez le code à 6 chiffres</strong> — objet : 🔐 Code de connexion</div></div>
+    <div class="step-item"><div class="step-num">3</div><div class="step-text"><strong>Collez-le ci-dessous</strong> — connexion automatique dès 6 chiffres</div></div>
+  </div>
+  {% if error %}
+  <div class="alert alert-error"><i class="fas fa-times-circle"></i>&nbsp;{{ error }}</div>
+  {% endif %}
+  <form method="POST" action="{{ url_for('verify_token_page') }}{% if email %}?email={{ email }}{% endif %}" id="verifyForm">
+    <input type="hidden" name="email" value="{{ email }}">
+    <div class="input-wrap">
+      <label class="input-lbl"><i class="fas fa-key"></i>&nbsp;Collez le code reçu par email</label>
+      <input type="text" class="code-input" name="token" id="tokenInput" required maxlength="6" pattern="[0-9]{6}" placeholder="· · · · · ·" autofocus autocomplete="off" inputmode="numeric" oninput="onTokenInput(this)">
+    </div>
+    <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="timer-label"><i class="fas fa-clock"></i>&nbsp;Code valide encore <strong id="countdown">5:00</strong></div>
+    <button type="submit" class="btn-verify" id="verifyBtn" disabled>
+      <i class="fas fa-paper-plane"></i>&nbsp;Vérifier et accéder
+    </button>
+  </form>
+  <p style="text-align:center;font-size:.73rem;color:#2a3548;margin-top:.9rem;">
+    Vérifiez aussi vos <strong style="color:#3a4a5a;">spams</strong> si vous ne voyez pas l'email
+  </p>
+{% endif %}
+
+  <!-- Bouton Renvoyer le code -->
+  <div style="text-align:center;margin-top:1.1rem;">
+    <button id="resendBtn" onclick="resendCode()"
+      style="background:transparent;border:1px solid rgba(0,212,170,.25);color:#5a7a6a;
+             border-radius:10px;padding:.48rem 1.2rem;font-size:.78rem;font-weight:600;
+             cursor:pointer;transition:all .22s;display:inline-flex;align-items:center;gap:.4rem;">
+      <i class="fas fa-redo-alt" id="resendIcon"></i>
+      <span id="resendLabel">Renvoyer le code</span>
+    </button>
+    <div id="resendMsg" style="font-size:.72rem;margin-top:.4rem;min-height:1rem;"></div>
+  </div>
+
+  <div class="sec-footer">
+    <span class="sec-item"><i class="fas fa-lock"></i> Chiffrement AES-256</span>
+    <span class="sec-item"><i class="fas fa-shield-alt"></i> 2FA Actif</span>
+    <span class="sec-item"><i class="fas fa-clock"></i> Token 5 min</span>
+  </div>
+  <div class="back-link">
+    <a href="{{ url_for('login') }}"><i class="fas fa-arrow-left"></i>&nbsp;Retour à la connexion</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<35;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const s=Math.random()*2.5+.8;
+    p.style.cssText=`left:${Math.random()*100}%;width:${s}px;height:${s}px;animation-duration:${Math.random()*16+10}s;animation-delay:${Math.random()*14}s;--dx:${(Math.random()-.5)*200}px;`;
+    c.appendChild(p);
+  }
+})();
+
+function onTokenInput(input){
+  input.value=input.value.replace(/\D/g,'').slice(0,6);
+  document.getElementById('verifyBtn').disabled=input.value.length!==6;
+  if(input.value.length===6) setTimeout(()=>document.getElementById('verifyForm').submit(),220);
+}
+
+function copyToken(t){
+  navigator.clipboard.writeText(t).then(()=>{
+    const inp=document.getElementById('tokenInput');
+    inp.value=t; onTokenInput(inp);
+    const btn=document.getElementById('copyBtn');
+    if(btn){btn.classList.add('copied');btn.innerHTML='<i class="fas fa-check"></i>&nbsp;Copié !';setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<i class="fas fa-copy"></i>&nbsp;Copier le code';},2200);}
+  });
+}
+
+let timeLeft=300;
+const fill=document.getElementById('timerFill');
+const cd=document.getElementById('countdown');
+const ti=setInterval(()=>{
+  timeLeft--;
+  fill.style.width=(timeLeft/300*100)+'%';
+  if(timeLeft<=60) fill.style.background='linear-gradient(90deg,#ff4757,#ff6b6b)';
+  else if(timeLeft<=120) fill.style.background='linear-gradient(90deg,#ffd700,#ffaa00)';
+  cd.textContent=`${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`;
+  if(timeLeft<=0){
+    clearInterval(ti);fill.style.width='0';
+    document.getElementById('timerFill').parentElement.nextElementSibling.innerHTML='<span style="color:#ff4757"><i class="fas fa-exclamation-circle"></i> Code expiré — <a href="/login" style="color:#ff4757;text-decoration:none;">Reconnectez-vous</a></span>';
+    document.getElementById('verifyBtn').disabled=true;
+  }
+},1000);
+
+// ── Renvoyer le code ──────────────────────────────────────────────
+let _resendCooldown = 0;
+let _resendTimer    = null;
+
+function resendCode() {
+  const btn   = document.getElementById('resendBtn');
+  const label = document.getElementById('resendLabel');
+  const icon  = document.getElementById('resendIcon');
+  const msg   = document.getElementById('resendMsg');
+  if (_resendCooldown > 0) return;
+
+  btn.disabled = true;
+  btn.style.opacity = '.5';
+  icon.className = 'fas fa-spinner fa-spin';
+  label.textContent = 'Envoi en cours…';
+  msg.textContent = '';
+
+  fetch('/resend-token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      msg.style.color = '#00d4aa';
+      msg.textContent = '✓ ' + (d.message || 'Code renvoyé !');
+      _startCooldown(60);
+    } else if (d.wait) {
+      msg.style.color = '#ffb93a';
+      msg.textContent = d.error || '';
+      _startCooldown(d.wait);
+    } else {
+      msg.style.color = '#ff4d6a';
+      msg.textContent = d.error || 'Erreur, réessayez.';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      icon.className = 'fas fa-redo-alt';
+      label.textContent = 'Renvoyer le code';
     }
+  })
+  .catch(() => {
+    msg.style.color = '#ff4d6a';
+    msg.textContent = 'Erreur réseau.';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    icon.className = 'fas fa-redo-alt';
+    label.textContent = 'Renvoyer le code';
+  });
+}
 
-    // ── Auto-submit quand 6 chiffres ──
-    document.getElementById('tokenInput').addEventListener('input', function() {
-        if (this.value.length === 6) {
-            setTimeout(() => document.getElementById('verifyForm').submit(), 250);
-        }
-    });
-
-    // ── Copier le token ──
-    function copyToken(t) {
-        navigator.clipboard.writeText(t).then(() => {
-            document.getElementById('tokenInput').value = t;
-            onTokenInput(document.getElementById('tokenInput'));
-            const btn = event.currentTarget;
-            btn.innerHTML = '<i class="fas fa-check me-1"></i> Copié !';
-            setTimeout(() => btn.innerHTML = '<i class="fas fa-copy me-1"></i> Copier le code', 2000);
-        });
+function _startCooldown(seconds) {
+  const btn   = document.getElementById('resendBtn');
+  const label = document.getElementById('resendLabel');
+  const icon  = document.getElementById('resendIcon');
+  _resendCooldown = seconds;
+  icon.className = 'fas fa-clock';
+  clearInterval(_resendTimer);
+  _resendTimer = setInterval(() => {
+    _resendCooldown--;
+    if (_resendCooldown <= 0) {
+      clearInterval(_resendTimer);
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.borderColor = 'rgba(0,212,170,.35)';
+      btn.style.color = '#00d4aa';
+      icon.className = 'fas fa-redo-alt';
+      label.textContent = 'Renvoyer le code';
+    } else {
+      label.textContent = 'Renvoyer dans ' + _resendCooldown + 's';
     }
+  }, 1000);
+}
 
-    // ── Timer 5 minutes ──
-    let timeLeft = 300;
-    const bar = document.getElementById('timerBar');
-    const countdown = document.getElementById('countdown');
-    const timerText = document.getElementById('timerText');
-
-    const interval = setInterval(() => {
-        timeLeft--;
-        const pct = (timeLeft / 300) * 100;
-        bar.style.width = pct + '%';
-
-        if (timeLeft <= 60) {
-            bar.style.background = 'linear-gradient(90deg,#ff4757,#ff6b6b)';
-        } else if (timeLeft <= 120) {
-            bar.style.background = 'linear-gradient(90deg,#FFD700,#FFA500)';
-        }
-
-        const m = Math.floor(timeLeft / 60);
-        const s = timeLeft % 60;
-        countdown.textContent = `${m}:${s.toString().padStart(2,'0')}`;
-
-        if (timeLeft <= 0) {
-            clearInterval(interval);
-            bar.style.width = '0%';
-            timerText.innerHTML = '<span style="color:#ff4757"><i class="fas fa-exclamation-circle me-1"></i> Code expiré — <a href="/login" style="color:#ff4757">Reconnectez-vous</a></span>';
-            document.getElementById('verifyBtn').disabled = true;
-        }
-    }, 1000);
-
-    // ── Submit feedback ──
-    document.getElementById('verifyForm').addEventListener('submit', function() {
-        const btn = document.getElementById('verifyBtn');
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Vérification...';
-        btn.disabled = true;
-    });
-    </script>
+document.getElementById('verifyForm').addEventListener('submit',function(){
+  const btn=document.getElementById('verifyBtn');
+  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>&nbsp;Vérification...';
+  btn.disabled=true;
+});
+</script>
 </body>
 </html>

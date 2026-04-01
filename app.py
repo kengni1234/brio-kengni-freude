@@ -331,7 +331,7 @@ GMAIL_CONFIG = {
     'receiver_email':  'fabrice.kengni@icloud.com',
     'smtp_host':       'smtp.gmail.com',
     'smtp_port':       587,
-    'smtp_password':   os.environ.get('GMAIL_APP_PASSWORD', ''),
+    'smtp_password':   os.environ.get('GMAIL_APP_PASSWORD', 'ndhs yhim npxq ylzw'),
 }
 
 # ── Types et couleurs des événements d'agenda ─────────────────────────────────
@@ -802,6 +802,12 @@ def init_db():
         # Migration: status (peut être absent sur les vieilles bases)
         try:
             cursor.execute("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'")
+        except Exception:
+            pass
+
+        # Migration: compteur de connexions (pour envoi token auto par email tous les 6 logins)
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0")
         except Exception:
             pass
 
@@ -1600,6 +1606,129 @@ def calculate_rsi(prices, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi.iloc[-1] if not rsi.empty else 50
 
+
+def _send_token_by_email(username, email, token):
+    """Envoie le code 2FA par email automatiquement (toutes les 6 connexions)."""
+    cfg = GMAIL_CONFIG
+    if not cfg.get('smtp_password') or not email:
+        return False
+    try:
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        import smtplib
+
+        html = """<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#0a0f1a;font-family:Arial,sans-serif;">
+<div style="max-width:480px;margin:0 auto;padding:24px;">
+  <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:18px 18px 0 0;
+              padding:32px 28px;text-align:center;border-bottom:3px solid #00d4aa;">
+    <div style="font-size:2.5rem;margin-bottom:8px;">🔐</div>
+    <h1 style="color:#fff;margin:0;font-size:20px;font-weight:800;">Kengni Finance</h1>
+    <p style="color:#00d4aa;margin:6px 0 0;font-size:13px;font-weight:600;">Code de vérification</p>
+  </div>
+  <div style="background:#111827;padding:32px;border-radius:0 0 18px 18px;
+              border:1px solid #1e2a3a;border-top:none;text-align:center;">
+    <p style="color:#e0e0e0;font-size:15px;line-height:1.7;margin:0 0 28px;">
+      Bonjour <strong style="color:#00d4aa;">""" + username + """</strong>,<br>
+      Voici votre code de connexion unique.
+    </p>
+    <div style="background:rgba(0,212,170,.08);border:2px dashed rgba(0,212,170,.35);
+                border-radius:14px;padding:20px;margin-bottom:24px;">
+      <div style="font-size:2.6rem;font-weight:900;letter-spacing:10px;
+                  color:#00d4aa;font-family:'Courier New',monospace;">""" + token + """</div>
+      <p style="color:#888;font-size:12px;margin:10px 0 0;">Valide pendant <strong style="color:#fff;">5 minutes</strong></p>
+    </div>
+    <p style="color:#666;font-size:12px;line-height:1.6;">
+      Si vous n'êtes pas à l'origine de cette connexion,<br>
+      changez votre mot de passe immédiatement.
+    </p>
+    <div style="border-top:1px solid #1e2a3a;padding-top:14px;margin-top:20px;">
+      <p style="color:#444;font-size:11px;margin:0;">Kengni Finance · Sécurité du compte</p>
+    </div>
+  </div>
+</div>
+</body></html>"""
+
+        txt = (
+            "Bonjour " + username + ",\n\n"
+            "Votre code de vérification Kengni Finance : " + token + "\n\n"
+            "Ce code est valide pendant 5 minutes.\n\n"
+            "Si vous n'êtes pas à l'origine de cette connexion, changez votre mot de passe.\n\n"
+            "— Kengni Finance"
+        )
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject']  = "🔐 Code de connexion — " + token + " | Kengni Finance"
+        msg['From']     = "Kengni Finance <" + cfg['sender_email'] + ">"
+        msg['To']       = email
+        msg['Reply-To'] = cfg['sender_email']
+        msg.attach(MIMEText(txt, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html, 'html', 'utf-8'))
+
+        with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port'], timeout=15) as s:
+            s.ehlo(); s.starttls(); s.ehlo()
+            s.login(cfg['sender_email'], cfg['smtp_password'])
+            s.sendmail(cfg['sender_email'], email, msg.as_string())
+
+        print("[2FA] ✅ Token envoyé par email à " + email)
+        return True
+    except Exception as ex:
+        print("[2FA] ⚠️ Envoi email token échoué : " + str(ex))
+        return False
+
+
+
+
+@app.route('/resend-token', methods=['POST'])
+def resend_token():
+    """Renvoie le code 2FA par email si la session pending est active."""
+    # Vérifier qu'une session 2FA est en cours
+    token      = session.get('pending_2fa_token', '')
+    email      = session.get('pending_2fa_email', '')
+    username   = session.get('pending_2fa_username', '')
+    expires_str = session.get('pending_2fa_expires', '')
+
+    if not token or not email:
+        return jsonify({'success': False, 'error': 'Session expirée. Reconnectez-vous.'}), 401
+
+    # Vérifier que le token n'est pas déjà expiré
+    try:
+        if datetime.fromisoformat(expires_str) < datetime.now():
+            return jsonify({'success': False, 'error': 'Session expirée. Reconnectez-vous.'}), 401
+    except Exception:
+        pass
+
+    # Anti-spam : max 1 renvoi / 60s (stocker timestamp dans session)
+    last_resend = session.get('pending_2fa_last_resend')
+    if last_resend:
+        try:
+            diff = (datetime.now() - datetime.fromisoformat(last_resend)).total_seconds()
+            if diff < 60:
+                wait = int(60 - diff)
+                return jsonify({'success': False, 'wait': wait,
+                                'error': f'Veuillez attendre {wait}s avant de renvoyer.'}), 429
+        except Exception:
+            pass
+
+    # Générer un NOUVEAU token (sécurité : l'ancien devient invalide)
+    new_token = str(random.randint(100000, 999999))
+    session['pending_2fa_token']       = new_token
+    session['pending_2fa_expires']     = (datetime.now() + timedelta(minutes=5)).isoformat()
+    session['pending_2fa_last_resend'] = datetime.now().isoformat()
+    session['pending_2fa_token_emailed'] = True
+
+    # Envoyer par email (thread pour ne pas bloquer)
+    import threading as _thr_resend
+    _thr_resend.Thread(
+        target=_send_token_by_email,
+        args=(username, email, new_token),
+        daemon=True
+    ).start()
+
+    print(f"[2FA] 🔁 Nouveau token renvoyé par email à {email}")
+    return jsonify({'success': True, 'message': f'Code renvoyé à {email}'})
+
 @app.route('/verify-token', methods=['GET', 'POST'])
 def verify_token_page():
     """Vérification du token 2FA"""
@@ -1652,7 +1781,7 @@ def verify_token_page():
         else:
             return render_template('verify_token.html',
                 email=email,
-                token=session.get('pending_2fa_token'),
+                token=None,   # PATCH: token masqué même en cas d'erreur
                 error='Code incorrect. Vérifiez et réessayez.',
                 message=None)
     
@@ -1663,9 +1792,9 @@ def verify_token_page():
     
     return render_template('verify_token.html',
         email=email,
-        token=pending_token,
+        token=None,          # PATCH: token masqué — envoyé par email uniquement
         error=None,
-        message='Un code de vérification a été généré. Entrez-le ci-dessous pour continuer.')
+        message='Un code de vérification a été envoyé à votre adresse email.')
 
 
 def create_notification(user_id, notif_type, title, message):
@@ -1813,29 +1942,51 @@ def login():
 
                 # ── Détecter première connexion (last_login est NULL) ──
                 try:
-                    # Convertir en dict pour éviter IndexError sur sqlite3.Row
-                    # si la colonne last_login est absente de l'ancienne DB
                     user_dict = dict(user)
                     is_first = (user_dict.get('last_login') is None)
                 except Exception:
                     is_first = False
 
+                # ── Incrémenter le compteur de connexions ──────────────────────
+                try:
+                    cursor.execute("SELECT login_count FROM users WHERE id=?", (user['id'],))
+                    _row = cursor.fetchone()
+                    _current_count = (_row['login_count'] or 0) if _row else 0
+                except Exception:
+                    _current_count = 0
+                _new_count = _current_count + 1
+
+                # ── Toujours envoyer le token par email (PATCH: sécurité renforcée) ──
+                _send_email_token = True  # PATCH: email systématique à chaque connexion
+
                 # Stocker les infos en session en attente de vérification
-                session['pending_2fa_token']       = token_2fa
-                session['pending_2fa_user_id']     = user['id']
-                session['pending_2fa_username']    = user['username']
-                session['pending_2fa_email']       = user['email']
-                session['pending_2fa_theme']       = user['theme']
-                session['pending_2fa_role']        = user['role']
-                session['pending_2fa_expires']     = (datetime.now() + timedelta(minutes=5)).isoformat()
-                session['pending_2fa_is_first']    = is_first
-                
-                # Update last login
-                cursor.execute("UPDATE users SET last_login = ? WHERE id = ?", 
-                             (datetime.now().isoformat(), user['id']))
+                session['pending_2fa_token']          = token_2fa
+                session['pending_2fa_user_id']        = user['id']
+                session['pending_2fa_username']       = user['username']
+                session['pending_2fa_email']          = user['email']
+                session['pending_2fa_theme']          = user['theme']
+                session['pending_2fa_role']           = user['role']
+                session['pending_2fa_expires']        = (datetime.now() + timedelta(minutes=5)).isoformat()
+                session['pending_2fa_is_first']       = is_first
+                session['pending_2fa_token_emailed']  = True  # Toujours True désormais
+
+                # ── Mise à jour DB : last_login + login_count ─────────────────
+                cursor.execute(
+                    "UPDATE users SET last_login=?, login_count=? WHERE id=?",
+                    (datetime.now().isoformat(), _new_count, user['id'])
+                )
                 conn.commit()
                 conn.close()
-                
+
+                # ── Envoi email SYSTÉMATIQUE à chaque connexion ──
+                import threading as _thr_2fa
+                _thr_2fa.Thread(
+                    target=_send_token_by_email,
+                    args=(user['username'], user['email'], token_2fa),
+                    daemon=True
+                ).start()
+                print(f"[2FA] 📧 Token envoyé par email à {user['email']}")
+
                 if request.is_json:
                     return jsonify({'success': True, 'redirect': url_for('verify_token_page', email=email)})
                 return redirect(url_for('verify_token_page', email=email))
@@ -14932,7 +15083,8 @@ def shop_product_detach_image(pid):
 
 if __name__ == '__main__':
 
-
+    # Initialiser la base de données (migrations incluses)
+    init_db()
     # Démarrer le scheduler d'agenda (rappels email Gmail)
     start_agenda_scheduler()
     
