@@ -5200,6 +5200,124 @@ def training_registration():
     return render_template('inscription_trading.html', success=success, wa=wa)
 
 
+
+def _send_prospect_confirmation(cfg, fn, em, wa, lvl, cap, obj, pay, prices):
+    """Envoie l'email de confirmation automatique au prospect après inscription."""
+    if not cfg.get('smtp_password') or not em:
+        return
+    try:
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        import smtplib
+
+        xaf = prices.get('xaf', 50000)
+        eur = prices.get('eur', 76)
+        wa_link = "https://wa.me/237695072759?text=Bonjour%2C+je+viens+de+m%27inscrire+à+la+formation+" + lvl.replace(" ", "+")
+
+        html = """<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#0a0f1a;font-family:Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:24px;">
+  <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:18px 18px 0 0;
+              padding:36px 28px;text-align:center;border-bottom:3px solid #00d4aa;">
+    <div style="font-size:3rem;">🎓</div>
+    <h1 style="color:#fff;margin:8px 0 0;font-size:22px;font-weight:800;">Kengni Trading Academy</h1>
+    <p style="color:#00d4aa;margin:8px 0 0;font-size:14px;font-weight:600;">Inscription confirmée !</p>
+  </div>
+  <div style="background:#111827;padding:32px;border-radius:0 0 18px 18px;border:1px solid #1e2a3a;border-top:none;">
+
+    <p style="color:#e0e0e0;font-size:15px;line-height:1.8;margin:0 0 22px;">
+      Bonjour <strong style="color:#00d4aa;">""" + fn + """</strong>,<br><br>
+      Nous avons bien reçu votre inscription à la formation
+      <strong style="color:#fff;">""" + lvl + """</strong>.
+      Notre équipe vous contactera sur WhatsApp
+      (<strong style="color:#00d4aa;">""" + wa + """</strong>) sous 24h pour finaliser votre dossier.
+    </p>
+
+    <!-- Récap -->
+    <div style="background:rgba(0,212,170,.07);border:1px solid rgba(0,212,170,.2);border-radius:12px;padding:18px 20px;margin-bottom:22px;">
+      <p style="color:#00d4aa;font-weight:700;font-size:13px;margin:0 0 12px;">📋 Récapitulatif</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr><td style="color:#888;padding:5px 0;">Formation</td>
+            <td style="color:#ffd700;font-weight:700;text-align:right;">""" + lvl + """</td></tr>
+        <tr><td style="color:#888;padding:5px 0;">Montant</td>
+            <td style="color:#00d4aa;font-weight:700;text-align:right;">""" + f"{xaf:,} FCFA &nbsp;≈&nbsp; {eur} EUR" + """</td></tr>
+        <tr><td style="color:#888;padding:5px 0;">WhatsApp</td>
+            <td style="color:#fff;text-align:right;">""" + wa + """</td></tr>
+      </table>
+    </div>
+
+    <!-- Étapes -->
+    <div style="background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.2);border-radius:12px;padding:16px 18px;margin-bottom:22px;">
+      <p style="color:#ffd700;font-weight:700;font-size:13px;margin:0 0 10px;">🚀 Prochaines étapes</p>
+      <ol style="color:#aaa;font-size:13px;margin:0;padding-left:18px;line-height:2.2;">
+        <li>Notre équipe vous contacte sur WhatsApp sous <strong style="color:#fff;">24h</strong></li>
+        <li>Vous recevrez un email avec les instructions de paiement</li>
+        <li>Votre accès est activé après confirmation du paiement</li>
+      </ol>
+    </div>
+
+    <!-- Paiements -->
+    <h3 style="color:#fff;font-size:14px;font-weight:700;margin:0 0 12px;">💳 Modes de paiement acceptés</h3>
+    <div style="background:#0d1b2a;border-radius:10px;padding:12px 16px;margin-bottom:8px;border-left:4px solid #ff6b00;">
+      <span style="color:#ff6b00;font-weight:700;font-size:12px;">🟠 Orange Money</span>
+      &nbsp;·&nbsp;<strong style="color:#fff;">""" + pay['orange_money']['numero'] + """</strong>
+    </div>
+    <div style="background:#0d1b2a;border-radius:10px;padding:12px 16px;margin-bottom:8px;border-left:4px solid #ffd700;">
+      <span style="color:#ffd700;font-weight:700;font-size:12px;">🟡 MTN MoMo</span>
+      &nbsp;·&nbsp;<strong style="color:#fff;">""" + pay['mtn_money']['numero'] + """</strong>
+    </div>
+    <div style="background:#0d1b2a;border-radius:10px;padding:12px 16px;margin-bottom:22px;border-left:4px solid #009cde;">
+      <span style="color:#009cde;font-weight:700;font-size:12px;">🔵 PayPal</span>
+      &nbsp;·&nbsp;<strong style="color:#fff;">""" + pay['paypal']['adresse'] + """</strong>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin-bottom:20px;">
+      <a href='""" + wa_link + """'
+         style="background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-weight:800;
+                font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;display:inline-block;">
+        📲 Nous contacter sur WhatsApp
+      </a>
+    </div>
+
+    <div style="border-top:1px solid #1e2a3a;padding-top:14px;text-align:center;">
+      <p style="color:#555;font-size:11px;margin:0;">Kengni Trading Academy · fabrice.kengni12@gmail.com</p>
+      <p style="color:#444;font-size:10px;margin:4px 0 0;">Email automatique suite à votre inscription.</p>
+    </div>
+  </div>
+</div></body></html>"""
+
+        txt = (
+            "Bonjour " + fn + ",\n\n"
+            "Votre inscription à la formation \"" + lvl + "\" est confirmée !\n\n"
+            "Notre équipe vous contactera sur WhatsApp (" + wa + ") sous 24h.\n\n"
+            "MONTANT : " + f"{xaf:,}" + " FCFA (≈ " + str(eur) + " EUR)\n\n"
+            "PAIEMENT :\n"
+            "• Orange Money : " + pay['orange_money']['numero'] + "\n"
+            "• MTN MoMo    : " + pay['mtn_money']['numero'] + "\n"
+            "• PayPal       : " + pay['paypal']['adresse'] + "\n\n"
+            "WhatsApp : https://wa.me/237695072759\n\n"
+            "— Kengni Trading Academy"
+        )
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject']  = "🎓 Inscription confirmée — " + lvl + " | Kengni Trading Academy"
+        msg['From']     = "Kengni Trading Academy <" + cfg['sender_email'] + ">"
+        msg['To']       = em
+        msg['Reply-To'] = cfg['sender_email']
+        msg.attach(MIMEText(txt, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html, 'html', 'utf-8'))
+
+        with smtplib.SMTP(cfg['smtp_host'], cfg['smtp_port'], timeout=15) as s:
+            s.ehlo(); s.starttls(); s.ehlo()
+            s.login(cfg['sender_email'], cfg['smtp_password'])
+            s.sendmail(cfg['sender_email'], em, msg.as_string())
+        print("[Inscription] ✅ Email confirmation envoyé au prospect " + em)
+    except Exception as ex:
+        print("[Inscription] ⚠️ Email prospect échoué : " + str(ex))
+
+
 @app.route('/inscription-trading', methods=['POST'])
 def register_trading_lead():
     """Enregistre un nouveau lead avec vérification de doublon."""
@@ -5259,7 +5377,136 @@ def register_trading_lead():
         user_id, datetime.now().isoformat()
     ))
     conn.commit()
+    lead_id = cursor.lastrowid
     conn.close()
+
+    # ── Notifier l'admin en base (cloche) ────────────────────────────
+    try:
+        _conn_n = get_db_connection()
+        if _conn_n:
+            _cur_n = _conn_n.cursor()
+            # Récupérer tous les admins/superadmins
+            _cur_n.execute("SELECT id FROM users WHERE role IN ('admin', 'superadmin')")
+            _admins = _cur_n.fetchall()
+            for _adm in _admins:
+                _cur_n.execute(
+                    "INSERT INTO notifications (user_id, type, title, message) VALUES (?, ?, ?, ?)",
+                    (
+                        _adm['id'],
+                        'info',
+                        f"🎓 Nouvelle inscription — {level_selected}",
+                        ("{} ({}) vient de s'inscrire à la formation {}. "
+                        "WhatsApp : {}. Capital : {}.").format(full_name, email, level_selected, whatsapp, capital or 'Non renseigné')
+                    )
+                )
+            _conn_n.commit()
+            _conn_n.close()
+    except Exception as _ne:
+        print(f"[Inscription] ⚠️ Notification admin échouée : {_ne}")
+
+    # ── Emails automatiques (admin + prospect) — thread parallèle ──────
+    try:
+        _cfg = GMAIL_CONFIG
+        if _cfg.get('smtp_password'):
+            import threading as _thr
+
+            # ── Variables capturées pour les closures ──
+            _fn  = full_name
+            _em  = email
+            _wa  = whatsapp
+            _lvl = level_selected
+            _cap = capital or 'Non renseigné'
+            _obj = objective or 'Non renseigné'
+            _src = source
+            _prices = FORMATION_PRICES.get(level_selected, {'xaf': 50000, 'eur': 76})
+            _pay    = PAYMENT_INFO
+
+            # ══ Email 1 : Alerte admin ══════════════════════════════════════
+            def _send_admin_alert():
+                _html = f'''<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#0a0f1a;font-family:Arial,sans-serif;">
+<div style="max-width:560px;margin:0 auto;padding:24px;">
+  <div style="background:linear-gradient(135deg,#0d1b2a,#1a2a3a);border-radius:16px 16px 0 0;
+              padding:28px 28px 20px;text-align:center;border-bottom:3px solid #00d4aa;">
+    <div style="font-size:2.5rem;">🎓</div>
+    <h2 style="color:#fff;margin:8px 0 0;font-size:18px;font-weight:800;">Nouvelle Inscription Trading</h2>
+    <p style="color:#00d4aa;margin:6px 0 0;font-size:13px;">Kengni Trading Academy</p>
+  </div>
+  <div style="background:#111827;padding:28px;border-radius:0 0 16px 16px;border:1px solid #1e2a3a;border-top:none;">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <tr><td style="color:#888;padding:8px 0 4px;font-weight:600;">👤 Nom complet</td>
+          <td style="color:#fff;padding:8px 0 4px;text-align:right;font-weight:700;">{full_name}</td></tr>
+      <tr><td colspan="2" style="border-top:1px solid #1e2a3a;"></td></tr>
+      <tr><td style="color:#888;padding:8px 0 4px;font-weight:600;">📧 Email</td>
+          <td style="color:#00d4aa;padding:8px 0 4px;text-align:right;">{email}</td></tr>
+      <tr><td colspan="2" style="border-top:1px solid #1e2a3a;"></td></tr>
+      <tr><td style="color:#888;padding:8px 0 4px;font-weight:600;">📱 WhatsApp</td>
+          <td style="color:#fff;padding:8px 0 4px;text-align:right;font-weight:700;">{whatsapp}</td></tr>
+      <tr><td colspan="2" style="border-top:1px solid #1e2a3a;"></td></tr>
+      <tr><td style="color:#888;padding:8px 0 4px;font-weight:600;">🎓 Formation</td>
+          <td style="color:#ffd700;padding:8px 0 4px;text-align:right;font-weight:700;">{level_selected}</td></tr>
+      <tr><td colspan="2" style="border-top:1px solid #1e2a3a;"></td></tr>
+      <tr><td style="color:#888;padding:8px 0 4px;font-weight:600;">💰 Capital</td>
+          <td style="color:#fff;padding:8px 0 4px;text-align:right;">{capital or 'Non renseigné'}</td></tr>
+      <tr><td colspan="2" style="border-top:1px solid #1e2a3a;"></td></tr>
+      <tr><td style="color:#888;padding:8px 0 4px;font-weight:600;">🎯 Objectif</td>
+          <td style="color:#fff;padding:8px 0 4px;text-align:right;">{objective or 'Non renseigné'}</td></tr>
+      <tr><td colspan="2" style="border-top:1px solid #1e2a3a;"></td></tr>
+      <tr><td style="color:#888;padding:8px 0 4px;font-weight:600;">📣 Source</td>
+          <td style="color:#fff;padding:8px 0 4px;text-align:right;">{source}</td></tr>
+    </table>
+    <div style="margin-top:20px;text-align:center;">
+      <a href="https://kengni.pythonanywhere.com/admin/leads"
+         style="background:linear-gradient(135deg,#00d4aa,#00ff88);color:#000;font-weight:800;
+                font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;
+                display:inline-block;">
+        👁 Voir les leads dans l'admin
+      </a>
+    </div>
+    <p style="color:#444;font-size:11px;text-align:center;margin-top:16px;">
+      Kengni Trading Academy · Notification automatique
+    </p>
+  </div>
+</div>
+</body></html>'''
+                try:
+                    from email.mime.multipart import MIMEMultipart as _M
+                    from email.mime.text import MIMEText as _T
+                    import smtplib as _smtp
+                    _msg = _M('alternative')
+                    _msg['Subject'] = f"🎓 Nouvelle inscription — {full_name} ({level_selected})"
+                    _msg['From']    = f"Kengni Trading Academy <{_cfg['sender_email']}>"
+                    _msg['To']      = _cfg['receiver_email']
+                    _msg.attach(_T(
+                        f"Nouvelle inscription\n\n"
+                        f"Nom : {full_name}\nEmail : {email}\nWhatsApp : {whatsapp}\n"
+                        f"Formation : {level_selected}\nCapital : {capital or 'N/R'}\n"
+                        f"Objectif : {objective or 'N/R'}\nSource : {source}\n\n"
+                        f"Voir : https://kengni.pythonanywhere.com/admin/leads",
+                        'plain', 'utf-8'
+                    ))
+                    _msg.attach(_T(_html, 'html', 'utf-8'))
+                    with _smtp.SMTP(_cfg['smtp_host'], _cfg['smtp_port'], timeout=15) as _s:
+                        _s.ehlo(); _s.starttls(); _s.ehlo()
+                        _s.login(_cfg['sender_email'], _cfg['smtp_password'])
+                        _s.sendmail(_cfg['sender_email'], _cfg['receiver_email'], _msg.as_string())
+                    print(f"[Inscription] ✅ Email admin envoyé à {_cfg['receiver_email']}")
+                except Exception as _ex:
+                    print(f"[Inscription] ⚠️ Email admin échoué : {_ex}")
+            _thr.Thread(target=_send_admin_alert, daemon=True).start()
+
+            # ── Email 2 : confirmation prospect (thread séparé) ──────────
+            _thr.Thread(
+                target=_send_prospect_confirmation,
+                args=(_cfg, _fn, _em, _wa, _lvl, _cap, _obj, _pay, _prices),
+                daemon=True
+            ).start()
+
+        else:
+            print("[Inscription] ⚠️ GMAIL_APP_PASSWORD manquant — emails non envoyés")
+    except Exception as _ee:
+        print(f"[Inscription] ⚠️ Erreur emails inscription : {_ee}")
 
     flash(f"Inscription confirmée ! Nous vous contacterons sur WhatsApp très bientôt. 🎉", 'success')
     return redirect(url_for('training_registration', success=1, wa=whatsapp))

@@ -1031,7 +1031,7 @@ body.light-theme .main-content { background: #f1f5f9 !important; }
                     ">NEW</span>
                 </a>
             </li>
-            {% if session.get('role') == 'admin' %}
+            {% if session.get('role') in ('admin', 'superadmin') %}
             <li>
                 <a href="{{ url_for('admin_leads') }}" class="{% if request.endpoint == 'admin_leads' %}active{% endif %}">
                     <i class="fas fa-users"></i>
